@@ -1,0 +1,26 @@
+id: CTRL-RATE-LIMITING
+title: Request Rate Limiting and Quotas
+description: Limits the rate of requests to models and tools through per-user limits,
+  global quotas, and adaptive throttling, preventing abuse, resource exhaustion, and
+  cost overruns from runaway agents or malicious use. The mechanism operates at the
+  API gateway level and tracks request counts per identity and globally. This protects
+  against DoS via excessive API calls, prevents accidental cost blowups, and ensures
+  fair resource allocation among users.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Per-user rate limiting
+  complexity: low
+  description: 'Per-user or per-session limits on API calls: X requests per minute/hour/day.
+    Limits are configured based on subscription tier, usage patterns, security level.
+    Exceeded limits return a 429 status with a retry-after header.'
+- name: Global resource quotas
+  complexity: low
+  description: 'Global quotas on total API usage: maximum concurrent requests, daily
+    token consumption limits, monthly cost caps. Global limits protect infrastructure
+    from aggregate load even when individual users are within their limits.'
+- name: Adaptive throttling
+  complexity: medium
+  description: Rate limits adapt dynamically based on system load, time of day, user
+    behavior patterns. Under high load, limits are tightened. An anomalous spike in
+    requests triggers temporary stricter limits pending investigation.

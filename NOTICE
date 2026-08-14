@@ -1,0 +1,12 @@
+Keel
+Copyright 2026 Aleksandr Goncharov
+
+This product includes the Keel GenAI threat catalog (catalog/) and the
+assessment methodology skills, authored by Aleksandr Goncharov.
+
+Attribution is requested when the catalog content, the facet model, or the
+assessment methodology is reused or adapted:
+"Based on Keel (https://github.com/roselis-lab/keel)".
+
+This product bundles the "humanizer" skill,
+Copyright (c) Siqi Chen, licensed under the MIT License.

@@ -1,0 +1,30 @@
+id: CTRL-RISK-BASED-APPROVAL
+title: Risk-Tiered Approval
+description: Classifies operations by risk level and applies differentiated confirmation
+  requirements — from automatic execution for low-risk to mandatory reinforced confirmation
+  for high-risk operations — optimizing the balance between security and productivity.
+  The mechanism operates at the action routing level and directs operations into the
+  appropriate confirmation process based on a risk assessment. This concentrates human
+  attention on genuinely risky operations, reduces confirmation fatigue by minimizing
+  interruptions for routine work, and provides an adequate level of oversight for
+  each risk.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Risk classification matrix
+  complexity: medium
+  description: 'A classification matrix defines the risk level for each combination
+    of action type x resource type x context. For example: reading public data = LOW,
+    writing configuration = MEDIUM, deleting production = HIGH, accessing secrets
+    = CRITICAL. Classification is automated through a policy engine.'
+- name: Context-aware risk assessment
+  complexity: high
+  description: 'Confirmation requirements depend on the sensitivity of the target
+    resource: reading a file with credentials requires more confirmations than reading
+    a log file. Context includes data classification, environment, business impact
+    assessment.'
+- name: Progressive friction for anomalies
+  complexity: medium
+  description: 'When unusual patterns are detected — bulk operations, after-hours
+    activity, first-time actions — the system applies progressive friction: additional
+    confirmations, mandatory waiting periods, elevated approval requirements.'

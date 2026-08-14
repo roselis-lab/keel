@@ -1,0 +1,18 @@
+# Browse UI + read-only REST:  docker compose up            -> http://localhost:8000/
+# Add the HTTP MCP transport:  docker compose --profile mcp up
+services:
+  keel:
+    build: .
+    image: keel:latest
+    ports:
+      - "8000:8000"
+
+  keel-mcp:
+    build: .
+    image: keel:latest
+    profiles: ["mcp"]
+    command: ["keel", "--http"]
+    environment:
+      - MCP_HTTP_HOST=0.0.0.0
+    ports:
+      - "8001:8001"

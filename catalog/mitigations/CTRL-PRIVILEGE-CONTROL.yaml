@@ -1,0 +1,27 @@
+id: CTRL-PRIVILEGE-CONTROL
+title: Least Privilege for Tokens
+description: Restricts the privileges of tokens and service accounts to the minimum
+  necessary set of permissions and scopes, applying the principle of least privilege
+  to reduce the blast radius when credentials are compromised. The mechanism operates
+  at the identity management configuration level and verifies that each identity holds
+  only the permissions needed to perform its functions. This minimizes potential damage
+  from credential theft, limits lateral movement capability, and ensures compliance
+  with least-privilege requirements.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Permission minimization review
+  complexity: medium
+  description: Each token and service account undergoes a review for the minimum necessary
+    permissions. Unused permissions are revoked. Regular audits check accumulated
+    privileges and surface least-privilege violations.
+- name: Scoped token issuance
+  complexity: low
+  description: Tokens are issued with a restricted scope — only the specific API endpoints,
+    operations, resources needed for the task. Broad scopes such as "read all" or
+    "administrator" are prohibited for service tokens.
+- name: Workload-specific identities
+  complexity: medium
+  description: Service accounts have no interactive login capability and are bound
+    to a specific workload identity. Permissions are inherited from the workload's
+    function rather than from a human operator's preferences.

@@ -1,0 +1,33 @@
+id: CTRL-IDE-EXTENSION-ALLOWLIST
+title: IDE Extension and Publisher Allowlist
+description: Restricts the installation of IDE extensions to only those approved from
+  an internal catalog or from verified publishers, preventing supply chain attacks
+  through malicious extensions and ensuring control over the extension ecosystem.
+  The mechanism operates at the level of the IDE's extension management system and
+  checks each extension request against the allowlist before permitting installation.
+  This blocks the installation of extensions from untrusted sources, provides visibility
+  into the installed extension landscape, and allows the organization to control security-relevant
+  extensions with access to the workspace.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Internal curated marketplace
+  complexity: high
+  description: The organization maintains an internal extension marketplace or a curated
+    list of approved extensions. Users can install only extensions from this approved
+    catalog. The catalog includes security-reviewed extensions with documented permissions
+    and an audit trail of the review process. This gives maximum control but requires
+    ongoing curation effort.
+- name: Publisher verification requirement
+  complexity: medium
+  description: 'Extensions are permitted only from publishers that have passed a verification
+    process: identity verification, security assessment, code signing certificate.
+    The IDE or management system verifies the publisher signature before installation.
+    Unverified publishers are blocked by default. This gives flexibility for trusted
+    publishers but requires verification infrastructure.'
+- name: Risk-tiered extension policy
+  complexity: low
+  description: 'Extensions are classified by risk tiers: low-risk (syntax highlighting,
+    themes) are freely installable, medium-risk (language servers, linters) require
+    team approval, high-risk (tools with file/network access) require security review.
+    A risk-based policy balances security with developer productivity.'

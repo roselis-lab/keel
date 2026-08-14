@@ -1,0 +1,54 @@
+id: T-CRED-THEFT
+title: Privilege abuse / credential theft via MCP
+description: 'Compromise of a privileged token grants access to resources within those
+  privileges without additional authentication.
+
+
+  Theft or substitution of a client bot''s token allows operations to be performed
+  on the client''s behalf with their permissions.'
+impact_class: infrastructure-execution
+vulnerability:
+- The agent or tool holds a privileged token with broad scope (a service account with
+  excessive rights, OAuth on-behalf-of the user); token compromise grants access to
+  resources within those rights without additional authentication.
+- 'An MCP connection to a tool without authentication: any agent or service on the
+  network invokes tools through it.'
+- A token with excessive rights is passed to the agent-tool boundary (including into
+  a browser or insecure environment) and can be intercepted.
+reachability: NOT applicable if tokens are narrowly scoped (least scope, separate
+  accounts per operation) and unreachable from a compromisable point, or the tools
+  carry no privileges beyond what the caller already has.
+tags: []
+mitigations:
+- mitigation_id: CTRL-AUDIT-LOGGING
+  rationale: 'Logging of all operations performed on behalf of the user
+
+
+    Auditing all credential operations enables detection of anomalous activity'
+- mitigation_id: CTRL-MCP-REGISTRY
+  rationale: Registry of MCP servers with a mandatory authentication policy
+- mitigation_id: CTRL-PRIVILEGE-CONTROL
+  rationale: 'Restricting service account permissions reduces risk in case of compromise
+
+
+    Restricting token scopes to the minimum
+
+
+    Least privilege limits the consequences of unauthorized access
+
+
+    The principle of least privilege limits the consequences of token compromise'
+- mitigation_id: CTRL-TOKEN-PROTECTION
+  rationale: 'Secure storage of credentials prevents their theft from tools
+
+
+    Protecting delegated tokens from theft
+
+
+    Protecting tokens from leakage through encryption and secure storage'
+- mitigation_id: CTRL-TRANSPORT-AUTH
+  rationale: 'mTLS or API-key authentication of MCP connections prevents unauthorized
+    calls
+
+
+    mTLS or API-key authentication protects the channel'

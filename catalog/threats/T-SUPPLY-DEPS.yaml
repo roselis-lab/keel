@@ -1,0 +1,28 @@
+id: T-SUPPLY-DEPS
+title: Installation of hallucinated packages
+description: 'Dependencies are installed from external registries without validating
+  package existence or verifying the publisher. The user trusts the LLM''s recommendation
+  when choosing dependencies: any hallucinated package name or typo not caught by
+  validation leads to installing code from an unverified source.'
+impact_class: infrastructure-execution
+vulnerability:
+- The agent generates a dependency-install command (npm/pip/go) based on a hallucinated
+  name or a typo; the package does not exist or exists from a different publisher
+  (typosquat/dependency-confusion), and code from an unverified source executes with
+  full access to the environment.
+reachability: NOT applicable if the agent's output cannot lead to dependency installation
+  — it generates no install commands, or there is no path from recommendation to execution.
+tags: []
+mitigations:
+- mitigation_id: CTRL-INSTALL-COMMAND-BLOCK
+  rationale: Blocking automatic install commands prevents the agent from executing
+    generated installation commands without review
+- mitigation_id: CTRL-INTERNAL-REGISTRY
+  rationale: An internal registry with an allowlist ensures that only vetted packages
+    are used
+- mitigation_id: CTRL-PACKAGE-VALIDATION
+  rationale: Checking for a package's existence in the registry before installation
+    reveals typo-squatting attacks
+- mitigation_id: CTRL-SUPPLY-CHAIN-SCANNING
+  rationale: SCA scanning of dependencies reveals known vulnerabilities and malicious
+    packages

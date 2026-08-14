@@ -1,0 +1,25 @@
+id: CTRL-TOOL-VERIFICATION
+title: Verification of Tool Attestations
+description: Verifies tool attestations - digital signatures, hashes, security scan
+  results - before first use and periodically thereafter, ensuring that tools are
+  in a verified state. The mechanism operates at the tool loading layer and checks
+  attestation metadata. This guarantees the authenticity and integrity of loaded tools,
+  detects tampered or corrupted components, and provides continuous verification not
+  only at registration.
+type: PREVENTIVE_HARD
+requirement_level: RECOMMENDED
+implementations:
+- name: Attestation generation
+  complexity: high
+  description: 'At tool registration, an attestation is generated: a signature from
+    a trusted key, a hash of the implementation, and scan results. Attestations are
+    checked before loading the tool at runtime.'
+- name: Verification before use
+  complexity: low
+  description: Before each use, the hash of the tool implementation is compared against
+    the stored attestation. A mismatch indicates tampering and triggers a security
+    alert.
+- name: Periodic re-verification
+  complexity: medium
+  description: Periodic re-verification of already loaded tools to detect tampering
+    at runtime or corruption of files on disk.

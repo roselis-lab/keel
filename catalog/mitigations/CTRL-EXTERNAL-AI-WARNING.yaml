@@ -1,0 +1,34 @@
+id: CTRL-EXTERNAL-AI-WARNING
+title: External AI Risk Warning
+description: Informs users of the risks of transmitting data to external AI services
+  through explicit UI notifications that include the name of the recipient service,
+  the categories of data being sent, and the implications for privacy and compliance,
+  ensuring informed consent before using external AI capabilities. The mechanism activates
+  on any data flow to an external AI service and displays a notice through a persistent
+  UI element or acknowledgment dialog. This ensures transparency of data practices,
+  supports compliance with privacy regulations, and enables users to make informed
+  decisions about using external AI.
+type: DETECTIVE
+requirement_level: RECOMMENDED
+implementations:
+- name: Persistent UI banner for external AI
+  description: A persistent UI banner or indicator that is visible while an external
+    AI service is actively in use. The banner includes the service name, a brief description
+    of the data being transmitted, and a link to a detailed privacy notice. This ensures
+    persistent awareness without blocking the workflow but may be ignored due to banner
+    blindness.
+  complexity: low
+- name: Mandatory acknowledgment dialog
+  description: On first use of an external AI service, or before sending sensitive
+    data categories, a modal dialog with detailed risk information is displayed and
+    requires explicit acknowledgment. The dialog includes information about data retention,
+    potential exposure scenarios, and compliance implications. This ensures informed
+    consent but adds friction.
+  complexity: low
+- name: Context-sensitive data warnings
+  description: Before sending data to an external AI, the system analyzes the content
+    for the presence of sensitive categories (PII, credentials, confidential content)
+    and shows a contextual warning if sensitive data is detected. The warning includes
+    the specific data types found and the risks associated with transmitting them.
+    This gives targeted warnings but requires accurate content classification.
+  complexity: medium

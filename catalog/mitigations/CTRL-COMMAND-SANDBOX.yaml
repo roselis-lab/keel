@@ -1,0 +1,35 @@
+id: CTRL-COMMAND-SANDBOX
+title: Command allowlist
+description: Restricts the execution of shell commands to a strictly defined allowlist
+  of permitted operations, blocking any attempt to run unauthorized commands, including
+  destructive operations, system utilities, and arbitrary code execution through shell
+  interfaces. The mechanism works as a wrapper or middleware around the shell execution
+  layer, checking each command against the allowlist before execution and blocking
+  everything that does not match the permitted set. This prevents RCE attacks through
+  injection vectors, limits the blast radius of compromised components, and provides
+  a deterministic attack surface for shell operations.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Shell wrapper with allowlist
+  description: All shell calls pass through a centralized wrapper that checks the
+    base command (the first token) against an allowlist of permitted utilities. For
+    each command in the allowlist, permissible flags and argument patterns are defined.
+    Commands outside the list are rejected with the attempt logged. The wrapper can
+    be implemented as a shell function, a sudoers policy, or a dedicated command proxy
+    service.
+  complexity: medium
+- name: Restricted shell (rbash)
+  description: Restricted bash (rbash) or zsh restricted mode is used, which forbids
+    cd, changing PATH, output redirection, job control, and the use of absolute paths
+    to scripts. In combination with a restricted PATH, this provides confinement to
+    a preinstalled set of commands. However, restricted shells have known escape vectors
+    through permitted scripts or editors.
+  complexity: low
+- name: Containerized command execution
+  description: Each command is executed in a separate container or sandbox with a
+    pre-configured set of utilities. The Docker image or sandbox profile contains
+    only the permitted binaries and libraries, without shell interpreters, compilers,
+    or system administration utilities. This gives the strongest isolation, but it
+    requires infrastructure for orchestration.
+  complexity: high
