@@ -22,11 +22,12 @@ uv run keel seed             # load the catalog into the database
 
 ## Editing the catalog
 
-The catalog is the source of truth as YAML under `catalog/` (one file per threat, one per mitigation, plus `style_guide.yaml`). The database is generated from it. Two ways to edit:
+The catalog is the source of truth as YAML under `catalog/` (one file per threat, one per mitigation, and one file per entity under `style_guide/`). The database is generated from it. Two ways to edit:
 
-**A. Edit the YAML directly.** Change or add `catalog/threats/<id>.yaml` or `catalog/mitigations/<id>.yaml`, then load and check:
+**A. Edit the YAML directly.** Change or add `catalog/threats/<id>.yaml` or `catalog/mitigations/<id>.yaml`, then validate, load, and check:
 
 ```bash
+uv run keel validate
 uv run keel seed
 uv run pytest
 ```
@@ -46,11 +47,12 @@ Every content field has an authoring bar in the **style guide** (the `get_style_
 ## Before you open a PR
 
 ```bash
+uv run keel validate   # schema, strict enums, and link integrity of catalog/
 uv run ruff check .
 uv run pytest
 ```
 
-Both must pass. CI runs the same checks plus a full build of the database from the catalog.
+All three must pass. CI runs the same checks plus a full build of the database from the catalog.
 
 ## Reporting issues
 

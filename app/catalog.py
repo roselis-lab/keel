@@ -1,12 +1,13 @@
 """Diffable catalog: the source of truth for library content.
 
 The catalog lives as reviewable YAML under `catalog/` (one file per threat, one per
-mitigation, plus `style_guide.yaml`). `threat_library.db` is a *generated* artifact:
-`alembic upgrade head` builds the schema, then `keel seed` loads the catalog into it.
-This keeps content changes readable in pull requests instead of hidden in a binary blob.
+mitigation, and one per entity under `style_guide/`). `threat_library.db` is a *generated*
+artifact: `alembic upgrade head` builds the schema, then `keel seed` loads the catalog into
+it. This keeps content changes readable in pull requests instead of a binary blob.
 
 `keel export` does the inverse (DB -> catalog/), used after editing content via the MCP
-tools or the browse UI to write the changes back to the reviewable YAML.
+tools or the browse UI. `keel validate` checks the YAML against the schemas before it ever
+touches the database.
 """
 from __future__ import annotations
 
@@ -14,15 +15,21 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Mitigation, Threat, ThreatMitigation
+from app.schemas.mitigation import MitigationCreate
+from app.schemas.threat import MitigationRef, ThreatCreate
 from app.services.style_guide_service import export_yaml as _export_style_yaml
 from app.services.style_guide_service import import_yaml as _import_style_yaml
 
 # Anchored at the project root so it works regardless of the current directory.
 DEFAULT_CATALOG_DIR = Path(__file__).resolve().parent.parent / "catalog"
+
+_THREAT_KEYS = {"id", "title", "description", "impact_class", "vulnerability", "reachability", "tags", "mitigations"}
+_MITIGATION_KEYS = {"id", "title", "description", "type", "requirement_level", "implementations"}
 
 
 def _dump(data: Any) -> str:
@@ -32,8 +39,8 @@ def _dump(data: Any) -> str:
 async def export_catalog(
     session: AsyncSession, catalog_dir: Path = DEFAULT_CATALOG_DIR
 ) -> dict[str, int]:
-    """Dump DB content to `catalog/`: one YAML per threat and per mitigation, plus
-    style_guide.yaml. Overwrites the files that exist for current rows."""
+    """Dump DB content to `catalog/`: one YAML per threat and per mitigation, plus one
+    file per entity under `style_guide/`. Overwrites the files for current rows."""
     threats_dir = catalog_dir / "threats"
     mit_dir = catalog_dir / "mitigations"
     threats_dir.mkdir(parents=True, exist_ok=True)
@@ -75,18 +82,40 @@ async def export_catalog(
         }
         (mit_dir / f"{m.id}.yaml").write_text(_dump(record), encoding="utf-8")
 
-    (catalog_dir / "style_guide.yaml").write_text(
-        await _export_style_yaml(session), encoding="utf-8"
-    )
+    # Style guide: one file per entity, so a field's authoring bar diffs on its own.
+    sg = yaml.safe_load(await _export_style_yaml(session)) or {}
+    sg_dir = catalog_dir / "style_guide"
+    sg_dir.mkdir(parents=True, exist_ok=True)
+    for entity_type, ent in (sg.get("entities") or {}).items():
+        (sg_dir / f"{entity_type}.yaml").write_text(_dump(ent), encoding="utf-8")
+    legacy = catalog_dir / "style_guide.yaml"
+    if legacy.exists():
+        legacy.unlink()
+
     return {"threats": len(threats), "mitigations": len(mitigations), "links": len(links)}
+
+
+async def _load_style_guide(session: AsyncSession, catalog_dir: Path) -> None:
+    """Load style_guide/ (one file per entity), or a legacy single style_guide.yaml."""
+    entities: dict[str, Any] = {}
+    sg_dir = catalog_dir / "style_guide"
+    if sg_dir.is_dir():
+        for path in sorted(sg_dir.glob("*.yaml")):
+            entities[path.stem] = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    legacy = catalog_dir / "style_guide.yaml"
+    if not entities and legacy.exists():
+        entities = (yaml.safe_load(legacy.read_text(encoding="utf-8")) or {}).get("entities", {}) or {}
+    if entities:
+        combined = yaml.safe_dump({"entities": entities}, allow_unicode=True, sort_keys=False)
+        await _import_style_yaml(session, combined, mode="merge", updated_by="seed")
 
 
 async def load_catalog(
     session: AsyncSession, catalog_dir: Path = DEFAULT_CATALOG_DIR
 ) -> dict[str, int]:
-    """Upsert `catalog/` YAML into the DB (idempotent). The schema must already
-    exist (run `alembic upgrade head` first). Mitigations load before threats so
-    the links resolve."""
+    """Upsert `catalog/` YAML into the DB (idempotent). The schema must already exist
+    (run `alembic upgrade head` first). Mitigations load before threats so the links
+    resolve."""
     if not catalog_dir.exists():
         raise FileNotFoundError(f"catalog directory not found: {catalog_dir}")
 
@@ -147,11 +176,96 @@ async def load_catalog(
                 lrow.rationale = link.get("rationale") or ""
             n_link += 1
 
-    style_path = catalog_dir / "style_guide.yaml"
-    if style_path.exists():
-        await _import_style_yaml(
-            session, style_path.read_text(encoding="utf-8"), mode="merge", updated_by="seed"
-        )
-
+    await _load_style_guide(session, catalog_dir)
     await session.commit()
     return {"threats": n_threat, "mitigations": n_mit, "links": n_link}
+
+
+def _fmt_err(e: ValidationError) -> str:
+    parts = []
+    for err in e.errors():
+        loc = ".".join(str(x) for x in err["loc"]) or "(root)"
+        parts.append(f"{loc}: {err['msg']}")
+    return "; ".join(parts)
+
+
+def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
+    """Validate catalog YAML before it touches the database. Checks each record against
+    the Pydantic schema (types and the strict enums), that a file's `id` matches its
+    filename, that ids are unique, that no unknown fields slipped in, and that every
+    threat->mitigation link resolves. Returns human-readable errors (empty list = valid)."""
+    errors: list[str] = []
+    if not catalog_dir.exists():
+        return [f"catalog directory not found: {catalog_dir}"]
+
+    mit_ids: set[str] = set()
+    for path in sorted((catalog_dir / "mitigations").glob("*.yaml")):
+        rel = path.relative_to(catalog_dir).as_posix()
+        rec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(rec, dict):
+            errors.append(f"{rel}: not a YAML mapping")
+            continue
+        unknown = set(rec) - _MITIGATION_KEYS
+        if unknown:
+            errors.append(f"{rel}: unknown field(s): {', '.join(sorted(unknown))}")
+        try:
+            MitigationCreate(**{k: rec[k] for k in rec if k in _MITIGATION_KEYS})
+        except ValidationError as e:
+            errors.append(f"{rel}: {_fmt_err(e)}")
+        rid = rec.get("id")
+        if rid != path.stem:
+            errors.append(f"{rel}: id {rid!r} does not match filename {path.stem!r}")
+        elif rid in mit_ids:
+            errors.append(f"{rel}: duplicate mitigation id {rid!r}")
+        else:
+            mit_ids.add(rid)
+
+    threat_ids: set[str] = set()
+    for path in sorted((catalog_dir / "threats").glob("*.yaml")):
+        rel = path.relative_to(catalog_dir).as_posix()
+        rec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(rec, dict):
+            errors.append(f"{rel}: not a YAML mapping")
+            continue
+        unknown = set(rec) - _THREAT_KEYS
+        if unknown:
+            errors.append(f"{rel}: unknown field(s): {', '.join(sorted(unknown))}")
+        try:
+            ThreatCreate(**{k: rec[k] for k in rec if k in _THREAT_KEYS and k != "mitigations"})
+        except ValidationError as e:
+            errors.append(f"{rel}: {_fmt_err(e)}")
+        rid = rec.get("id")
+        if rid != path.stem:
+            errors.append(f"{rel}: id {rid!r} does not match filename {path.stem!r}")
+        elif rid in threat_ids:
+            errors.append(f"{rel}: duplicate threat id {rid!r}")
+        else:
+            threat_ids.add(rid)
+
+        links = rec.get("mitigations") or []
+        if not isinstance(links, list):
+            errors.append(f"{rel}: 'mitigations' must be a list")
+            continue
+        for i, link in enumerate(links):
+            if not isinstance(link, dict):
+                errors.append(f"{rel}: mitigations[{i}] is not a mapping")
+                continue
+            try:
+                ref = MitigationRef(**link)
+            except ValidationError as e:
+                errors.append(f"{rel}: mitigations[{i}]: {_fmt_err(e)}")
+                continue
+            if ref.mitigation_id not in mit_ids:
+                errors.append(
+                    f"{rel}: mitigations[{i}] references unknown mitigation {ref.mitigation_id!r}"
+                )
+
+    sg_dir = catalog_dir / "style_guide"
+    if sg_dir.is_dir():
+        for path in sorted(sg_dir.glob("*.yaml")):
+            rel = path.relative_to(catalog_dir).as_posix()
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+            if not isinstance(data, dict) or not isinstance(data.get("fields"), dict):
+                errors.append(f"{rel}: expected a mapping with a 'fields' mapping")
+
+    return errors

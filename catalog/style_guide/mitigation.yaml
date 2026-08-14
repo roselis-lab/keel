@@ -1,0 +1,126 @@
+fields:
+  description:
+    purpose: Explains what it controls, how exactly it protects, and at which point
+      it intercepts
+    content_requirements:
+    - Point of application - where in the flow it intercepts (at input, at output,
+      at runtime)
+    - Mechanism - how exactly the protection works (filtering, isolation, validation)
+    - What it blocks/detects - a specific class of attacks or violations
+    avoid:
+    - 'Too brief: Input validation'
+    - Marketing phrasing without mechanics
+    - Repeating the title
+    - Explicit division into blocks (point, mechanism, limitations) - the text must
+      be coherent
+    examples:
+    - Intercepts user input before it reaches the model context, using an ML detector
+      and pattern matching to identify prompt-injection attempts of the form "ignore
+      the rules", "now you are..." and encoded payloads.
+    - Runs tools in an isolated environment with network isolation and restricted
+      access rights, blocking unauthorized access to internal services.
+  implementations:
+    purpose: Specific technical approaches to implementing the control
+    content_requirements:
+    - Each item is one specific technical mechanism, not a general intent
+    - At least 2-3 implementation options
+    avoid:
+    - Names that are too general without mechanics
+    - Describing intent instead of implementation
+    - Only one implementation option
+    subfields:
+      name:
+        purpose: A technically specific name for the pattern
+        content_requirements:
+        - 2-5 words
+        - Describes the mechanism, not the intent
+        examples:
+        - Prompt-injection detector
+        - Input sanitization
+        - Human-control gateway
+      description:
+        purpose: How exactly the mechanism works, where it is implemented, and what
+          practical protective effect it provides
+        content_requirements:
+        - A coherent, expanded description of the mechanism, not a telegraphic set
+          of phrases
+        - It must explain how the mechanism works, where exactly it is implemented
+          in the architecture, and what role it plays in the defense
+        - Where necessary, indicate in which circuit or scenario the mechanism is
+          especially appropriate, and where its capabilities are insufficient
+        - If it aids understanding, you may cite specific technologies, libraries,
+          standards, or classes of solutions
+        - If the mechanism includes several substantially different steps or implementation
+          points, two paragraphs are allowed
+        - After reading, it should be clear where to deploy the mechanism and what
+          exactly to check during review
+        avoid:
+        - 'Labels without a mechanism: validation, signature, internal registry'
+        - 'Describing intent instead of implementation: protects against attacks,
+          reduces risk'
+        - 'Marketing phrasing: reliably protects, effectively prevents'
+        - Technologies without explaining what role they play in this mechanism
+        - Mixing preventive, detective, and recovery measures in one description without
+          a clear distinction
+        - 'Telegraphic style: short phrases separated by periods without coherence'
+        examples:
+        - 'Before a call is executed, the tool''s arguments are validated against
+          a predefined schema: expected fields, types, allowed value ranges, required
+          parameters, and basic constraints on string format. Such a mechanism is
+          placed at the boundary between the agent and tool execution, so that the
+          model cannot pass an arbitrary data structure into runtime or covertly substitute
+          the meaning of the call through invalid parameters. In practice this reduces
+          the risk of injections, logic bypasses, and accidental errors when the LLM
+          produces a formally similar but essentially incorrect request. This approach
+          is especially useful for tools that work with external APIs, databases,
+          or sensitive business operations, where it is important not only to permit
+          the required call but also to strictly constrain the way it is formed.'
+        - High-risk operations, such as deleting data, mass-modifying records, or
+          executing irreversible commands, are not mixed with ordinary actions and
+          are routed into a separate execution circuit with mandatory confirmation
+          from the user or from an external policy. Thanks to this, the agent cannot
+          quietly turn an ordinary scenario into a critical operation merely because
+          the model erred in its reasoning or yielded to a malicious instruction.
+          Such a mechanism is usually built in at the level of the tool registry,
+          the policy engine, and the client interface, where the criticality of an
+          action is fixed in advance and affects the very order of execution. This
+          does not remove the need for correct authorization and argument validation,
+          but it substantially reduces the likelihood that a destructive action will
+          be performed automatically and without additional oversight.
+        - 'Tools are executed not in the shared application environment but in an
+          isolated runtime with pre-restricted rights: without arbitrary access to
+          the file system, without unnecessary system calls, and only with permitted
+          network destinations. Such a mechanism is needed so that even a vulnerable,
+          compromised, or simply erroneously implemented tool cannot become a point
+          of escape beyond its function and start reading extraneous data, executing
+          arbitrary commands, or establishing external connections. In practice this
+          reduces the blast radius of an incident and makes the tool''s behavior more
+          predictable from an exploitation standpoint. The approach is especially
+          important where agentic tools work with external resources, user input,
+          or code, and where an error in one component must not automatically mean
+          the compromise of the entire circuit.'
+  requirement_level:
+    purpose: Whether application is mandatory
+    content_requirements:
+    - 'MANDATORY: always required'
+    - 'RECOMMENDED: recommended'
+    examples:
+    - MANDATORY
+    - RECOMMENDED
+  title:
+    purpose: Short name for the UI
+    content_requirements:
+    - 3-7 words
+    - Describes what the control does
+    avoid:
+    - Too general
+    examples:
+    - Human in the loop for critical actions
+    - User input filtering
+  type:
+    purpose: Classification by the nature of the effect
+    content_requirements:
+    - 'PREVENTIVE_HARD: technically blocks the attack (MFA, encryption, sandbox)'
+    - 'PREVENTIVE_SOFT: policies, procedures (access review, security training)'
+    - 'DETECTIVE: monitoring, audit (logging, SIEM, anomaly detection)'
+    - 'CORRECTIVE: recovery (backup, incident response)'

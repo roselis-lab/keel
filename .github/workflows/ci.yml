@@ -22,6 +22,9 @@ jobs:
       - name: Lint
         run: uv run ruff check .
 
+      - name: Validate catalog
+        run: uv run keel validate
+
       - name: Build database from the catalog
         run: |
           uv run alembic upgrade head
