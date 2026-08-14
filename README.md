@@ -100,7 +100,7 @@ The suite includes a health check on the library (`tests/test_health.py`): it ru
 
 ## Make it yours
 
-Keel ships with a curated English reference model: 13 impact-centric threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, plus `style_guide.yaml`); `threat_library.db` is a generated artifact that `keel seed` builds from it, so content changes land as readable diffs in pull requests instead of a binary blob. It is meant to be forked and grown into your organization's model:
+Keel ships with a curated English reference model: 13 impact-centric threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, and one file per entity under `style_guide/`); `threat_library.db` is a generated artifact that `keel seed` builds from it, so content changes land as readable diffs in pull requests instead of a binary blob. `keel validate` checks the YAML against the schemas (strict enums, link integrity) before it touches the database, and runs in CI. It is meant to be forked and grown into your organization's model:
 
 - Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar) or the browse UI, then run `keel export` to write the changes back to `catalog/*.yaml` for review.
 - Adjust tags, implementations, and threat-to-mitigation rationale to match how your teams reason.

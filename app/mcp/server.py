@@ -109,7 +109,18 @@ def run_http() -> None:
 
 async def _run_catalog(action: str) -> None:
     """One-shot catalog commands (`seed` / `export`) against the configured DB."""
-    from app.catalog import export_catalog, load_catalog
+    from app.catalog import export_catalog, load_catalog, validate_catalog
+
+    if action == "seed":
+        errs = validate_catalog()
+        if errs:
+            print(
+                f"Refusing to seed: catalog invalid ({len(errs)} problem(s)). See `keel validate`.",
+                file=sys.stderr,
+            )
+            for e in errs:
+                print(f"  - {e}", file=sys.stderr)
+            raise SystemExit(1)
 
     engine = create_async_engine(settings.database_url, echo=settings.debug)
     maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -126,10 +137,20 @@ async def _run_catalog(action: str) -> None:
 
 
 def main():
-    """Entry point. `seed` / `export` run catalog commands; `--http` selects
-    Streamable HTTP; no args runs the stdio MCP server."""
+    """Entry point. `validate` / `seed` / `export` run catalog commands; `--http`
+    selects Streamable HTTP; no args runs the stdio MCP server."""
     args = sys.argv[1:]
-    if args and args[0] in ("seed", "export"):
+    if args and args[0] == "validate":
+        from app.catalog import validate_catalog
+
+        errs = validate_catalog()
+        if errs:
+            print(f"Catalog invalid ({len(errs)} problem(s)):", file=sys.stderr)
+            for e in errs:
+                print(f"  - {e}", file=sys.stderr)
+            raise SystemExit(1)
+        print("Catalog is valid.", file=sys.stderr)
+    elif args and args[0] in ("seed", "export"):
         asyncio.run(_run_catalog(args[0]))
     elif "--http" in args:
         run_http()
