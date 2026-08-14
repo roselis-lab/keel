@@ -1,0 +1,34 @@
+id: CTRL-FATIGUE-DETECTION
+title: Approval Fatigue Pattern Detection
+description: Monitors patterns in the user's responses to confirmation prompts to
+  identify signs of approval fatigue — mechanical approval without consideration —
+  and initiates protective responses when anomalies are detected. The mechanism analyzes
+  the timing, frequency, and consistency of approval decisions for deviations from
+  a specific user's normal behavior. This detects attackers exploiting fatigue, identifies
+  compromised accounts through unusual approval patterns, and enables intervention
+  before mass approval leads to a security incident.
+type: DETECTIVE
+requirement_level: RECOMMENDED
+implementations:
+- name: Approval pattern analytics
+  description: 'The system collects metrics for each approval decision: time to respond,
+    action approved/rejected, request context, session history. An ML model or rules
+    engine analyzes patterns for anomalies: unusually fast responses, approve-everything
+    behavior, deviations from the user''s historical patterns. When an anomaly is
+    detected, the system can require re-authentication, apply a mandatory cooldown,
+    or alert the security team.'
+  complexity: high
+- name: Response time monitoring
+  description: Monitoring the time between request and response — unusually fast responses
+    (under 2 seconds for complex requests) indicate mechanical approval without reading.
+    The system tracks response-time distributions by user and request type, triggering
+    alerts on significant deviations. This is a simple but effective heuristic, though
+    it may produce false positives on experienced users.
+  complexity: medium
+- name: Adaptive friction injection
+  description: 'When fatigue indicators are detected, the system applies adaptive
+    friction: a mandatory pause before the next approval, a requirement for explicit
+    confirmation that the user has read the details, verification through a challenge-response.
+    Friction increases with the severity of the detected fatigue pattern. This interrupts
+    mechanical approval behavior and forces a deliberate decision.'
+  complexity: medium

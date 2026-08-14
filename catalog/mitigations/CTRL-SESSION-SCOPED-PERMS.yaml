@@ -1,0 +1,28 @@
+id: CTRL-SESSION-SCOPED-PERMS
+title: Session-Scoped Permissions to Reduce Prompts
+description: Grants permissions at the session level rather than per action, with
+  a default-deny policy where the user explicitly approves categories of actions once
+  per session, significantly reducing the frequency of confirmation prompts and preventing
+  fatigue. The mechanism operates at the permission management layer and caches approved
+  permissions for the duration of the session. This focuses the user's attention on
+  initial permission decisions, eliminates repetitive confirmations for routine operations,
+  and preserves security through explicit user consent.
+type: PREVENTIVE_HARD
+requirement_level: RECOMMENDED
+implementations:
+- name: Session permission cache
+  complexity: medium
+  description: Permissions approved by the user are cached for the duration of the
+    session with a time-to-live. After the initial approval, action categories are
+    executed without repeated confirmations. Once the time-to-live expires, re-approval
+    is required. This balances security with usability.
+- name: Scoped tokens after approval
+  complexity: medium
+  description: After the initial approval, the system generates temporary scoped tokens
+    that authorize specific operations. The token expires together with the session.
+    This provides cryptographic enforcement of permissions.
+- name: Permission bundles
+  complexity: low
+  description: The user selects from predefined permission bundles (for example, "read-only
+    workspace", "full edit access") instead of granular confirmations for each action.
+    Bundles encapsulate common permission patterns.

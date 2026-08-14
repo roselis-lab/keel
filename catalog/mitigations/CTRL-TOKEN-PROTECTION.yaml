@@ -1,0 +1,27 @@
+id: CTRL-TOKEN-PROTECTION
+title: Token Protection
+description: Protects authentication tokens and credentials from theft and leakage
+  through secure storage, encryption at rest and in transit, short time-to-live, and
+  rotation policies, minimizing the blast radius upon compromise. The mechanism operates
+  at the credential management layer and ensures secure handling of tokens throughout
+  their entire lifecycle. This prevents credential theft through various attack vectors,
+  limits the window of opportunity upon token leakage, and ensures a secure credential
+  lifecycle.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Encryption at rest
+  complexity: high
+  description: Tokens are encrypted at rest using KMS-managed keys. Plaintext tokens
+    are never stored - only encrypted values. Decryption occurs in memory only when
+    needed.
+- name: Short time-to-live and rotation
+  complexity: low
+  description: A short token time-to-live (minutes or hours) limits the exposure window
+    upon theft. Automatic rotation ensures that compromised tokens quickly become
+    invalid.
+- name: Token redaction in outputs
+  complexity: low
+  description: Sensitive tokens are never logged, never returned in API responses,
+    and never disclosed in error messages. Token redaction is applied across all output
+    channels.

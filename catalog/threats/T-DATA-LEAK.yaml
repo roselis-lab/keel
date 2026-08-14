@@ -1,0 +1,86 @@
+id: T-DATA-LEAK
+title: Sensitive data disclosure through the response
+description: 'The text of the agent''s response becomes a leakage channel: a user
+  receives fragments of another party''s context — PII, secrets, internal documents
+  — to which they have no rights. Session and memory isolation guaranteed at the infrastructure
+  level is bypassed at the model level, which combines and "paraphrases" the data
+  available to it without distinguishing "own" from "others". Any request can return
+  sensitive data if it ended up in the model''s context.'
+impact_class: data-confidentiality
+vulnerability:
+- A tool has access to sensitive data (PII, secrets, regulated) and can exfiltrate
+  it — into free-form text that enters the context, or into an external system beyond
+  the perimeter.
+- A tool with filesystem access reads sensitive files (.env, secrets, configs) on
+  the model's initiative.
+- Session context or memory is not isolated between users/tenants; one party's data
+  ends up in another's response (including cross-tenant through a shared MCP).
+- The agent holds sensitive data in context (RAG of internal information, shared MAS
+  memory) while the output audience is external; the response paraphrases it to an
+  unauthorized recipient.
+reachability: NOT applicable if there is no data under differentiated authorization
+  in the agent's context and access — everything it can reach is already available
+  to any recipient of its output (data and audience in one access zone).
+tags: []
+mitigations:
+- mitigation_id: CTRL-ACCESS-CONTROL
+  rationale: Mandatory access control segregates data between tenants
+- mitigation_id: CTRL-CONTENT-STRIPPING
+  rationale: Indirect injection via external/free-form content is the vector for this
+    threat; stripping hidden instructions reduces the likelihood (soft).
+- mitigation_id: CTRL-CONTEXT-FILTERING
+  rationale: 'Context filtering removes confidential data from tool output before
+    use
+
+
+    Context filtering removes confidential data before it is sent to the user'
+- mitigation_id: CTRL-DATA-ACCESS-CONTROL
+  rationale: 'Access control restricts the tool''s access to only the necessary data
+
+
+    Restricting the tool''s access to only the necessary directories'
+- mitigation_id: CTRL-DATA-EGRESS-MONITORING
+  rationale: 'Egress traffic monitoring detects unauthorized exfiltration of PII
+
+
+    Monitoring of all outbound data to external systems
+
+
+    Monitoring of file operations reveals atypical access to sensitive files'
+- mitigation_id: CTRL-DLP
+  rationale: 'DLP filtering of PII/secrets before transmission to external systems
+
+
+    A DLP system blocks leakage of sensitive data to external systems
+
+
+    DLP filtering intercepts PII/secrets in tool responses
+
+
+    Filtering of tool output removes PII and secrets before they reach the agent
+
+
+    Filtering of tool output blocks transmission of secret contents into responses'
+- mitigation_id: CTRL-EXTERNAL-CONTENT-SANDBOX
+  rationale: Indirect injection via external content is the vector for this threat;
+    isolating external content limits its impact.
+- mitigation_id: CTRL-INPUT-FILTERING
+  rationale: Injection is the vector for this threat; input filtering reduces the
+    likelihood of embedded instructions (soft, best-effort).
+- mitigation_id: CTRL-MEMORY-ISOLATION
+  rationale: Memory isolation between agents prevents leakage of other users' data
+- mitigation_id: CTRL-PROMPT-HARDENING
+  rationale: Injection is the vector for this threat; structural prompt isolation
+    makes overriding instructions harder (soft).
+- mitigation_id: CTRL-SESSION-ISOLATION
+  rationale: 'Session isolation prevents data leakage between users
+
+
+    Session isolation prevents leakage of tool output between users
+
+
+    Strict session isolation segregates the contexts of different users'
+- mitigation_id: CTRL-TENANT-ISOLATION
+  rationale: Logical or physical isolation of data between tenants
+- mitigation_id: CTRL-URL-ALLOWLIST
+  rationale: Allowlist of permitted external systems

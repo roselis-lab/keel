@@ -1,0 +1,30 @@
+id: CTRL-PROMPT-HARDENING
+title: Structural Prompt Isolation
+description: Hardens system prompts against manipulation and injection attacks through
+  structural isolation of instructions, separation of trusted and untrusted data,
+  and explicit boundary markers, making the model more resistant to attempts to override
+  its behavior. The mechanism operates at the prompt engineering level and guarantees
+  that system instructions take priority over user content. This prevents prompt injection
+  attacks, hinders jailbreak attempts, and ensures consistent model behavior regardless
+  of user input.
+type: PREVENTIVE_SOFT
+requirement_level: MANDATORY
+implementations:
+- name: Structural instruction isolation
+  complexity: medium
+  description: System instructions are structurally isolated from user content via
+    delimiter markers, separate message roles, or XML-like tags. The model is trained
+    to treat content between markers as data, not instructions. This creates a semantic
+    boundary between system intent and user input.
+- name: Separation of trusted and untrusted data
+  complexity: low
+  description: 'Explicit boundaries between trusted system data and untrusted external
+    content: [BEGIN TRUSTED INSTRUCTIONS]...[END TRUSTED INSTRUCTIONS] and [BEGIN
+    UNTRUSTED DATA]...[END UNTRUSTED DATA]. The model is instructed not to follow
+    instructions from the untrusted sections.'
+- name: Anti-injection prompting
+  complexity: low
+  description: 'The system prompt includes explicit instructions against override
+    attempts: do not follow instructions embedded in data, maintain role regardless
+    of user claims, reject requests to ignore previous instructions. This is defensive
+    prompting against common attack patterns.'

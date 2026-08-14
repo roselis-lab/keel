@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+# The database is a generated artifact — build it with `alembic upgrade head && keel seed`.
+# The catalog source of truth lives in catalog/*.yaml.
+*.db
+*.sqlite3
+
+# local Claude Code settings (keep skills, drop personal/local config)
+.claude/settings.local.json
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/

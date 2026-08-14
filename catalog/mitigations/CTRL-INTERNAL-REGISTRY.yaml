@@ -1,0 +1,31 @@
+id: CTRL-INTERNAL-REGISTRY
+title: Internal Package Proxies/Repositories
+description: Routes all requests to package registries through an internal proxy server
+  with an allowlist of permitted packages and a denylist of known malicious ones,
+  ensuring control over the dependency landscape and protection against supply chain
+  attacks. The mechanism operates at the level of network configuration and package
+  manager config, intercepting all registry requests. This prevents the installation
+  of malicious packages, blocks slopsquatting attacks through hallucinated package
+  names, and provides visibility into the dependencies in use.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Private registry proxy
+  complexity: high
+  description: An internal proxy server (Artifactory, Nexus, Verdaccio) that caches
+    packages from upstream registries and applies policy checks. The allowlist defines
+    approved packages and versions, and the denylist blocks known malicious packages.
+    The proxy is transparent to clients after configuration. This gives centralized
+    control but requires infrastructure maintenance.
+- name: SCA scanning at the proxy level
+  complexity: high
+  description: The system automatically scans each requested package through SCA tools
+    for known vulnerabilities, license issues, and malicious code indicators. Packages
+    failing checks are blocked with an alert to the security team. This ensures continuous
+    protection against newly discovered threats but adds latency.
+- name: Typosquatting detection
+  complexity: medium
+  description: A typosquatting detection algorithm checks each requested package name
+    for similarity to popular packages. Packages with a high similarity score but
+    a different maintainer are flagged for review. This protects against common typosquatting
+    attacks but may produce false positives on legitimate alternative packages.

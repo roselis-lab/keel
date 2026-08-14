@@ -1,0 +1,56 @@
+id: T-HALLUCINATION
+title: Misleading or erroneous output → wrong decision
+description: 'The assistant produces a confident but factually wrong or logically
+  unfounded output — due to fabricated facts, a flaw in the reasoning chain, or the
+  user''s over-reliance on the answer. The output is embedded into reports, plans,
+  and decisions without independent verification: credibility is judged by phrasing,
+  not content. The error surfaces only through the consequences of execution, when
+  rollback is already late or impossible.'
+impact_class: decision-integrity
+vulnerability:
+- The agent produces a confidently phrased, human-read answer with factually wrong
+  statements (fabricated facts, non-existent references/APIs/documents); credibility
+  is judged by form, not content.
+- A flaw in the reasoning chain (an unfounded logical leap, mistaking correlation
+  for causation, wrong classification) leads to a wrong conclusion or choice of tool/action.
+- The agent builds a confident but wrong output from free-form text that arrived in
+  a tool's output.
+- 'Context confusion between projects/environments: a configuration or action from
+  one environment is applied to another (production vs development).'
+- The user over-trusts the agent's authoritative style and accepts the output without
+  verification; even a correct answer is extrapolated beyond its bounds of applicability.
+reachability: NOT applicable if the agent's output feeds no consequential decisions
+  or actions — not consumed by a downstream system and not a basis for human decisions.
+tags: []
+mitigations:
+- mitigation_id: CTRL-AGENT-REPORT
+  rationale: Agent reporting of confidence and limitations helps the user correctly
+    assess the risks
+- mitigation_id: CTRL-FACT-CHECKING
+  rationale: 'Fact-checking against external sources catches hallucinations caused
+    by incorrect tool output
+
+
+    Fact-checking against external sources catches model hallucinations'
+- mitigation_id: CTRL-HUMAN-IN-LOOP
+  rationale: 'A human reviews critical agent actions before execution
+
+
+    Human oversight of critical decisions reduces the risk of blind trust in the AI'
+- mitigation_id: CTRL-OUTPUT-VALIDATION
+  rationale: Validation of the result before it is applied
+- mitigation_id: CTRL-PLAN-CONFIRMATION
+  rationale: Presenting the plan to the user before execution provides a chance to
+    catch reasoning errors at an early stage
+- mitigation_id: CTRL-PLAN-VALIDATION
+  rationale: Validation of the action plan before execution reveals logical errors
+- mitigation_id: CTRL-SOURCE-REFERENCES
+  rationale: 'Requiring source references allows verification of the information''s
+    accuracy
+
+
+    Requiring source references allows verification of the accuracy of data from tool
+    output'
+- mitigation_id: CTRL-TOOL-CALL-VALIDATION
+  rationale: Validation of tool selection before execution catches selection errors
+    (actions instead of reads, destructive operations instead of viewing)

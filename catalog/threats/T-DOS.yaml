@@ -1,0 +1,42 @@
+id: T-DOS
+title: Resource / cost exhaustion (token-DoS)
+description: 'Heavy, flood, or looping requests — including recursive delegation between
+  agents and infinite tool-call loops — exhaust compute resources, token limits, and
+  message queues. The AI channel''s infrastructure becomes a single point of failure:
+  one user or script blocks access for everyone else. The system does not separate
+  critical from non-critical requests, so degradation forces legitimate users to do
+  without the tool or move to less controlled channels.'
+impact_class: resource-availability
+vulnerability:
+- 'User input exhausts resources: long prompts, recursive requests, triggering heavy
+  processing.'
+- Recursive delegation between agents or an infinite tool-call loop with no depth/iteration
+  limit exhausts compute and message queues.
+- Free-form text from a tool's output crafted for recursive or resource-heavy processing
+  by the agent.
+- A tool with network access is used for mass/resource-heavy outbound requests.
+reachability: NOT applicable if the reachable endpoint accepts no untrusted/unbounded
+  input and initiates no inter-agent or tool loops (no delegation, fixed depth), or
+  the resource is not shared with other consumers.
+tags: []
+mitigations:
+- mitigation_id: CTRL-ITERATION-LIMITS
+  rationale: Limiting recursion depth and iteration count prevents infinite loops
+- mitigation_id: CTRL-RATE-LIMITING
+  rationale: 'Rate limiting prevents abuse of tools with network access
+
+
+    Rate limiting on tool requests prevents DoS via bulk crafted output
+
+
+    Rate limiting on user requests prevents DoS via user input'
+- mitigation_id: CTRL-RESOURCE-QUOTAS
+  rationale: 'Resource quotas limit CPU/memory/network consumption by tools
+
+
+    Resource quotas (CPU, memory, time) protect against DoS via recursion'
+- mitigation_id: CTRL-TOKEN-LIMITS
+  rationale: 'Token limits prevent resource exhaustion via long prompts
+
+
+    Token limits prevent resource exhaustion via long tool output'

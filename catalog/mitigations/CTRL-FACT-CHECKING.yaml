@@ -1,0 +1,33 @@
+id: CTRL-FACT-CHECKING
+title: Fact Verification
+description: Verifies factual claims in model output through cross-reference with
+  authoritative sources and confidence scoring, detecting hallucinations and factual
+  errors before unreliable information is used for decision-making. The mechanism
+  operates as a post-generation validation layer, extracting checkable claims from
+  model output and verifying them against knowledge bases, trusted APIs, or search
+  results. This detects model hallucinations, prevents the spread of misinformation,
+  and increases the reliability of model outputs for decision-critical use cases.
+type: DETECTIVE
+requirement_level: RECOMMENDED
+implementations:
+- name: Source cross-reference verification
+  description: 'Checkable factual claims (names, dates, numbers, statements of fact)
+    are extracted from the model output, and each claim is verified through lookup
+    in trusted sources: knowledge bases, authoritative APIs (Wikipedia, Wolfram Alpha),
+    web search. Claims that find no confirmation or contradict the sources are flagged.
+    This gives objective verification but adds latency and depends on the availability
+    of sources.'
+  complexity: high
+- name: Model confidence scoring
+  description: The model assesses its own confidence in each factual claim through
+    calibrated probability or explicit uncertainty quantification. Claims with low
+    confidence are automatically flagged for review or excluded from the output. This
+    lets the model self-identify uncertain claims but requires well-calibrated confidence
+    scores, which not all models provide reliably.
+  complexity: medium
+- name: Multi-source corroboration
+  description: For critical facts, the system requires corroborating evidence from
+    multiple independent sources. A single source is insufficient — a fact must be
+    confirmed by at least two independent authoritative sources. This increases reliability
+    through redundancy but may filter out true yet rarely documented facts.
+  complexity: medium

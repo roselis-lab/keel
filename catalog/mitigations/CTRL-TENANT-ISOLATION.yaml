@@ -1,0 +1,25 @@
+id: CTRL-TENANT-ISOLATION
+title: Tenant Isolation
+description: Enforces strict data isolation between tenants in multi-tenant systems
+  through row-level security, ABAC policies, and filtering by tenant identifier at
+  all data access layers, preventing data leakage between tenants. The mechanism operates
+  at the database, application, and cache layers. This guarantees that each tenant
+  has access only to its own data, prevents accidental disclosure of data between
+  customers, and ensures compliance with data isolation requirements.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Enforcement of row-level security
+  complexity: high
+  description: Database row-level security policies automatically filter all queries
+    by tenant identifier from the session context. Even direct database access or
+    SQL injection cannot bypass tenant boundaries.
+- name: Tenant filtering at the application layer
+  complexity: medium
+  description: ABAC policies at the application layer check the tenant context on
+    every data access request. The tenant identifier is validated against the authenticated
+    user's membership in the tenant.
+- name: Tenant-scoped caching
+  complexity: medium
+  description: Cache namespaces are partitioned by tenant identifier - cached data
+    is isolated between tenants. Cache keys mandatorily include the tenant identifier.

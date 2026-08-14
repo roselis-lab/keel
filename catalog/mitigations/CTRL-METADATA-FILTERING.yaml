@@ -1,0 +1,29 @@
+id: CTRL-METADATA-FILTERING
+title: Stripping Technical Metadata from Responses
+description: Removes technical metadata — system paths, internal URLs, server versions,
+  stack traces — from output and responses before they are sent to the user or external
+  systems, preventing disclosure of information about the internal architecture. The
+  mechanism operates at the response processing level and sanitizes output content.
+  This reduces the attack surface by lowering reconnaissance capability, protects
+  internal infrastructure details, and supports defense through limited visibility
+  of implementation details.
+type: PREVENTIVE_HARD
+requirement_level: MANDATORY
+implementations:
+- name: Automatic metadata scrubbing
+  complexity: medium
+  description: 'Output passes through a metadata scrubber that removes known patterns:
+    file paths, internal hostnames, version strings, error traces. The scrubber applies
+    regular expressions and context-aware rules. This removes obvious metadata but
+    may miss novel patterns.'
+- name: Structured output sanitization
+  complexity: low
+  description: Structured output formats (JSON, XML) are sanitized — sensitive fields
+    are automatically masked or removed. A schema defines the fields that must be
+    filtered. This provides deterministic handling of structured data.
+- name: Error message sanitization
+  complexity: low
+  description: Error messages are sanitized — raw exceptions and stack traces are
+    replaced with generic user-facing messages. Technical details are logged server-side
+    but not disclosed externally. This prevents information leakage through error
+    handling.
