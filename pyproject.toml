@@ -32,7 +32,7 @@ dev = [
 keel = "app.mcp.server:main"
 
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = ["hatchling>=1.32.0"]
 build-backend = "hatchling.build"
 
 [tool.ruff]
