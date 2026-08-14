@@ -5,8 +5,17 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      # Bundle routine minor/patch bumps into one PR. Major bumps stay separate
+      # so a potentially breaking change gets reviewed on its own.
+      python-dependencies:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
