@@ -1,3 +1,10 @@
-# Shell scripts must stay LF so they run inside Linux containers.
-*.sh text eol=lf
-docker/entrypoint.sh text eol=lf
+# Normalize line endings: store text as LF in the repo, check out LF everywhere.
+# Keeps diffs clean across Windows/macOS/Linux and silences CRLF warnings.
+* text=auto eol=lf
+
+# Binary assets — never touch.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.db binary
