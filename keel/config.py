@@ -1,20 +1,10 @@
-from pathlib import Path
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-# Anchor the default DB at the project root so it resolves the same way regardless
-# of the current working directory. Override with DATABASE_URL for anything else.
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_DEFAULT_DB_PATH = _PROJECT_ROOT / "threat_library.db"
 
 
 class Settings(BaseSettings):
     """Application settings from environment variables."""
 
-    # Database — SQLite by default for zero-setup local use.
-    database_url: str = f"sqlite+aiosqlite:///{_DEFAULT_DB_PATH.as_posix()}"
-
-    # Read-only REST API
+    # Read-only REST API + browse UI
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     debug: bool = False
@@ -25,7 +15,10 @@ class Settings(BaseSettings):
     mcp_http_port: int = 8001
     mcp_http_host: str = "127.0.0.1"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # extra="ignore" so a stray var in .env (e.g. a leftover DATABASE_URL) never crashes startup.
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
 
 settings = Settings()

@@ -18,7 +18,7 @@ Keel is the operational layer that is missing: a compact, opinionated representa
 | Layer | What it is | Role |
 | --- | --- | --- |
 | **1. Reference model** | 13 impact-centric threats, 71 mitigations, 96 links, authored in the facet schema | The seed content: a floor to start from, not the product |
-| **2. The framework** | the facet representation (`impact_class` + `vulnerability` + `reachability`), the mitigation taxonomy (HARD/SOFT), a hard authoring style guide, and the machinery to extend it (MCP + REST + DB + browse/edit UI) | What a team adopts and grows into its own model |
+| **2. The framework** | the facet representation (`impact_class` + `vulnerability` + `reachability`), the mitigation-card model (class as a switch), a hard authoring style guide, and the machinery to extend it (MCP + REST + browse/edit UI over plain YAML) | What a team adopts and grows into its own model |
 | **3. The assessor** | skills that turn the static model into a repeatable pass over a real system (data-sufficiency gate, per-threat chain, delta, two-part output) | What makes the model runnable: read versus run |
 
 The reference model is deliberately small: the catalog is a floor, not a ceiling. Keel's value is the shape and the assessor, not a claim to enumerate every GenAI threat.
@@ -75,7 +75,7 @@ The assessor ships as skills under `.claude/skills/`:
 
 ## Run
 
-Keel is an MCP server — for any agent or MCP client — plus a browse UI. It builds its database from `catalog/` on first start, so there are no setup steps.
+Keel is an MCP server — for any agent or MCP client — plus a browse UI. It reads the catalog from `catalog/*.yaml` into memory on start, so there are no setup steps and no database.
 
 One command (needs the Docker daemon) serves the UI at `http://localhost:8000/`; add `--profile mcp` for the HTTP MCP transport on `:8001`:
 
@@ -83,7 +83,7 @@ One command (needs the Docker daemon) serves the UI at `http://localhost:8000/`;
 docker compose up
 ```
 
-Or let your agent launch it over stdio: `.mcp.json` in this repo is a ready-to-use example for MCP clients (it exposes the tools as `mcp__keel__*`). Nothing to seed — the server loads the catalog itself on first run.
+Or let your agent launch it over stdio: `.mcp.json` in this repo is a ready-to-use example for MCP clients (it exposes the tools as `mcp__keel__*`).
 
 <details>
 <summary><b>Run from source / develop Keel</b></summary>
@@ -93,14 +93,14 @@ Uses `uv` (pinned in `uv.lock`); `uv run` handles the virtualenv and `PATH` for 
 ```bash
 uv sync
 uv run uvicorn keel.main:app     # browse UI + REST at http://localhost:8000/
-uv run keel                      # stdio MCP        (uv run keel --http → HTTP MCP on :8001)
-uv run keel validate             # check catalog    (uv run keel export → write the DB back to catalog/)
+uv run keel                      # stdio MCP   (uv run keel --http → HTTP MCP on :8001)
+uv run keel validate             # check the catalog YAML against the schemas
 ```
 
-The SQLite database builds itself from `catalog/` on first run. For a long-lived Postgres instance, `uv run alembic upgrade head` manages the schema instead. Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
+Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
 </details>
 
-The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked. It supports inline editing through REST endpoints that share the service layer with the MCP write tools: MCP is the style-guide-guided authoring path, the UI is the raw counterpart.
+`catalog/*.yaml` is the single source of truth — there is no database. Every write, whether from an MCP tool, the browse UI, or your text editor, is a change to those files. The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked, and its inline editing patches the YAML directly through the same service layer the MCP write tools use.
 
 ## Tests
 
@@ -113,10 +113,10 @@ The suite includes a health check on the library (`tests/test_health.py`): it ru
 
 ## Make it yours
 
-Keel ships with a curated English reference model: 13 impact-centric threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, and one file per entity under `style_guide/`); `threat_library.db` is a generated artifact that `keel seed` builds from it, so content changes land as readable diffs in pull requests instead of a binary blob. `keel validate` checks the YAML against the schemas (strict enums, link integrity) before it touches the database, and runs in CI. It is meant to be forked and grown into your organization's model:
+Keel ships with a curated English reference model: 13 impact-centric threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, and one file per entity under `style_guide/`), so content changes land as readable diffs in pull requests. `keel validate` checks the YAML against the schemas (strict enums, link integrity) and runs in CI. It is meant to be forked and grown into your organization's model:
 
-- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar) or the browse UI, then run `keel export` to write the changes back to `catalog/*.yaml` for review.
-- Adjust tags, implementations, and threat-to-mitigation rationale to match how your teams reason.
+- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar) or the browse UI — each write lands directly in `catalog/*.yaml` for review — or edit the files by hand.
+- Adjust tags, mitigation cards, and threat-to-mitigation rationale to match how your teams reason.
 - Drop what does not apply: the catalog is a floor, so shrinking it to a sharper model tuned to your context is the point.
 
 **Roadmap (not yet built):** per-organization state, so an org can mark a threat *not applicable* or a mitigation *already implemented* and suppress known noise without deleting the shared knowledge. For now you express that context by editing or pruning the model directly.

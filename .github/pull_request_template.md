@@ -15,6 +15,6 @@
 
 - [ ] `uv run ruff check .` passes
 - [ ] `uv run pytest` passes
-- [ ] For catalog changes: I edited `catalog/*.yaml` (not the database) and ran `uv run keel seed`
-- [ ] For catalog changes: content follows the style guide bar (impact-centric threat, `reachability` carve-outs, mitigation `type`)
+- [ ] For catalog changes: I edited `catalog/*.yaml` and ran `uv run keel validate`
+- [ ] For catalog changes: content follows the style guide bar (impact-centric threat, `reachability` carve-outs, mitigation card with a `mitigation_class`)
 - [ ] This belongs in the shared catalog (a general pattern), not org-specific state that should live in a fork

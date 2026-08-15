@@ -10,35 +10,30 @@ Keel's catalog is a **floor**: a small set of GenAI/LLM threat patterns that app
 - **Out of scope (keep in your fork):** threats specific to your stack, and per-organization state such as "not applicable here" or "already mitigated." Those are how *you* tailor a fork; they would only add noise to the shared floor.
 - **Prefer extending** an existing threat or mitigation over adding a near-duplicate.
 
-A threat must be **impact-centric**: it anchors to one `impact_class`, describes *how* it is exploitable as one or more `vulnerability` patterns, and states `reachability` carve-outs (when it is *not* a live path, judged on the un-mitigated system). A mitigation must be an architectural control with a `type` (`PREVENTIVE_HARD` blocks, `PREVENTIVE_SOFT` only hinders, `DETECTIVE`, `CORRECTIVE`).
+A threat must be **impact-centric**: it anchors to one `impact_class`, describes *how* it is exploitable as one or more `vulnerability` patterns, and states `reachability` carve-outs (when it is *not* a live path, judged on the un-mitigated system). A mitigation must be an architectural control authored as a **mitigation card** whose `mitigation_class` (`gating_control`, `detector`, `process`, `evidential_mitigation`, `corrective`) is a switch for how its control mechanism and failure behavior are read.
 
 ## Dev setup
 
 ```bash
 uv sync --extra dev          # or: pip install -e ".[dev]"
-uv run alembic upgrade head  # build the schema
-uv run keel seed             # load the catalog into the database
 ```
+
+There is no database and no build step — the server reads `catalog/*.yaml` into memory on start.
 
 ## Editing the catalog
 
-The catalog is the source of truth as YAML under `catalog/` (one file per threat, one per mitigation, and one file per entity under `style_guide/`). The database is generated from it. Two ways to edit:
+`catalog/*.yaml` is the single source of truth (one file per threat, one per mitigation, and one file per entity under `style_guide/`). Every write goes straight to those files. Two ways to edit:
 
-**A. Edit the YAML directly.** Change or add `catalog/threats/<id>.yaml` or `catalog/mitigations/<id>.yaml`, then validate, load, and check:
+**A. Edit the YAML directly.** Change or add `catalog/threats/<id>.yaml` or `catalog/mitigations/<id>.yaml`, then validate and test:
 
 ```bash
 uv run keel validate
-uv run keel seed
 uv run pytest
 ```
 
-**B. Edit through the tools, then export.** Use the MCP write tools (which carry the style guide's authoring bar) or the browse UI, then write the changes back to YAML:
+**B. Edit through the tools.** Use the MCP write tools (which carry the style guide's authoring bar) or the browse UI; each write patches the YAML directly.
 
-```bash
-uv run keel export
-```
-
-Either way, commit the YAML diff. `threat_library.db` is git-ignored, so it stays out of the PR.
+Either way, commit the YAML diff.
 
 ## Quality bar
 
@@ -52,7 +47,7 @@ uv run ruff check .
 uv run pytest
 ```
 
-All three must pass. CI runs the same checks plus a full build of the database from the catalog.
+All three must pass. CI runs the same checks.
 
 ## Reporting issues
 

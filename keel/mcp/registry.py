@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, get_type_hints
 
 from pydantic import Field, create_model
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from keel.lib.i18n import DEFAULT_LOCALE, SUPPORTED_LOCALES
 from keel.lib.style_guide import register_tool_entity, get_tool_style_pointer
@@ -116,9 +115,7 @@ def get_tool_list() -> list[dict[str, Any]]:
     return result
 
 
-async def dispatch_tool(
-    name: str, arguments: dict[str, Any], session: AsyncSession
-) -> dict[str, Any]:
+async def dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """Dispatch a tool call by name using the registry."""
     defn = TOOL_REGISTRY.get(name)
     if defn is None:
@@ -128,5 +125,5 @@ async def dispatch_tool(
     if lang not in SUPPORTED_LOCALES:
         arguments = {**arguments, "lang": DEFAULT_LOCALE}
 
-    kwargs = {k: v for k, v in arguments.items() if k != "session"}
-    return await defn.handler(session=session, **kwargs)
+    kwargs = {k: v for k, v in arguments.items() if k not in ("session", "lang")}
+    return await defn.handler(**kwargs)
