@@ -64,7 +64,7 @@ async def test_get_stats_counts_rows(session):
             reachability="not applicable if the attacker cannot influence the input",
         )
     )
-    session.add(Mitigation(id="M-DEMO", title="Demo control", type="PREVENTIVE_HARD"))
+    session.add(Mitigation(id="M-DEMO", name="Demo control", mitigation_class="gating_control"))
     session.add(
         ThreatMitigation(
             id="T-DEMO::M-DEMO",

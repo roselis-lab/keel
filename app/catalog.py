@@ -29,7 +29,11 @@ from app.services.style_guide_service import import_yaml as _import_style_yaml
 DEFAULT_CATALOG_DIR = Path(__file__).resolve().parent.parent / "catalog"
 
 _THREAT_KEYS = {"id", "title", "description", "impact_class", "vulnerability", "reachability", "tags", "mitigations"}
-_MITIGATION_KEYS = {"id", "title", "description", "type", "requirement_level", "implementations"}
+_MITIGATION_KEYS = {
+    "id", "name", "status", "mitigation_class", "purpose", "formal_implementation_risk",
+    "review", "maintainer", "owner", "locus", "scope", "control_mechanism",
+    "failure_behavior", "telemetry", "anti_patterns", "validation", "faq",
+}
 
 
 def _dump(data: Any) -> str:
@@ -74,11 +78,22 @@ async def export_catalog(
     for m in mitigations:
         record = {
             "id": m.id,
-            "title": m.title,
-            "description": m.description,
-            "type": m.type,
-            "requirement_level": m.requirement_level,
-            "implementations": m.implementations or [],
+            "name": m.name,
+            "status": m.status,
+            "mitigation_class": m.mitigation_class,
+            "purpose": m.purpose,
+            "formal_implementation_risk": m.formal_implementation_risk,
+            "review": m.review,
+            "maintainer": m.maintainer,
+            "owner": m.owner,
+            "locus": m.locus,
+            "scope": m.scope,
+            "control_mechanism": m.control_mechanism,
+            "failure_behavior": m.failure_behavior,
+            "telemetry": m.telemetry,
+            "anti_patterns": m.anti_patterns or [],
+            "validation": m.validation or [],
+            "faq": m.faq or [],
         }
         (mit_dir / f"{m.id}.yaml").write_text(_dump(record), encoding="utf-8")
 
@@ -123,11 +138,22 @@ async def load_catalog(
     for path in sorted((catalog_dir / "mitigations").glob("*.yaml")):
         rec = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         fields = {
-            "title": rec.get("title"),
-            "description": rec.get("description"),
-            "type": rec.get("type"),
-            "requirement_level": rec.get("requirement_level"),
-            "implementations": rec.get("implementations") or None,
+            "name": rec.get("name"),
+            "status": rec.get("status"),
+            "mitigation_class": rec.get("mitigation_class"),
+            "purpose": rec.get("purpose"),
+            "formal_implementation_risk": rec.get("formal_implementation_risk"),
+            "review": rec.get("review"),
+            "maintainer": rec.get("maintainer"),
+            "owner": rec.get("owner"),
+            "locus": rec.get("locus"),
+            "scope": rec.get("scope"),
+            "control_mechanism": rec.get("control_mechanism"),
+            "failure_behavior": rec.get("failure_behavior"),
+            "telemetry": rec.get("telemetry"),
+            "anti_patterns": rec.get("anti_patterns") or None,
+            "validation": rec.get("validation") or None,
+            "faq": rec.get("faq") or None,
         }
         row = await session.get(Mitigation, rec["id"])
         if row is None:

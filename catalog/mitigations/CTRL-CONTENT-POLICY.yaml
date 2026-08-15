@@ -1,7 +1,9 @@
 id: CTRL-CONTENT-POLICY
-title: Content policy and ethical standards
-description: Defines and enforces rules of acceptable content across all input and
-  output flows of the system, blocking the generation or processing of toxic, discriminatory,
+name: Content policy and ethical standards
+status: draft
+mitigation_class: gating_control
+purpose: Defines and enforces rules of acceptable content across all input and output
+  flows of the system, blocking the generation or processing of toxic, discriminatory,
   illegal, or otherwise unacceptable material in accordance with ethical standards
   and regulatory requirements. The mechanism is deployed as a content moderation layer
   at the system's boundaries - user input, model output, external data ingestion -
@@ -9,30 +11,36 @@ description: Defines and enforces rules of acceptable content across all input a
   to detect violations. This prevents reputational damage from generating harmful
   content, ensures compliance with content regulations, and protects users from exposure
   to objectionable material.
-type: PREVENTIVE_HARD
-requirement_level: RECOMMENDED
-implementations:
-- name: Content moderation API
-  description: 'Integration with external content moderation APIs (OpenAI Moderation,
-    Azure Content Safety, Perspective API) to classify content by harm categories:
-    hate speech, violence, self-harm, sexual content, harassment. When the threshold
-    for any category is exceeded, the content is blocked or flagged for review. This
-    gives access to state-of-the-art moderation without ML expertise, but it adds
-    latency and an external dependency.'
-  complexity: low
-- name: Custom classifier for domain-specific harm
-  description: Training and deploying an in-house classifier on an annotated dataset
-    with domain-specific harm categories tailored to the system's use case. The model
-    can be fine-tuned from a pretrained language model or trained from scratch for
-    simple classification tasks. This gives control over taxonomy, data privacy, and
-    cost at scale, but it requires ML expertise and ongoing maintenance for concept
-    drift.
-  complexity: high
-- name: Hybrid ML + rules approach
-  description: 'A combination of ML classifiers with deterministic rule-based filters:
-    a blacklist of words and phrases, regex patterns for PII/credentials, structural
-    rules for certain content types. Rules give 100% recall on known bad patterns,
-    ML generalizes to unknown variants. This provides defense-in-depth and makes it
-    possible to react quickly to emerging threats through rule updates without model
-    retraining.'
-  complexity: medium
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Content moderation API (low): Integration with external content
+  moderation APIs (OpenAI Moderation, Azure Content Safety, Perspective API) to classify
+  content by harm categories: hate speech, violence, self-harm, sexual content, harassment.
+  When the threshold for any category is exceeded, the content is blocked or flagged
+  for review. This gives access to state-of-the-art moderation without ML expertise,
+  but it adds latency and an external dependency.
+
+
+  Custom classifier for domain-specific harm (high): Training and deploying an in-house
+  classifier on an annotated dataset with domain-specific harm categories tailored
+  to the system''s use case. The model can be fine-tuned from a pretrained language
+  model or trained from scratch for simple classification tasks. This gives control
+  over taxonomy, data privacy, and cost at scale, but it requires ML expertise and
+  ongoing maintenance for concept drift.
+
+
+  Hybrid ML + rules approach (medium): A combination of ML classifiers with deterministic
+  rule-based filters: a blacklist of words and phrases, regex patterns for PII/credentials,
+  structural rules for certain content types. Rules give 100% recall on known bad
+  patterns, ML generalizes to unknown variants. This provides defense-in-depth and
+  makes it possible to react quickly to emerging threats through rule updates without
+  model retraining.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

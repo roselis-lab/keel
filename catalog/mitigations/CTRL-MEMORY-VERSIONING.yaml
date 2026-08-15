@@ -1,29 +1,37 @@
 id: CTRL-MEMORY-VERSIONING
-title: Memory Versioning and Rollback
-description: Provides versioning of an agent's long-term memory with the ability to
-  roll back to previous states, enabling recovery from accidental corruption, malicious
+name: Memory Versioning and Rollback
+status: draft
+mitigation_class: corrective
+purpose: Provides versioning of an agent's long-term memory with the ability to roll
+  back to previous states, enabling recovery from accidental corruption, malicious
   poisoning, or unwanted modifications. The mechanism operates at the memory store
   level and creates checkpoints or snapshots of memory state. This guarantees recoverability
   when memory is compromised, provides an audit trail of memory changes, and enables
   forensic analysis of incidents.
-type: CORRECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Periodic memory snapshots
-  complexity: medium
-  description: Memory state is regularly snapshotted to immutable storage. Snapshots
-    are retained for a configured retention period. When needed, an agent's memory
-    can be restored to any snapshot. This provides point-in-time recovery but incurs
-    storage overhead.
-- name: Change log
-  complexity: medium
-  description: Every memory modification is recorded to an append-only change log
-    with a timestamp, source, and modification details. The change log allows replaying
-    modifications from any point and reconstructing memory state. This provides granular
-    recoverability.
-- name: Versioned memory segments
-  complexity: high
-  description: Memory is divided into versioned segments. On modification, a new version
-    of the segment is created instead of updating in place. Old versions are retained
-    for a grace period. This allows instant rollback to a previous version for individual
-    segments.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Periodic memory snapshots (medium): Memory state is regularly
+  snapshotted to immutable storage. Snapshots are retained for a configured retention
+  period. When needed, an agent''s memory can be restored to any snapshot. This provides
+  point-in-time recovery but incurs storage overhead.
+
+
+  Change log (medium): Every memory modification is recorded to an append-only change
+  log with a timestamp, source, and modification details. The change log allows replaying
+  modifications from any point and reconstructing memory state. This provides granular
+  recoverability.
+
+
+  Versioned memory segments (high): Memory is divided into versioned segments. On
+  modification, a new version of the segment is created instead of updating in place.
+  Old versions are retained for a grace period. This allows instant rollback to a
+  previous version for individual segments.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

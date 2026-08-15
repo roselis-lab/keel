@@ -1,6 +1,8 @@
 id: CTRL-DATA-EGRESS-MONITORING
-title: Outbound data monitoring
-description: Monitors all of the system's outbound traffic - API calls, file uploads,
+name: Outbound data monitoring
+status: draft
+mitigation_class: detector
+purpose: Monitors all of the system's outbound traffic - API calls, file uploads,
   network connections, clipboard operations - for unauthorized transfer of sensitive
   data beyond the trusted perimeter, ensuring detection of data exfiltration and policy
   violations. The mechanism is deployed as an inspection layer at all outbound traffic
@@ -8,28 +10,36 @@ description: Monitors all of the system's outbound traffic - API calls, file upl
   detection, and threat feeds. This detects active exfiltration during compromise,
   surfaces shadow data flows, and identifies policy violations through unauthorized
   data transfer channels.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: DLP scanning of outbound traffic
-  description: All outbound traffic is passed through a DLP scanner that checks the
-    content for personal data, credentials, and confidential documents via pattern
-    matching and ML classifiers. When a transfer of sensitive data is detected, it
-    is blocked or flagged for review with an alert to the security team. This gives
-    content-aware protection, but it adds latency to all outbound communications.
-  complexity: high
-- name: ML anomaly detection
-  description: 'The system analyzes a baseline of normal behavior: typical data volumes,
-    request frequency, destination endpoints. Anomalies - a sharp increase in data
-    volume, unusual destinations, access patterns outside normal hours - generate
-    alerts. The ML model adapts to changing patterns over time. This makes it possible
-    to detect new exfiltration techniques, but it requires tuning to control false
-    positives.'
-  complexity: high
-- name: Outbound allowlist with blocking of unknowns
-  description: All external connections are permitted only to an allowlist of endpoints.
-    Any request to a destination outside the allowlist is blocked with logging. The
-    allowlist includes only business-necessary external services and is reviewed regularly.
-    This gives deterministic control over the outbound traffic surface, but it limits
-    flexibility and requires updates when new legitimate destinations appear.
-  complexity: low
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'DLP scanning of outbound traffic (high): All outbound traffic
+  is passed through a DLP scanner that checks the content for personal data, credentials,
+  and confidential documents via pattern matching and ML classifiers. When a transfer
+  of sensitive data is detected, it is blocked or flagged for review with an alert
+  to the security team. This gives content-aware protection, but it adds latency to
+  all outbound communications.
+
+
+  ML anomaly detection (high): The system analyzes a baseline of normal behavior:
+  typical data volumes, request frequency, destination endpoints. Anomalies - a sharp
+  increase in data volume, unusual destinations, access patterns outside normal hours
+  - generate alerts. The ML model adapts to changing patterns over time. This makes
+  it possible to detect new exfiltration techniques, but it requires tuning to control
+  false positives.
+
+
+  Outbound allowlist with blocking of unknowns (low): All external connections are
+  permitted only to an allowlist of endpoints. Any request to a destination outside
+  the allowlist is blocked with logging. The allowlist includes only business-necessary
+  external services and is reviewed regularly. This gives deterministic control over
+  the outbound traffic surface, but it limits flexibility and requires updates when
+  new legitimate destinations appear.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

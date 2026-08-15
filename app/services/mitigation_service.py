@@ -8,14 +8,19 @@ from app.models import Mitigation, ThreatMitigation
 from app.schemas.mitigation import MitigationCreate, MitigationUpdate
 
 
+# Fields returnable via `include` (everything past the id/name/class always shown).
+_INCLUDABLE = [
+    "status", "purpose", "formal_implementation_risk", "review", "maintainer", "owner",
+    "locus", "scope", "control_mechanism", "failure_behavior", "telemetry", "anti_patterns",
+    "validation", "faq",
+]
+
+
 def _mitigation_item(m: Mitigation, include: list[str]) -> dict[str, Any]:
-    item: dict[str, Any] = {"id": m.id, "title": m.title, "type": m.type}
-    if "description" in include:
-        item["description"] = m.description
-    if "requirement_level" in include:
-        item["requirement_level"] = m.requirement_level
-    if "implementations" in include:
-        item["implementations"] = m.implementations
+    item: dict[str, Any] = {"id": m.id, "name": m.name, "mitigation_class": m.mitigation_class}
+    for field in include:
+        if field in _INCLUDABLE:
+            item[field] = getattr(m, field)
     return item
 
 
@@ -24,13 +29,13 @@ async def list_mitigations(
     brief: bool = True,
     include: list[str] | None = None,
 ) -> dict[str, Any]:
-    """List all mitigations. `brief` returns [id, title, type] triples."""
+    """List all mitigations. `brief` returns [id, name, mitigation_class] triples."""
     result = await session.execute(select(Mitigation).order_by(Mitigation.id))
     mitigations = result.scalars().all()
 
     if brief:
         return {
-            "mitigations": [[m.id, m.title, m.type] for m in mitigations],
+            "mitigations": [[m.id, m.name, m.mitigation_class] for m in mitigations],
             "count": len(mitigations),
         }
 
@@ -46,7 +51,7 @@ async def get_mitigation(session: AsyncSession, mitigation_id: str) -> dict[str,
     m = await session.get(Mitigation, mitigation_id)
     if not m:
         return {"error": f"Mitigation '{mitigation_id}' not found", "success": False}
-    response = _mitigation_item(m, ["description", "requirement_level", "implementations"])
+    response = _mitigation_item(m, _INCLUDABLE)
     response["success"] = True
     return response
 
@@ -56,17 +61,10 @@ async def create_mitigation(session: AsyncSession, data: MitigationCreate) -> di
     if await session.get(Mitigation, data.id):
         return {"error": f"Mitigation '{data.id}' already exists", "success": False}
 
-    m = Mitigation(
-        id=data.id,
-        title=data.title,
-        description=data.description,
-        type=data.type,
-        requirement_level=data.requirement_level,
-        implementations=data.implementations,
-    )
+    m = Mitigation(**data.model_dump())
     session.add(m)
     await session.commit()
-    return {"id": m.id, "title": m.title, "success": True}
+    return {"id": m.id, "name": m.name, "success": True}
 
 
 async def update_mitigation(
@@ -102,7 +100,7 @@ async def delete_mitigation(
 
     if not confirm:
         return {
-            "preview": {"id": m.id, "title": m.title, "linked_threats": len(links)},
+            "preview": {"id": m.id, "name": m.name, "linked_threats": len(links)},
             "confirm_required": True,
         }
 
