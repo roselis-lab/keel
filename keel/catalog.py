@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from keel.database import Base, async_session, engine
 from keel.models import Mitigation, Threat, ThreatMitigation
 from keel.schemas.mitigation import MitigationCreate
 from keel.schemas.threat import MitigationRef, ThreatCreate
@@ -43,6 +44,25 @@ def _dump(data: Any) -> str:
     return yaml.dump(
         data, allow_unicode=True, default_flow_style=False, sort_keys=False, width=1_000_000
     )
+
+
+async def ensure_ready() -> dict[str, Any]:
+    """Make the database usable with no manual setup: create any missing tables, then
+    seed from the catalog if it is empty. The DB is a cache of `catalog/`, so this is
+    safe and idempotent to run on every startup — existing content is only re-synced
+    with the model, never wiped. This is what lets `keel`/the UI start from nothing.
+
+    (The Alembic migrations remain for anyone running a long-lived Postgres instance;
+    the default SQLite path does not need them.)"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    async with async_session() as session:
+        already_seeded = await session.scalar(select(Threat.id).limit(1)) is not None
+        if already_seeded:
+            await _sync_skeletons(session)
+            return {"seeded": False}
+        counts = await load_catalog(session)  # also syncs skeletons
+        return {"seeded": True, **counts}
 
 
 async def export_catalog(

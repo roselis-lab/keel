@@ -29,10 +29,10 @@ async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
     engine = create_async_engine(settings.database_url, echo=settings.debug)
     async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    # Keep style guide skeletons in sync with the current model fields.
-    async with async_session_maker() as session:
-        from keel.services.style_guide_service import sync_skeletons
-        await sync_skeletons(session)
+    # Build the database from the catalog on first run (no manual setup), and keep the
+    # style guide skeletons in sync with the model on every start.
+    from keel.catalog import ensure_ready
+    await ensure_ready()
 
     try:
         yield {"engine": engine, "session_maker": async_session_maker}
@@ -125,6 +125,11 @@ async def _run_catalog(action: str) -> None:
     engine = create_async_engine(settings.database_url, echo=settings.debug)
     maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     try:
+        if action == "seed":
+            # Create any missing tables so seed works on a fresh DB without Alembic.
+            from keel.database import Base
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
         async with maker() as session:
             if action == "seed":
                 result = await load_catalog(session)
