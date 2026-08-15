@@ -1,9 +1,6 @@
 #!/bin/sh
-# Build the database from the catalog, then run whatever command was passed.
-# Both steps are idempotent, so restarts are safe.
+# The app builds its database from the catalog on first start
+# (see keel.catalog.ensure_ready), so there is nothing to set up here.
 set -e
-
-alembic upgrade head
-keel seed
 
 exec "$@"

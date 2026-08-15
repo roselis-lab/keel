@@ -75,33 +75,32 @@ The assessor ships as skills under `.claude/skills/`:
 
 ## Run
 
-Zero setup — Docker builds the image, migrates, seeds the catalog, and serves the UI at `http://localhost:8000/` in one command (needs the Docker daemon running):
+Keel is an MCP server — for any agent or MCP client — plus a browse UI. It builds its database from `catalog/` on first start, so there are no setup steps.
+
+One command (needs the Docker daemon) serves the UI at `http://localhost:8000/`; add `--profile mcp` for the HTTP MCP transport on `:8001`:
 
 ```bash
-docker compose up                  # add: --profile mcp   for the HTTP MCP transport on :8001
+docker compose up
 ```
 
-Local development uses `uv` (the pinned toolchain in `uv.lock`); `uv run` handles the virtualenv and `PATH` for you:
+Or let your agent launch it over stdio: `.mcp.json` in this repo is a ready-to-use example for MCP clients (it exposes the tools as `mcp__keel__*`). Nothing to seed — the server loads the catalog itself on first run.
+
+<details>
+<summary><b>Run from source / develop Keel</b></summary>
+
+Uses `uv` (pinned in `uv.lock`); `uv run` handles the virtualenv and `PATH` for you:
 
 ```bash
-uv sync                            # install deps + the `keel` CLI (add [postgres] for asyncpg)
-cp .env.example .env               # SQLite by default — zero setup
-uv run alembic upgrade head        # create the schema
-uv run keel seed                   # load the catalog (catalog/*.yaml) into the database
-uv run keel validate               # check the catalog YAML against the schemas
-
-uv run keel                        # MCP over stdio
-uv run keel --http                 # MCP over Streamable HTTP (port 8001)
-uv run uvicorn keel.main:app       # read-only REST (port 8000) + browse UI at /
+uv sync
+uv run uvicorn keel.main:app     # browse UI + REST at http://localhost:8000/
+uv run keel                      # stdio MCP        (uv run keel --http → HTTP MCP on :8001)
+uv run keel validate             # check catalog    (uv run keel export → write the DB back to catalog/)
 ```
 
-Without `uv`: `pip install -e .` installs the same `keel` console script, so `keel seed`, `alembic …`, and `uvicorn keel.main:app` work directly once your `Scripts`/`bin` directory is on `PATH`, or run them as `python -m keel …` / `python -m alembic …` from the repo root.
+The SQLite database builds itself from `catalog/` on first run. For a long-lived Postgres instance, `uv run alembic upgrade head` manages the schema instead. Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
+</details>
 
-With Docker (daemon running), `docker compose up` builds the image, seeds the database from the catalog, and serves the UI at `http://localhost:8000/` in one command. Dependencies are pinned in `uv.lock` for reproducible installs (`uv sync`).
-
-A minimal browse-and-edit UI (single static file, no build step, no npm) is served at the root, `http://localhost:8000/`: threats, mitigations, and the style guide, with cross-links between linked threats and mitigations. It supports inline editing (threat and mitigation-card fields, tags, threat↔mitigation links, style guide slots) via a small set of REST write endpoints that delegate to the same service layer as the MCP write tools. MCP remains the style-guide-guided authoring path; the UI is the raw editing counterpart.
-
-For local Claude Code, `.mcp.json` registers the server as `keel`, so the assessor skill calls its tools as `mcp__keel__*`.
+The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked. It supports inline editing through REST endpoints that share the service layer with the MCP write tools: MCP is the style-guide-guided authoring path, the UI is the raw counterpart.
 
 ## Tests
 
