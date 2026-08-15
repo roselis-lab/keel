@@ -16,9 +16,9 @@ import mcp.types as types
 from mcp.server.lowlevel import Server
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
-from app.config import settings
-from app.mcp.registry import get_tool_list
-from app.mcp.tools import dispatch_tool
+from keel.config import settings
+from keel.mcp.registry import get_tool_list
+from keel.mcp.tools import dispatch_tool
 
 
 @asynccontextmanager
@@ -31,7 +31,7 @@ async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
 
     # Keep style guide skeletons in sync with the current model fields.
     async with async_session_maker() as session:
-        from app.services.style_guide_service import sync_skeletons
+        from keel.services.style_guide_service import sync_skeletons
         await sync_skeletons(session)
 
     try:
@@ -109,7 +109,7 @@ def run_http() -> None:
 
 async def _run_catalog(action: str) -> None:
     """One-shot catalog commands (`seed` / `export`) against the configured DB."""
-    from app.catalog import export_catalog, load_catalog, validate_catalog
+    from keel.catalog import export_catalog, load_catalog, validate_catalog
 
     if action == "seed":
         errs = validate_catalog()
@@ -141,7 +141,7 @@ def main():
     selects Streamable HTTP; no args runs the stdio MCP server."""
     args = sys.argv[1:]
     if args and args[0] == "validate":
-        from app.catalog import validate_catalog
+        from keel.catalog import validate_catalog
 
         errs = validate_catalog()
         if errs:

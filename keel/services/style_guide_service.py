@@ -11,8 +11,8 @@ import yaml as yaml_mod
 from sqlalchemy import inspect as sa_inspect, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import StyleGuideField, Threat, Mitigation, ThreatMitigation
-from app.schemas.style_guide import (
+from keel.models import StyleGuideField, Threat, Mitigation, ThreatMitigation
+from keel.schemas.style_guide import (
     CoverageReport,
     EntityCoverage,
     FieldCoverage,

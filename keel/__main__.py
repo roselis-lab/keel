@@ -1,4 +1,4 @@
-"""`python -m keel [validate|seed|export|--http]` — same entry point as the `keel` script."""
-from app.mcp.server import main
+"""`python -m keel [validate|seed|export|--http]` — the CLI entry point."""
+from keel.mcp.server import main
 
 main()

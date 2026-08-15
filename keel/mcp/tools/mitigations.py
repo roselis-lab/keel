@@ -1,13 +1,13 @@
 """MCP tools for mitigation operations."""
-from app.mcp.registry import register_tool
-from app.services.mitigation_service import (
+from keel.mcp.registry import register_tool
+from keel.services.mitigation_service import (
     list_mitigations as _list_mitigations,
     get_mitigation as _get_mitigation,
     create_mitigation as _create_mitigation,
     update_mitigation as _update_mitigation,
     delete_mitigation as _delete_mitigation,
 )
-from app.schemas.mitigation import (
+from keel.schemas.mitigation import (
     MitigationClass,
     MitigationCreate,
     MitigationStatus,

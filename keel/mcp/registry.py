@@ -12,8 +12,8 @@ from typing import Any, Callable, get_type_hints
 from pydantic import Field, create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.lib.i18n import DEFAULT_LOCALE, SUPPORTED_LOCALES
-from app.lib.style_guide import register_tool_entity, get_tool_style_pointer
+from keel.lib.i18n import DEFAULT_LOCALE, SUPPORTED_LOCALES
+from keel.lib.style_guide import register_tool_entity, get_tool_style_pointer
 
 
 @dataclass

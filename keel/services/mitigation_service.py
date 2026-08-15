@@ -4,8 +4,8 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Mitigation, ThreatMitigation
-from app.schemas.mitigation import MitigationCreate, MitigationUpdate
+from keel.models import Mitigation, ThreatMitigation
+from keel.schemas.mitigation import MitigationCreate, MitigationUpdate
 
 
 # Fields returnable via `include` (everything past the id/name/class always shown).

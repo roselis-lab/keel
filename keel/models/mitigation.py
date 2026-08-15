@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Text, JSON
 
-from app.database import Base
+from keel.database import Base
 
 
 class Mitigation(Base):

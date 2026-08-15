@@ -1,5 +1,5 @@
 """Catalog validation: the shipped catalog is valid, and bad records are caught."""
-from app.catalog import validate_catalog
+from keel.catalog import validate_catalog
 
 
 def test_shipped_catalog_is_valid():

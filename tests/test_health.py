@@ -1,4 +1,4 @@
-"""Health and stats checks for the library (app.services.health_service).
+"""Health and stats checks for the library (keel.services.health_service).
 
 Ports the check-health smoke test from the predecessor repo: an in-memory SQLite
 database, empty and populated, exercised through the same service functions the MCP
@@ -7,9 +7,9 @@ database, empty and populated, exercised through the same service functions the 
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.database import Base
-from app.models import Mitigation, Threat, ThreatMitigation
-from app.services.health_service import check_library_health, get_stats
+from keel.database import Base
+from keel.models import Mitigation, Threat, ThreatMitigation
+from keel.services.health_service import check_library_health, get_stats
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

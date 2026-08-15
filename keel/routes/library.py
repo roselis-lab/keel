@@ -8,10 +8,10 @@ raw editing counterpart for the UI.
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_session
-from app.schemas.mitigation import MitigationUpdate
-from app.schemas.threat import ThreatUpdate
-from app.services import threat_service, mitigation_service, style_guide_service
+from keel.database import get_session
+from keel.schemas.mitigation import MitigationUpdate
+from keel.schemas.threat import ThreatUpdate
+from keel.services import threat_service, mitigation_service, style_guide_service
 
 router = APIRouter()
 

@@ -75,21 +75,27 @@ The assessor ships as skills under `.claude/skills/`:
 
 ## Run
 
-Run the commands below from the repo root. They use `python -m …` so they work whether or not your Python `Scripts`/`bin` directory is on `PATH`.
+Zero setup — Docker builds the image, migrates, seeds the catalog, and serves the UI at `http://localhost:8000/` in one command (needs the Docker daemon running):
 
 ```bash
-uv sync                            # or: pip install -e .   (add [postgres] for asyncpg)
-cp .env.example .env               # SQLite by default — zero setup
-python -m alembic upgrade head     # create the schema
-python -m keel seed                # load the catalog (catalog/*.yaml) into the database
-python -m keel validate            # check the catalog YAML against the schemas
-
-python -m keel                     # MCP over stdio
-python -m keel --http              # MCP over Streamable HTTP (port 8001)
-python -m uvicorn app.main:app     # read-only REST (port 8000) + browse UI at /
+docker compose up                  # add: --profile mcp   for the HTTP MCP transport on :8001
 ```
 
-`pip install -e .` also installs a `keel` console script, so `keel seed`, `keel --http`, `alembic …`, and `uvicorn …` work directly once your Scripts/bin directory is on `PATH`. With `uv`, prefix any of them with `uv run` (e.g. `uv run keel seed`).
+Local development uses `uv` (the pinned toolchain in `uv.lock`); `uv run` handles the virtualenv and `PATH` for you:
+
+```bash
+uv sync                            # install deps + the `keel` CLI (add [postgres] for asyncpg)
+cp .env.example .env               # SQLite by default — zero setup
+uv run alembic upgrade head        # create the schema
+uv run keel seed                   # load the catalog (catalog/*.yaml) into the database
+uv run keel validate               # check the catalog YAML against the schemas
+
+uv run keel                        # MCP over stdio
+uv run keel --http                 # MCP over Streamable HTTP (port 8001)
+uv run uvicorn keel.main:app       # read-only REST (port 8000) + browse UI at /
+```
+
+Without `uv`: `pip install -e .` installs the same `keel` console script, so `keel seed`, `alembic …`, and `uvicorn keel.main:app` work directly once your `Scripts`/`bin` directory is on `PATH`, or run them as `python -m keel …` / `python -m alembic …` from the repo root.
 
 With Docker (daemon running), `docker compose up` builds the image, seeds the database from the catalog, and serves the UI at `http://localhost:8000/` in one command. Dependencies are pinned in `uv.lock` for reproducible installs (`uv sync`).
 

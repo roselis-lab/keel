@@ -2,7 +2,7 @@
   "mcpServers": {
     "keel": {
       "command": "python",
-      "args": ["-m", "app.mcp.server"]
+      "args": ["-m", "keel.mcp.server"]
     }
   }
 }
