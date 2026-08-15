@@ -1,6 +1,8 @@
 id: CTRL-APPROVAL-THROTTLING
-title: Throttling and batching of approval requests
-description: Limits the rate of approval requests from the agent to the user and groups
+name: Throttling and batching of approval requests
+status: draft
+mitigation_class: gating_control
+purpose: Limits the rate of approval requests from the agent to the user and groups
   similar actions into batched requests, in order to reduce cognitive load and prevent
   automatic approval without consideration. The mechanism operates between the agent
   and the user interface, aggregating requests over a time interval and checking patterns
@@ -8,28 +10,35 @@ description: Limits the rate of approval requests from the agent to the user and
   where an attacker or a compromised agent deliberately floods the user with requests
   to obtain automatic approval, and protects against impulsive decisions under the
   pressure of a stream of notifications.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Batched approval queue
-  description: Approval requests are aggregated in queues and presented to the user
-    in batches of several homogeneous operations. Instead of "confirm deletion of
-    file A?", "confirm deletion of file B?", the user sees "confirm deletion of 5
-    files matching mask X?". This reduces the number of interruptions and lets the
-    user assess the cumulative effect of the operations. Suitable for homogeneous
-    actions with a similar level of risk.
-  complexity: medium
-- name: Rate limiter with cooldown
-  description: For each type of action, a limit on requests per unit of time per user
-    or session is configured. When the limit is exceeded, the agent is blocked or
-    put into a cooldown mode. This prevents a mass-request attack and allows time
-    to analyze the situation. It is important to distinguish legitimate intensity
-    (a batch operation) from anomalous intensity (spam after compromise).
-  complexity: medium
-- name: Approval pattern detector
-  description: The system analyzes the context of the user's previous approvals and
-    rejections, identifying patterns of automatic approval (all approvals in under
-    2 seconds, identical responses to requests with different risk). When such patterns
-    are detected, the system introduces a mandatory pause and requires explicit confirmation
-    of deliberateness. This detects not only attacks but also user fatigue.
-  complexity: medium
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Batched approval queue (medium): Approval requests are aggregated
+  in queues and presented to the user in batches of several homogeneous operations.
+  Instead of "confirm deletion of file A?", "confirm deletion of file B?", the user
+  sees "confirm deletion of 5 files matching mask X?". This reduces the number of
+  interruptions and lets the user assess the cumulative effect of the operations.
+  Suitable for homogeneous actions with a similar level of risk.
+
+
+  Rate limiter with cooldown (medium): For each type of action, a limit on requests
+  per unit of time per user or session is configured. When the limit is exceeded,
+  the agent is blocked or put into a cooldown mode. This prevents a mass-request attack
+  and allows time to analyze the situation. It is important to distinguish legitimate
+  intensity (a batch operation) from anomalous intensity (spam after compromise).
+
+
+  Approval pattern detector (medium): The system analyzes the context of the user''s
+  previous approvals and rejections, identifying patterns of automatic approval (all
+  approvals in under 2 seconds, identical responses to requests with different risk).
+  When such patterns are detected, the system introduces a mandatory pause and requires
+  explicit confirmation of deliberateness. This detects not only attacks but also
+  user fatigue.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

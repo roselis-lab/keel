@@ -1,27 +1,35 @@
 id: CTRL-RESOURCE-QUOTAS
-title: CPU/Memory Quotas for Agents
-description: Sets hard limits on CPU, memory, storage, and network bandwidth consumption
+name: CPU/Memory Quotas for Agents
+status: draft
+mitigation_class: gating_control
+purpose: Sets hard limits on CPU, memory, storage, and network bandwidth consumption
   by agents and tools, preventing resource exhaustion and ensuring predictable infrastructure
   costs. The mechanism operates at the container orchestration or runtime level and
   enforces limits through kernel or hypervisor mechanisms. This protects against runaway
   agents consuming unbounded resources, ensures fairness in multi-tenant environments,
   and prevents cost overruns from unexpected resource consumption.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Container resource limits
-  complexity: medium
-  description: 'Container-level resource limits via Docker/Kubernetes: CPU shares,
-    memory limits, disk quotas. Limits are enforced at the kernel level — processes
-    exceeding the limits are terminated or throttled. This provides deterministic
-    resource bounds.'
-- name: Session-level quotas
-  complexity: medium
-  description: 'Per-session or per-agent quotas on total resource consumption: maximum
-    memory per session, maximum execution time, maximum output size. Quotas are tracked
-    by the runtime and enforced when bounds are breached.'
-- name: Network bandwidth quotas
-  complexity: medium
-  description: Network bandwidth quotas limit outbound traffic per agent/session.
-    Large data transfers are throttled or blocked. This prevents data exfiltration
-    by volume and protects network infrastructure.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Container resource limits (medium): Container-level resource limits
+  via Docker/Kubernetes: CPU shares, memory limits, disk quotas. Limits are enforced
+  at the kernel level — processes exceeding the limits are terminated or throttled.
+  This provides deterministic resource bounds.
+
+
+  Session-level quotas (medium): Per-session or per-agent quotas on total resource
+  consumption: maximum memory per session, maximum execution time, maximum output
+  size. Quotas are tracked by the runtime and enforced when bounds are breached.
+
+
+  Network bandwidth quotas (medium): Network bandwidth quotas limit outbound traffic
+  per agent/session. Large data transfers are throttled or blocked. This prevents
+  data exfiltration by volume and protects network infrastructure.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

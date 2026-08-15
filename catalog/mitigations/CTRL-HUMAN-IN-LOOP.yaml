@@ -1,36 +1,45 @@
 id: CTRL-HUMAN-IN-LOOP
-title: Human in the Loop for Critical Actions
-description: Enforces mandatory human approval for critical operations initiated by
-  the agent — financial transactions, configuration changes, processing of personal
-  data, destructive actions — as a last line of defense against automated malicious
-  actions and decisions of a compromised agent. The mechanism operates as an approval
-  gate that intercepts critical operations and requires explicit human approval before
+name: Human in the Loop for Critical Actions
+status: draft
+mitigation_class: gating_control
+purpose: Enforces mandatory human approval for critical operations initiated by the
+  agent — financial transactions, configuration changes, processing of personal data,
+  destructive actions — as a last line of defense against automated malicious actions
+  and decisions of a compromised agent. The mechanism operates as an approval gate
+  that intercepts critical operations and requires explicit human approval before
   execution. This guarantees human oversight over the highest-risk operations, provides
   the ability to intercept errors or malicious actions, and maintains accountability
   for consequential decisions.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Centralized approval gateway
-  complexity: high
-  description: A centralized approval service through which all critical operations
-    must pass before execution. The service integrates with various action sources
-    — agents, tools, API endpoints — through a unified interface. When a critical
-    operation arrives, the service routes the request to the appropriate approver,
-    collects the decision, and only then permits or denies execution. This gives centralized
-    control and an audit trail for all approvals.
-- name: In-interface approval with detail disclosure
-  complexity: low
-  description: 'A modal approval dialog in the interface that displays the full details
-    of the proposed action: what will be done, the affected resources, potential risks,
-    irreversible consequences. The dialog requires explicit user interaction (button
-    click, checkbox confirmation) and may include a mandatory waiting period for critical
-    operations. This ensures informed consent but can be bypassed through social engineering.'
-- name: Out-of-band approval channel
-  complexity: medium
-  description: 'For the highest-risk operations, the system requires approval through
-    a separate channel: a mobile push notification, an email with a confirmation link,
-    an SMS code, a hardware token. This protects against attacks on the interface
-    and guarantees that the user genuinely intended to perform the action. Multi-channel
-    approval adds significant friction but is appropriate for the highest-criticality
-    operations.'
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Centralized approval gateway (high): A centralized approval service
+  through which all critical operations must pass before execution. The service integrates
+  with various action sources — agents, tools, API endpoints — through a unified interface.
+  When a critical operation arrives, the service routes the request to the appropriate
+  approver, collects the decision, and only then permits or denies execution. This
+  gives centralized control and an audit trail for all approvals.
+
+
+  In-interface approval with detail disclosure (low): A modal approval dialog in the
+  interface that displays the full details of the proposed action: what will be done,
+  the affected resources, potential risks, irreversible consequences. The dialog requires
+  explicit user interaction (button click, checkbox confirmation) and may include
+  a mandatory waiting period for critical operations. This ensures informed consent
+  but can be bypassed through social engineering.
+
+
+  Out-of-band approval channel (medium): For the highest-risk operations, the system
+  requires approval through a separate channel: a mobile push notification, an email
+  with a confirmation link, an SMS code, a hardware token. This protects against attacks
+  on the interface and guarantees that the user genuinely intended to perform the
+  action. Multi-channel approval adds significant friction but is appropriate for
+  the highest-criticality operations.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

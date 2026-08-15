@@ -1,32 +1,40 @@
 id: CTRL-INPUT-FILTERING
-title: Input Filtering Against Prompt Injection
-description: Validates and sanitizes all user and external input before processing
-  by the model, applying detection of prompt injection patterns, jailbreak attempts,
+name: Input Filtering Against Prompt Injection
+status: draft
+mitigation_class: process
+purpose: Validates and sanitizes all user and external input before processing by
+  the model, applying detection of prompt injection patterns, jailbreak attempts,
   and sanitization of dangerous content to prevent manipulation of the model through
   specially crafted inputs. The mechanism operates as an input pre-processing layer
   that analyzes incoming data for malicious patterns and blocks or transforms suspicious
   content. This prevents direct prompt injection attacks, detects obvious jailbreak
   attempts, and reduces the attack surface for model-based systems.
-type: PREVENTIVE_SOFT
-requirement_level: MANDATORY
-implementations:
-- name: ML injection detector
-  complexity: high
-  description: An ML model trained on known prompt injection and jailbreak patterns
-    classifies each input as safe, suspicious, or malicious. Suspicious inputs are
-    flagged for review or processed with additional protections. Malicious inputs
-    are blocked entirely. This enables detection of novel variations but depends on
-    the quality of the training data and may produce false positives.
-- name: Deterministic input sanitization
-  complexity: low
-  description: 'Rule-based sanitization that removes or escapes potentially dangerous
-    content: special tokens, instruction-like phrases, role declarations, control
-    characters. Sanitization is applied uniformly to all user inputs before they reach
-    the model. This gives deterministic protection but may break legitimate functionality
-    and does not catch sophisticated injections.'
-- name: Structural input constraints
-  complexity: low
-  description: Input length limits, format constraints, and structural requirements
-    that restrict possible inputs to expected patterns. Free-form text, where possible,
-    is replaced with structured input through forms, selections, and validated fields.
-    This reduces the attack surface but limits flexibility.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'ML injection detector (high): An ML model trained on known prompt
+  injection and jailbreak patterns classifies each input as safe, suspicious, or malicious.
+  Suspicious inputs are flagged for review or processed with additional protections.
+  Malicious inputs are blocked entirely. This enables detection of novel variations
+  but depends on the quality of the training data and may produce false positives.
+
+
+  Deterministic input sanitization (low): Rule-based sanitization that removes or
+  escapes potentially dangerous content: special tokens, instruction-like phrases,
+  role declarations, control characters. Sanitization is applied uniformly to all
+  user inputs before they reach the model. This gives deterministic protection but
+  may break legitimate functionality and does not catch sophisticated injections.
+
+
+  Structural input constraints (low): Input length limits, format constraints, and
+  structural requirements that restrict possible inputs to expected patterns. Free-form
+  text, where possible, is replaced with structured input through forms, selections,
+  and validated fields. This reduces the attack surface but limits flexibility.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

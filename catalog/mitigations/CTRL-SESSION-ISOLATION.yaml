@@ -1,27 +1,37 @@
 id: CTRL-SESSION-ISOLATION
-title: User Session Isolation
-description: Enforces strict separation of data between user sessions through isolation
+name: User Session Isolation
+status: draft
+mitigation_class: gating_control
+purpose: Enforces strict separation of data between user sessions through isolation
   of context, cache, and state, preventing information leakage from one user to another
   via shared infrastructure. The mechanism operates at the session management layer
   and guarantees that each user has a fully isolated execution environment. This protects
   against accidental data leakage between tenants, prevents context contamination,
   and ensures data confidentiality in multi-user systems.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Per-session context isolation
-  complexity: medium
-  description: Each session receives a unique session-scoped context that is not shared
-    with other sessions. The context includes conversation history, agent state, and
-    cached data. Isolation is enforced at the infrastructure level - there is no cross-session
-    access to data.
-- name: Cache namespaces per session
-  complexity: low
-  description: Cache namespaces are partitioned by session identifier - cached queries,
-    embeddings, and intermediate results are isolated between sessions. Cache invalidation
-    is bounded by the session lifetime. This prevents data leakage through the cache.
-- name: Tenant isolation at the database level
-  complexity: high
-  description: Database queries and data access are automatically filtered by user
-    or tenant identifier from the session context. Row-level security ensures that
-    each user sees only their own data. This enforces isolation at the database level.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Per-session context isolation (medium): Each session receives
+  a unique session-scoped context that is not shared with other sessions. The context
+  includes conversation history, agent state, and cached data. Isolation is enforced
+  at the infrastructure level - there is no cross-session access to data.
+
+
+  Cache namespaces per session (low): Cache namespaces are partitioned by session
+  identifier - cached queries, embeddings, and intermediate results are isolated between
+  sessions. Cache invalidation is bounded by the session lifetime. This prevents data
+  leakage through the cache.
+
+
+  Tenant isolation at the database level (high): Database queries and data access
+  are automatically filtered by user or tenant identifier from the session context.
+  Row-level security ensures that each user sees only their own data. This enforces
+  isolation at the database level.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

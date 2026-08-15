@@ -1,32 +1,41 @@
 id: CTRL-EXTENSION-UPDATE-CONTROL
-title: IDE Extension Update Control
-description: Manages the IDE extension update process through version pinning, digital
+name: IDE Extension Update Control
+status: draft
+mitigation_class: gating_control
+purpose: Manages the IDE extension update process through version pinning, digital
   signature verification, auditing of changes between versions, and mandatory verification
   before applying updates, preventing supply chain attacks through malicious updates.
   The mechanism is deployed at the level of the extension management system and checks
   each update request against security policies. This prevents automatic installation
   of compromised updates, enables review of security-relevant changes before deployment,
   and allows rollback to a known-good version when problems are detected.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Pinned versions with manual approval
-  description: All extensions are pinned to specific versions in a central configuration.
-    Automatic updates are disabled — an update requires an explicit approval process
-    that includes reviewing the changelog, diff analysis for security-relevant changes,
-    and testing in staging. This gives full control over versions but delays receiving
-    security fixes.
-  complexity: low
-- name: Signature verification for updates
-  description: Each extension update must be signed by the developer or a trusted
-    publisher key. The IDE or extension manager verifies the signature before installation
-    and rejects updates with invalid or missing signatures. This ensures the authenticity
-    of updates but requires PKI infrastructure for key distribution.
-  complexity: medium
-- name: Automated diff audit
-  description: The extension manager automatically compares permissions, API usage,
-    and code patterns between the current and new versions. Changes in sensitive areas
-    — new permissions, access to additional resources, changes to network communication
-    — are flagged for manual review. This provides visibility into security-relevant
-    changes but requires accurate diff analysis.
-  complexity: medium
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Pinned versions with manual approval (low): All extensions are
+  pinned to specific versions in a central configuration. Automatic updates are disabled
+  — an update requires an explicit approval process that includes reviewing the changelog,
+  diff analysis for security-relevant changes, and testing in staging. This gives
+  full control over versions but delays receiving security fixes.
+
+
+  Signature verification for updates (medium): Each extension update must be signed
+  by the developer or a trusted publisher key. The IDE or extension manager verifies
+  the signature before installation and rejects updates with invalid or missing signatures.
+  This ensures the authenticity of updates but requires PKI infrastructure for key
+  distribution.
+
+
+  Automated diff audit (medium): The extension manager automatically compares permissions,
+  API usage, and code patterns between the current and new versions. Changes in sensitive
+  areas — new permissions, access to additional resources, changes to network communication
+  — are flagged for manual review. This provides visibility into security-relevant
+  changes but requires accurate diff analysis.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

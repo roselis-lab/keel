@@ -1,37 +1,46 @@
 id: CTRL-AGENT-AUTHENTICATION
-title: Agent-to-agent authentication
-description: Provides cryptographic authenticity verification of agents when they
-  establish connections with one another, using mutual TLS authentication or signed
-  tokens with a limited lifetime. The mechanism operates at the transport layer and
-  the application session layer, blocking the ability for one agent to impersonate
-  another or for an unauthorized participant to join the agent mesh. This prevents
-  man-in-the-middle attacks between agents, injection of malicious commands through
-  spoofed sources, and compromise of the chain of trust in multi-agent systems.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Mutual TLS between agents
-  description: Each agent receives a unique client certificate issued by an internal
-    CA and uses it for two-way authentication on every connection with other agents.
-    Certificates carry the agent's identifier and its role, which lets the receiving
-    side verify not only authenticity but also the calling agent's authority. This
-    approach provides a high level of security and does not require passing tokens
-    on every request, but it creates operational overhead for managing the certificate
-    lifecycle and their rotation.
-  complexity: high
-- name: JWT with short TTL
-  description: Agents exchange signed JWT tokens containing the source identifier,
-    timestamps, and scope of authority, with a typical lifetime of 5 to 15 minutes.
-    Tokens are signed with the agent's private key or that of a central identity provider
-    and are verified by the recipient before processing any request. This mechanism
-    is simpler to deploy than mTLS and integrates well with service meshes, but it
-    requires a reliable refresh mechanism and protection of the private signing keys.
-  complexity: medium
-- name: Service mesh with automatic mTLS
-  description: A service mesh such as Istio or Linkerd automatically establishes mTLS
-    connections between all agents through sidecar proxies, managing certificates
-    via a built-in CA. Agents do not need to work with cryptography themselves - the
-    mesh injects verification at the infrastructure level. This reduces the complexity
-    of the agent code and provides a uniform policy, but it adds a dependency on the
-    mesh infrastructure and can make debugging authentication issues harder.
-  complexity: high
+name: Agent-to-agent authentication
+status: draft
+mitigation_class: gating_control
+purpose: Provides cryptographic authenticity verification of agents when they establish
+  connections with one another, using mutual TLS authentication or signed tokens with
+  a limited lifetime. The mechanism operates at the transport layer and the application
+  session layer, blocking the ability for one agent to impersonate another or for
+  an unauthorized participant to join the agent mesh. This prevents man-in-the-middle
+  attacks between agents, injection of malicious commands through spoofed sources,
+  and compromise of the chain of trust in multi-agent systems.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Mutual TLS between agents (high): Each agent receives a unique
+  client certificate issued by an internal CA and uses it for two-way authentication
+  on every connection with other agents. Certificates carry the agent''s identifier
+  and its role, which lets the receiving side verify not only authenticity but also
+  the calling agent''s authority. This approach provides a high level of security
+  and does not require passing tokens on every request, but it creates operational
+  overhead for managing the certificate lifecycle and their rotation.
+
+
+  JWT with short TTL (medium): Agents exchange signed JWT tokens containing the source
+  identifier, timestamps, and scope of authority, with a typical lifetime of 5 to
+  15 minutes. Tokens are signed with the agent''s private key or that of a central
+  identity provider and are verified by the recipient before processing any request.
+  This mechanism is simpler to deploy than mTLS and integrates well with service meshes,
+  but it requires a reliable refresh mechanism and protection of the private signing
+  keys.
+
+
+  Service mesh with automatic mTLS (high): A service mesh such as Istio or Linkerd
+  automatically establishes mTLS connections between all agents through sidecar proxies,
+  managing certificates via a built-in CA. Agents do not need to work with cryptography
+  themselves - the mesh injects verification at the infrastructure level. This reduces
+  the complexity of the agent code and provides a uniform policy, but it adds a dependency
+  on the mesh infrastructure and can make debugging authentication issues harder.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

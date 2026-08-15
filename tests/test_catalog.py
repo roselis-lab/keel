@@ -29,6 +29,6 @@ def test_validate_flags_id_filename_mismatch(tmp_path):
     (tmp_path / "threats").mkdir()
     (tmp_path / "mitigations").mkdir()
     (tmp_path / "mitigations" / "CTRL-X.yaml").write_text(
-        "id: CTRL-Y\ntitle: t\ntype: PREVENTIVE_HARD\n", encoding="utf-8"
+        "id: CTRL-Y\nname: t\nmitigation_class: gating_control\n", encoding="utf-8"
     )
     assert any("does not match filename" in e for e in validate_catalog(tmp_path))

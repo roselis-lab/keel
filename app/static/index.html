@@ -143,8 +143,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const TYPES = ["PREVENTIVE_HARD", "PREVENTIVE_SOFT", "DETECTIVE", "CORRECTIVE"];
-const REQ = ["MANDATORY", "RECOMMENDED"];
+const MIT_CLASSES = ["gating_control", "detector", "process", "evidential_mitigation", "corrective"];
+const MIT_STATUS = ["draft", "verified"];
 const IMPACT_CLASSES = [
   "decision-integrity", "data-confidentiality", "infrastructure-execution",
   "resource-availability", "reputation-compliance", "recon-exposure",
@@ -189,7 +189,7 @@ async function load() {
   const inc = f => f.map(x => "include=" + x).join("&");
   const [tr, mi, sg] = await Promise.all([
     j("/threats?brief=false&" + inc(["description", "impact_class", "vulnerability", "reachability", "tags", "mitigations"])),
-    j("/mitigations?brief=false&" + inc(["description", "requirement_level", "implementations"])),
+    j("/mitigations?brief=false&" + inc(["status", "purpose", "formal_implementation_risk", "review", "maintainer", "owner", "locus", "scope", "control_mechanism", "failure_behavior", "telemetry", "anti_patterns", "validation", "faq"])),
     j("/style-guide"),
   ]);
   state.threats = tr.threats;
@@ -242,14 +242,14 @@ function render() {
         </div>
       </div>`).join("");
   } else {
-    items = state.mitigations.filter(m => hit(m.id, m.title, m.description, m.type));
+    items = state.mitigations.filter(m => hit(m.id, m.name, m.purpose, m.mitigation_class));
     html = items.map(m => `
       <div class="row ${state.selected === m.id ? "active" : ""}" data-id="${esc(m.id)}">
         <span class="rid">${esc(m.id)}</span>
-        <span class="rtitle">${esc(m.title)}</span>
+        <span class="rtitle">${esc(m.name)}</span>
         <div class="badges">
-          <span class="badge type">${esc((m.type || "?").replace(/_/g, " ").toLowerCase())}</span>
-          ${m.requirement_level ? `<span class="badge req-${esc(m.requirement_level)}">${esc(m.requirement_level)}</span>` : ""}
+          <span class="badge type">${esc((m.mitigation_class || "?").replace(/_/g, " "))}</span>
+          ${m.status ? `<span class="badge req-${esc(m.status)}">${esc(m.status)}</span>` : ""}
         </div>
       </div>`).join("");
   }
@@ -286,11 +286,11 @@ function renderThreat() {
     return `<div class="card">
       <div class="chead">
         <span class="cid">${esc(l.mitigation_id)}</span>
-        <button class="ctitle" data-jmit="${esc(l.mitigation_id)}">${esc(mm ? mm.title : "(missing)")}</button>
-        ${mm ? `<span class="badge type" style="margin-left:auto">${esc((mm.type||"").replace(/_/g," ").toLowerCase())}</span>
-                ${mm.requirement_level ? `<span class="badge req-${esc(mm.requirement_level)}">${esc(mm.requirement_level)}</span>` : ""}` : ""}
+        <button class="ctitle" data-jmit="${esc(l.mitigation_id)}">${esc(mm ? mm.name : "(missing)")}</button>
+        ${mm ? `<span class="badge type" style="margin-left:auto">${esc((mm.mitigation_class||"").replace(/_/g," "))}</span>
+                ${mm.status ? `<span class="badge req-${esc(mm.status)}">${esc(mm.status)}</span>` : ""}` : ""}
       </div>
-      ${mm && mm.description ? `<div class="cdesc">${esc(mm.description)}</div>` : ""}
+      ${mm && mm.purpose ? `<div class="cdesc">${esc(mm.purpose)}</div>` : ""}
       ${l.rationale ? `<div class="rationale">${esc(l.rationale)}</div>` : ""}
     </div>`;
   }).join("");
@@ -328,7 +328,7 @@ function editThreat(t) {
     return `<div class="card">
       <div class="chead">
         <span class="cid">${esc(l.mitigation_id)}</span>
-        <span class="ctitle" style="cursor:default">${esc(mm ? mm.title : "(missing)")}</span>
+        <span class="ctitle" style="cursor:default">${esc(mm ? mm.name : "(missing)")}</span>
         <button class="btn sm danger" style="margin-left:auto" data-unlink="${esc(l.mitigation_id)}">Unlink</button>
       </div>
       <textarea class="f" rows="2" style="margin-top:8px" data-rat="${esc(l.mitigation_id)}"
@@ -369,7 +369,7 @@ function editThreat(t) {
         <div class="stag" style="font-size:10px;color:var(--navy-500);text-transform:uppercase;font-weight:700">Link a mitigation</div>
         <div class="addlink">
           <select class="f" id="linkSel" style="flex:1">
-            ${avail.map(m => `<option value="${esc(m.id)}">${esc(m.id)} — ${esc(m.title)}</option>`).join("")}
+            ${avail.map(m => `<option value="${esc(m.id)}">${esc(m.id)} — ${esc(m.name)}</option>`).join("")}
           </select>
           <button class="btn ghost" id="addLinkBtn" ${avail.length ? "" : "disabled"}>+ Link</button>
         </div>
@@ -384,11 +384,24 @@ function renderMitigation() {
   if (!m) return '<div class="empty">Not found.</div>';
   if (state.editing) return editMitigation(m);
 
-  const impl = Array.isArray(m.implementations) && m.implementations.length
-    ? `<ul class="impl">${m.implementations.map(i => `<li>
-        <div class="iname">${esc(i.name || (typeof i === "string" ? i : JSON.stringify(i)))}</div>
-        ${i.description ? `<div class="idesc">${esc(i.description)}</div>` : ""}</li>`).join("")}</ul>`
-    : '<p class="placeholder">None.</p>';
+  const sec = (label, val, hint) => val
+    ? `<section><h3 class="slabel">${label}${hint ? ` <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— ${hint}</span>` : ""}</h3><div class="prose">${esc(val)}</div></section>`
+    : "";
+  const listSec = (label, arr) => (Array.isArray(arr) && arr.length)
+    ? `<section><h3 class="slabel">${label}</h3><ul class="impl">${arr.map(x => `<li>${esc(typeof x === "string" ? x : JSON.stringify(x))}</li>`).join("")}</ul></section>`
+    : "";
+  const valSec = (Array.isArray(m.validation) && m.validation.length)
+    ? `<section><h3 class="slabel">Validation</h3>${m.validation.map(v => `<div class="card">
+        <div class="iname">${esc(v.criterion || "")}</div>
+        ${v.test_scenario ? `<div class="idesc"><b>Test:</b> ${esc(v.test_scenario)}</div>` : ""}
+        ${v.expected_result ? `<div class="idesc"><b>Expected:</b> ${esc(v.expected_result)}</div>` : ""}</div>`).join("")}</section>`
+    : "";
+  const faqSec = (Array.isArray(m.faq) && m.faq.length)
+    ? `<section><h3 class="slabel">FAQ</h3>${m.faq.map(f => `<div class="card">
+        <div class="iname">${esc(f.question || "")}</div>
+        <div class="idesc">${esc(f.answer || "")}</div></div>`).join("")}</section>`
+    : "";
+  const ownership = [m.maintainer && ("Maintainer: " + m.maintainer), m.owner && ("Owner: " + m.owner)].filter(Boolean).join(" · ");
   const threats = state.threatsByMit[m.id] || [];
   const tlist = threats.length ? threats.map(t => `<div class="card">
       <div class="chead"><span class="cid">${esc(t.id)}</span>
@@ -399,18 +412,27 @@ function renderMitigation() {
     <div class="dhead">
       <div class="dicon mit">◆</div>
       <div class="dtitle">
-        <h2>${esc(m.title)}</h2>
+        <h2>${esc(m.name)}</h2>
         <div class="did">${esc(m.id)}</div>
         <div class="hbadges badges">
-          <span class="badge type">${esc((m.type || "?").replace(/_/g, " ").toLowerCase())}</span>
-          ${m.requirement_level ? `<span class="badge req-${esc(m.requirement_level)}">${esc(m.requirement_level)}</span>` : ""}
+          <span class="badge type">${esc((m.mitigation_class || "?").replace(/_/g, " "))}</span>
+          ${m.status ? `<span class="badge req-${esc(m.status)}">${esc(m.status)}</span>` : ""}
         </div>
       </div>
       <div class="hactions"><button class="btn ghost" id="editBtn">✎ Edit</button></div>
     </div>
-    <section><h3 class="slabel">Description</h3>${
-      m.description ? `<div class="prose">${esc(m.description)}</div>` : '<div class="warn">Description is empty.</div>'}</section>
-    <section><h3 class="slabel">Implementations</h3>${impl}</section>
+    ${m.purpose ? sec("Purpose", m.purpose) : '<section><h3 class="slabel">Purpose</h3><div class="warn">Purpose is empty.</div></section>'}
+    ${sec("Risk of formal implementation", m.formal_implementation_risk, "what a useless-but-mitigation-looking build looks like")}
+    ${sec("Scope", m.scope, "deterministic applicability rule + boundary")}
+    ${sec("Control mechanism", m.control_mechanism, "read per class")}
+    ${sec("Failure behavior", m.failure_behavior, "read per class")}
+    ${sec("Telemetry & attribution", m.telemetry)}
+    ${listSec("Anti-patterns — what does NOT count", m.anti_patterns)}
+    ${valSec}
+    ${faqSec}
+    ${sec("Locus", m.locus)}
+    ${sec("Review", m.review)}
+    ${ownership ? sec("Ownership", ownership) : ""}
     <section><h3 class="slabel">Addresses threats (${threats.length})</h3>${tlist}</section>
   </div>`;
 }
@@ -418,20 +440,12 @@ function renderMitigation() {
 function editMitigation(m) {
   const d = state.draft;
   const opt = (arr, cur) => arr.map(v => `<option value="${v}" ${v === cur ? "selected" : ""}>${v.replace(/_/g, " ")}</option>`).join("");
-  const implRows = (d.implementations || []).map((i, idx) => `
-    <div class="card" style="padding:11px 13px">
-      <div class="lerow">
-        <input class="f" data-impl-name="${idx}" placeholder="Name" value="${esc(i.name)}">
-        <button class="rmx" data-impl-rm="${idx}" title="Remove">×</button>
-      </div>
-      <textarea class="f" data-impl-desc="${idx}" rows="2" placeholder="Description">${esc(i.description)}</textarea>
-    </div>`).join("");
 
   return `<div class="detail">
     <div class="dhead">
       <div class="dicon mit">◆</div>
       <div class="dtitle" style="width:100%">
-        <input class="f titlein" id="f_title" value="${esc(d.title)}">
+        <input class="f titlein" id="f_name" value="${esc(d.name)}">
         <div class="did" style="margin-top:6px">${esc(m.id)}</div>
       </div>
       <div class="hactions">
@@ -440,16 +454,20 @@ function editMitigation(m) {
       </div>
     </div>
     <section style="display:flex;gap:14px">
-      <div style="flex:1"><h3 class="slabel">Type</h3>
-        <select class="f" id="f_type">${opt(TYPES, d.type)}</select></div>
-      <div style="flex:1"><h3 class="slabel">Requirement level</h3>
-        <select class="f" id="f_req"><option value="">(none)</option>${opt(REQ, d.requirement_level)}</select></div>
+      <div style="flex:1"><h3 class="slabel">Mitigation class</h3>
+        <select class="f" id="f_class">${opt(MIT_CLASSES, d.mitigation_class)}</select></div>
+      <div style="flex:1"><h3 class="slabel">Status</h3>
+        <select class="f" id="f_status"><option value="">(none)</option>${opt(MIT_STATUS, d.status)}</select></div>
     </section>
-    <section><h3 class="slabel">Description</h3>
-      <textarea class="f" id="f_description" rows="4">${esc(d.description)}</textarea></section>
-    <section><h3 class="slabel">Implementations</h3>
-      <div id="implList">${implRows || '<p class="placeholder">None.</p>'}</div>
-      <button class="btn ghost sm" id="addImplBtn" style="margin-top:6px">+ Add implementation</button></section>
+    <section><h3 class="slabel">Purpose <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— which class of failure it prevents</span></h3>
+      <textarea class="f" id="f_purpose" rows="3">${esc(d.purpose)}</textarea></section>
+    <section><h3 class="slabel">Scope</h3>
+      <textarea class="f" id="f_scope" rows="3" placeholder="Deterministic applicability rule + profiles + boundary">${esc(d.scope)}</textarea></section>
+    <section><h3 class="slabel">Control mechanism <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— read per class</span></h3>
+      <textarea class="f" id="f_control_mechanism" rows="5">${esc(d.control_mechanism)}</textarea></section>
+    <section><h3 class="slabel">Failure behavior <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— read per class</span></h3>
+      <textarea class="f" id="f_failure_behavior" rows="3">${esc(d.failure_behavior)}</textarea></section>
+    <p class="hint">Telemetry, anti-patterns, validation, FAQ, review and ownership are authored in the catalog YAML.</p>
   </div>`;
 }
 
@@ -532,9 +550,9 @@ function enterEdit() {
   } else {
     const m = state.mitById[state.selected];
     state.draft = {
-      title: m.title || "", description: m.description || "", type: m.type || TYPES[0],
-      requirement_level: m.requirement_level || "",
-      implementations: (m.implementations || []).map(i => ({ name: i.name || "", description: i.description || "" })),
+      name: m.name || "", mitigation_class: m.mitigation_class || MIT_CLASSES[0],
+      status: m.status || "", purpose: m.purpose || "", scope: m.scope || "",
+      control_mechanism: m.control_mechanism || "", failure_behavior: m.failure_behavior || "",
     };
   }
   state.editing = true;
@@ -566,14 +584,10 @@ function wireThreatEdit() {
 function wireMitEdit() {
   const d = state.draft;
   const bind = (id, key) => { const e = document.getElementById(id); if (e) e.oninput = () => d[key] = e.value; };
-  bind("f_title", "title"); bind("f_description", "description");
-  const ty = document.getElementById("f_type"); if (ty) ty.onchange = () => d.type = ty.value;
-  const rq = document.getElementById("f_req"); if (rq) rq.onchange = () => d.requirement_level = rq.value;
-  document.querySelectorAll("[data-impl-name]").forEach(e => e.oninput = () => d.implementations[+e.dataset.implName].name = e.value);
-  document.querySelectorAll("[data-impl-desc]").forEach(e => e.oninput = () => d.implementations[+e.dataset.implDesc].description = e.value);
-  document.querySelectorAll("[data-impl-rm]").forEach(b => b.onclick = () => { d.implementations.splice(+b.dataset.implRm, 1); renderDetail(); });
-  const add = document.getElementById("addImplBtn");
-  if (add) add.onclick = () => { d.implementations.push({ name: "", description: "" }); renderDetail(); };
+  bind("f_name", "name"); bind("f_purpose", "purpose"); bind("f_scope", "scope");
+  bind("f_control_mechanism", "control_mechanism"); bind("f_failure_behavior", "failure_behavior");
+  const cl = document.getElementById("f_class"); if (cl) cl.onchange = () => d.mitigation_class = cl.value;
+  const st = document.getElementById("f_status"); if (st) st.onchange = () => d.status = st.value;
 }
 
 function wireStyle() {
@@ -639,10 +653,11 @@ async function linkMit(mid) {
 async function saveMitigation() {
   const d = state.draft;
   const body = {
-    title: d.title, description: d.description, type: d.type,
-    implementations: (d.implementations || []).filter(i => i.name || i.description),
+    name: d.name, mitigation_class: d.mitigation_class,
+    purpose: d.purpose, scope: d.scope,
+    control_mechanism: d.control_mechanism, failure_behavior: d.failure_behavior,
   };
-  if (d.requirement_level) body.requirement_level = d.requirement_level;
+  if (d.status) body.status = d.status;
   try {
     await api("PATCH", "/mitigations/" + encodeURIComponent(state.selected), body);
     await refresh(); state.editing = false; state.draft = null;

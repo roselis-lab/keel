@@ -1,28 +1,37 @@
 id: CTRL-ITERATION-LIMITS
-title: Iteration and Recursion Limits
-description: Bounds the number of iterations, recursion depth, and total steps an
-  agent may perform within a single task, preventing runaway execution, infinite loops,
+name: Iteration and Recursion Limits
+status: draft
+mitigation_class: gating_control
+purpose: Bounds the number of iterations, recursion depth, and total steps an agent
+  may perform within a single task, preventing runaway execution, infinite loops,
   and resource exhaustion. The mechanism operates at the agent runtime level and checks
   counters at every step of the execution loop. This blocks agents from uncontrolled
   expansion activity, protects against DoS via resource consumption, and provides
   a termination guarantee even under compromised or malfunctioning agent logic.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Absolute step limit
-  complexity: low
-  description: An absolute limit on the number of tool calls or action steps an agent
-    may perform per session. When the limit is reached, execution stops with an error.
-    The limit is set based on expected task complexity and resource constraints. This
-    provides a deterministic bound on execution.
-- name: Recursion depth limit
-  complexity: low
-  description: Recursion depth is bounded — an agent cannot invoke itself or another
-    agent more than N times in a chain. Recursion depth tracking is maintained via
-    the call stack or an explicit counter. This prevents infinite recursion between
-    agents.
-- name: Execution timeout
-  complexity: low
-  description: Total execution time is bounded by a timeout — if an agent has not
-    completed the task within the configured time (for example, 5 minutes), execution
-    is forcibly terminated. This protects against hanging agents and resource starvation.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Absolute step limit (low): An absolute limit on the number of
+  tool calls or action steps an agent may perform per session. When the limit is reached,
+  execution stops with an error. The limit is set based on expected task complexity
+  and resource constraints. This provides a deterministic bound on execution.
+
+
+  Recursion depth limit (low): Recursion depth is bounded — an agent cannot invoke
+  itself or another agent more than N times in a chain. Recursion depth tracking is
+  maintained via the call stack or an explicit counter. This prevents infinite recursion
+  between agents.
+
+
+  Execution timeout (low): Total execution time is bounded by a timeout — if an agent
+  has not completed the task within the configured time (for example, 5 minutes),
+  execution is forcibly terminated. This protects against hanging agents and resource
+  starvation.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []
