@@ -269,6 +269,11 @@ async def export_yaml(session: AsyncSession) -> str:
     for entity_type, ent in full.entities.items():
         fields_out: dict[str, dict[str, Any]] = {}
         for field_name, field in ent.fields.items():
+            # Skip orphans: fields whose model column no longer exists. Their methodology
+            # is retained in the DB (recoverable if the field returns) but must not leak
+            # back into the catalog, which mirrors the live model.
+            if field.is_orphan:
+                continue
             slot: dict[str, Any] = {}
             for k in _IMPORT_SLOTS:
                 v = getattr(field, k)
