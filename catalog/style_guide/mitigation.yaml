@@ -2,114 +2,65 @@ fields:
   name:
     purpose: Name of the mitigation.
   status:
-    purpose: Status of the card. Before the card passes verification (Stage 0 of the
-      acceptance process) the status is draft; verified once it passes.
+    purpose: Status of the card. Before the card passes verification (Stage 0 of the acceptance process) the status is draft; verified once it passes.
   mitigation_class:
-    purpose: 'One of gating_control / detector / process / evidential_mitigation /
-      corrective. The class is a switch: it sets how the Control mechanism and Failure
-      behavior sections are read.'
+    purpose: 'One of gating_control / detector / process / evidential_mitigation / corrective. The class is a switch: it sets how the Control mechanism and Failure behavior sections are read.'
     content_requirements:
-    - Exactly one class per card; secondary behavior is noted in prose inside Control
-      mechanism.
+    - Exactly one class per card; secondary behavior is noted in prose inside Control mechanism.
   purpose:
     purpose: '1-3 sentences: which class of failure the mitigation prevents.'
   formal_implementation_risk:
-    purpose: '1-3 sentences: what a useless-but-mitigation-looking implementation
-      looks like - what happens if the mitigation is implemented ''formally''. This
-      field sets the failure mode that the other fields are obliged to close.'
+    purpose: '1-3 sentences: what a useless-but-mitigation-looking implementation looks like - what happens if the mitigation is implemented ''formally''. This field sets the failure mode that the other fields are obliged to close.'
   scope:
-    purpose: A deterministic rule for the condition under which the mitigation applies
-      or fires, formulated through a property of the system, an operation, or an asset.
+    purpose: A deterministic rule for the condition under which the mitigation applies or fires, formulated through a property of the system, an operation, or an asset.
     content_requirements:
     - Deterministic rule - no 'by team decision' or 'by model decision'.
-    - Strictness levels, if any, set through a deterministic property (system class,
-      criticality, chain type).
-    - Profiles (same mitigation varied by a deterministic property) described here,
-      not as separate cards.
+    - Strictness levels, if any, set through a deterministic property (system class, criticality, chain type).
+    - Profiles (same mitigation varied by a deterministic property) described here, not as separate cards.
     - 'Boundary: explicitly state what is out of the mitigation''s scope.'
     avoid:
-    - Variation dictated by the team's timeline or resources - that is a temporary
-      exception in the acceptance log, not scope.
+    - Variation dictated by the team's timeline or resources - that is a temporary exception in the acceptance log, not scope.
   control_mechanism:
-    purpose: 'Read per mitigation_class: the concrete mechanism and the deterministic
-      guarantee it holds.'
+    purpose: 'Read per mitigation_class: the concrete mechanism and the deterministic guarantee it holds.'
     content_requirements:
-    - 'gating_control: the enforcement point (concrete architectural component); the
-      trust boundary at which it fires; the deterministic mechanism that guarantees
-      it cannot be bypassed. The trigger is deterministic, not at the discretion of
-      the model or a human ad hoc.'
-    - 'detector: what emits the signal (what is measured, signal quality, the budget
-      of false positives and misses); who or what deterministically responds and with
-      what SLA; which deterministic gate relies on the signal - or an explicit justification
-      that there is none. A detector does not gate by itself; the reaction gates.'
-    - 'process: the trigger for conducting it; coverage; who evaluates sufficiency
-      and by what criteria. Separate ''is X done'' from ''is X done well'' - sufficiency
-      criteria are mandatory.'
-    - 'evidential_mitigation: what is stored (event types, mandatory attributes, per-event
-      integrity anchors - ID + hash); where it is emitted (instrumentation points
-      on the platform side); the completeness guarantee (append-only, cryptographic
-      chain) that needed events are not lost or falsified.'
-    - 'corrective: the remediation action (concrete component / runbook performing
-      rollback / kill-switch / containment); the trigger (deterministic, or an explicit
-      decision authority + SLA); the deterministic guarantee it brings the system
-      to a known-good state, not a partial or ambiguous one.'
+    - 'gating_control: the enforcement point (concrete architectural component); the trust boundary at which it fires; the deterministic mechanism that guarantees it cannot be bypassed. The trigger is deterministic, not at the discretion of the model or a human ad hoc.'
+    - 'detector: what emits the signal (what is measured, signal quality, the budget of false positives and misses); who or what deterministically responds and with what SLA; which deterministic gate relies on the signal - or an explicit justification that there is none. A detector does not gate by itself; the reaction gates.'
+    - 'process: the trigger for conducting it; coverage; who evaluates sufficiency and by what criteria. Separate ''is X done'' from ''is X done well'' - sufficiency criteria are mandatory.'
+    - 'evidential_mitigation: what is stored (event types, mandatory attributes, per-event integrity anchors - ID + hash); where it is emitted (instrumentation points on the platform side); the completeness guarantee (append-only, cryptographic chain) that needed events are not lost or falsified.'
+    - 'corrective: the remediation action (concrete component / runbook performing rollback / kill-switch / containment); the trigger (deterministic, or an explicit decision authority + SLA); the deterministic guarantee it brings the system to a known-good state, not a partial or ambiguous one.'
   failure_behavior:
-    purpose: 'Read per mitigation_class: what happens when the mitigation fails, and
-      how that failure is discovered.'
+    purpose: 'Read per mitigation_class: what happens when the mitigation fails, and how that failure is discovered.'
     content_requirements:
-    - 'gating_control: fail-closed / fail-open + justification. For blocking controls
-      the default is fail-closed.'
-    - 'detector: what happens when detection fails (the detector is silent or unavailable);
-      how a ''blind'' detector is discovered.'
-    - 'process: what happens if the process is skipped or not conducted on time; how
-      this is discovered.'
-    - 'evidential_mitigation: loss of an event must not be silent - the inability
-      to log is recorded with an explicit loss marker; a break of integrity is discovered
-      automatically.'
-    - 'corrective: what happens if the corrective action itself fails or cannot complete
-      - it must fail toward a safe / contained state, not leave the system mid-remediation
-      in an ambiguous state; how a stuck or failed remediation is detected.'
+    - 'gating_control: fail-closed / fail-open + justification. For blocking controls the default is fail-closed.'
+    - 'detector: what happens when detection fails (the detector is silent or unavailable); how a ''blind'' detector is discovered.'
+    - 'process: what happens if the process is skipped or not conducted on time; how this is discovered.'
+    - 'evidential_mitigation: loss of an event must not be silent - the inability to log is recorded with an explicit loss marker; a break of integrity is discovered automatically.'
+    - 'corrective: what happens if the corrective action itself fails or cannot complete - it must fail toward a safe / contained state, not leave the system mid-remediation in an ambiguous state; how a stuck or failed remediation is detected.'
   telemetry:
-    purpose: The events that are logged, the mandatory attributes of each (including
-      attribution to a person or subject), and where the evidence is stored.
+    purpose: The events that are logged, the mandatory attributes of each (including attribution to a person or subject), and where the evidence is stored.
     content_requirements:
     - The list of events that are logged.
-    - 'Mandatory attributes of each event, including attribution: actor, initiator,
-      object, decision taken, result.'
+    - 'Mandatory attributes of each event, including attribution: actor, initiator, object, decision taken, result.'
     - Where the evidence is stored.
     avoid:
     - Duplicating attributes already in Control mechanism.
-    - Listing standard identifiers (session_id, timestamp, user_id) unless they have
-      specific requirements here.
+    - Listing standard identifiers (session_id, timestamp, user_id) unless they have specific requirements here.
   anti_patterns:
-    purpose: An explicit list of implementations that look like the mitigation but
-      are not - a clean list of 'how NOT to do it', including at minimum the 'formal'
-      variant from Risk of formal implementation.
+    purpose: An explicit list of implementations that look like the mitigation but are not - a clean list of 'how NOT to do it', including at minimum the 'formal' variant from Risk of formal implementation.
   validation:
-    purpose: Pass/fail acceptance criteria with test scenarios. Base criteria are
-      the mandatory adoption bar; additional criteria cover the mitigation's specifics.
+    purpose: Pass/fail acceptance criteria with test scenarios. Base criteria are the mandatory adoption bar; additional criteria cover the mitigation's specifics.
     content_requirements:
     - Each criterion is a pass/fail statement; if it cannot be, it is not a criterion.
-    - Each criterion checks what the others do not. Thresholds and numeric values
-      go here.
-    - 'A test scenario per criterion: a drill, a red-team case, or a reproducible
-      audit check.'
-    - Run frequency is driven by the change-triggers in Review; the calendar cadence
-      is only a safety-net.
+    - Each criterion checks what the others do not. Thresholds and numeric values go here.
+    - 'A test scenario per criterion: a drill, a red-team case, or a reproducible audit check.'
+    - Run frequency is driven by the change-triggers in Review; the calendar cadence is only a safety-net.
   review:
-    purpose: Change-triggers for revising the card + a safety-net review cadence.
-      If the safety-net run regularly finds something, the list of change-triggers
-      is incomplete.
+    purpose: Change-triggers for revising the card + a safety-net review cadence. If the safety-net run regularly finds something, the list of change-triggers is incomplete.
   locus:
-    purpose: Which layer the mitigation naturally belongs to - the product (application
-      logic) or the infrastructure/platform - with a short rationale, not a bare label
-      (the boundary is often a split). This is the shared-responsibility call.
+    purpose: Which layer the mitigation naturally belongs to - the product (application logic) or the infrastructure/platform - with a short rationale, not a bare label (the boundary is often a split). This is the shared-responsibility call.
   maintainer:
     purpose: Name + contact for operational communication.
   owner:
-    purpose: Owner-role of the mitigation; if several parties are responsible, the
-      one accountable owner of the card.
+    purpose: Owner-role of the mitigation; if several parties are responsible, the one accountable owner of the card.
   faq:
-    purpose: Short answers to questions that arise when implementing the mitigation
-      - only what is not obvious from the other sections or regularly causes divergent
-      readings.
+    purpose: Short answers to questions that arise when implementing the mitigation - only what is not obvious from the other sections or regularly causes divergent readings.

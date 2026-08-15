@@ -1,20 +1,10 @@
 id: T-SHADOW-AI
 title: Unsanctioned or excessive use of external AI tools (Shadow AI)
-description: 'Employees use external AI services outside the approved perimeter —
-  public chatbots, third-party plugins, unsanctioned IDE extensions. Organizational
-  data enters an external processing contour: corporate documents, source code, and
-  client information are sent to services not covered by DLP monitoring, not described
-  in the architecture, and not governed by data-processing agreements. Condition:
-  the client environment or employee workflows lack control over the AI tools in use
-  and filtering of data leaving the perimeter.'
+description: 'Employees use external AI services outside the approved perimeter — public chatbots, third-party plugins, unsanctioned IDE extensions. Organizational data enters an external processing contour: corporate documents, source code, and client information are sent to services not covered by DLP monitoring, not described in the architecture, and not governed by data-processing agreements. Condition: the client environment or employee workflows lack control over the AI tools in use and filtering of data leaving the perimeter.'
 impact_class: data-confidentiality
 vulnerability:
-- 'In an uncontrolled environment (client machine, employee workstation) the user
-  offloads corporate data — code, documents, client information — to external AI services
-  beyond the perimeter: public chatbots, third-party plugins, unsanctioned IDE extensions;
-  the data enters an external contour with no DLP or processing agreements.'
-reachability: NOT applicable if external AI services are technically unreachable from
-  the user's environment, or there is no corporate data in it worth offloading.
+- 'In an uncontrolled environment (client machine, employee workstation) the user offloads corporate data — code, documents, client information — to external AI services beyond the perimeter: public chatbots, third-party plugins, unsanctioned IDE extensions; the data enters an external contour with no DLP or processing agreements.'
+reachability: NOT applicable if external AI services are technically unreachable from the user's environment, or there is no corporate data in it worth offloading.
 tags: []
 mitigations:
 - mitigation_id: CTRL-EXTERNAL-AI-WARNING

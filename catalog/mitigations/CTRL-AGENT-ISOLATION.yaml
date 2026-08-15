@@ -2,43 +2,20 @@ id: CTRL-AGENT-ISOLATION
 name: Agent sandbox
 status: draft
 mitigation_class: gating_control
-purpose: Isolates the agent's execution environment within a constrained perimeter
-  with controlled access rights to resources, using containerization or system isolation
-  mechanisms to prevent it from escaping beyond the permitted boundaries. The mechanism
-  is deployed around the agent process and intercepts attempts to access the file
-  system, network, and other resources at the OS kernel or runtime level, blocking
-  unauthorized operations. This prevents compromise of the host system when an agent
-  is breached, limits the blast radius of an attack, and prevents a compromised agent
-  from gaining access to other agents' data or system resources.
+purpose: Isolates the agent's execution environment within a constrained perimeter with controlled access rights to resources, using containerization or system isolation mechanisms to prevent it from escaping beyond the permitted boundaries. The mechanism is deployed around the agent process and intercepts attempts to access the file system, network, and other resources at the OS kernel or runtime level, blocking unauthorized operations. This prevents compromise of the host system when an agent is breached, limits the blast radius of an attack, and prevents a compromised agent from gaining access to other agents' data or system resources.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Container isolation with resource limits (high): Each agent is
-  deployed in its own Docker container with explicitly set resource limits (CPU, memory,
-  I/O), a read-only file system for critical directories, and restricted capabilities.
-  Network access is regulated through separate network namespaces and firewall rules,
-  and volume access through volume policies. This gives strong isolation with relatively
-  low overhead, but it requires orchestration and lifecycle management of many containers.
+control_mechanism: 'Container isolation with resource limits (high): Each agent is deployed in its own Docker container with explicitly set resource limits (CPU, memory, I/O), a read-only file system for critical directories, and restricted capabilities. Network access is regulated through separate network namespaces and firewall rules, and volume access through volume policies. This gives strong isolation with relatively low overhead, but it requires orchestration and lifecycle management of many containers.
 
 
-  Process sandboxing via seccomp and namespaces (high): Linux namespaces, seccomp,
-  and capabilities mechanisms are used to restrict the system calls and resources
-  available to the agent process, without full containerization. The seccomp profile
-  permits only safe syscalls, and all capabilities are dropped except those explicitly
-  required for the agent''s operation. This approach gives finer-grained control than
-  containers and less overhead, but it requires privileges to configure on the host
-  and is harder to debug.
+  Process sandboxing via seccomp and namespaces (high): Linux namespaces, seccomp, and capabilities mechanisms are used to restrict the system calls and resources available to the agent process, without full containerization. The seccomp profile permits only safe syscalls, and all capabilities are dropped except those explicitly required for the agent''s operation. This approach gives finer-grained control than containers and less overhead, but it requires privileges to configure on the host and is harder to debug.
 
 
-  Micro-VM isolation (Firecracker/gVisor) (high): Agents run inside virtual machines
-  or micro-VMs (Firecracker, kata-containers), where each agent gets its own kernel
-  and a fully isolated address space. The maximum level of isolation is achieved -
-  even a kernel exploit in one agent does not grant access to others. The approach
-  is especially relevant for multi-tenant and highly critical systems, but it carries
-  significant overhead in startup and resource consumption.'
+  Micro-VM isolation (Firecracker/gVisor) (high): Agents run inside virtual machines or micro-VMs (Firecracker, kata-containers), where each agent gets its own kernel and a fully isolated address space. The maximum level of isolation is achieved - even a kernel exploit in one agent does not grant access to others. The approach is especially relevant for multi-tenant and highly critical systems, but it carries significant overhead in startup and resource consumption.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

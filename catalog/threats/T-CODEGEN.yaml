@@ -1,32 +1,20 @@
 id: T-CODEGEN
 title: Malicious code and command generation
-description: 'An internal assistant whose outputs are automatically fed into scripts,
-  CI/CD pipelines, or admin interfaces generates malicious or incorrect fragments
-  (SQL, shell, configs), triggering unwanted operations in the infrastructure.
+description: 'An internal assistant whose outputs are automatically fed into scripts, CI/CD pipelines, or admin interfaces generates malicious or incorrect fragments (SQL, shell, configs), triggering unwanted operations in the infrastructure.
 
 
-  A client-facing bot whose responses are embedded in a web interface becomes a source
-  of XSS and other attacks when it generates code/HTML/scripts, compromising the client''s
-  browser.'
+  A client-facing bot whose responses are embedded in a web interface becomes a source of XSS and other attacks when it generates code/HTML/scripts, compromising the client''s browser.'
 impact_class: infrastructure-execution
 vulnerability:
-- The agent's output reaches an executing sink (CI/CD, eval/exec, database) and runs
-  without sanitization/review; vulnerable code arises via injection into the input
-  or the model reproducing insecure patterns.
-- The agent's output is rendered as HTML/Markdown in the user UI without escaping
-  — the generated markup executes in the browser (XSS).
-- Code is assembled from free-form text that arrived in a tool's output (indirect
-  injection) and goes on to execution/render.
-- Output is passed to a tool that accepts and executes arbitrary input (shell/eval),
-  with no "text" vs "command" separation.
-reachability: NOT applicable if the agent's output is text for a human only — not
-  executed and not rendered as active content — and there is no tool that executes
-  arbitrary input.
+- The agent's output reaches an executing sink (CI/CD, eval/exec, database) and runs without sanitization/review; vulnerable code arises via injection into the input or the model reproducing insecure patterns.
+- The agent's output is rendered as HTML/Markdown in the user UI without escaping — the generated markup executes in the browser (XSS).
+- Code is assembled from free-form text that arrived in a tool's output (indirect injection) and goes on to execution/render.
+- Output is passed to a tool that accepts and executes arbitrary input (shell/eval), with no "text" vs "command" separation.
+reachability: NOT applicable if the agent's output is text for a human only — not executed and not rendered as active content — and there is no tool that executes arbitrary input.
 tags: []
 mitigations:
 - mitigation_id: CTRL-AI-CODE-REVIEW
-  rationale: 'Security review of AI-generated code produced under the influence of
-    external content
+  rationale: 'Security review of AI-generated code produced under the influence of external content
 
 
     Elevated security review for AI-generated code
@@ -42,23 +30,18 @@ mitigations:
 
     Isolated execution of generated code prevents damage to the host system'
 - mitigation_id: CTRL-CONTENT-STRIPPING
-  rationale: Indirect injection via external/free-form content is the vector for this
-    threat; stripping hidden instructions reduces the likelihood (soft).
+  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
 - mitigation_id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  rationale: Indirect injection via external content is the vector for this threat;
-    isolating external content limits its impact.
+  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
 - mitigation_id: CTRL-INPUT-FILTERING
-  rationale: Filtering tool output before adding it to context prevents malicious
-    instructions from influencing code generation
+  rationale: Filtering tool output before adding it to context prevents malicious instructions from influencing code generation
 - mitigation_id: CTRL-OUTPUT-ENCODING
   rationale: 'Output encoding prevents XSS when rendering HTML/Markdown
 
 
-    Output encoding prevents XSS when rendering HTML/Markdown containing malicious
-    data from tools'
+    Output encoding prevents XSS when rendering HTML/Markdown containing malicious data from tools'
 - mitigation_id: CTRL-OUTPUT-VALIDATION
-  rationale: 'Output validation before rendering blocks malicious content from tool
-    output
+  rationale: 'Output validation before rendering blocks malicious content from tool output
 
 
     Scanning output for secrets
@@ -72,11 +55,9 @@ mitigations:
 
     Checking generated code for safety before execution'
 - mitigation_id: CTRL-PROMPT-HARDENING
-  rationale: Injection is the vector for this threat; structural prompt isolation
-    makes overriding instructions harder (soft).
+  rationale: Injection is the vector for this threat; structural prompt isolation makes overriding instructions harder (soft).
 - mitigation_id: CTRL-SECURITY-GATES
-  rationale: 'SAST/DAST checks in CI detect injection vulnerabilities in generated
-    code
+  rationale: 'SAST/DAST checks in CI detect injection vulnerabilities in generated code
 
 
     SAST/DAST checks in CI

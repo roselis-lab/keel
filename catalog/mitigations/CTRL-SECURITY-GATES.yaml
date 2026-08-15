@@ -2,34 +2,20 @@ id: CTRL-SECURITY-GATES
 name: Mandatory Security Gates in CI
 status: draft
 mitigation_class: gating_control
-purpose: Enforces mandatory automated security checks on every PR and commit — SAST,
-  DAST, SCA, secret scanning, IaC scanning — with merge blocking on failed checks
-  and mandatory review for diffs with a high proportion of AI-generated code, preventing
-  vulnerabilities from entering the codebase. The mechanism operates at the CI/CD
-  pipeline level and is a mandatory gate before merge. This ensures a consistent security
-  baseline for all code, detects vulnerabilities at the earliest stage, and imposes
-  elevated requirements on AI-generated code.
+purpose: Enforces mandatory automated security checks on every PR and commit — SAST, DAST, SCA, secret scanning, IaC scanning — with merge blocking on failed checks and mandatory review for diffs with a high proportion of AI-generated code, preventing vulnerabilities from entering the codebase. The mechanism operates at the CI/CD pipeline level and is a mandatory gate before merge. This ensures a consistent security baseline for all code, detects vulnerabilities at the earliest stage, and imposes elevated requirements on AI-generated code.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'SAST pipeline (medium): Static code analysis on every commit surfaces
-  security vulnerabilities, code quality issues, and compliance violations. Tools:
-  Semgrep, CodeQL, SonarQube. Failed checks block merge. Trade-off: false positives
-  require triage.
+control_mechanism: 'SAST pipeline (medium): Static code analysis on every commit surfaces security vulnerabilities, code quality issues, and compliance violations. Tools: Semgrep, CodeQL, SonarQube. Failed checks block merge. Trade-off: false positives require triage.
 
 
-  Secret scanning (low): Secret-scanning detectors check code and configurations for
-  credentials, API keys, passwords. Detected secrets block merge and require rotation.
-  Tools: Gitleaks, TruffleHog, GitGuardian. Trade-off: does not catch obfuscated secrets.
+  Secret scanning (low): Secret-scanning detectors check code and configurations for credentials, API keys, passwords. Detected secrets block merge and require rotation. Tools: Gitleaks, TruffleHog, GitGuardian. Trade-off: does not catch obfuscated secrets.
 
 
-  Flagging AI diffs for enhanced review (medium): PRs with a high percentage of AI-generated
-  code are automatically flagged for increased scrutiny. Reviewers see an indicator
-  of the AI-content proportion. Sensitive areas (authentication, cryptography) require
-  an explicit security review.'
+  Flagging AI diffs for enhanced review (medium): PRs with a high percentage of AI-generated code are automatically flagged for increased scrutiny. Reviewers see an indicator of the AI-content proportion. Sensitive areas (authentication, cryptography) require an explicit security review.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

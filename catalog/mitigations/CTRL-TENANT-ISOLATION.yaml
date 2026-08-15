@@ -2,31 +2,20 @@ id: CTRL-TENANT-ISOLATION
 name: Tenant Isolation
 status: draft
 mitigation_class: gating_control
-purpose: Enforces strict data isolation between tenants in multi-tenant systems through
-  row-level security, ABAC policies, and filtering by tenant identifier at all data
-  access layers, preventing data leakage between tenants. The mechanism operates at
-  the database, application, and cache layers. This guarantees that each tenant has
-  access only to its own data, prevents accidental disclosure of data between customers,
-  and ensures compliance with data isolation requirements.
+purpose: Enforces strict data isolation between tenants in multi-tenant systems through row-level security, ABAC policies, and filtering by tenant identifier at all data access layers, preventing data leakage between tenants. The mechanism operates at the database, application, and cache layers. This guarantees that each tenant has access only to its own data, prevents accidental disclosure of data between customers, and ensures compliance with data isolation requirements.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Enforcement of row-level security (high): Database row-level security
-  policies automatically filter all queries by tenant identifier from the session
-  context. Even direct database access or SQL injection cannot bypass tenant boundaries.
+control_mechanism: 'Enforcement of row-level security (high): Database row-level security policies automatically filter all queries by tenant identifier from the session context. Even direct database access or SQL injection cannot bypass tenant boundaries.
 
 
-  Tenant filtering at the application layer (medium): ABAC policies at the application
-  layer check the tenant context on every data access request. The tenant identifier
-  is validated against the authenticated user''s membership in the tenant.
+  Tenant filtering at the application layer (medium): ABAC policies at the application layer check the tenant context on every data access request. The tenant identifier is validated against the authenticated user''s membership in the tenant.
 
 
-  Tenant-scoped caching (medium): Cache namespaces are partitioned by tenant identifier
-  - cached data is isolated between tenants. Cache keys mandatorily include the tenant
-  identifier.'
+  Tenant-scoped caching (medium): Cache namespaces are partitioned by tenant identifier - cached data is isolated between tenants. Cache keys mandatorily include the tenant identifier.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -2,38 +2,20 @@ id: CTRL-EXTERNAL-CONTENT-SANDBOX
 name: External Content Sandbox
 status: draft
 mitigation_class: gating_control
-purpose: Isolates the processing of external content — documents, HTML pages, RSS
-  feeds, API responses — in a sandboxed environment before inclusion in the model
-  context, preventing indirect prompt injection and code execution through malicious
-  content. The mechanism deploys the external content processing pipeline in an isolated
-  enclosure with restricted privileges and validates/sanitizes content before passing
-  it onward. This blocks injection attacks through embedded scripts, prevents data
-  exfiltration through malicious network requests, and ensures safe handling of untrusted
-  content.
+purpose: Isolates the processing of external content — documents, HTML pages, RSS feeds, API responses — in a sandboxed environment before inclusion in the model context, preventing indirect prompt injection and code execution through malicious content. The mechanism deploys the external content processing pipeline in an isolated enclosure with restricted privileges and validates/sanitizes content before passing it onward. This blocks injection attacks through embedded scripts, prevents data exfiltration through malicious network requests, and ensures safe handling of untrusted content.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Strict CORS isolation (low): External content is loaded and processed
-  in an isolated context with strict CORS policies — only same-origin requests or
-  explicitly whitelisted domains. JavaScript execution is disabled while parsing HTML.
-  This prevents script execution and unauthorized data exfiltration but may break
-  legitimate embedded content.
+control_mechanism: 'Strict CORS isolation (low): External content is loaded and processed in an isolated context with strict CORS policies — only same-origin requests or explicitly whitelisted domains. JavaScript execution is disabled while parsing HTML. This prevents script execution and unauthorized data exfiltration but may break legitimate embedded content.
 
 
-  Content Security Policy enforcement (medium): Content Security Policy headers are
-  applied to all responses containing external content: inline scripts, eval, and
-  data URIs are forbidden. The CSP also restricts connect-src to prevent exfiltration.
-  This gives a declarative security policy but requires careful configuration so as
-  not to break legitimate functionality.
+  Content Security Policy enforcement (medium): Content Security Policy headers are applied to all responses containing external content: inline scripts, eval, and data URIs are forbidden. The CSP also restricts connect-src to prevent exfiltration. This gives a declarative security policy but requires careful configuration so as not to break legitimate functionality.
 
 
-  Offline processing container (high): External content is processed in an isolated
-  process or container without network access. Content parsing and extraction happen
-  offline, after which the extracted text is sanitized and passed to the main process.
-  This gives strong isolation but adds latency from process spawning.'
+  Offline processing container (high): External content is processed in an isolated process or container without network access. Content parsing and extraction happen offline, after which the extracted text is sanitized and passed to the main process. This gives strong isolation but adds latency from process spawning.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

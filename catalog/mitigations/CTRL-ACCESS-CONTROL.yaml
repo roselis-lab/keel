@@ -2,44 +2,20 @@ id: CTRL-ACCESS-CONTROL
 name: Per-operation access control
 status: draft
 mitigation_class: gating_control
-purpose: Verifies a user's or agent's authorization to perform each operation before
-  it is actually executed, relying on pre-configured access policies and permission
-  matrices. The mechanism operates at the boundary between the incoming request and
-  the execution environment, blocking attempts to carry out actions that fall outside
-  the subject's assigned roles or attributes. This prevents unauthorized use of sensitive
-  functions, access to other parties' data, and privilege escalation through misconfigured
-  or missing checks.
+purpose: Verifies a user's or agent's authorization to perform each operation before it is actually executed, relying on pre-configured access policies and permission matrices. The mechanism operates at the boundary between the incoming request and the execution environment, blocking attempts to carry out actions that fall outside the subject's assigned roles or attributes. This prevents unauthorized use of sensitive functions, access to other parties' data, and privilege escalation through misconfigured or missing checks.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'RBAC operation matrix (medium): Each user or agent is assigned
-  a role from a fixed set, and each operation in the system is bound to one or more
-  roles through a permission matrix. Before a request is executed, middleware or a
-  policy engine checks whether the current subject holds a role that permits the given
-  operation on the given resource. This approach is simple to implement and audit,
-  but it requires manual updates to the matrix whenever new roles or operations appear,
-  which makes it less flexible in rapidly changing systems.
+control_mechanism: 'RBAC operation matrix (medium): Each user or agent is assigned a role from a fixed set, and each operation in the system is bound to one or more roles through a permission matrix. Before a request is executed, middleware or a policy engine checks whether the current subject holds a role that permits the given operation on the given resource. This approach is simple to implement and audit, but it requires manual updates to the matrix whenever new roles or operations appear, which makes it less flexible in rapidly changing systems.
 
 
-  ABAC with attribute-based policies (high): Access is determined dynamically based
-  on attributes of the subject (department, clearance level), the resource (confidentiality
-  label, owner), and the context (time, IP address). Policies are described declaratively
-  and can account for complex conditions, for example "allow access to a document
-  only if the subject and resource belong to the same department and the subject''s
-  trust level is no lower than the document''s level". This approach scales better
-  than RBAC, but it requires a mature attribute infrastructure and a more complex
-  policy engine.
+  ABAC with attribute-based policies (high): Access is determined dynamically based on attributes of the subject (department, clearance level), the resource (confidentiality label, owner), and the context (time, IP address). Policies are described declaratively and can account for complex conditions, for example "allow access to a document only if the subject and resource belong to the same department and the subject''s trust level is no lower than the document''s level". This approach scales better than RBAC, but it requires a mature attribute infrastructure and a more complex policy engine.
 
 
-  Policy-as-Code with OPA (high): Access policies are described in the Rego language
-  and loaded into Open Policy Agent, which is embedded into services as a sidecar
-  or runs as a separate decision point. On each request the service sends the context
-  to OPA and receives an allow or deny decision. This makes it possible to manage
-  policies centrally, version them, and test them before rollout, as well as to easily
-  integrate complex logical conditions without changing the application code.'
+  Policy-as-Code with OPA (high): Access policies are described in the Rego language and loaded into Open Policy Agent, which is embedded into services as a sidecar or runs as a separate decision point. On each request the service sends the context to OPA and receives an allow or deny decision. This makes it possible to manage policies centrally, version them, and test them before rollout, as well as to easily integrate complex logical conditions without changing the application code.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

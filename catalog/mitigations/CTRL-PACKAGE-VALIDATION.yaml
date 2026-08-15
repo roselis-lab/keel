@@ -2,36 +2,20 @@ id: CTRL-PACKAGE-VALIDATION
 name: Package Validation Before Installation
 status: draft
 mitigation_class: gating_control
-purpose: Verifies a package's existence in the registry and assesses its reputation
-  before allowing installation, intercepting install commands from an LLM/agent and
-  blocking non-existent or suspicious packages to defend against typosquatting and
-  slopsquatting attacks. The mechanism operates at the command interception level
-  and checks every install request against package data. This prevents installation
-  of malicious packages, blocks dependency confusion attacks, and provides visibility
-  into the package acquisition process.
+purpose: Verifies a package's existence in the registry and assesses its reputation before allowing installation, intercepting install commands from an LLM/agent and blocking non-existent or suspicious packages to defend against typosquatting and slopsquatting attacks. The mechanism operates at the command interception level and checks every install request against package data. This prevents installation of malicious packages, blocks dependency confusion attacks, and provides visibility into the package acquisition process.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Registry API query (low): Before allowing an install command,
-  the system makes an API call to the package registry (npm, PyPI, Maven Central)
-  to confirm that the package exists and its metadata matches the request. Non-existent
-  packages are blocked with a warning. This is a simple but effective defense against
-  hallucinated package names.
+control_mechanism: 'Registry API query (low): Before allowing an install command, the system makes an API call to the package registry (npm, PyPI, Maven Central) to confirm that the package exists and its metadata matches the request. Non-existent packages are blocked with a warning. This is a simple but effective defense against hallucinated package names.
 
 
-  Package reputation scoring (medium): For each requested package, the system gathers
-  reputation metrics: download counts, GitHub stars, maintainer history, security
-  advisories, dependency health. Packages with poor reputation (new, few downloads,
-  unknown maintainer, signs of typosquatting) require additional approval.
+  Package reputation scoring (medium): For each requested package, the system gathers reputation metrics: download counts, GitHub stars, maintainer history, security advisories, dependency health. Packages with poor reputation (new, few downloads, unknown maintainer, signs of typosquatting) require additional approval.
 
 
-  Install command interception (medium): LLM output is parsed for install commands
-  via regular expressions or structured output parsing. Detected commands are intercepted
-  and validated before execution. This prevents automatic execution of untrusted install
-  commands but can be bypassed via obfuscation.'
+  Install command interception (medium): LLM output is parsed for install commands via regular expressions or structured output parsing. Detected commands are intercepted and validated before execution. This prevents automatic execution of untrusted install commands but can be bypassed via obfuscation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

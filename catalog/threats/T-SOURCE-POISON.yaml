@@ -1,51 +1,30 @@
 id: T-SOURCE-POISON
 title: Trusted-source integrity compromise (poisoning)
-description: 'An attacker corrupts a source the agent trusts on read — the RAG corpus,
-  shared memory, a tool''s output, or an entry in an agent registry. The tainted content
-  becomes part of the trusted context and systematically distorts every response and
-  decision that relies on it. The source of error is in the trusted data layer, not
-  the model: the model formally works correctly, but on compromised facts. The poisoning
-  is persistent, replicated on every request, and propagates along the chain of dependent
-  agents until detected and removed manually.'
+description: 'An attacker corrupts a source the agent trusts on read — the RAG corpus, shared memory, a tool''s output, or an entry in an agent registry. The tainted content becomes part of the trusted context and systematically distorts every response and decision that relies on it. The source of error is in the trusted data layer, not the model: the model formally works correctly, but on compromised facts. The poisoning is persistent, replicated on every request, and propagates along the chain of dependent agents until detected and removed manually.'
 impact_class: decision-integrity
 vulnerability:
-- The RAG corpus is populated from a source with no provenance verification (open
-  ingestion, SEO indexing, free-form text from a tool's output); a poisoned document
-  is cited by the agent as authoritative.
-- The shared memory of a multi-agent system is writable without verification; poisoned
-  data persistently affects all subsequent decisions until removed manually.
-- A tool/MCP server is connected via a dynamic registry or a third party without integrity
-  and authenticity verification; a substituted tool or a compromised MCP returns false
-  data, and its description may carry a hidden injection for the model.
-- The agent is discovered/connected through a registry without authentication; a malicious
-  or compromised peer agent supplies false results into the chain.
-- An in-process tool or agent shares the address space with the agent with no isolation
-  boundary; compromise gives full access to its context and memory.
-- In a multi-agent chain, one node's tainted output is accepted by the next as trusted
-  and amplified at each step (cascade).
-reachability: NOT applicable if no source influencing the outputs is reachable for
-  write or substitution by the adversary (corpus, memory, tool and agent registries
-  closed to external write), or the agent relies on no external sources at all.
+- The RAG corpus is populated from a source with no provenance verification (open ingestion, SEO indexing, free-form text from a tool's output); a poisoned document is cited by the agent as authoritative.
+- The shared memory of a multi-agent system is writable without verification; poisoned data persistently affects all subsequent decisions until removed manually.
+- A tool/MCP server is connected via a dynamic registry or a third party without integrity and authenticity verification; a substituted tool or a compromised MCP returns false data, and its description may carry a hidden injection for the model.
+- The agent is discovered/connected through a registry without authentication; a malicious or compromised peer agent supplies false results into the chain.
+- An in-process tool or agent shares the address space with the agent with no isolation boundary; compromise gives full access to its context and memory.
+- In a multi-agent chain, one node's tainted output is accepted by the next as trusted and amplified at each step (cascade).
+reachability: NOT applicable if no source influencing the outputs is reachable for write or substitution by the adversary (corpus, memory, tool and agent registries closed to external write), or the agent relies on no external sources at all.
 tags: []
 mitigations:
 - mitigation_id: CTRL-AGENT-AUTHENTICATION
-  rationale: Agent authentication at registration prevents substitution with malicious
-    agents
+  rationale: Agent authentication at registration prevents substitution with malicious agents
 - mitigation_id: CTRL-AGENT-ISOLATION
-  rationale: 'Isolating a compromised agent in a sandbox limits its impact on the
-    system
+  rationale: 'Isolating a compromised agent in a sandbox limits its impact on the system
 
 
-    Sandbox isolation limits the consequences of an in-process tool compromise by
-    denying it access to the agent''s memory'
+    Sandbox isolation limits the consequences of an in-process tool compromise by denying it access to the agent''s memory'
 - mitigation_id: CTRL-AGENT-REGISTRY
-  rationale: A trusted agent registry with verification prevents registration of malicious
-    agents
+  rationale: A trusted agent registry with verification prevents registration of malicious agents
 - mitigation_id: CTRL-CODE-SANDBOX
   rationale: Isolating tool code in a sandbox limits the consequences of compromise
 - mitigation_id: CTRL-CONTENT-STRIPPING
-  rationale: Indirect injection via external/free-form content is the vector for this
-    threat; stripping hidden instructions reduces the likelihood (soft).
+  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
 - mitigation_id: CTRL-CROSS-AGENT-REVIEW
   rationale: 'Cross-checking results between agents reveals contradictions and errors
 
@@ -57,22 +36,18 @@ mitigations:
 
     Monitoring of outbound data through MCP'
 - mitigation_id: CTRL-DATA-VALIDATION
-  rationale: 'Validating data from tool output before indexing it into RAG prevents
-    ingestion of malicious content
+  rationale: 'Validating data from tool output before indexing it into RAG prevents ingestion of malicious content
 
 
-    Validating documents before indexing them into RAG prevents ingestion of malicious
-    content'
+    Validating documents before indexing them into RAG prevents ingestion of malicious content'
 - mitigation_id: CTRL-EXTENSION-RIGHTS
   rationale: Least privilege for extensions
 - mitigation_id: CTRL-EXTENSION-SANDBOX
   rationale: Isolation of extensions
 - mitigation_id: CTRL-EXTENSION-UPDATE-CONTROL
-  rationale: Controlling IDE extension updates prevents automatic installation of
-    malicious updates
+  rationale: Controlling IDE extension updates prevents automatic installation of malicious updates
 - mitigation_id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  rationale: Indirect injection via external content is the vector for this threat;
-    isolating external content limits its impact.
+  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
 - mitigation_id: CTRL-IDE-EXTENSION-ALLOWLIST
   rationale: Only approved extensions
 - mitigation_id: CTRL-INTEGRITY-VERIFICATION
@@ -92,17 +67,14 @@ mitigations:
 - mitigation_id: CTRL-PROMPT-HARDENING
   rationale: Hardening the system prompt against injection
 - mitigation_id: CTRL-RAG-INTEGRITY
-  rationale: 'Integrity control of the RAG knowledge base through hashing and document
-    signatures
+  rationale: 'Integrity control of the RAG knowledge base through hashing and document signatures
 
 
-    Integrity control of the RAG knowledge base through hashing and signatures of
-    documents from tool output'
+    Integrity control of the RAG knowledge base through hashing and signatures of documents from tool output'
 - mitigation_id: CTRL-TOOL-DESCRIPTION-AUDIT
   rationale: Auditing descriptions for instructions aimed at the model
 - mitigation_id: CTRL-TOOL-REGISTRY-INTEGRITY
-  rationale: An immutable binding in the tool registry precludes substitution during
-    dynamic binding resolution
+  rationale: An immutable binding in the tool registry precludes substitution during dynamic binding resolution
 - mitigation_id: CTRL-TOOL-VERIFICATION
   rationale: 'Verification of tools from the registry before first use
 

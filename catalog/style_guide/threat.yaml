@@ -10,15 +10,12 @@ fields:
     - Abstract descriptions without specifics
     - Repeating the title
     examples:
-    - 'Direct prompt injection: an attacker embeds malicious instructions through
-      user input, which the model executes as its own'
+    - 'Direct prompt injection: an attacker embeds malicious instructions through user input, which the model executes as its own'
   impact_class:
-    purpose: An anchor asset that keeps the catalog impact-centric. It names WHICH
-      asset is compromised, not how. A strict, closed, minimal vocabulary.
+    purpose: An anchor asset that keeps the catalog impact-centric. It names WHICH asset is compromised, not how. A strict, closed, minimal vocabulary.
     content_requirements:
     - Exactly one value from the closed vocabulary.
-    - Chosen by asset/damage, NOT by cause (injection/poisoning is a vector, not an
-      impact_class).
+    - Chosen by asset/damage, NOT by cause (injection/poisoning is a vector, not an impact_class).
     avoid:
     - cataloging the cause (injection/poisoning) as an impact_class
     - introducing a new value without a deliberate revision of the taxonomy
@@ -30,22 +27,15 @@ fields:
       reputation-compliance: harmful content → reputation/legal
       recon-exposure: leak of technical information that enables an attack
   reachability:
-    purpose: 'Carve-outs: when the pattern is NOT a live path, even if it matched.
-      Pure reachability + asset materiality, on the UN-MITIGATED architecture. NOT
-      "whether a mitigation is implemented".'
+    purpose: 'Carve-outs: when the pattern is NOT a live path, even if it matched. Pure reachability + asset materiality, on the UN-MITIGATED architecture. NOT "whether a mitigation is implemented".'
     content_requirements:
     - 'Formulate as exceptions: "NOT applicable if ...".'
-    - Only reachability (the attacker cannot influence the input / the surface is
-      not exposed) and materiality (there is no valuable asset/privileges behind the
-      pattern).
+    - Only reachability (the attacker cannot influence the input / the surface is not exposed) and materiality (there is no valuable asset/privileges behind the pattern).
     - Assessed on the architecture BEFORE mitigations.
     avoid:
-    - re-negating the weakness ("if parameterized") - that is a self-check against
-      vulnerability, not a carve-out
-    - the positive "applicable if..." - it is tautological with the presence of a
-      vulnerability
-    - treating the presence of a control as a reason for non-applicability (that is
-      risk reduction, a separate step)
+    - re-negating the weakness ("if parameterized") - that is a self-check against vulnerability, not a carve-out
+    - the positive "applicable if..." - it is tautological with the presence of a vulnerability
+    - treating the presence of a control as a reason for non-applicability (that is risk reduction, a separate step)
     - vague conditions of the form "if the system uses AI"
   title:
     purpose: Short name for the UI
@@ -61,26 +51,16 @@ fields:
     - Data theft via a tool
     - Knowledge base poisoning
   vulnerability:
-    purpose: 'A list of vulnerabilities - HOW the system is exploitable (an umbrella
-      over steps 2/5/6 of the skill: cause + interaction point + predisposing weakness).
-      System-agnostic. This is the ONLY basis for recognition - each item must read
-      as a pattern that an assessor will recognize on a system they are seeing for
-      the first time.'
+    purpose: 'A list of vulnerabilities - HOW the system is exploitable (an umbrella over steps 2/5/6 of the skill: cause + interaction point + predisposing weakness). System-agnostic. This is the ONLY basis for recognition - each item must read as a pattern that an assessor will recognize on a system they are seeing for the first time.'
     content_requirements:
     - 'A list: each item is ONE recognizable exploitable pattern (one point of manifestation/configuration).'
-    - 'In each item, bring together: the cause (how the harmful output arises; injection/hallucination
-      is a given), WHERE it manifests (the interaction point in recognition terms),
-      and the weakness that makes it exploitable.'
-    - List ALL points of manifestation - completeness = coverage; cross-check against
-      the cases. A missing item = a missed scenario.
-    - List the points themselves, NOT their combinations (the Cartesian product) -
-      linking them into a scenario is done by the assessor (step 7).
+    - 'In each item, bring together: the cause (how the harmful output arises; injection/hallucination is a given), WHERE it manifests (the interaction point in recognition terms), and the weakness that makes it exploitable.'
+    - List ALL points of manifestation - completeness = coverage; cross-check against the cases. A missing item = a missed scenario.
+    - List the points themselves, NOT their combinations (the Cartesian product) - linking them into a scenario is done by the assessor (step 7).
     instructions:
-    - 'Length as required for sufficiency: an expert reading only the vulnerability
-      should be able to recognize the pattern on an unfamiliar system.'
+    - 'Length as required for sufficiency: an expert reading only the vulnerability should be able to recognize the pattern on an unfamiliar system.'
     avoid:
     - relying on "the model should not behave that way" as a guarantee
-    - a reachability/materiality condition (unreachable, no asset) - that is reachability,
-      not here
+    - a reachability/materiality condition (unreachable, no asset) - that is reachability, not here
     - restating the impact (that is description)
     - listing mitigations
