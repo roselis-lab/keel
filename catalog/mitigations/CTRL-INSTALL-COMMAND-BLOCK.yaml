@@ -2,39 +2,20 @@ id: CTRL-INSTALL-COMMAND-BLOCK
 name: Blocking Automatic Install Commands
 status: draft
 mitigation_class: gating_control
-purpose: Blocks the automatic execution of LLM-generated install commands without
-  prior verification of the package in the registry, reputation checks, and user confirmation,
-  preventing supply chain attacks through malicious packages and typosquatting. The
-  mechanism operates at the command execution layer and intercepts install commands
-  (npm install, pip install, apt-get) before execution. This prevents the installation
-  of malicious packages, protects against typosquatting attacks where the model generates
-  similar but malicious package names, and ensures human oversight for dependency
-  additions.
+purpose: Blocks the automatic execution of LLM-generated install commands without prior verification of the package in the registry, reputation checks, and user confirmation, preventing supply chain attacks through malicious packages and typosquatting. The mechanism operates at the command execution layer and intercepts install commands (npm install, pip install, apt-get) before execution. This prevents the installation of malicious packages, protects against typosquatting attacks where the model generates similar but malicious package names, and ensures human oversight for dependency additions.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Install command blocklist (low): A blocklist of install commands
-  (npm install, pip install, yarn add, apt-get install, etc.) that cannot be executed
-  directly by the agent. When execution of a blocked command is attempted, the system
-  shows the user information about the command and requires explicit approval. This
-  prevents automatic installation but can be bypassed through aliases or alternative
-  package managers.
+control_mechanism: 'Install command blocklist (low): A blocklist of install commands (npm install, pip install, yarn add, apt-get install, etc.) that cannot be executed directly by the agent. When execution of a blocked command is attempted, the system shows the user information about the command and requires explicit approval. This prevents automatic installation but can be bypassed through aliases or alternative package managers.
 
 
-  Package reputation check (medium): The system checks the requested package in the
-  registry and collects metadata: download count, GitHub stars, maintainer history,
-  security advisories, known vulnerabilities. Packages with suspicious characteristics
-  (new, low downloads, unknown maintainer, typosquatting patterns) require additional
-  review. This gives informed decision context but adds latency.
+  Package reputation check (medium): The system checks the requested package in the registry and collects metadata: download count, GitHub stars, maintainer history, security advisories, known vulnerabilities. Packages with suspicious characteristics (new, low downloads, unknown maintainer, typosquatting patterns) require additional review. This gives informed decision context but adds latency.
 
 
-  Allowlist for verified packages (medium): Instead of block-all, an allowlist of
-  verified packages that can be installed without confirmation is defined. Packages
-  outside the allowlist require an explicit approval process with security review.
-  This balances security with developer productivity but requires ongoing curation.'
+  Allowlist for verified packages (medium): Instead of block-all, an allowlist of verified packages that can be installed without confirmation is defined. Packages outside the allowlist require an explicit approval process with security review. This balances security with developer productivity but requires ongoing curation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

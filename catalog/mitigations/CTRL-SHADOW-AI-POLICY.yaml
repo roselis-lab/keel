@@ -2,34 +2,20 @@ id: CTRL-SHADOW-AI-POLICY
 name: Policy for Use of External AI Services
 status: draft
 mitigation_class: gating_control
-purpose: Defines a corporate policy for the use of external AI services with explicit
-  allowlisting of approved services, categorization of data permitted for external
-  processing, and an approval process for new services, preventing shadow IT and uncontrolled
-  data disclosure. The mechanism operates at the level of policy enforcement and user
-  training. This provides governance over the use of AI tools, protects against accidental
-  data leakage through unauthorized services, and establishes clear guidelines for
-  employees.
+purpose: Defines a corporate policy for the use of external AI services with explicit allowlisting of approved services, categorization of data permitted for external processing, and an approval process for new services, preventing shadow IT and uncontrolled data disclosure. The mechanism operates at the level of policy enforcement and user training. This provides governance over the use of AI tools, protects against accidental data leakage through unauthorized services, and establishes clear guidelines for employees.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Allowlist of AI services (medium): An explicit allowlist of external
-  AI services is maintained with documented security assessments, data handling practices,
-  and compliance status. Services not on the list are prohibited for use with business
-  data. The list is regularly reviewed and updated.
+control_mechanism: 'Allowlist of AI services (medium): An explicit allowlist of external AI services is maintained with documented security assessments, data handling practices, and compliance status. Services not on the list are prohibited for use with business data. The list is regularly reviewed and updated.
 
 
-  Data category classification (low): The policy defines which categories of data
-  may be processed by external AI: public data - yes, internal documents with approval,
-  personal data and secrets - no. The classification framework helps users make correct
-  decisions.
+  Data category classification (low): The policy defines which categories of data may be processed by external AI: public data - yes, internal documents with approval, personal data and secrets - no. The classification framework helps users make correct decisions.
 
 
-  Approval process for new services (medium): The approval request process for new
-  AI services includes a security assessment, privacy review, and legal compliance
-  check. A self-service form with automatic routing to the appropriate approvers.'
+  Approval process for new services (medium): The approval request process for new AI services includes a security assessment, privacy review, and legal compliance check. A self-service form with automatic routing to the appropriate approvers.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

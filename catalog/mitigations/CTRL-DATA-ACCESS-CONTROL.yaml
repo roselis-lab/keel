@@ -2,41 +2,20 @@ id: CTRL-DATA-ACCESS-CONTROL
 name: Data-level access control
 status: draft
 mitigation_class: gating_control
-purpose: Manages the access rights of agents and tools to data sources at the level
-  of individual fields, records, and operations, enforcing the principle of least
-  privilege and preventing unauthorized access to sensitive information. The mechanism
-  is deployed as an authorization layer between the agent or tool and the data sources
-  - databases, APIs, file storage - checking each request against access policies.
-  This prevents mass data exfiltration, limits exposure in the event of compromise,
-  and ensures tenant isolation in multi-tenant systems through row- and column-level
-  security.
+purpose: Manages the access rights of agents and tools to data sources at the level of individual fields, records, and operations, enforcing the principle of least privilege and preventing unauthorized access to sensitive information. The mechanism is deployed as an authorization layer between the agent or tool and the data sources - databases, APIs, file storage - checking each request against access policies. This prevents mass data exfiltration, limits exposure in the event of compromise, and ensures tenant isolation in multi-tenant systems through row- and column-level security.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Row-level security in the database (medium): At the database level,
-  row-level security (RLS) is configured, where each query is automatically filtered
-  by the tenant or user identifier from the session context. An agent or tool cannot
-  reach another tenant''s data even with a direct SQL injection - the database engine
-  enforces the filter. This gives the strongest isolation, but it requires thorough
-  testing of RLS policies for coverage.
+control_mechanism: 'Row-level security in the database (medium): At the database level, row-level security (RLS) is configured, where each query is automatically filtered by the tenant or user identifier from the session context. An agent or tool cannot reach another tenant''s data even with a direct SQL injection - the database engine enforces the filter. This gives the strongest isolation, but it requires thorough testing of RLS policies for coverage.
 
 
-  Data masking and tokenization (medium): Sensitive fields (salary, SSN/SNILS, medical
-  records) are masked or tokenized at the data access layer. The agent receives only
-  masked values (***123) or tokens without access to the plaintext. When access to
-  the plaintext is required for specific business operations, an additional confirmation
-  process is applied. This protects against accidental exposure, but it limits the
-  agent''s functionality.
+  Data masking and tokenization (medium): Sensitive fields (salary, SSN/SNILS, medical records) are masked or tokenized at the data access layer. The agent receives only masked values (***123) or tokens without access to the plaintext. When access to the plaintext is required for specific business operations, an additional confirmation process is applied. This protects against accidental exposure, but it limits the agent''s functionality.
 
 
-  Fine-grained permissions for each agent or tool (medium): For each tool or agent,
-  a minimal set of permitted operations on the data is defined: read-only for certain
-  tables, no access to sensitive columns, write-only to audit tables. The policy engine
-  checks each data access request against the permissions and blocks violations. This
-  enforces the principle of least privilege at the data level.'
+  Fine-grained permissions for each agent or tool (medium): For each tool or agent, a minimal set of permitted operations on the data is defined: read-only for certain tables, no access to sensitive columns, write-only to audit tables. The policy engine checks each data access request against the permissions and blocks violations. This enforces the principle of least privilege at the data level.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -37,7 +37,11 @@ _MITIGATION_KEYS = {
 
 
 def _dump(data: Any) -> str:
-    return yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    # width kept effectively unlimited so prose values stay one-per-line instead of
+    # being hard-wrapped at ~80 cols (noisy diffs, and just annoying to read).
+    return yaml.dump(
+        data, allow_unicode=True, default_flow_style=False, sort_keys=False, width=1_000_000
+    )
 
 
 async def export_catalog(

@@ -2,31 +2,20 @@ id: CTRL-SUPPLY-CHAIN-SCANNING
 name: Supply Chain Scanning and SCA
 status: draft
 mitigation_class: detector
-purpose: Performs SCA scanning of dependencies on every PR with detection of new packages,
-  alerts on nonexistent or suspicious packages and typosquatting variants, providing
-  continuous monitoring of supply chain risks. The mechanism operates at the CI/CD
-  pipeline layer and integrates with dependency management. This surfaces known vulnerabilities
-  in dependencies, detects malicious packages masquerading as legitimate ones, and
-  provides visibility into the security posture of the supply chain.
+purpose: Performs SCA scanning of dependencies on every PR with detection of new packages, alerts on nonexistent or suspicious packages and typosquatting variants, providing continuous monitoring of supply chain risks. The mechanism operates at the CI/CD pipeline layer and integrates with dependency management. This surfaces known vulnerabilities in dependencies, detects malicious packages masquerading as legitimate ones, and provides visibility into the security posture of the supply chain.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Vulnerability scanning (medium): Automated scanning of dependencies
-  for known vulnerabilities via CVE databases and security advisories. Tools: Snyk,
-  Dependabot, OWASP Dependency-Check. Findings block the merge or generate warnings.
+control_mechanism: 'Vulnerability scanning (medium): Automated scanning of dependencies for known vulnerabilities via CVE databases and security advisories. Tools: Snyk, Dependabot, OWASP Dependency-Check. Findings block the merge or generate warnings.
 
 
-  Alerts on new packages (medium): Detection of newly added packages with alerts on
-  low reputation, a new maintainer, and signs of typosquatting. Packages without an
-  established history are flagged for manual review.
+  Alerts on new packages (medium): Detection of newly added packages with alerts on low reputation, a new maintainer, and signs of typosquatting. Packages without an established history are flagged for manual review.
 
 
-  Rapid rollback capability (low): Upon detection of a malicious or vulnerable dependency,
-  automatic rollback to the previous known-good version via the lockfile. Rapid response
-  capability to newly disclosed vulnerabilities.'
+  Rapid rollback capability (low): Upon detection of a malicious or vulnerable dependency, automatic rollback to the previous known-good version via the lockfile. Rapid response capability to newly disclosed vulnerabilities.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

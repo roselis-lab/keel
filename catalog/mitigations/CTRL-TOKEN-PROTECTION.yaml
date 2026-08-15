@@ -2,32 +2,20 @@ id: CTRL-TOKEN-PROTECTION
 name: Token Protection
 status: draft
 mitigation_class: gating_control
-purpose: Protects authentication tokens and credentials from theft and leakage through
-  secure storage, encryption at rest and in transit, short time-to-live, and rotation
-  policies, minimizing the blast radius upon compromise. The mechanism operates at
-  the credential management layer and ensures secure handling of tokens throughout
-  their entire lifecycle. This prevents credential theft through various attack vectors,
-  limits the window of opportunity upon token leakage, and ensures a secure credential
-  lifecycle.
+purpose: Protects authentication tokens and credentials from theft and leakage through secure storage, encryption at rest and in transit, short time-to-live, and rotation policies, minimizing the blast radius upon compromise. The mechanism operates at the credential management layer and ensures secure handling of tokens throughout their entire lifecycle. This prevents credential theft through various attack vectors, limits the window of opportunity upon token leakage, and ensures a secure credential lifecycle.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Encryption at rest (high): Tokens are encrypted at rest using
-  KMS-managed keys. Plaintext tokens are never stored - only encrypted values. Decryption
-  occurs in memory only when needed.
+control_mechanism: 'Encryption at rest (high): Tokens are encrypted at rest using KMS-managed keys. Plaintext tokens are never stored - only encrypted values. Decryption occurs in memory only when needed.
 
 
-  Short time-to-live and rotation (low): A short token time-to-live (minutes or hours)
-  limits the exposure window upon theft. Automatic rotation ensures that compromised
-  tokens quickly become invalid.
+  Short time-to-live and rotation (low): A short token time-to-live (minutes or hours) limits the exposure window upon theft. Automatic rotation ensures that compromised tokens quickly become invalid.
 
 
-  Token redaction in outputs (low): Sensitive tokens are never logged, never returned
-  in API responses, and never disclosed in error messages. Token redaction is applied
-  across all output channels.'
+  Token redaction in outputs (low): Sensitive tokens are never logged, never returned in API responses, and never disclosed in error messages. Token redaction is applied across all output channels.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

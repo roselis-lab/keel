@@ -2,33 +2,20 @@ id: CTRL-PRIVILEGE-CONTROL
 name: Least Privilege for Tokens
 status: draft
 mitigation_class: gating_control
-purpose: Restricts the privileges of tokens and service accounts to the minimum necessary
-  set of permissions and scopes, applying the principle of least privilege to reduce
-  the blast radius when credentials are compromised. The mechanism operates at the
-  identity management configuration level and verifies that each identity holds only
-  the permissions needed to perform its functions. This minimizes potential damage
-  from credential theft, limits lateral movement capability, and ensures compliance
-  with least-privilege requirements.
+purpose: Restricts the privileges of tokens and service accounts to the minimum necessary set of permissions and scopes, applying the principle of least privilege to reduce the blast radius when credentials are compromised. The mechanism operates at the identity management configuration level and verifies that each identity holds only the permissions needed to perform its functions. This minimizes potential damage from credential theft, limits lateral movement capability, and ensures compliance with least-privilege requirements.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Permission minimization review (medium): Each token and service
-  account undergoes a review for the minimum necessary permissions. Unused permissions
-  are revoked. Regular audits check accumulated privileges and surface least-privilege
-  violations.
+control_mechanism: 'Permission minimization review (medium): Each token and service account undergoes a review for the minimum necessary permissions. Unused permissions are revoked. Regular audits check accumulated privileges and surface least-privilege violations.
 
 
-  Scoped token issuance (low): Tokens are issued with a restricted scope — only the
-  specific API endpoints, operations, resources needed for the task. Broad scopes
-  such as "read all" or "administrator" are prohibited for service tokens.
+  Scoped token issuance (low): Tokens are issued with a restricted scope — only the specific API endpoints, operations, resources needed for the task. Broad scopes such as "read all" or "administrator" are prohibited for service tokens.
 
 
-  Workload-specific identities (medium): Service accounts have no interactive login
-  capability and are bound to a specific workload identity. Permissions are inherited
-  from the workload''s function rather than from a human operator''s preferences.'
+  Workload-specific identities (medium): Service accounts have no interactive login capability and are bound to a specific workload identity. Permissions are inherited from the workload''s function rather than from a human operator''s preferences.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

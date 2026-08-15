@@ -2,38 +2,20 @@ id: CTRL-IDE-EXTENSION-ALLOWLIST
 name: IDE Extension and Publisher Allowlist
 status: draft
 mitigation_class: gating_control
-purpose: Restricts the installation of IDE extensions to only those approved from
-  an internal catalog or from verified publishers, preventing supply chain attacks
-  through malicious extensions and ensuring control over the extension ecosystem.
-  The mechanism operates at the level of the IDE's extension management system and
-  checks each extension request against the allowlist before permitting installation.
-  This blocks the installation of extensions from untrusted sources, provides visibility
-  into the installed extension landscape, and allows the organization to control security-relevant
-  extensions with access to the workspace.
+purpose: Restricts the installation of IDE extensions to only those approved from an internal catalog or from verified publishers, preventing supply chain attacks through malicious extensions and ensuring control over the extension ecosystem. The mechanism operates at the level of the IDE's extension management system and checks each extension request against the allowlist before permitting installation. This blocks the installation of extensions from untrusted sources, provides visibility into the installed extension landscape, and allows the organization to control security-relevant extensions with access to the workspace.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Internal curated marketplace (high): The organization maintains
-  an internal extension marketplace or a curated list of approved extensions. Users
-  can install only extensions from this approved catalog. The catalog includes security-reviewed
-  extensions with documented permissions and an audit trail of the review process.
-  This gives maximum control but requires ongoing curation effort.
+control_mechanism: 'Internal curated marketplace (high): The organization maintains an internal extension marketplace or a curated list of approved extensions. Users can install only extensions from this approved catalog. The catalog includes security-reviewed extensions with documented permissions and an audit trail of the review process. This gives maximum control but requires ongoing curation effort.
 
 
-  Publisher verification requirement (medium): Extensions are permitted only from
-  publishers that have passed a verification process: identity verification, security
-  assessment, code signing certificate. The IDE or management system verifies the
-  publisher signature before installation. Unverified publishers are blocked by default.
-  This gives flexibility for trusted publishers but requires verification infrastructure.
+  Publisher verification requirement (medium): Extensions are permitted only from publishers that have passed a verification process: identity verification, security assessment, code signing certificate. The IDE or management system verifies the publisher signature before installation. Unverified publishers are blocked by default. This gives flexibility for trusted publishers but requires verification infrastructure.
 
 
-  Risk-tiered extension policy (low): Extensions are classified by risk tiers: low-risk
-  (syntax highlighting, themes) are freely installable, medium-risk (language servers,
-  linters) require team approval, high-risk (tools with file/network access) require
-  security review. A risk-based policy balances security with developer productivity.'
+  Risk-tiered extension policy (low): Extensions are classified by risk tiers: low-risk (syntax highlighting, themes) are freely installable, medium-risk (language servers, linters) require team approval, high-risk (tools with file/network access) require security review. A risk-based policy balances security with developer productivity.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -2,29 +2,20 @@ id: CTRL-TOOL-VERIFICATION
 name: Verification of Tool Attestations
 status: draft
 mitigation_class: gating_control
-purpose: Verifies tool attestations - digital signatures, hashes, security scan results
-  - before first use and periodically thereafter, ensuring that tools are in a verified
-  state. The mechanism operates at the tool loading layer and checks attestation metadata.
-  This guarantees the authenticity and integrity of loaded tools, detects tampered
-  or corrupted components, and provides continuous verification not only at registration.
+purpose: Verifies tool attestations - digital signatures, hashes, security scan results - before first use and periodically thereafter, ensuring that tools are in a verified state. The mechanism operates at the tool loading layer and checks attestation metadata. This guarantees the authenticity and integrity of loaded tools, detects tampered or corrupted components, and provides continuous verification not only at registration.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Attestation generation (high): At tool registration, an attestation
-  is generated: a signature from a trusted key, a hash of the implementation, and
-  scan results. Attestations are checked before loading the tool at runtime.
+control_mechanism: 'Attestation generation (high): At tool registration, an attestation is generated: a signature from a trusted key, a hash of the implementation, and scan results. Attestations are checked before loading the tool at runtime.
 
 
-  Verification before use (low): Before each use, the hash of the tool implementation
-  is compared against the stored attestation. A mismatch indicates tampering and triggers
-  a security alert.
+  Verification before use (low): Before each use, the hash of the tool implementation is compared against the stored attestation. A mismatch indicates tampering and triggers a security alert.
 
 
-  Periodic re-verification (medium): Periodic re-verification of already loaded tools
-  to detect tampering at runtime or corruption of files on disk.'
+  Periodic re-verification (medium): Periodic re-verification of already loaded tools to detect tampering at runtime or corruption of files on disk.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

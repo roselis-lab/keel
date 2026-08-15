@@ -2,34 +2,20 @@ id: CTRL-MCP-REGISTRY
 name: MCP Server Registry with Verification
 status: draft
 mitigation_class: gating_control
-purpose: Centrally manages a registry of MCP servers with mandatory verification of
-  signatures, capabilities, and security posture before registration, preventing connections
-  to malicious or untrusted MCP servers. The mechanism operates at the MCP client
-  configuration level and checks every server registration request against policy.
-  This blocks connections to rogue MCP servers, provides visibility into the MCP ecosystem,
-  and ensures that agents connect only to vetted infrastructure.
+purpose: Centrally manages a registry of MCP servers with mandatory verification of signatures, capabilities, and security posture before registration, preventing connections to malicious or untrusted MCP servers. The mechanism operates at the MCP client configuration level and checks every server registration request against policy. This blocks connections to rogue MCP servers, provides visibility into the MCP ecosystem, and ensures that agents connect only to vetted infrastructure.
 formal_implementation_risk: null
 review: null
 maintainer: null
 owner: null
 locus: null
 scope: null
-control_mechanism: 'Internal MCP server catalog (high): All MCP servers must be registered
-  in an internal catalog with verified metadata: publisher, capabilities, security
-  assessment, audit history. Agents may connect only to servers in the catalog. This
-  provides complete control over the MCP surface area but requires a curation process.
+control_mechanism: 'Internal MCP server catalog (high): All MCP servers must be registered in an internal catalog with verified metadata: publisher, capabilities, security assessment, audit history. Agents may connect only to servers in the catalog. This provides complete control over the MCP surface area but requires a curation process.
 
 
-  MCP server signatures (high): Each MCP server signs its responses with a cryptographic
-  signature. The client verifies the signature against a trusted public key. This
-  ensures authenticity and integrity of communication but requires key distribution
-  infrastructure.
+  MCP server signatures (high): Each MCP server signs its responses with a cryptographic signature. The client verifies the signature against a trusted public key. This ensures authenticity and integrity of communication but requires key distribution infrastructure.
 
 
-  MCP server allowlist (low): Agents may connect only to MCP servers on an allowlist
-  defined in policy. The allowlist includes server IDs, endpoints, and allowed capabilities.
-  A connection attempt to a non-allowlisted server is blocked. This is a simple but
-  effective control.'
+  MCP server allowlist (low): Agents may connect only to MCP servers on an allowlist defined in policy. The allowlist includes server IDs, endpoints, and allowed capabilities. A connection attempt to a non-allowlisted server is blocked. This is a simple but effective control.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []
