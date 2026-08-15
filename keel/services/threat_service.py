@@ -1,220 +1,170 @@
-"""Service layer for threat operations."""
+"""Service layer for threat operations (backed by the file store)."""
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
-from keel.models import Threat, ThreatMitigation, Mitigation
 from keel.schemas.threat import ThreatCreate, ThreatUpdate
+from keel.store import get_store
+
+_THREAT_FIELDS = ("description", "impact_class", "vulnerability", "reachability", "tags")
 
 
-def _mitigations_of(threat: Threat) -> list[dict[str, str]]:
-    return [
-        {"mitigation_id": link.mitigation_id, "rationale": link.rationale}
-        for link in threat.mitigation_links
-    ]
+def _mitigations_of(rec: dict[str, Any]) -> list[dict[str, str]]:
+    return list(rec.get("mitigations") or [])
 
 
-def _threat_item(threat: Threat, include: list[str]) -> dict[str, Any]:
-    item: dict[str, Any] = {"id": threat.id, "title": threat.title}
-    if "description" in include:
-        item["description"] = threat.description
-    if "impact_class" in include:
-        item["impact_class"] = threat.impact_class
-    if "vulnerability" in include:
-        item["vulnerability"] = threat.vulnerability
-    if "reachability" in include:
-        item["reachability"] = threat.reachability
-    if "tags" in include:
-        item["tags"] = threat.tags
+def _threat_item(rec: dict[str, Any], include: list[str]) -> dict[str, Any]:
+    item: dict[str, Any] = {"id": rec["id"], "title": rec.get("title")}
+    for field in _THREAT_FIELDS:
+        if field in include:
+            item[field] = rec.get(field)
     if "mitigations" in include:
-        item["mitigations"] = _mitigations_of(threat)
+        item["mitigations"] = _mitigations_of(rec)
     return item
 
 
-async def list_threats(
-    session: AsyncSession,
-    brief: bool = True,
-    include: list[str] | None = None,
-) -> dict[str, Any]:
+async def list_threats(brief: bool = True, include: list[str] | None = None) -> dict[str, Any]:
     """List all threats. `brief` returns [id, title] pairs."""
-    result = await session.execute(
-        select(Threat).options(selectinload(Threat.mitigation_links)).order_by(Threat.id)
-    )
-    threats = result.scalars().all()
-
+    store = get_store()
+    threats = [store.threats[k] for k in sorted(store.threats)]
     if brief:
-        return {"threats": [[t.id, t.title] for t in threats], "count": len(threats)}
-
+        return {"threats": [[t["id"], t.get("title")] for t in threats], "count": len(threats)}
     include = include or []
-    return {
-        "threats": [_threat_item(t, include) for t in threats],
-        "count": len(threats),
-    }
+    return {"threats": [_threat_item(t, include) for t in threats], "count": len(threats)}
 
 
-async def get_threat(
-    session: AsyncSession,
-    threat_id: str,
-    include: list[str] | None = None,
-) -> dict[str, Any]:
+async def get_threat(threat_id: str, include: list[str] | None = None) -> dict[str, Any]:
     """Get a threat. Mitigations are always included."""
-    result = await session.execute(
-        select(Threat)
-        .options(selectinload(Threat.mitigation_links))
-        .where(Threat.id == threat_id)
-    )
-    threat = result.scalar_one_or_none()
-    if not threat:
+    rec = get_store().threats.get(threat_id)
+    if not rec:
         return {"error": f"Threat '{threat_id}' not found", "success": False}
-
-    include = set(include or []) | {
-        "description", "impact_class", "vulnerability", "reachability", "tags", "mitigations",
-    }
-    response = _threat_item(threat, list(include))
+    include = list(set(include or []) | set(_THREAT_FIELDS) | {"mitigations"})
+    response = _threat_item(rec, include)
     response["success"] = True
     return response
 
 
-async def create_threat(session: AsyncSession, data: ThreatCreate) -> dict[str, Any]:
+async def create_threat(data: ThreatCreate) -> dict[str, Any]:
     """Create a new threat."""
-    if await session.get(Threat, data.id):
+    store = get_store()
+    if data.id in store.threats:
         return {"error": f"Threat '{data.id}' already exists", "success": False}
+    rec = {
+        "id": data.id,
+        "title": data.title,
+        "description": data.description,
+        "impact_class": data.impact_class,
+        "vulnerability": data.vulnerability,
+        "reachability": data.reachability,
+        "tags": data.tags,
+        "mitigations": [],
+    }
+    with store.lock:
+        store.threats[data.id] = rec
+        store.write_threat(data.id)
+    return {"id": data.id, "title": data.title, "success": True}
 
-    threat = Threat(
-        id=data.id,
-        title=data.title,
-        description=data.description,
-        impact_class=data.impact_class,
-        vulnerability=data.vulnerability,
-        reachability=data.reachability,
-        tags=data.tags,
-    )
-    session.add(threat)
-    await session.commit()
-    return {"id": threat.id, "title": threat.title, "success": True}
 
-
-async def update_threat(
-    session: AsyncSession,
-    threat_id: str,
-    data: ThreatUpdate,
-) -> dict[str, Any]:
+async def update_threat(threat_id: str, data: ThreatUpdate) -> dict[str, Any]:
     """Update threat content."""
-    threat = await session.get(Threat, threat_id)
-    if not threat:
+    store = get_store()
+    rec = store.threats.get(threat_id)
+    if not rec:
         return {"error": f"Threat '{threat_id}' not found", "success": False}
-
     update_data = data.model_dump(exclude_unset=True, exclude_none=True)
-    for field, value in update_data.items():
-        setattr(threat, field, value)
-    await session.commit()
-    return {"id": threat.id, "updated": list(update_data.keys()), "success": True}
+    with store.lock:
+        rec.update(update_data)
+        store.write_threat(threat_id)
+    return {"id": threat_id, "updated": list(update_data.keys()), "success": True}
 
 
-async def delete_threat(
-    session: AsyncSession,
-    threat_id: str,
-    confirm: bool = False,
-) -> dict[str, Any]:
+async def delete_threat(threat_id: str, confirm: bool = False) -> dict[str, Any]:
     """Delete a threat and its mitigation links."""
-    result = await session.execute(
-        select(Threat).options(selectinload(Threat.mitigation_links)).where(Threat.id == threat_id)
-    )
-    threat = result.scalar_one_or_none()
-    if not threat:
+    store = get_store()
+    rec = store.threats.get(threat_id)
+    if not rec:
         return {"error": f"Threat '{threat_id}' not found", "success": False}
-
     if not confirm:
         return {
             "preview": {
-                "id": threat.id,
-                "title": threat.title,
-                "mitigation_link_count": len(threat.mitigation_links),
+                "id": rec["id"],
+                "title": rec.get("title"),
+                "mitigation_link_count": len(_mitigations_of(rec)),
             },
             "confirm_required": True,
         }
-
-    await session.delete(threat)
-    await session.commit()
+    with store.lock:
+        del store.threats[threat_id]
+        store.delete_threat_file(threat_id)
     return {"success": True, "deleted": threat_id}
 
 
 async def batch_update_threats(
-    session: AsyncSession,
     updates: list[dict[str, Any]],
     confirm: bool = False,
 ) -> dict[str, Any]:
     """Batch update threats by threat_id."""
+    store = get_store()
     if not confirm:
         preview = []
         for u in updates:
-            threat = await session.get(Threat, u.get("threat_id"))
-            if threat:
+            rec = store.threats.get(u.get("threat_id"))
+            if rec:
                 preview.append({
-                    "threat_id": threat.id,
-                    "current_title": threat.title,
+                    "threat_id": rec["id"],
+                    "current_title": rec.get("title"),
                     "proposed": {k: v for k, v in u.items() if k != "threat_id"},
                 })
         return {"preview": preview, "count": len(preview), "confirm_required": True}
 
     updated = []
-    for u in updates:
-        tid = u.get("threat_id")
-        threat = await session.get(Threat, tid) if tid else None
-        if not threat:
-            continue
-        for field in ("title", "description", "impact_class", "vulnerability", "reachability", "tags"):
-            if field in u:
-                setattr(threat, field, u[field])
-        updated.append(tid)
-
-    await session.commit()
+    with store.lock:
+        for u in updates:
+            tid = u.get("threat_id")
+            rec = store.threats.get(tid) if tid else None
+            if not rec:
+                continue
+            for field in ("title", *_THREAT_FIELDS):
+                if field in u:
+                    rec[field] = u[field]
+            store.write_threat(tid)
+            updated.append(tid)
     return {"success": True, "updated": updated, "count": len(updated)}
 
 
 # ============================================================================
-# Threat <-> Mitigation links
+# Threat <-> Mitigation links (stored inline in the threat's YAML)
 # ============================================================================
 
 
-async def add_mitigation(
-    session: AsyncSession,
-    threat_id: str,
-    mitigation_id: str,
-    rationale: str,
-) -> dict[str, Any]:
+async def add_mitigation(threat_id: str, mitigation_id: str, rationale: str) -> dict[str, Any]:
     """Link a mitigation to a threat with a rationale (UPSERTs the rationale)."""
-    if not await session.get(Threat, threat_id):
+    store = get_store()
+    if threat_id not in store.threats:
         return {"error": f"Threat '{threat_id}' not found", "success": False}
-    if not await session.get(Mitigation, mitigation_id):
+    if mitigation_id not in store.mitigations:
         return {"error": f"Mitigation '{mitigation_id}' not found", "success": False}
-
-    link_id = f"{threat_id}::{mitigation_id}"
-    link = await session.get(ThreatMitigation, link_id)
-    if link:
-        link.rationale = rationale
-    else:
-        session.add(ThreatMitigation(
-            id=link_id,
-            threat_id=threat_id,
-            mitigation_id=mitigation_id,
-            rationale=rationale,
-        ))
-    await session.commit()
+    with store.lock:
+        rec = store.threats[threat_id]
+        links = rec.setdefault("mitigations", [])
+        for link in links:
+            if link["mitigation_id"] == mitigation_id:
+                link["rationale"] = rationale
+                break
+        else:
+            links.append({"mitigation_id": mitigation_id, "rationale": rationale})
+        links.sort(key=lambda x: x["mitigation_id"])
+        store.write_threat(threat_id)
     return {"success": True, "threat_id": threat_id, "mitigation_id": mitigation_id}
 
 
-async def remove_mitigation(
-    session: AsyncSession,
-    threat_id: str,
-    mitigation_id: str,
-) -> dict[str, Any]:
+async def remove_mitigation(threat_id: str, mitigation_id: str) -> dict[str, Any]:
     """Unlink a mitigation from a threat."""
-    link = await session.get(ThreatMitigation, f"{threat_id}::{mitigation_id}")
-    if not link:
+    store = get_store()
+    rec = store.threats.get(threat_id)
+    links = list(rec.get("mitigations") or []) if rec else []
+    kept = [link for link in links if link["mitigation_id"] != mitigation_id]
+    if rec is None or len(kept) == len(links):
         return {"error": "Link not found", "success": False}
-    await session.delete(link)
-    await session.commit()
+    with store.lock:
+        rec["mitigations"] = kept
+        store.write_threat(threat_id)
     return {"success": True, "removed": f"{threat_id}::{mitigation_id}"}

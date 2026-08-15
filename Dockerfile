@@ -15,7 +15,7 @@ COPY . .
 # Reproducible install from uv.lock (no dev dependencies in the image).
 RUN uv sync --frozen --no-dev
 
-# Run as a non-root user; it owns /app so the entrypoint can build the SQLite DB there.
+# Run as a non-root user; it owns /app so it can write catalog edits back to the files.
 RUN chmod +x /app/docker/entrypoint.sh \
     && useradd -m -u 10001 appuser \
     && chown -R appuser:appuser /app

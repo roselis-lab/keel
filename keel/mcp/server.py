@@ -14,7 +14,6 @@ from typing import Any
 import mcp.server.stdio
 import mcp.types as types
 from mcp.server.lowlevel import Server
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from keel.config import settings
 from keel.mcp.registry import get_tool_list
@@ -23,22 +22,14 @@ from keel.mcp.tools import dispatch_tool
 
 @asynccontextmanager
 async def server_lifespan(server: Server) -> AsyncIterator[dict[str, Any]]:
-    """Manage server lifespan with a database connection."""
+    """Load the catalog from `catalog/*.yaml` into memory on startup — no setup step."""
     print("Keel MCP server starting...", file=sys.stderr)
-
-    engine = create_async_engine(settings.database_url, echo=settings.debug)
-    async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-    # Build the database from the catalog on first run (no manual setup), and keep the
-    # style guide skeletons in sync with the model on every start.
-    from keel.catalog import ensure_ready
-    await ensure_ready()
-
+    from keel.store import get_store
+    get_store()
     try:
-        yield {"engine": engine, "session_maker": async_session_maker}
+        yield {}
     finally:
         print("Keel MCP server shutting down...", file=sys.stderr)
-        await engine.dispose()
 
 
 async def handle_list_tools(ctx, params) -> types.ListToolsResult:
@@ -49,18 +40,16 @@ async def handle_list_tools(ctx, params) -> types.ListToolsResult:
 
 async def handle_call_tool(ctx, params) -> types.CallToolResult:
     """Dispatch a tool call, serializing the result as JSON text."""
-    session_maker = ctx.lifespan_context["session_maker"]
-    async with session_maker() as session:
-        try:
-            result = await dispatch_tool(params.name, params.arguments or {}, session)
-            text = json.dumps(result, indent=2, default=str)
-            return types.CallToolResult(content=[types.TextContent(type="text", text=text)])
-        except Exception as e:
-            text = json.dumps({"error": str(e), "success": False}, indent=2)
-            return types.CallToolResult(
-                content=[types.TextContent(type="text", text=text)],
-                is_error=True,
-            )
+    try:
+        result = await dispatch_tool(params.name, params.arguments or {})
+        text = json.dumps(result, indent=2, default=str)
+        return types.CallToolResult(content=[types.TextContent(type="text", text=text)])
+    except Exception as e:
+        text = json.dumps({"error": str(e), "success": False}, indent=2)
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=text)],
+            is_error=True,
+        )
 
 
 server = Server(
@@ -107,43 +96,9 @@ def run_http() -> None:
     uvicorn.run(app, host=settings.mcp_http_host, port=settings.mcp_http_port, log_level="info")
 
 
-async def _run_catalog(action: str) -> None:
-    """One-shot catalog commands (`seed` / `export`) against the configured DB."""
-    from keel.catalog import export_catalog, load_catalog, validate_catalog
-
-    if action == "seed":
-        errs = validate_catalog()
-        if errs:
-            print(
-                f"Refusing to seed: catalog invalid ({len(errs)} problem(s)). See `keel validate`.",
-                file=sys.stderr,
-            )
-            for e in errs:
-                print(f"  - {e}", file=sys.stderr)
-            raise SystemExit(1)
-
-    engine = create_async_engine(settings.database_url, echo=settings.debug)
-    maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    try:
-        if action == "seed":
-            # Create any missing tables so seed works on a fresh DB without Alembic.
-            from keel.database import Base
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-        async with maker() as session:
-            if action == "seed":
-                result = await load_catalog(session)
-                print(f"Seeded catalog into the database: {result}", file=sys.stderr)
-            else:
-                result = await export_catalog(session)
-                print(f"Exported database to catalog/: {result}", file=sys.stderr)
-    finally:
-        await engine.dispose()
-
-
 def main():
-    """Entry point. `validate` / `seed` / `export` run catalog commands; `--http`
-    selects Streamable HTTP; no args runs the stdio MCP server."""
+    """Entry point. `validate` checks the catalog YAML; `--http` selects Streamable
+    HTTP; no args runs the stdio MCP server."""
     args = sys.argv[1:]
     if args and args[0] == "validate":
         from keel.catalog import validate_catalog
@@ -155,8 +110,6 @@ def main():
                 print(f"  - {e}", file=sys.stderr)
             raise SystemExit(1)
         print("Catalog is valid.", file=sys.stderr)
-    elif args and args[0] in ("seed", "export"):
-        asyncio.run(_run_catalog(args[0]))
     elif "--http" in args:
         run_http()
     else:

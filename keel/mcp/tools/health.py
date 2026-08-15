@@ -6,13 +6,13 @@ _RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "
 
 
 @register_tool(annotations=_RO)
-async def check_library_health(session) -> dict:
+async def check_library_health() -> dict:
     """Surface content and integrity gaps: threats missing vulnerability/impact_class, threats
     without mitigations, dangling links, plus style guide coverage."""
-    return await _check_library_health(session)
+    return await _check_library_health()
 
 
 @register_tool(annotations=_RO)
-async def get_stats(session) -> dict:
+async def get_stats() -> dict:
     """Return counts across the library (threats, mitigations, links)."""
-    return await _get_stats(session)
+    return await _get_stats()
