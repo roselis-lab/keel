@@ -1,8 +1,8 @@
 """MCP tools for the authoring style guide (methodology)."""
 from typing import Any
 
-from app.mcp.registry import register_tool
-from app.services import style_guide_service as svc
+from keel.mcp.registry import register_tool
+from keel.services import style_guide_service as svc
 
 _RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 _WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}

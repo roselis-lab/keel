@@ -1,6 +1,6 @@
 """MCP tools for threat operations."""
-from app.mcp.registry import register_tool
-from app.services.threat_service import (
+from keel.mcp.registry import register_tool
+from keel.services.threat_service import (
     list_threats as _list_threats,
     get_threat as _get_threat,
     create_threat as _create_threat,
@@ -10,7 +10,7 @@ from app.services.threat_service import (
     add_mitigation as _add_mitigation,
     remove_mitigation as _remove_mitigation,
 )
-from app.schemas.threat import ThreatCreate, ThreatUpdate
+from keel.schemas.threat import ThreatCreate, ThreatUpdate
 
 _RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 _WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}

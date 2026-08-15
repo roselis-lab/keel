@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.database import async_session
-from app.routes.library import router as library_router
-from app.services.style_guide_service import sync_skeletons
+from keel.database import async_session
+from keel.routes.library import router as library_router
+from keel.services.style_guide_service import sync_skeletons
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("keel")

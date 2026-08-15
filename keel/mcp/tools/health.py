@@ -1,6 +1,6 @@
 """MCP tools for library health and stats."""
-from app.mcp.registry import register_tool
-from app.services.health_service import check_library_health as _check_library_health, get_stats as _get_stats
+from keel.mcp.registry import register_tool
+from keel.services.health_service import check_library_health as _check_library_health, get_stats as _get_stats
 
 _RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 

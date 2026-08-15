@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Threat, ThreatMitigation, Mitigation
-from app.schemas.threat import ThreatCreate, ThreatUpdate
+from keel.models import Threat, ThreatMitigation, Mitigation
+from keel.schemas.threat import ThreatCreate, ThreatUpdate
 
 
 def _mitigations_of(threat: Threat) -> list[dict[str, str]]:

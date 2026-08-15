@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import BigInteger, Boolean, Integer, String, Text, JSON, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database import Base
+from keel.database import Base
 
 
 class StyleGuideField(Base):

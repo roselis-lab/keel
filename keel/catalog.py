@@ -19,12 +19,12 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Mitigation, Threat, ThreatMitigation
-from app.schemas.mitigation import MitigationCreate
-from app.schemas.threat import MitigationRef, ThreatCreate
-from app.services.style_guide_service import export_yaml as _export_style_yaml
-from app.services.style_guide_service import import_yaml as _import_style_yaml
-from app.services.style_guide_service import sync_skeletons as _sync_skeletons
+from keel.models import Mitigation, Threat, ThreatMitigation
+from keel.schemas.mitigation import MitigationCreate
+from keel.schemas.threat import MitigationRef, ThreatCreate
+from keel.services.style_guide_service import export_yaml as _export_style_yaml
+from keel.services.style_guide_service import import_yaml as _import_style_yaml
+from keel.services.style_guide_service import sync_skeletons as _sync_skeletons
 
 # Anchored at the project root so it works regardless of the current directory.
 DEFAULT_CATALOG_DIR = Path(__file__).resolve().parent.parent / "catalog"

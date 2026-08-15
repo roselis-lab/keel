@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from app.config import settings
-from app.database import Base
+from keel.config import settings
+from keel.database import Base
 # Import all models so Alembic can see them in Base.metadata
-from app.models import *  # noqa: F401,F403
+from keel.models import *  # noqa: F401,F403
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

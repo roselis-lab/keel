@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Text, JSON, ForeignKey
 
-from app.database import Base
+from keel.database import Base
 
 if TYPE_CHECKING:
-    from app.models.mitigation import Mitigation
+    from keel.models.mitigation import Mitigation
 
 
 class Threat(Base):

@@ -4,8 +4,8 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Threat, Mitigation, ThreatMitigation
-from app.services.style_guide_service import get_coverage
+from keel.models import Threat, Mitigation, ThreatMitigation
+from keel.services.style_guide_service import get_coverage
 
 
 async def get_stats(session: AsyncSession) -> dict[str, Any]:
