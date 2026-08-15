@@ -24,6 +24,7 @@ from app.schemas.mitigation import MitigationCreate
 from app.schemas.threat import MitigationRef, ThreatCreate
 from app.services.style_guide_service import export_yaml as _export_style_yaml
 from app.services.style_guide_service import import_yaml as _import_style_yaml
+from app.services.style_guide_service import sync_skeletons as _sync_skeletons
 
 # Anchored at the project root so it works regardless of the current directory.
 DEFAULT_CATALOG_DIR = Path(__file__).resolve().parent.parent / "catalog"
@@ -208,6 +209,10 @@ async def load_catalog(
 
     await _load_style_guide(session, catalog_dir)
     await session.commit()
+    # Reconcile style-guide skeletons with the current model: surface new fields as
+    # coverage gaps and flag fields whose column was dropped as orphans, so seed leaves
+    # the style guide consistent with the schema (not only on server startup).
+    await _sync_skeletons(session)
     return {"threats": n_threat, "mitigations": n_mit, "links": n_link}
 
 

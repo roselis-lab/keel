@@ -75,20 +75,25 @@ The assessor ships as skills under `.claude/skills/`:
 
 ## Run
 
-```bash
-pip install -e .            # add [postgres] for asyncpg; installs the `keel` CLI
-cp .env.example .env        # SQLite by default — zero setup
-alembic upgrade head        # create the schema
-keel seed                   # load the catalog (catalog/*.yaml) into the database
+Run the commands below from the repo root. They use `python -m …` so they work whether or not your Python `Scripts`/`bin` directory is on `PATH`.
 
-keel                        # MCP over stdio
-keel --http                 # MCP over Streamable HTTP (port 8001)
-uvicorn app.main:app        # read-only REST (port 8000) + browse UI at /
+```bash
+uv sync                            # or: pip install -e .   (add [postgres] for asyncpg)
+cp .env.example .env               # SQLite by default — zero setup
+python -m alembic upgrade head     # create the schema
+python -m keel seed                # load the catalog (catalog/*.yaml) into the database
+python -m keel validate            # check the catalog YAML against the schemas
+
+python -m keel                     # MCP over stdio
+python -m keel --http              # MCP over Streamable HTTP (port 8001)
+python -m uvicorn app.main:app     # read-only REST (port 8000) + browse UI at /
 ```
 
-With Docker, `docker compose up` builds the image, seeds the database from the catalog, and serves the UI at `http://localhost:8000/` in one command. Dependencies are pinned in `uv.lock` for reproducible installs (`uv sync`).
+`pip install -e .` also installs a `keel` console script, so `keel seed`, `keel --http`, `alembic …`, and `uvicorn …` work directly once your Scripts/bin directory is on `PATH`. With `uv`, prefix any of them with `uv run` (e.g. `uv run keel seed`).
 
-A minimal browse-and-edit UI (single static file, no build step, no npm) is served at the root, `http://localhost:8000/`: threats, mitigations, and the style guide, with cross-links between linked threats and mitigations. It supports inline editing (threat/mitigation fields, tags, implementations, threat↔mitigation links, style guide slots) via a small set of REST write endpoints that delegate to the same service layer as the MCP write tools. MCP remains the style-guide-guided authoring path; the UI is the raw editing counterpart.
+With Docker (daemon running), `docker compose up` builds the image, seeds the database from the catalog, and serves the UI at `http://localhost:8000/` in one command. Dependencies are pinned in `uv.lock` for reproducible installs (`uv sync`).
+
+A minimal browse-and-edit UI (single static file, no build step, no npm) is served at the root, `http://localhost:8000/`: threats, mitigations, and the style guide, with cross-links between linked threats and mitigations. It supports inline editing (threat and mitigation-card fields, tags, threat↔mitigation links, style guide slots) via a small set of REST write endpoints that delegate to the same service layer as the MCP write tools. MCP remains the style-guide-guided authoring path; the UI is the raw editing counterpart.
 
 For local Claude Code, `.mcp.json` registers the server as `keel`, so the assessor skill calls its tools as `mcp__keel__*`.
 
