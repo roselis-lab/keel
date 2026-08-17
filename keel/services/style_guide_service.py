@@ -20,28 +20,36 @@ from keel.schemas.style_guide import (
     StyleGuideFieldRead,
     StyleGuideFull,
 )
-from keel.schemas.threat import ThreatCreate
+from keel.schemas.threat import MitigationLink, ThreatCreate, Weakness
 from keel.store import get_store
 
-# Slots that count toward "completeness".
+# Slots that count toward the "richness" percentage.
 TRACKED_SLOTS = ("purpose", "content_requirements", "instructions", "avoid", "examples")
+# The minimum bar a field must have to count as authored (drives list_incomplete / the CI gate).
+REQUIRED_SLOTS = ("purpose", "content_requirements")
 # All authorable slots (persisted per field).
 SLOTS = (
     "purpose", "content_requirements", "instructions",
     "avoid", "examples", "subfields", "allowed_values",
 )
 # Entities the style guide tracks, in display order.
-ENTITY_ORDER = ("threat", "mitigation", "threat_mitigation")
+ENTITY_ORDER = ("threat", "weakness", "mitigation_link", "mitigation")
+
+# Fields covered by a sub-entity's own bar, so they are not repeated on the parent.
+_SUBENTITY_FIELDS = {"weaknesses", "mitigations"}
 
 
 def _canonical_fields(entity_type: str) -> list[str]:
-    """The fields an entity has, per its schema (the authoring surface)."""
+    """The fields an entity has, per its schema — so the style guide can never drift
+    from the model: a new field surfaces as a gap, a removed one reads as an orphan."""
     if entity_type == "threat":
-        return [f for f in ThreatCreate.model_fields if f != "id"]
+        return [f for f in ThreatCreate.model_fields if f not in ("id", *_SUBENTITY_FIELDS)]
+    if entity_type == "weakness":
+        return list(Weakness.model_fields)
+    if entity_type == "mitigation_link":
+        return [f for f in MitigationLink.model_fields if f != "id"]
     if entity_type == "mitigation":
         return [f for f in MitigationCreate.model_fields if f != "id"]
-    if entity_type == "threat_mitigation":
-        return ["rationale"]
     return []
 
 
@@ -134,13 +142,14 @@ async def get_coverage() -> CoverageReport:
 
 
 async def list_incomplete() -> list[dict[str, Any]]:
-    """Return non-orphan fields with one or more empty tracked slots."""
+    """Return non-orphan fields missing a required slot (purpose / content_requirements) —
+    i.e. fields whose authoring bar is not yet written. Optional slots do not count."""
     out: list[dict[str, Any]] = []
     for et in _entity_types():
         for field in _entity(et).fields.values():
             if field.is_orphan:
                 continue
-            missing = [slot for slot in TRACKED_SLOTS if not getattr(field, slot)]
+            missing = [slot for slot in REQUIRED_SLOTS if not getattr(field, slot)]
             if missing:
                 out.append({
                     "entity_type": et,
