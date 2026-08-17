@@ -1,0 +1,10 @@
+# System components (DFD-grounded): owned processes and data stores. NOT external
+# entities (those are captured by a threat's surface + source) and NOT boundaries
+# (those are surface). A weakness sits on one of these.
+components:
+  model:          {kind: process,     name: Model & reasoning,   desc: "The foundation model, its system prompt and planner/reasoning."}
+  tool:           {kind: process,     name: Tools & actions,     desc: "Function calls, code execution, MCP servers — the agent acting outward."}
+  downstream:     {kind: process,     name: Downstream consumer, desc: "A system that executes or consumes the agent's output (CI/CD, DB, renderer)."}
+  memory:         {kind: data-store,  name: Memory,              desc: "Short-term context and long-term / persistent memory."}
+  knowledge-base: {kind: data-store,  name: Knowledge base,      desc: "RAG index / retrieved-knowledge store the agent owns."}
+  identity-store: {kind: data-store,  name: Identity & tokens,   desc: "Credentials, tokens and privileges the agent holds."}

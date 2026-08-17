@@ -29,10 +29,12 @@ async def test_get_stats_counts_records(store):
     store.threats["T-DEMO"] = {
         "id": "T-DEMO",
         "title": "Demo threat",
-        "impact_class": "decision-integrity",
-        "vulnerability": ["a recognizable exploitation pattern"],
-        "reachability": "not applicable if the attacker cannot influence the input",
-        "mitigations": [{"mitigation_id": "M-DEMO", "rationale": "blocks the path"}],
+        "harm": "code-execution",
+        "surface": ["agent-environment"],
+        "source": ["external-attacker"],
+        "weaknesses": [{"component": "tool", "text": "a recognizable architectural weakness", "nature": "targeted"}],
+        "reachability": "NOT applicable if the tool has no valuable access",
+        "mitigations": [{"id": "M-DEMO", "strength": "gating", "rationale": "blocks the path"}],
     }
     assert await get_stats() == {
         "threats": 1,
@@ -43,12 +45,12 @@ async def test_get_stats_counts_records(store):
 
 @pytest.mark.asyncio
 async def test_check_library_health_flags_gaps(store):
-    """A threat with no facets and no mitigation surfaces in every relevant bucket."""
+    """A threat with no weaknesses, no harm and no mitigation surfaces in every bucket."""
     store.threats["T-BAD"] = {"id": "T-BAD", "title": "Incomplete threat", "mitigations": []}
     result = await check_library_health()
     issues = result["issues"]
-    assert "T-BAD" in issues["threats_missing_vulnerability"]
-    assert "T-BAD" in issues["threats_missing_impact_class"]
+    assert "T-BAD" in issues["threats_missing_weaknesses"]
+    assert "T-BAD" in issues["threats_missing_harm"]
     assert "T-BAD" in issues["threats_without_mitigation"]
 
 
@@ -58,9 +60,9 @@ async def test_dangling_link_is_flagged(store):
     store.threats["T-DANGLE"] = {
         "id": "T-DANGLE",
         "title": "Links to nothing",
-        "impact_class": "decision-integrity",
-        "vulnerability": ["pattern"],
-        "mitigations": [{"mitigation_id": "CTRL-GHOST", "rationale": "n/a"}],
+        "harm": "code-execution",
+        "weaknesses": [{"component": "tool", "text": "weak", "nature": "targeted"}],
+        "mitigations": [{"id": "CTRL-GHOST", "strength": "gating", "rationale": "n/a"}],
     }
     result = await check_library_health()
     assert "T-DANGLE::CTRL-GHOST" in result["issues"]["dangling_mitigation_links"]

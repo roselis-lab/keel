@@ -13,13 +13,14 @@ import yaml
 from pydantic import ValidationError
 
 from keel.schemas.mitigation import MitigationCreate
-from keel.schemas.threat import MitigationRef, ThreatCreate
+from keel.schemas.threat import Threat
 from keel.store import DEFAULT_CATALOG_DIR
 
-_THREAT_KEYS = {
-    "id", "title", "description", "impact_class", "vulnerability", "reachability",
-    "tags", "mitigations",
-}
+# Technique words that must never be a threat/weakness identity (they are mechanisms →
+# they belong in `source` / `references`). Kept LLM-specific so established threat names
+# like "command injection" are not flagged.
+_TECHNIQUE_WORDS = ("prompt injection", "jailbreak")
+
 _MITIGATION_KEYS = {
     "id", "name", "status", "mitigation_class", "purpose", "formal_implementation_risk",
     "review", "maintainer", "owner", "locus", "scope", "control_mechanism",
@@ -73,38 +74,42 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
         if not isinstance(rec, dict):
             errors.append(f"{rel}: not a YAML mapping")
             continue
-        unknown = set(rec) - _THREAT_KEYS
-        if unknown:
-            errors.append(f"{rel}: unknown field(s): {', '.join(sorted(unknown))}")
+
+        # Whole-record schema validation (extra="forbid" catches unknown fields; Literals
+        # enforce the frozen vocabularies; HttpUrl enforces reference links).
+        threat = None
         try:
-            ThreatCreate(**{k: rec[k] for k in rec if k in _THREAT_KEYS and k != "mitigations"})
+            threat = Threat(**rec)
         except ValidationError as e:
             errors.append(f"{rel}: {_fmt_err(e)}")
+
         rid = rec.get("id")
         if rid != path.stem:
             errors.append(f"{rel}: id {rid!r} does not match filename {path.stem!r}")
         elif rid in threat_ids:
             errors.append(f"{rel}: duplicate threat id {rid!r}")
-        else:
+        elif rid:
             threat_ids.add(rid)
 
-        links = rec.get("mitigations") or []
-        if not isinstance(links, list):
-            errors.append(f"{rel}: 'mitigations' must be a list")
+        if threat is None:
             continue
-        for i, link in enumerate(links):
-            if not isinstance(link, dict):
-                errors.append(f"{rel}: mitigations[{i}] is not a mapping")
-                continue
-            try:
-                ref = MitigationRef(**link)
-            except ValidationError as e:
-                errors.append(f"{rel}: mitigations[{i}]: {_fmt_err(e)}")
-                continue
-            if ref.mitigation_id not in mit_ids:
-                errors.append(
-                    f"{rel}: mitigations[{i}] references unknown mitigation {ref.mitigation_id!r}"
-                )
+
+        # Link integrity: every mitigation id resolves to a real card.
+        for i, link in enumerate(threat.mitigations):
+            if link.id not in mit_ids:
+                errors.append(f"{rel}: mitigations[{i}] references unknown mitigation {link.id!r}")
+
+        # Lint A — a threat with controls but none `gating` has no real closure.
+        if threat.mitigations and not any(m.strength == "gating" for m in threat.mitigations):
+            errors.append(f"{rel}: no `gating` mitigation (all soft) — no architectural closure")
+
+        # Lint B — a technique must not be the threat/weakness identity (it is a mechanism).
+        blob = " ".join([threat.title, *(w.text for w in threat.weaknesses)]).lower()
+        for tw in _TECHNIQUE_WORDS:
+            if tw in threat.title.lower():
+                errors.append(f"{rel}: technique {tw!r} used as the threat title — belongs in source/references")
+            elif tw in blob and any(tw in w.text.lower() and len(w.text) < 40 for w in threat.weaknesses):
+                errors.append(f"{rel}: technique {tw!r} used as a weakness identity — belongs in source/references")
 
     sg_dir = catalog_dir / "style_guide"
     if sg_dir.is_dir():

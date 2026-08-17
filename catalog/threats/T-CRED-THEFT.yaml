@@ -1,25 +1,35 @@
 id: T-CRED-THEFT
 title: Privilege abuse / credential theft via MCP
-description: 'Compromise of a privileged token grants access to resources within those privileges without additional authentication.
-
-
-  Theft or substitution of a client bot''s token allows operations to be performed on the client''s behalf with their permissions.'
-impact_class: infrastructure-execution
-vulnerability:
-- The agent or tool holds a privileged token with broad scope (a service account with excessive rights, OAuth on-behalf-of the user); token compromise grants access to resources within those rights without additional authentication.
-- 'An MCP connection to a tool without authentication: any agent or service on the network invokes tools through it.'
-- A token with excessive rights is passed to the agent-tool boundary (including into a browser or insecure environment) and can be intercepted.
+harm: code-execution
+surface:
+- agent-environment
+- agent-agent
+source:
+- external-attacker
+- internal
+weaknesses:
+- component: identity-store
+  text: The agent or tool holds a privileged token with broad scope (a service account with excessive rights, OAuth on-behalf-of the user); token compromise grants access to resources within those rights without additional authentication.
+  nature: targeted
+- component: tool
+  text: 'An MCP connection to a tool without authentication: any agent or service on the network invokes tools through it.'
+  nature: secondary
+- component: identity-store
+  text: A token with excessive rights is passed to the agent-tool boundary (including into a browser or insecure environment) and can be intercepted.
+  nature: secondary
 reachability: NOT applicable if tokens are narrowly scoped (least scope, separate accounts per operation) and unreachable from a compromisable point, or the tools carry no privileges beyond what the caller already has.
-tags: []
 mitigations:
-- mitigation_id: CTRL-AUDIT-LOGGING
+- id: CTRL-AUDIT-LOGGING
+  strength: gating
   rationale: 'Logging of all operations performed on behalf of the user
 
 
     Auditing all credential operations enables detection of anomalous activity'
-- mitigation_id: CTRL-MCP-REGISTRY
+- id: CTRL-MCP-REGISTRY
+  strength: gating
   rationale: Registry of MCP servers with a mandatory authentication policy
-- mitigation_id: CTRL-PRIVILEGE-CONTROL
+- id: CTRL-PRIVILEGE-CONTROL
+  strength: gating
   rationale: 'Restricting service account permissions reduces risk in case of compromise
 
 
@@ -30,7 +40,8 @@ mitigations:
 
 
     The principle of least privilege limits the consequences of token compromise'
-- mitigation_id: CTRL-TOKEN-PROTECTION
+- id: CTRL-TOKEN-PROTECTION
+  strength: gating
   rationale: 'Secure storage of credentials prevents their theft from tools
 
 
@@ -38,8 +49,11 @@ mitigations:
 
 
     Protecting tokens from leakage through encryption and secure storage'
-- mitigation_id: CTRL-TRANSPORT-AUTH
+- id: CTRL-TRANSPORT-AUTH
+  strength: gating
   rationale: 'mTLS or API-key authentication of MCP connections prevents unauthorized calls
 
 
     mTLS or API-key authentication protects the channel'
+references: []
+tags: []

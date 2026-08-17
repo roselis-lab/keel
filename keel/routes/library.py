@@ -41,9 +41,10 @@ async def update_threat(threat_id: str, data: ThreatUpdate):
 async def link_mitigation(
     threat_id: str,
     mitigation_id: str,
+    strength: str = Body("gating", embed=True),
     rationale: str = Body("", embed=True),
 ):
-    result = await threat_service.add_mitigation(threat_id, mitigation_id, rationale)
+    result = await threat_service.add_mitigation(threat_id, mitigation_id, strength, rationale)
     if not result.get("success"):
         raise HTTPException(status_code=404, detail=result.get("error"))
     return result
