@@ -12,16 +12,16 @@ weaknesses:
   nature: targeted
 - component: model
   text: A flaw in the reasoning chain (an unfounded logical leap, mistaking correlation for causation, wrong classification) leads to a wrong conclusion or choice of tool/action.
-  nature: secondary
+  nature: targeted
 - component: model
   text: The agent builds a confident but wrong output from free-form text that arrived in a tool's output.
-  nature: secondary
+  nature: targeted
 - component: model
   text: 'Context confusion between projects/environments: a configuration or action from one environment is applied to another (production vs development).'
-  nature: secondary
+  nature: targeted
 - component: downstream
   text: The user over-trusts the agent's authoritative style and accepts the output without verification; even a correct answer is extrapolated beyond its bounds of applicability.
-  nature: secondary
+  nature: targeted
 reachability: NOT applicable if the agent's output feeds no consequential decisions or actions — not consumed by a downstream system and not a basis for human decisions.
 mitigations:
 - id: CTRL-AGENT-REPORT

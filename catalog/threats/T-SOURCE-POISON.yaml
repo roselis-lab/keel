@@ -12,19 +12,19 @@ weaknesses:
   nature: targeted
 - component: memory
   text: The shared memory of a multi-agent system is writable without verification; poisoned data persistently affects all subsequent decisions until removed manually.
-  nature: secondary
+  nature: targeted
 - component: tool
   text: A tool/MCP server is connected via a dynamic registry or a third party without integrity and authenticity verification; a substituted tool or a compromised MCP returns false data, and its description may carry a hidden injection for the model.
-  nature: secondary
+  nature: targeted
 - component: tool
   text: The agent is discovered/connected through a registry without authentication; a malicious or compromised peer agent supplies false results into the chain.
-  nature: secondary
+  nature: targeted
 - component: tool
   text: An in-process tool or agent shares the address space with the agent with no isolation boundary; compromise gives full access to its context and memory.
-  nature: secondary
+  nature: targeted
 - component: model
   text: In a multi-agent chain, one node's tainted output is accepted by the next as trusted and amplified at each step (cascade).
-  nature: secondary
+  nature: targeted
 reachability: NOT applicable if no source influencing the outputs is reachable for write or substitution by the adversary (corpus, memory, tool and agent registries closed to external write), or the agent relies on no external sources at all.
 mitigations:
 - id: CTRL-AGENT-AUTHENTICATION

@@ -13,13 +13,13 @@ weaknesses:
   nature: targeted
 - component: tool
   text: Recursive delegation between agents or an infinite tool-call loop with no depth/iteration limit exhausts compute and message queues.
-  nature: secondary
+  nature: targeted
 - component: model
   text: Free-form text from a tool's output crafted for recursive or resource-heavy processing by the agent.
-  nature: secondary
+  nature: targeted
 - component: tool
   text: A tool with network access is used for mass/resource-heavy outbound requests.
-  nature: secondary
+  nature: targeted
 reachability: NOT applicable if the reachable endpoint accepts no untrusted/unbounded input and initiates no inter-agent or tool loops (no delegation, fixed depth), or the resource is not shared with other consumers.
 mitigations:
 - id: CTRL-ITERATION-LIMITS
