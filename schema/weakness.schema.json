@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "description": "An architectural predisposing condition on a component.",
+  "properties": {
+    "component": {
+      "enum": [
+        "model",
+        "tool",
+        "downstream",
+        "memory",
+        "knowledge-base",
+        "identity-store"
+      ],
+      "title": "Component",
+      "type": "string"
+    },
+    "nature": {
+      "default": "targeted",
+      "enum": [
+        "targeted",
+        "secondary"
+      ],
+      "title": "Nature",
+      "type": "string"
+    },
+    "text": {
+      "description": "Architectural condition: cause + where + defect",
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "component",
+    "text"
+  ],
+  "title": "Weakness",
+  "type": "object"
+}
