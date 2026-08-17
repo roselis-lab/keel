@@ -1,66 +1,50 @@
 fields:
-  description:
-    purpose: Defines the attack scenario and the applicability conditions
-    content_requirements:
-    - Context - where and when the threat arises
-    - Mechanics - how exactly the vulnerability is exploited
-    - Required conditions - which system properties make the attack possible
-    avoid:
-    - 'Too brief: An attacker can steal data'
-    - Abstract descriptions without specifics
-    - Repeating the title
-    examples:
-    - 'Direct prompt injection: an attacker embeds malicious instructions through user input, which the model executes as its own'
-  impact_class:
-    purpose: An anchor asset that keeps the catalog impact-centric. It names WHICH asset is compromised, not how. A strict, closed, minimal vocabulary.
-    content_requirements:
-    - Exactly one value from the closed vocabulary.
-    - Chosen by asset/damage, NOT by cause (injection/poisoning is a vector, not an impact_class).
-    avoid:
-    - cataloging the cause (injection/poisoning) as an impact_class
-    - introducing a new value without a deliberate revision of the taxonomy
-    allowed_values:
-      decision-integrity: output/decision is distorted → wrong action
-      data-confidentiality: unauthorized disclosure of data
-      infrastructure-execution: unauthorized action/execution in systems
-      resource-availability: exhaustion of resource/cost (LLM as an asset)
-      reputation-compliance: harmful content → reputation/legal
-      recon-exposure: leak of technical information that enables an attack
-  reachability:
-    purpose: 'Carve-outs: when the pattern is NOT a live path, even if it matched. Pure reachability + asset materiality, on the UN-MITIGATED architecture. NOT "whether a mitigation is implemented".'
-    content_requirements:
-    - 'Formulate as exceptions: "NOT applicable if ...".'
-    - Only reachability (the attacker cannot influence the input / the surface is not exposed) and materiality (there is no valuable asset/privileges behind the pattern).
-    - Assessed on the architecture BEFORE mitigations.
-    avoid:
-    - re-negating the weakness ("if parameterized") - that is a self-check against vulnerability, not a carve-out
-    - the positive "applicable if..." - it is tautological with the presence of a vulnerability
-    - treating the presence of a control as a reason for non-applicability (that is risk reduction, a separate step)
-    - vague conditions of the form "if the system uses AI"
   title:
-    purpose: Short name for the UI
+    purpose: Name what goes wrong, in a few words.
     content_requirements:
-    - 3-7 words
-    - In English
-    - Describes what happens
+    - Name the outcome or scenario, not a technique or a restated consequence.
     avoid:
-    - Too general
-    - Technical jargon when unnecessary
+    - A technique as the title (prompt injection, jailbreak) — that is a mechanism, not a threat.
+    - Just the harm restated.
     examples:
-    - Prompt injection
-    - Data theft via a tool
-    - Knowledge base poisoning
-  vulnerability:
-    purpose: 'A list of vulnerabilities - HOW the system is exploitable (an umbrella over steps 2/5/6 of the skill: cause + interaction point + predisposing weakness). System-agnostic. This is the ONLY basis for recognition - each item must read as a pattern that an assessor will recognize on a system they are seeing for the first time.'
+    - Sensitive data disclosure through the response
+    - Unauthorized or destructive tool action
+  harm:
+    purpose: The consequence class — what actually breaks.
     content_requirements:
-    - 'A list: each item is ONE recognizable exploitable pattern (one point of manifestation/configuration).'
-    - 'In each item, bring together: the cause (how the harmful output arises; injection/hallucination is a given), WHERE it manifests (the interaction point in recognition terms), and the weakness that makes it exploitable.'
-    - List ALL points of manifestation - completeness = coverage; cross-check against the cases. A missing item = a missed scenario.
-    - List the points themselves, NOT their combinations (the Cartesian product) - linking them into a scenario is done by the assessor (step 7).
-    instructions:
-    - 'Length as required for sufficiency: an expert reading only the vulnerability should be able to recognize the pattern on an unfamiliar system.'
+    - One primary value from catalog/harm.yaml.
+  surface:
+    purpose: Which trust boundary the untrusted influence crosses to reach the weakness.
+    content_requirements:
+    - One or more values from catalog/surface.yaml, matching the reachability path.
+  source:
+    purpose: Who or what drives the threat.
+    content_requirements:
+    - Values from catalog/source.yaml.
+    - Include non-attacker causes (hallucination / error / accident) when the threat is real without an attacker.
     avoid:
-    - relying on "the model should not behave that way" as a guarantee
-    - a reachability/materiality condition (unreachable, no asset) - that is reachability, not here
-    - restating the impact (that is description)
-    - listing mitigations
+    - Attacker-only when the threat fires from a plain model mistake.
+  reachability:
+    purpose: The rule-out gate — when this threat is NOT a live path in a given system.
+    content_requirements:
+    - Frame as "NOT applicable if …".
+    - About the path not being reachable or the asset not being material.
+    - Judge on the un-mitigated architecture (before controls).
+    avoid:
+    - Re-negating the weakness itself.
+    - Naming a control — closing the weakness is the mitigation's job, not the carve-out's.
+    examples:
+    - NOT applicable if the model cannot influence the arguments (hard-coded), or the interpreter runs with no valuable access.
+  references:
+    purpose: Provenance — where this maps in public catalogs.
+    content_requirements:
+    - Each entry is {id, url} with a real, working link.
+    - Relevant CWE / CAPEC / OWASP-LLM / ATLAS ids.
+    avoid:
+    - Using a reference to rule out or to build chains — provenance only.
+  tags:
+    purpose: Coarse labels for grouping and search.
+    content_requirements:
+    - Short, lowercase, reusable labels.
+    avoid:
+    - Encoding meaning here that belongs in a real field.
