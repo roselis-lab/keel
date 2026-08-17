@@ -100,6 +100,19 @@ def main():
     """Entry point. `validate` checks the catalog YAML; `--http` selects Streamable
     HTTP; no args runs the stdio MCP server."""
     args = sys.argv[1:]
+    if args and args[0] == "schema":
+        from keel.schema_export import DEFAULT_SCHEMA_DIR, schemas_are_fresh, write_schemas
+
+        if "--check" in args:
+            if schemas_are_fresh():
+                print("Schema files are fresh.", file=sys.stderr)
+            else:
+                print("Schema files are stale — run `keel schema`.", file=sys.stderr)
+                raise SystemExit(1)
+        else:
+            write_schemas()
+            print(f"Wrote JSON Schema to {DEFAULT_SCHEMA_DIR}", file=sys.stderr)
+        return
     if args and args[0] == "validate":
         from keel.catalog import validate_catalog
 
