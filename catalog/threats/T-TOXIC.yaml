@@ -1,19 +1,28 @@
 id: T-TOXIC
 title: Generation of offensive, discriminatory, or illegal content
-description: 'The agent generates text from the user''s request and the model''s training data with no output filtering. Under certain prompt-and-context combinations the model reproduces toxic, discriminatory, or illegal patterns from the training set — slurs, stereotypes, instructions for illegal acts. The generated content looks like a meaningful answer and is delivered to the user unchecked. Condition: the agent''s output passes no content filtering, and the model was trained on data containing toxic patterns without sufficient cleaning.'
-impact_class: reputation-compliance
-vulnerability:
-- The agent generates offensive, discriminatory, or illegal content — reproducing toxic patterns from the training data or under the influence of injection or free-form text from a tool's output — and delivers it to the recipient without filtering; the content is perceived as the organization's position.
+harm: reputation-legal
+surface:
+- user-agent
+source:
+- external-attacker
+- training-data
+weaknesses:
+- component: model
+  text: The agent generates offensive, discriminatory, or illegal content — reproducing toxic patterns from the training data or under the influence of injection or free-form text from a tool's output — and delivers it to the recipient without filtering; the content is perceived as the organization's position.
+  nature: targeted
 reachability: NOT applicable if the agent's output reaches no human recipients (no external or employee audience) for whom toxic content would carry reputational or legal consequences.
-tags: []
 mitigations:
-- mitigation_id: CTRL-CONTENT-POLICY
+- id: CTRL-CONTENT-POLICY
+  strength: gating
   rationale: 'A content policy defines impermissible topics and content types
 
 
     A content policy limits the influence of malicious tool output on the generation of toxic content'
-- mitigation_id: CTRL-OUTPUT-VALIDATION
+- id: CTRL-OUTPUT-VALIDATION
+  strength: gating
   rationale: 'Output validation for toxicity blocks offensive content caused by tool output
 
 
     Output validation for toxicity and discrimination blocks offensive content'
+references: []
+tags: []

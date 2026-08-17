@@ -1,6 +1,8 @@
 """MCP tools for threat operations."""
+from typing import Any
+
 from keel.mcp.registry import register_tool
-from keel.schemas.threat import ThreatCreate, ThreatUpdate
+from keel.schemas.threat import Harm, Source, Strength, Surface, ThreatCreate, ThreatUpdate
 from keel.services.threat_service import (
     list_threats as _list_threats,
     get_threat as _get_threat,
@@ -20,14 +22,13 @@ _DESTRUCTIVE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint"
 @register_tool(annotations=_RO)
 async def list_threats(brief: bool = True, include: list[str] | None = None) -> dict:
     """List threats. brief=True → [id, title] pairs; else include any of:
-    description, impact_class, vulnerability, reachability, tags, mitigations."""
+    harm, surface, source, weaknesses, reachability, mitigations, references, tags."""
     return await _list_threats(brief=brief, include=include)
 
 
 @register_tool(annotations=_RO)
 async def get_threat(threat_id: str) -> dict:
-    """Get a threat with description, impact_class, vulnerability, reachability,
-    tags and linked mitigations."""
+    """Get a threat with weaknesses, harm, surface, source, reachability, and mitigations."""
     return await _get_threat(threat_id)
 
 
@@ -35,21 +36,20 @@ async def get_threat(threat_id: str) -> dict:
 async def create_threat(
     threat_id: str,
     title: str,
-    description: str | None = None,
-    impact_class: str | None = None,
-    vulnerability: list[str] | None = None,
-    reachability: str | None = None,
+    harm: Harm,
+    weaknesses: list[dict[str, Any]],
+    reachability: str,
+    surface: list[Surface] | None = None,
+    source: list[Source] | None = None,
     tags: list[str] | None = None,
 ) -> dict:
-    """Create a threat. The catalog is impact-centric: `impact_class` is the
-    asset/damage anchor (strict enum); `vulnerability` (prose list) is HOW the
-    system is exploitable — each item one recognizable pattern (cause+where+weakness);
-    `reachability` (prose) is the carve-outs when it is NOT a live path (reachability
-    + asset materiality, un-mitigated). Follow the style guide before authoring."""
+    """Create a threat. `weaknesses` is a list of {component, text, nature?}; each weakness is an
+    architectural condition (cause+where+defect), NOT a technique or a consequence. `harm` is the
+    consequence class; `reachability` is the rule-out gate ('NOT applicable if…'). Follow the style
+    guide before authoring. Link mitigations via add_threat_mitigation; add references via update."""
     return await _create_threat(ThreatCreate(
-        id=threat_id, title=title, description=description,
-        impact_class=impact_class, vulnerability=vulnerability,
-        reachability=reachability, tags=tags,
+        id=threat_id, title=title, harm=harm, weaknesses=weaknesses, reachability=reachability,
+        surface=surface or [], source=source or [], tags=tags or [],
     ))
 
 
@@ -57,16 +57,18 @@ async def create_threat(
 async def update_threat(
     threat_id: str,
     title: str | None = None,
-    description: str | None = None,
-    impact_class: str | None = None,
-    vulnerability: list[str] | None = None,
+    harm: Harm | None = None,
+    weaknesses: list[dict[str, Any]] | None = None,
     reachability: str | None = None,
+    surface: list[Surface] | None = None,
+    source: list[Source] | None = None,
+    references: list[dict[str, Any]] | None = None,
     tags: list[str] | None = None,
 ) -> dict:
     """Update threat content. Only provided fields change."""
     return await _update_threat(threat_id, ThreatUpdate(
-        title=title, description=description, impact_class=impact_class,
-        vulnerability=vulnerability, reachability=reachability, tags=tags,
+        title=title, harm=harm, weaknesses=weaknesses, reachability=reachability,
+        surface=surface, source=source, references=references, tags=tags,
     ))
 
 
@@ -82,10 +84,13 @@ async def batch_update_threats(updates: list[dict], confirm: bool = False) -> di
     return await _batch_update_threats(updates, confirm=confirm)
 
 
-@register_tool(annotations=_WRITE, entity_type="threat_mitigation")
-async def add_threat_mitigation(threat_id: str, mitigation_id: str, rationale: str) -> dict:
-    """Link a mitigation to a threat with a rationale (UPSERT)."""
-    return await _add_mitigation(threat_id, mitigation_id, rationale)
+@register_tool(annotations=_WRITE)
+async def add_threat_mitigation(
+    threat_id: str, mitigation_id: str, strength: Strength, rationale: str,
+) -> dict:
+    """Link a mitigation to a threat. strength ∈ {gating (blocks), soft (only lowers likelihood)};
+    a soft control does not close the threat."""
+    return await _add_mitigation(threat_id, mitigation_id, strength, rationale)
 
 
 @register_tool(annotations=_WRITE)

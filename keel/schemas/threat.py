@@ -1,65 +1,76 @@
+"""Threat schema: component → surface/source → weakness(nature) → threat → harm →
+reachability → mitigation(strength). Frozen vocabularies as Literals; prose fields
+free; references are real URLs.
+"""
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-# Strict, minimal, closed anchor. Enforced here (Pydantic), not in the DB — the
-# column is a plain string so growing it is a deliberate decision, not a schema
-# accident. Keep this list tight; it is a near-complete partition of "what asset".
-ImpactClass = Literal[
-    "decision-integrity",
-    "data-confidentiality",
-    "infrastructure-execution",
-    "resource-availability",
-    "reputation-compliance",
-    "recon-exposure",
+# --- frozen vocabularies (mirrored in catalog/{components,harm,surface,source}.yaml) ---
+Component = Literal["model", "tool", "downstream", "memory", "knowledge-base", "identity-store"]
+Harm = Literal["wrong-decision", "data-exposed", "code-execution", "downtime", "reputation-legal"]
+Surface = Literal["user-agent", "agent-agent", "agent-environment"]
+Source = Literal[
+    "external-attacker", "internal", "hallucination", "error", "accident", "training-data"
 ]
+Nature = Literal["targeted", "secondary"]
+Strength = Literal["gating", "soft"]
 
 
-class MitigationRef(BaseModel):
-    """A mitigation linked to a threat, with rationale."""
+class Weakness(BaseModel):
+    """An architectural predisposing condition on a component."""
 
-    mitigation_id: str
+    model_config = ConfigDict(extra="forbid")
+    component: Component
+    text: str = Field(..., description="Architectural condition: cause + where + defect")
+    nature: Nature = "targeted"
+
+
+class MitigationLink(BaseModel):
+    """Link to a mitigation card, with its role for this threat."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(..., description="A real CTRL-* mitigation id")
+    strength: Strength = Field(..., description="gating (blocks) | soft (only lowers likelihood)")
     rationale: str
 
 
-class ThreatBase(BaseModel):
-    title: str | None = Field(None, description="Threat title")
-    description: str | None = Field(None, description="What the threat is (impact narrative)")
-    impact_class: ImpactClass | None = Field(None, description="Asset/damage anchor (strict enum)")
-    vulnerability: list[str] | None = Field(
-        None,
-        description="Prose list: HOW the system is exploitable — each item one recognizable pattern (cause+where+weakness). Sole recognition anchor.",
-    )
-    reachability: str | None = Field(
-        None,
-        description="Prose: carve-outs when it is NOT a live path — reachability + asset materiality, un-mitigated; 'not applicable if …'",
-    )
-    tags: list[str] | None = Field(None, description="Coarse labels, e.g. Vibe-Coding")
-
-
-class ThreatCreate(ThreatBase):
-    id: str = Field(..., description="Unique threat ID (e.g. T-INJECT)")
-
-
-class ThreatUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    impact_class: ImpactClass | None = None
-    vulnerability: list[str] | None = None
-    reachability: str | None = None
-    tags: list[str] | None = None
+class Reference(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str
+    url: HttpUrl
 
 
 class Threat(BaseModel):
-    """Threat in responses."""
+    """A threat: what can go wrong, resting on weaknesses at components."""
 
-    model_config = ConfigDict(from_attributes=True)
-
+    model_config = ConfigDict(extra="forbid")
     id: str
+    title: str
+    harm: Harm
+    surface: list[Surface] = Field(default_factory=list)
+    source: list[Source] = Field(default_factory=list)
+    weaknesses: list[Weakness] = Field(..., min_length=1)
+    reachability: str = Field(..., description="Rule-out gate on the un-mitigated arch: 'NOT applicable if…'")
+    mitigations: list[MitigationLink] = Field(default_factory=list)
+    references: list[Reference] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+
+class ThreatCreate(Threat):
+    """Create payload — same shape, id required."""
+
+
+class ThreatUpdate(BaseModel):
+    """Partial update; only provided fields change."""
+
+    model_config = ConfigDict(extra="forbid")
     title: str | None = None
-    description: str | None = None
-    impact_class: str | None = None
-    vulnerability: list[str] | None = None
+    harm: Harm | None = None
+    surface: list[Surface] | None = None
+    source: list[Source] | None = None
+    weaknesses: list[Weakness] | None = None
     reachability: str | None = None
+    mitigations: list[MitigationLink] | None = None
+    references: list[Reference] | None = None
     tags: list[str] | None = None
-    mitigations: list[MitigationRef] = Field(default_factory=list)

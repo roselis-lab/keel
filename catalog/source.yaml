@@ -1,0 +1,8 @@
+# Who or what drives the threat. Not only attackers — a threat can be real without one.
+source:
+  external-attacker: {name: External attacker, desc: "An outside adversary (via injection, source substitution, etc.)."}
+  internal:          {name: Internal actor,    desc: "An insider with legitimate access, per this system's rules."}
+  hallucination:     {name: Hallucination,     desc: "The model itself errs / fabricates — no attacker."}
+  error:             {name: Implementation error, desc: "An implementation or configuration defect."}
+  accident:          {name: Accidental,        desc: "An accidental user action."}
+  training-data:     {name: Training data,     desc: "Toxic / biased patterns carried from training data."}

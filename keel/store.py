@@ -27,8 +27,8 @@ def dump_yaml(data: Any) -> str:
 
 # Stable on-disk field order, so files stay diffable regardless of write path.
 THREAT_ORDER = [
-    "id", "title", "description", "impact_class", "vulnerability", "reachability",
-    "tags", "mitigations",
+    "id", "title", "harm", "surface", "source", "weaknesses", "reachability",
+    "mitigations", "references", "tags",
 ]
 MITIGATION_ORDER = [
     "id", "name", "status", "mitigation_class", "purpose", "formal_implementation_risk",
