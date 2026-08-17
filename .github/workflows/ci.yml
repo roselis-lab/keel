@@ -22,6 +22,9 @@ jobs:
       - name: Lint
         run: uv run ruff check .
 
+      - name: Check generated schema is fresh
+        run: uv run keel schema --check
+
       - name: Validate catalog
         run: uv run keel validate
 

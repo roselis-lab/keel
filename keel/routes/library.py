@@ -6,6 +6,7 @@ tools use, and every write lands directly in `catalog/*.yaml`.
 """
 from fastapi import APIRouter, Body, HTTPException, Query
 
+from keel.schema_export import build_schemas
 from keel.schemas.mitigation import MitigationUpdate
 from keel.schemas.threat import ThreatUpdate
 from keel.services import mitigation_service, style_guide_service, threat_service
@@ -99,3 +100,14 @@ async def update_style_field(entity_type: str, field_name: str, patch: dict = Bo
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     return row.model_dump()
+
+
+# --------------------------------------------------------------------------- #
+# Schema
+# --------------------------------------------------------------------------- #
+@router.get("/schema/{entity}")
+async def get_schema(entity: str):
+    schemas = build_schemas()
+    if entity not in schemas:
+        raise HTTPException(status_code=404, detail=f"unknown entity {entity!r}")
+    return schemas[entity]
