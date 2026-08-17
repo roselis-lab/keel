@@ -13,10 +13,10 @@ weaknesses:
   nature: targeted
 - component: tool
   text: 'An MCP connection to a tool without authentication: any agent or service on the network invokes tools through it.'
-  nature: secondary
+  nature: targeted
 - component: identity-store
   text: A token with excessive rights is passed to the agent-tool boundary (including into a browser or insecure environment) and can be intercepted.
-  nature: secondary
+  nature: targeted
 reachability: NOT applicable if tokens are narrowly scoped (least scope, separate accounts per operation) and unreachable from a compromisable point, or the tools carry no privileges beyond what the caller already has.
 mitigations:
 - id: CTRL-AUDIT-LOGGING

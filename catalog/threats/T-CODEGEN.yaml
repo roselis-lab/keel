@@ -13,13 +13,13 @@ weaknesses:
   nature: targeted
 - component: downstream
   text: The agent's output is rendered as HTML/Markdown in the user UI without escaping — the generated markup executes in the browser (XSS).
-  nature: secondary
+  nature: targeted
 - component: tool
   text: Code is assembled from free-form text that arrived in a tool's output (indirect injection) and goes on to execution/render.
-  nature: secondary
+  nature: targeted
 - component: tool
   text: Output is passed to a tool that accepts and executes arbitrary input (shell/eval), with no "text" vs "command" separation.
-  nature: secondary
+  nature: targeted
 reachability: NOT applicable if the agent's output is text for a human only — not executed and not rendered as active content — and there is no tool that executes arbitrary input.
 mitigations:
 - id: CTRL-AI-CODE-REVIEW

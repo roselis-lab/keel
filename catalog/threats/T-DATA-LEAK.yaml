@@ -13,13 +13,13 @@ weaknesses:
   nature: targeted
 - component: tool
   text: A tool with filesystem access reads sensitive files (.env, secrets, configs) on the model's initiative.
-  nature: secondary
+  nature: targeted
 - component: memory
   text: Session context or memory is not isolated between users/tenants; one party's data ends up in another's response (including cross-tenant through a shared MCP).
-  nature: secondary
+  nature: targeted
 - component: model
   text: The agent holds sensitive data in context (RAG of internal information, shared MAS memory) while the output audience is external; the response paraphrases it to an unauthorized recipient.
-  nature: secondary
+  nature: targeted
 reachability: NOT applicable if there is no data under differentiated authorization in the agent's context and access — everything it can reach is already available to any recipient of its output (data and audience in one access zone).
 mitigations:
 - id: CTRL-ACCESS-CONTROL
