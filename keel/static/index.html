@@ -244,22 +244,194 @@ async function select(id) {
 }
 
 // ------------------------------------------------------------- detail ------ //
-// The read view and schema-driven edit form arrive in the next task; for now the
-// centre pane just confirms the selection and shows the raw fetched record.
 function renderDetail() {
   const m = document.getElementById("main");
-  const t = state.current;
-  if (!state.selected || !t) {
+  if (!state.selected || !state.current) {
     m.innerHTML = '<div class="empty">Select a threat from the list.</div>';
     return;
   }
-  m.innerHTML = `<div class="detail">
+  m.innerHTML = state.editing ? editThreat(state.current) : readThreat(state.current);
+  wireDetail();
+}
+
+// Read view — the NEW threat fields.
+function readThreat(t) {
+  const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
+  const surface = (t.surface || []).map(v => badge("type", v)).join(" ") || '<span class="placeholder">none</span>';
+  const source = (t.source || []).map(v => badge("type", v)).join(" ") || '<span class="placeholder">none</span>';
+
+  const weaknesses = (t.weaknesses || []).length
+    ? `<ul class="plain">${t.weaknesses.map(w => `
+        <li><div class="meta">${esc(w.component)}${w.nature ? " · " + esc(w.nature) : ""}</div>${esc(w.text)}</li>`).join("")}</ul>`
+    : '<div class="warn">No weaknesses authored.</div>';
+
+  const mits = (t.mitigations || []).length
+    ? (t.mitigations || []).map(l => {
+        const mm = state.mitById[l.id];
+        return `<div class="card">
+          <div class="chead">
+            <span class="cid">${esc(l.id)}</span>
+            <span class="ctitle">${esc(mm ? mm.name : "(missing)")}</span>
+            <span class="badge soft" style="margin-left:auto">${esc(l.strength || "")}</span>
+          </div>
+          ${l.rationale ? `<div class="rationale">${esc(l.rationale)}</div>` : ""}
+        </div>`;
+      }).join("")
+    : '<p class="placeholder">None linked.</p>';
+
+  const refs = (t.references || []).length
+    ? `<ul class="plain">${t.references.map(r => `<li><span class="meta">${esc(r.id)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`
+    : '<p class="placeholder">None.</p>';
+
+  const tags = (t.tags || []).length
+    ? (t.tags || []).map(x => badge("tag", x)).join(" ")
+    : '<span class="placeholder">none</span>';
+
+  return `<div class="detail">
     <div class="dhead">
       <div class="dicon">▲</div>
-      <div class="dtitle"><h2>${esc(t.title)}</h2><div class="did">${esc(t.id)}</div></div>
+      <div class="dtitle">
+        <h2>${esc(t.title)}</h2>
+        <div class="did">${esc(t.id)}</div>
+        <div class="hbadges badges">
+          ${t.harm ? badge("harm", t.harm) : '<span class="badge soft" style="color:var(--crimson-600)">no harm</span>'}
+        </div>
+      </div>
+      <div class="hactions"><button class="btn ghost" id="editBtn">✎ Edit</button></div>
     </div>
-    <section><p class="placeholder">— threat read view &amp; editor (next task) —</p></section>
+    <section><h3 class="slabel">Surface <span class="sub">— where the interaction happens</span></h3><div class="badges">${surface}</div></section>
+    <section><h3 class="slabel">Source <span class="sub">— who or what drives it</span></h3><div class="badges">${source}</div></section>
+    <section><h3 class="slabel">Weaknesses <span class="sub">— architectural conditions</span></h3>${weaknesses}</section>
+    <section><h3 class="slabel">Reachability <span class="sub">— when NOT a live path</span></h3>${
+      t.reachability ? `<div class="prose">${esc(t.reachability)}</div>` : '<div class="warn">Reachability not authored.</div>'}</section>
+    <section><h3 class="slabel">Mitigations (${(t.mitigations || []).length})</h3>${mits}</section>
+    <section><h3 class="slabel">References</h3>${refs}</section>
+    <section><h3 class="slabel">Tags</h3><div class="badges">${tags}</div></section>
   </div>`;
+}
+
+// Edit form — built by walking the threat schema's field order.
+// Only the schema-simple fields are editable here; weakness/mitigation editors are deferred.
+const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", "tags"]);
+const PLACEHOLDER_FIELDS = { weaknesses: "weakness editor (next task)", mitigations: "mitigation link editor (next task)" };
+
+function editThreat(t) {
+  const d = state.draft;
+  const order = Object.keys(state.schema.threat.properties || {});
+  const blocks = [];
+  for (const name of order) {
+    if (name === "id" || name === "title" || name === "references") continue;   // id/title fixed; references deferred
+    if (PLACEHOLDER_FIELDS[name]) {
+      blocks.push(`<section><h3 class="slabel">${esc(name)}</h3><p class="placeholder">— ${esc(PLACEHOLDER_FIELDS[name])} —</p></section>`);
+      continue;
+    }
+    if (!EDITABLE.has(name)) continue;
+    blocks.push(fieldEditor(name, d));
+  }
+
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">▲</div>
+      <div class="dtitle" style="width:100%">
+        <input class="f titlein" id="f_title" value="${esc(d.title)}">
+        <div class="did" style="margin-top:6px">${esc(t.id)}</div>
+      </div>
+      <div class="hactions">
+        <button class="btn primary" id="saveBtn">✔ Save</button>
+        <button class="btn ghost" id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+    ${blocks.join("")}
+  </div>`;
+}
+
+function fieldEditor(name, d) {
+  if (name === "harm") {
+    const opts = harmEnum().map(v => `<option value="${esc(v)}" ${v === d.harm ? "selected" : ""}>${esc(v)}</option>`).join("");
+    return `<section><h3 class="slabel">Harm</h3><select class="f" id="f_harm">${opts}</select></section>`;
+  }
+  if (name === "surface" || name === "source") {
+    const vals = name === "surface" ? surfaceEnum() : sourceEnum();
+    const chosen = new Set(d[name] || []);
+    const boxes = vals.map(v => `
+      <label><input type="checkbox" data-set="${name}" value="${esc(v)}" ${chosen.has(v) ? "checked" : ""}>${esc(v)}</label>`).join("");
+    return `<section><h3 class="slabel">${esc(name)}</h3><div class="checkset">${boxes}</div></section>`;
+  }
+  if (name === "reachability") {
+    return `<section><h3 class="slabel">Reachability <span class="sub">— NOT applicable if…</span></h3>
+      <textarea class="f" id="f_reachability" rows="4" placeholder="NOT applicable if…">${esc(d.reachability)}</textarea></section>`;
+  }
+  if (name === "tags") {
+    return `<section><h3 class="slabel">Tags</h3>
+      <input class="f" id="f_tags" value="${esc((d.tags || []).join(", "))}" placeholder="comma, separated">
+      <div class="hint">Comma-separated.</div></section>`;
+  }
+  return "";
+}
+
+// --------------------------------------------------------------- wiring ---- //
+function wireDetail() {
+  const editBtn = document.getElementById("editBtn");
+  if (editBtn) editBtn.onclick = enterEdit;
+  const cancelBtn = document.getElementById("cancelBtn");
+  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; renderDetail(); };
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) saveBtn.onclick = saveThreat;
+  if (state.editing) wireThreatEdit();
+}
+
+function enterEdit() {
+  const t = state.current;
+  state.draft = {
+    title: t.title || "",
+    harm: t.harm || (harmEnum()[0] || ""),
+    surface: [...(t.surface || [])],
+    source: [...(t.source || [])],
+    reachability: t.reachability || "",
+    tags: [...(t.tags || [])],
+  };
+  state.editing = true;
+  renderDetail();
+}
+
+function wireThreatEdit() {
+  const d = state.draft;
+  const title = document.getElementById("f_title");
+  if (title) title.oninput = () => d.title = title.value;
+  const harm = document.getElementById("f_harm");
+  if (harm) harm.onchange = () => d.harm = harm.value;
+  const reach = document.getElementById("f_reachability");
+  if (reach) reach.oninput = () => d.reachability = reach.value;
+  const tags = document.getElementById("f_tags");
+  if (tags) tags.oninput = () => d.tags = tags.value.split(",").map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll("[data-set]").forEach(cb => cb.onchange = () => {
+    const set = new Set(d[cb.dataset.set]);
+    if (cb.checked) set.add(cb.value); else set.delete(cb.value);
+    d[cb.dataset.set] = [...set];
+  });
+}
+
+// --------------------------------------------------------------- save ------ //
+async function saveThreat() {
+  const d = state.draft;
+  const body = {
+    title: d.title,
+    harm: d.harm,
+    surface: d.surface,
+    source: d.source,
+    reachability: d.reachability,
+    tags: d.tags,
+  };
+  try {
+    await api("PATCH", "/threats/" + encodeURIComponent(state.selected), body);
+    state.current = await j("/threats/" + encodeURIComponent(state.selected));
+    state.editing = false; state.draft = null;
+    // reflect a possible title change in the rail
+    const row = state.threats.find(r => r[0] === state.selected);
+    if (row) row[1] = state.current.title;
+    renderList(); renderDetail(); renderPreview();
+    toast("Threat saved");
+  } catch (e) { toast(e.message, true); }
 }
 
 // ------------------------------------------------------------- preview ----- //
