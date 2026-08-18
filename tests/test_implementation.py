@@ -8,6 +8,8 @@ import pytest
 from pydantic import ValidationError
 
 from keel.schemas.mitigation import Implementation, MitigationCreate
+from keel.services.mitigation_service import create_mitigation, get_mitigation
+from keel.store import Store, set_store
 
 
 def test_valid_implementation_parses():
@@ -48,3 +50,31 @@ def test_mitigation_carries_implementations():
         implementations=[{"title": "t", "description": "d"}],
     )
     assert m.implementations[0].title == "t"
+
+
+@pytest.fixture
+def temp_store(tmp_path):
+    (tmp_path / "threats").mkdir()
+    (tmp_path / "mitigations").mkdir()
+    set_store(Store(tmp_path))
+    yield
+    set_store(None)
+
+
+@pytest.mark.asyncio
+async def test_get_mitigation_round_trips_implementations(temp_store):
+    await create_mitigation(
+        MitigationCreate(
+            id="CTRL-RT",
+            name="Round trip",
+            mitigation_class="gating_control",
+            implementations=[
+                {"title": "Platform sandbox", "description": "locked-down container"}
+            ],
+        )
+    )
+    got = await get_mitigation("CTRL-RT")
+    assert got["success"] is True
+    assert got["implementations"] == [
+        {"title": "Platform sandbox", "description": "locked-down container", "reference": None}
+    ]
