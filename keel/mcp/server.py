@@ -114,14 +114,28 @@ def main():
             print(f"Wrote JSON Schema to {DEFAULT_SCHEMA_DIR}", file=sys.stderr)
         return
     if args and args[0] == "validate":
-        from keel.catalog import validate_catalog
+        from keel.catalog import catalog_warnings, validate_catalog
 
+        strict = "--strict" in args
         errs = validate_catalog()
+        warns = catalog_warnings()
+
+        # Advisory tier: printed to stderr, but never fails CI on its own (only --strict does).
+        if warns:
+            print(f"Warnings ({len(warns)}):", file=sys.stderr)
+            for w in warns:
+                print(f"  ! {w}", file=sys.stderr)
+
         if errs:
             print(f"Catalog invalid ({len(errs)} problem(s)):", file=sys.stderr)
             for e in errs:
                 print(f"  - {e}", file=sys.stderr)
             raise SystemExit(1)
+
+        if warns and strict:
+            print(f"--strict: {len(warns)} warning(s) treated as errors.", file=sys.stderr)
+            raise SystemExit(1)
+
         print("Catalog is valid.", file=sys.stderr)
     elif "--http" in args:
         run_http()
