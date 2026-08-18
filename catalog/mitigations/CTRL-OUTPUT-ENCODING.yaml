@@ -1,27 +1,23 @@
 id: CTRL-OUTPUT-ENCODING
-title: HTML/JS/URL Escaping Before Render
-description: Applies proper output encoding — HTML entity encoding, JavaScript escaping,
-  URL encoding — before rendering or passing model output, preventing XSS and injection
-  attacks via unescaped content. The mechanism operates at the output layer and ensures
-  content is safely encoded for the target context. This neutralizes malicious content
-  in model output, protects users from script injection, and ensures safe handling
-  of dynamic content.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: HTML entity encoding
-  complexity: low
-  description: HTML output passes through an entity encoder that converts special
-    characters (<, >, &, \", ') into HTML entities. This prevents the browser from
-    interpreting the output as HTML/JS. Encoding is applied consistently to all user-facing
-    HTML output.
-- name: JavaScript context escaping
-  complexity: low
-  description: Content embedded in JavaScript contexts is properly escaped to prevent
-    XSS via JS injection. String escaping, JSON serialization, and safe templating
-    engines are used for JS contexts.
-- name: URL parameter encoding
-  complexity: low
-  description: URL parameters and path segments are properly encoded before inclusion
-    in a URL. URL encoding prevents injection via URL manipulation and ensures safe
-    URL construction.
+name: HTML/JS/URL Escaping Before Render
+status: draft
+mitigation_class: gating_control
+purpose: Applies proper output encoding — HTML entity encoding, JavaScript escaping, URL encoding — before rendering or passing model output, preventing XSS and injection attacks via unescaped content. The mechanism operates at the output layer and ensures content is safely encoded for the target context. This neutralizes malicious content in model output, protects users from script injection, and ensures safe handling of dynamic content.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'HTML entity encoding (low): HTML output passes through an entity encoder that converts special characters (<, >, &, \", '') into HTML entities. This prevents the browser from interpreting the output as HTML/JS. Encoding is applied consistently to all user-facing HTML output.
+
+
+  JavaScript context escaping (low): Content embedded in JavaScript contexts is properly escaped to prevent XSS via JS injection. String escaping, JSON serialization, and safe templating engines are used for JS contexts.
+
+
+  URL parameter encoding (low): URL parameters and path segments are properly encoded before inclusion in a URL. URL encoding prevents injection via URL manipulation and ensures safe URL construction.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

@@ -1,38 +1,23 @@
 id: CTRL-AUDIT-LOGGING
-title: Immutable ToolCall logging
-description: Records all tool calls, agent decisions, data accesses, and operation
-  results in an immutable log with cryptographic integrity protection, ensuring the
-  ability to perform forensic analysis and incident investigation. The mechanism works
-  through instrumentation of all critical points in the system - tool calls, API endpoints,
-  data access layers - and writes events to append-only storage tied to timestamps,
-  session identifiers, and action subjects. This makes it possible to reconstruct
-  the chronology of an incident, establish cause-and-effect relationships, detect
-  anomalous patterns post-factum, and ensure accountability for compliance requirements.
-type: DETECTIVE
-requirement_level: MANDATORY
-implementations:
-- name: Append-only audit storage
-  description: All events are written to a dedicated append-only store (a dedicated
-    database table with RESTRICT deletes, object storage with a WORM policy, or a
-    dedicated audit log service). Each record contains timestamp, event type, actor
-    ID, session ID, resource, action, outcome, and relevant context. Deleting and
-    modifying records is technically impossible or requires a privileged break-glass
-    procedure. This provides baseline protection of audit trail integrity at moderate
-    cost.
-  complexity: medium
-- name: Hash-chained event log
-  description: Records in the audit log are cryptographically linked through a hash
-    chain or Merkle tree - each new event contains the hash of the previous one. This
-    makes it impossible to silently modify or delete history without compromising
-    the entire chain. For additional assurance, root hashes are periodically published
-    to a public blockchain or signed by an external party. The approach provides judicial-grade
-    integrity, but it adds complexity in implementation and storage.
-  complexity: high
-- name: SIEM integration with correlation
-  description: 'The audit log is integrated with a SIEM system (Splunk, ELK, Datadog)
-    for real-time event correlation, anomaly detection, and automated alerting. Correlation
-    rules are tuned to typical attack patterns: unusual tool call frequency, access
-    to sensitive data, privilege escalation attempts. This combines forensic capability
-    with operational response, but it requires expertise to configure the rules and
-    keep them current.'
-  complexity: high
+name: Immutable ToolCall logging
+status: draft
+mitigation_class: detector
+purpose: Records all tool calls, agent decisions, data accesses, and operation results in an immutable log with cryptographic integrity protection, ensuring the ability to perform forensic analysis and incident investigation. The mechanism works through instrumentation of all critical points in the system - tool calls, API endpoints, data access layers - and writes events to append-only storage tied to timestamps, session identifiers, and action subjects. This makes it possible to reconstruct the chronology of an incident, establish cause-and-effect relationships, detect anomalous patterns post-factum, and ensure accountability for compliance requirements.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Append-only audit storage (medium): All events are written to a dedicated append-only store (a dedicated database table with RESTRICT deletes, object storage with a WORM policy, or a dedicated audit log service). Each record contains timestamp, event type, actor ID, session ID, resource, action, outcome, and relevant context. Deleting and modifying records is technically impossible or requires a privileged break-glass procedure. This provides baseline protection of audit trail integrity at moderate cost.
+
+
+  Hash-chained event log (high): Records in the audit log are cryptographically linked through a hash chain or Merkle tree - each new event contains the hash of the previous one. This makes it impossible to silently modify or delete history without compromising the entire chain. For additional assurance, root hashes are periodically published to a public blockchain or signed by an external party. The approach provides judicial-grade integrity, but it adds complexity in implementation and storage.
+
+
+  SIEM integration with correlation (high): The audit log is integrated with a SIEM system (Splunk, ELK, Datadog) for real-time event correlation, anomaly detection, and automated alerting. Correlation rules are tuned to typical attack patterns: unusual tool call frequency, access to sensitive data, privilege escalation attempts. This combines forensic capability with operational response, but it requires expertise to configure the rules and keep them current.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

@@ -22,13 +22,11 @@ jobs:
       - name: Lint
         run: uv run ruff check .
 
+      - name: Check generated schema is fresh
+        run: uv run keel schema --check
+
       - name: Validate catalog
         run: uv run keel validate
-
-      - name: Build database from the catalog
-        run: |
-          uv run alembic upgrade head
-          uv run keel seed
 
       - name: Test
         run: uv run pytest

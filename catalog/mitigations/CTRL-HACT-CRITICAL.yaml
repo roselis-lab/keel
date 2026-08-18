@@ -1,34 +1,23 @@
 id: CTRL-HACT-CRITICAL
-title: HACT — Human Approval for Critical Tools
-description: Enforces mandatory human approval for critical actions regardless of
-  other settings — irreversible operations, access to secrets, production changes,
-  destructive commands — as a last line of defense against automated malicious actions.
-  The mechanism operates as a mandatory approval gate on invocations of critical tools
-  and actions, which cannot be disabled or bypassed through configuration. This prevents
-  catastrophic damage from a compromised or malfunctioning agent, ensures human oversight
-  over the highest-risk operations, and guarantees the ability to intercept dangerous
-  actions before execution.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Mandatory allowlist
-  complexity: low
-  description: 'An explicit allowlist of critical tools and actions that always require
-    human approval is defined: file deletion, dropping databases, production deployment,
-    access to secrets, privileged commands. The allowlist is hard-coded into policy
-    and cannot be changed at runtime. Any invocation of a tool from the list automatically
-    triggers an approval flow that cannot be bypassed.'
-- name: Dynamic risk-based trigger
-  complexity: high
-  description: The system automatically assesses the risk level of each action based
-    on type, target resources, potential impact, and context. Actions exceeding the
-    risk threshold are automatically classified as requiring approval regardless of
-    explicit categorization. This can catch new high-risk actions but depends on the
-    accuracy of the risk model.
-- name: Multi-person approval
-  complexity: medium
-  description: 'For the highest-criticality operations, a single approval is insufficient
-    — dual control or M-of-N approvals from different authorized persons are required.
-    Examples: modifying a production database schema, large financial transactions,
-    modifying security policies. This prevents a single point of failure but adds
-    significant latency for critical operations.'
+name: HACT — Human Approval for Critical Tools
+status: draft
+mitigation_class: gating_control
+purpose: Enforces mandatory human approval for critical actions regardless of other settings — irreversible operations, access to secrets, production changes, destructive commands — as a last line of defense against automated malicious actions. The mechanism operates as a mandatory approval gate on invocations of critical tools and actions, which cannot be disabled or bypassed through configuration. This prevents catastrophic damage from a compromised or malfunctioning agent, ensures human oversight over the highest-risk operations, and guarantees the ability to intercept dangerous actions before execution.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Mandatory allowlist (low): An explicit allowlist of critical tools and actions that always require human approval is defined: file deletion, dropping databases, production deployment, access to secrets, privileged commands. The allowlist is hard-coded into policy and cannot be changed at runtime. Any invocation of a tool from the list automatically triggers an approval flow that cannot be bypassed.
+
+
+  Dynamic risk-based trigger (high): The system automatically assesses the risk level of each action based on type, target resources, potential impact, and context. Actions exceeding the risk threshold are automatically classified as requiring approval regardless of explicit categorization. This can catch new high-risk actions but depends on the accuracy of the risk model.
+
+
+  Multi-person approval (medium): For the highest-criticality operations, a single approval is insufficient — dual control or M-of-N approvals from different authorized persons are required. Examples: modifying a production database schema, large financial transactions, modifying security policies. This prevents a single point of failure but adds significant latency for critical operations.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

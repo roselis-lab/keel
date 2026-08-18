@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keel · GenAI threat model</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --panel: #ffffff; --tint: #f6f8fc;
+    --border: #dfe3ec; --border2: #eef1f7;
+    --navy-900: #17203a; --navy-800: #232d4a; --navy-700: #38415f; --navy-600: #4a5570;
+    --navy-500: #6b7690; --navy-400: #97a0b5; --navy-200: #d7dce8; --navy-100: #eef1f7;
+    --crimson-700: #b81f42; --crimson-600: #d6294e; --crimson-200: #f6c9d3; --crimson-50: #fdeef1;
+    --amber: #e0a021; --green: #1f9d57;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--navy-900);
+    font: 14px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: grid; grid-template-columns: 320px 1fr 360px; height: 100vh;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ------ left rail ------ */
+  aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  header {
+    padding: 15px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+  header .count { color: var(--navy-400); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .search { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .search input {
+    width: 100%; padding: 9px 11px; background: var(--tint); color: var(--navy-900);
+    border: 1px solid var(--border); border-radius: 9px; outline: none; font-size: 13px;
+  }
+  .search input:focus { border-color: var(--crimson-600); background: #fff; }
+  .list { overflow-y: auto; flex: 1; min-height: 0; }
+  .row { padding: 11px 15px; border-bottom: 1px solid var(--border2); display: flex; flex-direction: column; gap: 3px; }
+  .row:hover { background: var(--tint); }
+  .row.active { background: var(--crimson-50); box-shadow: inset 3px 0 0 var(--crimson-600); }
+  .row .rid { font-size: 11px; color: var(--navy-400); font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .row .rtitle { font-size: 13px; color: var(--navy-900); }
+
+  /* ------ badges ------ */
+  .badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+  .badge { font-size: 10px; padding: 1px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .badge.soft { background: var(--navy-100); color: var(--navy-600); font-weight: 500; border-radius: 10px; }
+  .badge.type { background: var(--navy-200); color: var(--navy-700); }
+  .badge.harm { background: var(--crimson-600); color: #fff; }
+  .badge.tag { background: #eaf4ee; color: var(--green); }
+
+  /* ------ center editor ------ */
+  main { overflow-y: auto; padding: 30px 40px; }
+  .empty { color: var(--navy-400); margin-top: 22vh; text-align: center; }
+  .detail { max-width: 820px; }
+  .dhead { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 20px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 20px; background: var(--crimson-600); }
+  .dhead .dtitle { flex: 1; min-width: 0; }
+  .dhead h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-400); font-size: 12px; margin-top: 4px; }
+  .dhead .hbadges { margin-top: 8px; }
+  .hactions { display: flex; gap: 8px; flex-shrink: 0; }
+  section { margin-top: 24px; }
+  h3.slabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-700); margin: 0 0 9px; font-weight: 700; }
+  .slabel .sub { font-weight: 400; text-transform: none; color: var(--navy-400); }
+  .prose { white-space: pre-wrap; color: var(--navy-700); font-size: 14px; line-height: 1.6; }
+  .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+  .placeholder { color: var(--navy-400); font-style: italic; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; margin-bottom: 10px; background: #fff; }
+  .card .chead { display: flex; align-items: center; gap: 8px; }
+  .card .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
+  .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
+  .card .rationale { margin-top: 7px; color: var(--navy-500); font-size: 13px; font-style: italic; white-space: pre-wrap; }
+  .card .cdesc { margin-top: 6px; color: var(--navy-600); font-size: 13px; white-space: pre-wrap; }
+  ul.plain { margin: 6px 0 0; padding-left: 0; list-style: none; }
+  ul.plain li { border-left: 2px solid var(--navy-200); padding: 3px 0 3px 10px; margin-bottom: 7px; color: var(--navy-700); }
+  ul.plain li .meta { font-size: 11px; color: var(--navy-400); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ------ buttons ------ */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
+  .btn.primary { background: var(--crimson-600); color: #fff; }
+  .btn.primary:hover { background: var(--crimson-700); }
+  .btn.primary:disabled { opacity: .5; }
+  .btn.ghost { background: var(--navy-100); color: var(--navy-700); }
+  .btn.ghost:hover { background: var(--navy-200); }
+  .btn.sm { padding: 4px 9px; font-size: 12px; }
+
+  /* ------ inputs ------ */
+  input.f, textarea.f, select.f {
+    width: 100%; border: 1px solid var(--navy-200); border-radius: 8px; padding: 8px 10px;
+    font: inherit; font-size: 14px; color: var(--navy-900); background: #fff; outline: none;
+  }
+  input.f:focus, textarea.f:focus, select.f:focus { border-color: var(--crimson-600); box-shadow: 0 0 0 3px var(--crimson-50); }
+  textarea.f { resize: vertical; line-height: 1.55; }
+  .titlein { font-size: 19px; font-weight: 700; }
+  .checkset { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkset label {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px;
+    border: 1px solid var(--navy-200); border-radius: 8px; font-size: 13px; cursor: pointer; background: #fff;
+  }
+  .checkset label:hover { border-color: var(--crimson-200); }
+  .checkset input { accent-color: var(--crimson-600); }
+  .hint { color: var(--navy-400); font-size: 12px; margin-top: 4px; }
+
+  /* ------ repeatable editor cards (weaknesses, mitigation links) ------ */
+  .ecard { position: relative; border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; background: var(--tint); }
+  .ecard .field + .field { margin-top: 12px; }
+  .cardx { position: absolute; top: 9px; right: 11px; border: none; background: none; color: var(--navy-400); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .cardx:hover { background: var(--crimson-50); color: var(--crimson-600); }
+  .ml-head { display: flex; align-items: center; gap: 8px; padding-right: 22px; }
+  .ml-head .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
+  .ml-head .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
+  .link-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .link-row select { flex: 1; }
+
+  /* ------ inline style-guide bar ------ */
+  .field { position: relative; }
+  .sg-hint { color: var(--navy-500); font-size: 12px; margin: 0 0 5px; }
+  .sg-panel { display: none; margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--navy-200); border-radius: 8px; font-size: 12px; }
+  .sg-panel.show { display: block; }
+  .sg-sec { margin-bottom: 8px; }
+  .sg-sec:last-child { margin-bottom: 0; }
+  .sg-k { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 10px; color: var(--navy-600); margin-bottom: 3px; }
+  .sg-panel ul { margin: 0; padding-left: 16px; color: var(--navy-600); }
+  .sg-panel ul li { margin-bottom: 2px; }
+  .sg-ex { color: var(--navy-700); font-style: italic; margin: 0 0 5px; }
+
+  /* ------ right preview ------ */
+  #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+  #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
+
+  /* ------ toast ------ */
+  .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(20,30,60,.2); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.err { background: var(--crimson-700); }
+
+  /* ------ validation channels ------ */
+  .err-summary { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 10px 14px; margin: 16px 0 4px; font-size: 13px; }
+  .err-summary strong { display: block; margin-bottom: 5px; }
+  .err-summary ul { margin: 0; padding-left: 18px; }
+  .err-summary code { font-family: ui-monospace, monospace; font-size: 12px; }
+  .fld-msg { font-size: 12px; margin-top: 5px; line-height: 1.4; }
+  .fld-msg.err { color: var(--crimson-700); }
+  .fld-msg.adv { color: var(--amber); }
+  .field .slabel, .dtitle .did { position: relative; }
+  .field.has-err > .slabel::after, .field.has-adv > .slabel::after {
+    content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: middle;
+  }
+  .field.has-err > .slabel::after { background: var(--crimson-600); }
+  .field.has-adv > .slabel::after { background: var(--amber); }
+
+  /* ------ view toggle ------ */
+  .vtoggle { display: inline-flex; border: 1px solid var(--navy-200); border-radius: 8px; overflow: hidden; }
+  .vtoggle button { border: none; background: #fff; color: var(--navy-600); font-size: 12px; font-weight: 600; padding: 6px 11px; }
+  .vtoggle button.on { background: var(--navy-800); color: #fff; }
+  textarea.yaml-view { width: 100%; min-height: 60vh; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 13px; line-height: 1.5; color: var(--navy-900); background: var(--tint); border: 1px solid var(--navy-200); border-radius: 8px; padding: 12px 14px; resize: vertical; margin-top: 16px; }
+
+  /* ------ preview + insights ------ */
+  #preview .pv-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: var(--navy-900); }
+  #preview .pv-harm .badge { vertical-align: middle; }
+  #preview .pv-sec { margin-top: 14px; }
+  #preview .pv-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 4px; }
+  #preview .pv p { margin: 0; color: var(--navy-700); }
+  #preview .pv ul { margin: 4px 0 0; padding-left: 16px; color: var(--navy-700); }
+  #preview .pv .carve { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 8px 11px; font-size: 13px; }
+  .insights { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .insights .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 8px; }
+  .insights ul { margin: 0; padding-left: 16px; }
+  .insights li { color: var(--amber); font-size: 12px; margin-bottom: 4px; }
+  .insights .ok { color: var(--green); font-size: 12px; }
+
+  /* ------ saved dialog ------ */
+  .saved-dialog { position: fixed; bottom: 20px; right: 22px; max-width: 340px; background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--green); color: var(--navy-800); padding: 13px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 10px 30px rgba(20,30,60,.18); z-index: 60; display: none; }
+  .saved-dialog.show { display: block; }
+  .saved-dialog code { font-family: ui-monospace, monospace; font-size: 12px; color: var(--navy-900); }
+  .saved-dialog .sd-actions { margin-top: 10px; display: flex; gap: 12px; align-items: center; }
+  .saved-dialog a { color: var(--crimson-600); font-weight: 600; text-decoration: none; }
+  .saved-dialog a:hover { text-decoration: underline; }
+  .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-400); font-size: 12px; }
+
+  /* ------ screen switcher ------ */
+  .screens { display: flex; }
+  .screens button { flex: 1; border: none; background: var(--tint); color: var(--navy-500); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--border); }
+  .screens button.on { background: var(--panel); color: var(--navy-900); border-bottom-color: var(--crimson-600); }
+
+  /* ------ style-guide field tree ------ */
+  .sg-group { padding: 9px 15px 5px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--navy-500); font-weight: 700; background: var(--tint); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+  .sg-frow { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+  .sg-frow .fname { font-size: 13px; color: var(--navy-800); font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .badge.cov { font-variant-numeric: tabular-nums; }
+  .badge.cov.c-hi { background: #eaf4ee; color: var(--green); }
+  .badge.cov.c-mid { background: #fdf3e0; color: var(--amber); }
+  .badge.cov.c-lo { background: var(--crimson-50); color: var(--crimson-700); }
+  .badge.orphan { background: var(--navy-200); color: var(--navy-600); }
+
+  /* ------ style-guide bar editor ------ */
+  .slot-list { list-style: none; margin: 6px 0 0; padding: 0; }
+  .slot-list li { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
+  .slot-list li input { flex: 1; }
+  .slotcount { color: var(--navy-400); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+  #preview .sg-fieldwrap { border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; background: var(--tint); }
+  #preview .sg-fieldwrap .f { background: #fff; }
+</style>
+</head>
+<body>
+<aside>
+  <nav class="screens" id="screens">
+    <button data-screen="threats" class="on">Threats</button>
+    <button data-screen="style">Style guide</button>
+  </nav>
+  <header>
+    <h1 id="railTitle">Keel · Threats</h1>
+    <span class="count" id="count"></span>
+  </header>
+  <div class="search" id="searchWrap"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
+  <div class="list" id="list"></div>
+</aside>
+
+<main id="main"><div class="empty">Select a threat from the list.</div></main>
+
+<section id="preview"><p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div></section>
+
+<div class="toast" id="toast"></div>
+<div class="saved-dialog" id="savedDialog"></div>
+
+<script>
+// ------------------------------------------------------------------ state --- //
+const state = {
+  schema: { threat: null, weakness: null, mitigation_link: null },
+  style: null,
+  threats: [],          // brief list: [[id, title], ...]
+  mitById: {},          // id -> { id, name, mitigation_class }
+  selected: null,       // selected threat id
+  current: null,        // full threat record from GET /threats/{id}
+  filter: "",
+  editing: false,
+  draft: null,          // in-progress edits
+  validation: { errors: [], advice: [] },  // last /threats/validate result
+  view: "structure",    // editor view: "structure" | "yaml"
+  config: { repo_url: "" },  // GET /config
+  screen: "threats",    // top-level screen: "threats" | "style"
+  coverage: null,       // GET /style-guide/coverage
+  styleSel: null,       // style screen: { entity, field } selected in the tree
+  styleDraft: null,     // style screen: in-progress slot edits for the selected field
+};
+window.state = state;   // exposed for smoke checks / debugging
+
+// ------------------------------------------------------------- helpers ----- //
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function api(method, url, body) {
+  const opt = { method, headers: {} };
+  if (body !== undefined) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+  const r = await fetch(url, opt);
+  const txt = await r.text();
+  const data = txt ? JSON.parse(txt) : {};
+  if (!r.ok) throw new Error(data.detail || (method + " " + url + " → " + r.status));
+  return data;
+}
+const j = url => api("GET", url);
+
+let toastTimer = null;
+function toast(msg, isErr) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.className = "toast show" + (isErr ? " err" : "");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.className = "toast", 2200);
+}
+
+// ------------------------------------------------------- schema readers ---- //
+// The form vocabularies come from the JSON Schema, never hardcoded.
+function resolveRef(rootSchema, ref) {
+  // ref like "#/$defs/Weakness"
+  const parts = ref.replace(/^#\//, "").split("/");
+  let node = rootSchema;
+  for (const p of parts) node = node && node[p];
+  return node;
+}
+// Resolve a property node, following an items.$ref one level if present.
+function itemSchema(rootSchema, prop) {
+  if (prop && prop.items && prop.items.$ref) return resolveRef(rootSchema, prop.items.$ref);
+  return prop && prop.items ? prop.items : prop;
+}
+// Enum values for a scalar prop (properties.harm) or an array-of-enum prop (properties.surface).
+function enumValues(rootSchema, prop) {
+  if (!prop) return [];
+  if (Array.isArray(prop.enum)) return prop.enum;
+  const it = itemSchema(rootSchema, prop);
+  return (it && Array.isArray(it.enum)) ? it.enum : [];
+}
+const threatProp = name => (state.schema.threat.properties || {})[name];
+const harmEnum = () => enumValues(state.schema.threat, threatProp("harm"));
+const surfaceEnum = () => enumValues(state.schema.threat, threatProp("surface"));
+const sourceEnum = () => enumValues(state.schema.threat, threatProp("source"));
+// Weakness component enum — resolved via the standalone weakness schema.
+const componentEnum = () => {
+  const wp = state.schema.weakness && state.schema.weakness.properties;
+  return wp && wp.component && Array.isArray(wp.component.enum) ? wp.component.enum : [];
+};
+// Weakness nature enum (targeted / secondary) — from the weakness schema.
+const natureEnum = () => {
+  const wp = state.schema.weakness && state.schema.weakness.properties;
+  return wp && wp.nature && Array.isArray(wp.nature.enum) ? wp.nature.enum : [];
+};
+// Mitigation-link strength enum (gating / soft) — from the mitigation_link schema.
+const strengthEnum = () => {
+  const mp = state.schema.mitigation_link && state.schema.mitigation_link.properties;
+  return mp && mp.strength && Array.isArray(mp.strength.enum) ? mp.strength.enum : [];
+};
+
+// --------------------------------------------------------------- boot ------ //
+async function boot() {
+  const [sThreat, sWeak, sMitLink, style, cov, tr, mi, cfg] = await Promise.all([
+    j("/schema/threat"),
+    j("/schema/weakness"),
+    j("/schema/mitigation_link"),
+    j("/style-guide"),
+    j("/style-guide/coverage"),  // { overall, entities: [{entity_type, overall, fields:[{field_name, completeness, is_orphan}]}] }
+    j("/threats"),          // brief: { threats: [[id, title], ...], count }
+    j("/mitigations"),      // brief: { mitigations: [[id, name, class], ...], count }
+    j("/config"),           // { repo_url } — empty string when unset
+  ]);
+  state.schema.threat = sThreat;
+  state.schema.weakness = sWeak;
+  state.schema.mitigation_link = sMitLink;
+  state.style = style;
+  state.coverage = cov;
+  state.threats = tr.threats || [];
+  state.mitById = Object.fromEntries(
+    (mi.mitigations || []).map(([id, name, mclass]) => [id, { id, name, mitigation_class: mclass }])
+  );
+  state.config = cfg || { repo_url: "" };
+}
+
+// --------------------------------------------------------------- rail ------ //
+function renderList() {
+  const el = document.getElementById("list");
+  const f = state.filter.toLowerCase();
+  const items = state.threats.filter(([id, title]) => (id + " " + (title || "")).toLowerCase().includes(f));
+  el.innerHTML = items.length ? items.map(([id, title]) => `
+    <div class="row ${state.selected === id ? "active" : ""}" data-id="${esc(id)}">
+      <span class="rid">${esc(id)}</span>
+      <span class="rtitle">${esc(title)}</span>
+    </div>`).join("") : '<div class="empty" style="margin-top:40px">No matches.</div>';
+  document.getElementById("count").textContent = items.length + " / " + state.threats.length;
+  el.querySelectorAll(".row").forEach(r => r.onclick = () => select(r.dataset.id));
+}
+
+async function select(id) {
+  state.selected = id; state.editing = false; state.draft = null;
+  state.view = "structure";
+  state.validation = { errors: [], advice: [] };
+  renderList();
+  try {
+    state.current = await j("/threats/" + encodeURIComponent(id));
+  } catch (e) {
+    state.current = null; toast(e.message, true);
+  }
+  renderDetail();
+  renderPreview();
+  document.getElementById("main").scrollTop = 0;
+  validateDraft();   // populate advice for the Insights strip (non-blocking)
+}
+
+// ------------------------------------------------------------- detail ------ //
+function renderDetail() {
+  const m = document.getElementById("main");
+  if (!state.selected || !state.current) {
+    m.innerHTML = '<div class="empty">Select a threat from the list.</div>';
+    return;
+  }
+  m.innerHTML = state.editing ? editThreat(state.current) : readThreat(state.current);
+  wireDetail();
+}
+
+// Read view — the NEW threat fields.
+function readThreat(t) {
+  const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
+  const surface = (t.surface || []).map(v => badge("type", v)).join(" ") || '<span class="placeholder">none</span>';
+  const source = (t.source || []).map(v => badge("type", v)).join(" ") || '<span class="placeholder">none</span>';
+
+  const weaknesses = (t.weaknesses || []).length
+    ? `<ul class="plain">${t.weaknesses.map(w => `
+        <li><div class="meta">${esc(w.component)}${w.nature ? " · " + esc(w.nature) : ""}</div>${esc(w.text)}</li>`).join("")}</ul>`
+    : '<div class="warn">No weaknesses authored.</div>';
+
+  const mits = (t.mitigations || []).length
+    ? (t.mitigations || []).map(l => {
+        const mm = state.mitById[l.id];
+        return `<div class="card">
+          <div class="chead">
+            <span class="cid">${esc(l.id)}</span>
+            <span class="ctitle">${esc(mm ? mm.name : "(missing)")}</span>
+            <span class="badge soft" style="margin-left:auto">${esc(l.strength || "")}</span>
+          </div>
+          ${l.rationale ? `<div class="rationale">${esc(l.rationale)}</div>` : ""}
+        </div>`;
+      }).join("")
+    : '<p class="placeholder">None linked.</p>';
+
+  const refs = (t.references || []).length
+    ? `<ul class="plain">${t.references.map(r => `<li><span class="meta">${esc(r.id)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`
+    : '<p class="placeholder">None.</p>';
+
+  const tags = (t.tags || []).length
+    ? (t.tags || []).map(x => badge("tag", x)).join(" ")
+    : '<span class="placeholder">none</span>';
+
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">▲</div>
+      <div class="dtitle">
+        <h2>${esc(t.title)}</h2>
+        <div class="did">${esc(t.id)}</div>
+        <div class="hbadges badges">
+          ${t.harm ? badge("harm", t.harm) : '<span class="badge soft" style="color:var(--crimson-600)">no harm</span>'}
+        </div>
+      </div>
+      <div class="hactions"><button class="btn ghost" id="editBtn">✎ Edit</button></div>
+    </div>
+    <section><h3 class="slabel">Surface <span class="sub">— where the interaction happens</span></h3><div class="badges">${surface}</div></section>
+    <section><h3 class="slabel">Source <span class="sub">— who or what drives it</span></h3><div class="badges">${source}</div></section>
+    <section><h3 class="slabel">Weaknesses <span class="sub">— architectural conditions</span></h3>${weaknesses}</section>
+    <section><h3 class="slabel">Reachability <span class="sub">— when NOT a live path</span></h3>${
+      t.reachability ? `<div class="prose">${esc(t.reachability)}</div>` : '<div class="warn">Reachability not authored.</div>'}</section>
+    <section><h3 class="slabel">Mitigations (${(t.mitigations || []).length})</h3>${mits}</section>
+    <section><h3 class="slabel">References</h3>${refs}</section>
+    <section><h3 class="slabel">Tags</h3><div class="badges">${tags}</div></section>
+  </div>`;
+}
+
+// ---------------------------------------------------- style-guide bar ------ //
+// Live guidance read from state.style.entities.<entity>.fields.<field>.
+// Missing entries degrade gracefully (empty string, no hint, no panel).
+function styleField(entity, field) {
+  const ents = state.style && state.style.entities;
+  const ent = ents && ents[entity];
+  return (ent && ent.fields && ent.fields[field]) || null;
+}
+// One-line hint (the field's purpose), shown above the input at all times.
+// The *From variants take a style-field-like object directly, so the style-guide
+// editor's right pane can render the SAME markup fed from an in-progress draft.
+function sgHintFrom(sf) {
+  return (sf && sf.purpose) ? `<div class="sg-hint">${esc(sf.purpose)}</div>` : "";
+}
+function sgHint(entity, field) {
+  return sgHintFrom(styleField(entity, field));
+}
+// Expandable guidance panel: Include / Avoid / first example (+ "use example").
+// opts.show forces the panel open (used by the always-on style-guide preview).
+function sgPanelFrom(sf, targetId, opts) {
+  if (!sf) return "";
+  const list = (k, items) => `<div class="sg-sec"><span class="sg-k">${k}</span><ul>${
+    items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+  const parts = [];
+  if (sf.content_requirements && sf.content_requirements.length) parts.push(list("Include", sf.content_requirements));
+  if (sf.avoid && sf.avoid.length) parts.push(list("Avoid", sf.avoid));
+  if (sf.examples && sf.examples.length) {
+    const ex = sf.examples[0];
+    const btn = targetId
+      ? `<button type="button" class="btn ghost sm sg-useex" data-target="${esc(targetId)}" data-example="${esc(encodeURIComponent(ex))}">use example</button>`
+      : "";
+    parts.push(`<div class="sg-sec"><span class="sg-k">Example</span><div class="sg-ex">${esc(ex)}</div>${btn}</div>`);
+  }
+  const cls = (opts && opts.show) ? "sg-panel show" : "sg-panel";
+  return parts.length ? `<div class="${cls}">${parts.join("")}</div>` : "";
+}
+function sgPanel(entity, field, targetId) {
+  return sgPanelFrom(styleField(entity, field), targetId);
+}
+
+// Edit form — built by walking the threat schema's field order.
+// Only the schema-simple fields are editable here; weakness/mitigation editors are deferred.
+const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", "tags"]);
+
+function editThreat(t) {
+  const d = state.draft;
+  const yaml = state.view === "yaml";
+  const order = Object.keys(state.schema.threat.properties || {});
+  const blocks = [];
+  for (const name of order) {
+    if (name === "id" || name === "title" || name === "references") continue;   // id/title fixed; references deferred
+    if (name === "weaknesses") { blocks.push(weaknessesEditor()); continue; }
+    if (name === "mitigations") { blocks.push(mitigationsEditor()); continue; }
+    if (!EDITABLE.has(name)) continue;
+    blocks.push(fieldEditor(name, d));
+  }
+
+  const body = yaml
+    ? `<textarea class="yaml-view" id="yamlView" readonly spellcheck="false">${esc(emitThreatYaml(assembleThreat()))}</textarea>`
+    : `<div id="errSummary" class="err-summary" style="display:none"></div>${blocks.join("")}`;
+
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">▲</div>
+      <div class="dtitle field" data-entity="threat" data-field="title" style="width:100%">
+        ${sgHint("threat", "title")}
+        <input class="f titlein" id="f_title" value="${esc(d.title)}">
+        <div class="did" style="margin-top:6px">${esc(t.id)}</div>
+        ${sgPanel("threat", "title", "f_title")}
+      </div>
+      <div class="hactions" style="flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="vtoggle">
+          <button id="viewStructBtn" class="${yaml ? "" : "on"}">Structure</button>
+          <button id="viewYamlBtn" class="${yaml ? "on" : ""}">YAML</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" id="saveBtn"${yaml ? " disabled" : ""}>✔ Save</button>
+          <button class="btn ghost" id="cancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function fieldEditor(name, d) {
+  // Each threat field is wrapped in a .field so the style-guide bar can attach.
+  const wrap = (label, inner, targetId, sub) =>
+    `<section class="field" data-entity="threat" data-field="${esc(name)}">
+      <h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>
+      ${sgHint("threat", name)}
+      ${inner}
+      ${sgPanel("threat", name, targetId)}
+    </section>`;
+  if (name === "harm") {
+    const opts = harmEnum().map(v => `<option value="${esc(v)}" ${v === d.harm ? "selected" : ""}>${esc(v)}</option>`).join("");
+    return wrap("Harm", `<select class="f" id="f_harm">${opts}</select>`);
+  }
+  if (name === "surface" || name === "source") {
+    const vals = name === "surface" ? surfaceEnum() : sourceEnum();
+    const chosen = new Set(d[name] || []);
+    const boxes = vals.map(v => `
+      <label><input type="checkbox" data-set="${name}" value="${esc(v)}" ${chosen.has(v) ? "checked" : ""}>${esc(v)}</label>`).join("");
+    return wrap(name, `<div class="checkset">${boxes}</div>`);
+  }
+  if (name === "reachability") {
+    return wrap("Reachability",
+      `<textarea class="f" id="f_reachability" rows="4" placeholder="NOT applicable if…">${esc(d.reachability)}</textarea>`,
+      "f_reachability", "— NOT applicable if…");
+  }
+  if (name === "tags") {
+    return wrap("Tags",
+      `<input class="f" id="f_tags" value="${esc((d.tags || []).join(", "))}" placeholder="comma, separated">
+       <div class="hint">Comma-separated.</div>`,
+      "f_tags");
+  }
+  return "";
+}
+
+// Weaknesses — repeatable cards bound to state.draft.weaknesses (an array).
+function weaknessesEditor() {
+  const ws = state.draft.weaknesses || [];
+  const comps = componentEnum();
+  const nats = natureEnum();
+  const cards = ws.map((w, i) => {
+    const compOpts = comps.map(c => `<option value="${esc(c)}" ${c === w.component ? "selected" : ""}>${esc(c)}</option>`).join("");
+    const natOpts = nats.map(n => `<option value="${esc(n)}" ${n === w.nature ? "selected" : ""}>${esc(n)}</option>`).join("");
+    return `<div class="ecard wk-card" data-widx="${i}">
+      <button class="cardx wk-remove" data-widx="${i}" title="Remove weakness">✕</button>
+      <div class="field" data-entity="weakness" data-field="component">
+        <h3 class="slabel">Component</h3>
+        ${sgHint("weakness", "component")}
+        <select class="f wk-component" data-widx="${i}">${compOpts}</select>
+        ${sgPanel("weakness", "component")}
+      </div>
+      <div class="field" data-entity="weakness" data-field="text">
+        <h3 class="slabel">Text</h3>
+        ${sgHint("weakness", "text")}
+        <textarea class="f wk-text" data-widx="${i}" id="wk_text_${i}" rows="3" placeholder="cause + where + defect">${esc(w.text || "")}</textarea>
+        ${sgPanel("weakness", "text", "wk_text_" + i)}
+      </div>
+      <div class="field" data-entity="weakness" data-field="nature">
+        <h3 class="slabel">Nature</h3>
+        ${sgHint("weakness", "nature")}
+        <select class="f wk-nature" data-widx="${i}">${natOpts}</select>
+        ${sgPanel("weakness", "nature")}
+      </div>
+    </div>`;
+  }).join("");
+  return `<section><h3 class="slabel">Weaknesses <span class="sub">— architectural conditions</span></h3>
+    ${cards}
+    <button class="btn ghost" id="addWeakness">+ Add weakness</button></section>`;
+}
+
+// Mitigation links — cards over state.current.mitigations (immediate server writes,
+// separate from the draft/Save flow). Link/unlink/strength/rationale hit the API directly.
+function mitigationsEditor() {
+  const links = (state.current && state.current.mitigations) || [];
+  const linkedIds = new Set(links.map(l => l.id));
+  const strengths = strengthEnum();
+  const cards = links.length ? links.map(l => {
+    const mm = state.mitById[l.id];
+    const opts = strengths.map(s => `<option value="${esc(s)}" ${s === l.strength ? "selected" : ""}>${esc(s)}</option>`).join("");
+    return `<div class="ecard ml-card" data-mid="${esc(l.id)}">
+      <button class="cardx ml-unlink" title="Unlink mitigation">✕</button>
+      <div class="ml-head">
+        <span class="cid">${esc(l.id)}</span>
+        <span class="ctitle">${esc(mm ? mm.name : "(missing)")}</span>
+      </div>
+      <div class="field" data-entity="mitigation_link" data-field="strength">
+        <h3 class="slabel">Strength</h3>
+        ${sgHint("mitigation_link", "strength")}
+        <select class="f ml-strength">${opts}</select>
+        ${sgPanel("mitigation_link", "strength")}
+      </div>
+      <div class="field" data-entity="mitigation_link" data-field="rationale">
+        <h3 class="slabel">Rationale</h3>
+        ${sgHint("mitigation_link", "rationale")}
+        <textarea class="f ml-rationale" id="ml_rat_${esc(l.id)}" rows="2" placeholder="why this control addresses this threat">${esc(l.rationale || "")}</textarea>
+        ${sgPanel("mitigation_link", "rationale", "ml_rat_" + l.id)}
+      </div>
+    </div>`;
+  }).join("") : '<p class="placeholder">None linked.</p>';
+
+  const unlinked = Object.values(state.mitById).filter(m => !linkedIds.has(m.id));
+  const pickOpts = unlinked.map(m => `<option value="${esc(m.id)}">${esc(m.id)} — ${esc(m.name)}</option>`).join("");
+  const picker = unlinked.length
+    ? `<div class="link-row"><select class="f" id="mlPicker">${pickOpts}</select>
+        <button class="btn ghost" id="mlLinkBtn">Link</button></div>`
+    : '<p class="placeholder">All mitigations linked.</p>';
+
+  return `<section><h3 class="slabel">Mitigations (${links.length})</h3>${cards}${picker}</section>`;
+}
+
+// --------------------------------------------------------------- wiring ---- //
+function wireDetail() {
+  const editBtn = document.getElementById("editBtn");
+  if (editBtn) editBtn.onclick = enterEdit;
+  const cancelBtn = document.getElementById("cancelBtn");
+  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; state.view = "structure"; renderDetail(); };
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) saveBtn.onclick = saveThreat;
+  const structBtn = document.getElementById("viewStructBtn");
+  if (structBtn) structBtn.onclick = () => { state.view = "structure"; renderDetail(); };
+  const yamlBtn = document.getElementById("viewYamlBtn");
+  if (yamlBtn) yamlBtn.onclick = () => { state.view = "yaml"; renderDetail(); };
+  if (state.editing && state.view === "structure") { wireThreatEdit(); applyValidation(); }
+}
+
+function enterEdit() {
+  const t = state.current;
+  state.draft = {
+    title: t.title || "",
+    harm: t.harm || (harmEnum()[0] || ""),
+    surface: [...(t.surface || [])],
+    source: [...(t.source || [])],
+    reachability: t.reachability || "",
+    tags: [...(t.tags || [])],
+    weaknesses: (t.weaknesses || []).map(w => ({
+      component: w.component, text: w.text || "", nature: w.nature || "targeted",
+    })),
+  };
+  state.editing = true;
+  renderDetail();
+  validateDraft();   // seed the red/amber channels for the initial draft
+}
+
+function wireThreatEdit() {
+  const d = state.draft;
+  const title = document.getElementById("f_title");
+  if (title) title.oninput = () => d.title = title.value;
+  const harm = document.getElementById("f_harm");
+  if (harm) harm.onchange = () => d.harm = harm.value;
+  const reach = document.getElementById("f_reachability");
+  if (reach) reach.oninput = () => d.reachability = reach.value;
+  const tags = document.getElementById("f_tags");
+  if (tags) tags.oninput = () => d.tags = tags.value.split(",").map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll("[data-set]").forEach(cb => cb.onchange = () => {
+    const set = new Set(d[cb.dataset.set]);
+    if (cb.checked) set.add(cb.value); else set.delete(cb.value);
+    d[cb.dataset.set] = [...set];
+  });
+  wireWeaknesses();
+  wireMitigations();
+  wireStyleGuide();
+}
+
+// Style-guide bar: expand a field's panel while any control inside it has focus;
+// "use example" writes the example text into the field's input/textarea.
+function wireStyleGuide() {
+  document.querySelectorAll(".field").forEach(f => {
+    const panel = f.querySelector(".sg-panel");
+    if (!panel) return;
+    f.addEventListener("focusin", () => panel.classList.add("show"));
+    f.addEventListener("focusout", e => { if (!f.contains(e.relatedTarget)) panel.classList.remove("show"); });
+  });
+  document.querySelectorAll(".sg-useex").forEach(b => b.onclick = () => {
+    const el = document.getElementById(b.dataset.target);
+    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+      el.value = decodeURIComponent(b.dataset.example);
+      el.dispatchEvent(new Event("input"));
+      el.focus();
+    }
+  });
+}
+
+// Mitigation-link cards: link/unlink/strength/rationale are immediate server writes.
+function wireMitigations() {
+  document.querySelectorAll(".ml-card").forEach(card => {
+    const mid = card.dataset.mid;
+    const strength = card.querySelector(".ml-strength");
+    const rationale = card.querySelector(".ml-rationale");
+    const persist = () => putMitLink(mid, strength ? strength.value : "gating", rationale ? rationale.value : "");
+    if (strength) strength.onchange = persist;
+    if (rationale) rationale.onblur = persist;
+    const unlink = card.querySelector(".ml-unlink");
+    if (unlink) unlink.onclick = () => unlinkMit(mid);
+  });
+  const linkBtn = document.getElementById("mlLinkBtn");
+  if (linkBtn) linkBtn.onclick = () => {
+    const pick = document.getElementById("mlPicker");
+    if (pick && pick.value) linkMit(pick.value);
+  };
+}
+
+async function refreshCurrent() {
+  state.current = await j("/threats/" + encodeURIComponent(state.selected));
+}
+const mitUrl = mid =>
+  "/threats/" + encodeURIComponent(state.selected) + "/mitigations/" + encodeURIComponent(mid);
+
+async function linkMit(mid) {
+  try {
+    await api("PUT", mitUrl(mid), { strength: "gating", rationale: "" });
+    await refreshCurrent(); renderDetail(); renderPreview();
+    toast("Mitigation linked");
+  } catch (e) { toast(e.message, true); }
+}
+async function unlinkMit(mid) {
+  try {
+    await api("DELETE", mitUrl(mid));
+    await refreshCurrent(); renderDetail(); renderPreview();
+    toast("Mitigation unlinked");
+  } catch (e) { toast(e.message, true); }
+}
+async function putMitLink(mid, strength, rationale) {
+  try {
+    await api("PUT", mitUrl(mid), { strength, rationale });
+    await refreshCurrent(); renderDetail(); renderPreview();
+    toast("Mitigation link updated");
+  } catch (e) { toast(e.message, true); }
+}
+
+// Weakness cards edit state.draft.weaknesses in place; add/remove re-renders.
+function wireWeaknesses() {
+  const d = state.draft;
+  document.querySelectorAll(".wk-card").forEach(card => {
+    const i = +card.dataset.widx;
+    const comp = card.querySelector(".wk-component");
+    const text = card.querySelector(".wk-text");
+    const nat = card.querySelector(".wk-nature");
+    if (comp) comp.onchange = () => d.weaknesses[i].component = comp.value;
+    if (text) text.oninput = () => d.weaknesses[i].text = text.value;
+    if (nat) nat.onchange = () => d.weaknesses[i].nature = nat.value;
+    const rm = card.querySelector(".wk-remove");
+    if (rm) rm.onclick = () => { d.weaknesses.splice(i, 1); renderDetail(); };
+  });
+  const add = document.getElementById("addWeakness");
+  if (add) add.onclick = () => {
+    d.weaknesses.push({ component: componentEnum()[0] || "", text: "", nature: "targeted" });
+    renderDetail();
+  };
+}
+
+// --------------------------------------------------- validation channels --- //
+// Assemble the full threat the way the server wants it: the draft plus the id and
+// the separately-managed pieces (mitigations/references live on state.current).
+// Falls back to state.current when not editing, so preview/insights work in read view.
+function assembleThreat() {
+  const d = state.draft || {};
+  const c = state.current || {};
+  const pick = (k, dflt) => (d[k] !== undefined ? d[k] : (c[k] !== undefined ? c[k] : dflt));
+  return {
+    id: c.id,
+    title: pick("title", ""),
+    harm: pick("harm", undefined),
+    surface: pick("surface", []),
+    source: pick("source", []),
+    weaknesses: pick("weaknesses", []),
+    reachability: pick("reachability", ""),
+    mitigations: c.mitigations || [],
+    references: c.references || [],
+    tags: pick("tags", []),
+  };
+}
+
+let validateTimer = null;
+function scheduleValidate() { clearTimeout(validateTimer); validateTimer = setTimeout(validateDraft, 300); }
+
+// POST the assembled threat; store errors (red, blocking) + advice (amber, soft).
+async function validateDraft() {
+  if (!state.current) return;
+  try {
+    const res = await api("POST", "/threats/validate", assembleThreat());
+    state.validation = { errors: res.errors || [], advice: res.advice || [] };
+  } catch (e) {
+    state.validation = { errors: [{ field: "", msg: e.message }], advice: [] };
+  }
+  applyValidation();
+  renderPreview();   // insights strip reads state.validation.advice
+}
+
+// Map a dotted error path to the input's .field wrapper. Root/unmatched -> null.
+function fieldEl(path) {
+  if (!path) return null;
+  const parts = path.split(".");
+  if (parts[0] === "weaknesses" && parts.length === 3) {
+    return document.querySelector(
+      `.wk-card[data-widx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`
+    );
+  }
+  if (parts.length === 1) {
+    return document.querySelector(`.field[data-entity="threat"][data-field="${CSS.escape(parts[0])}"]`);
+  }
+  return null;
+}
+
+function renderErrorSummary(errors) {
+  const el = document.getElementById("errSummary");
+  if (!el) return;
+  if (!errors.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "block";
+  el.innerHTML = `<strong>Fix these before saving:</strong><ul>${errors.map(e =>
+    `<li>${e.field ? `<code>${esc(e.field)}</code> — ` : ""}${esc(e.msg)}</li>`).join("")}</ul>`;
+}
+
+// Paint the two channels onto the form: errors red (summary + inline), advice amber (inline only).
+function applyValidation() {
+  const { errors, advice } = state.validation;
+  document.querySelectorAll(".fld-msg").forEach(e => e.remove());
+  document.querySelectorAll(".field").forEach(f => f.classList.remove("has-err", "has-adv"));
+
+  renderErrorSummary(errors);   // errors — RED — also shown in full at the top
+
+  const place = (item, cls) => {
+    const el = fieldEl(item.field);
+    if (!el) return;
+    el.classList.add(cls === "err" ? "has-err" : "has-adv");
+    const msg = document.createElement("div");
+    msg.className = "fld-msg " + cls;
+    msg.textContent = item.msg;
+    el.appendChild(msg);
+  };
+  errors.forEach(e => place(e, "err"));    // identical text to the summary, inline
+  advice.forEach(a => place(a, "adv"));    // amber only, never in the summary, never blocking
+
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) saveBtn.disabled = errors.length > 0 || state.view === "yaml";
+}
+
+// --------------------------------------------------------- YAML emitter ---- //
+// Tiny read-only emitter for the simple scalar/list/small-object shapes in a threat.
+// Field order matches the on-disk order. No YAML library.
+function yamlScalar(s) {
+  s = String(s);
+  if (s === "") return '""';
+  const plain = /^[A-Za-z0-9][A-Za-z0-9 _\-./:()'?…]*$/.test(s)
+    && !/: /.test(s) && !/:$/.test(s) && !/ #/.test(s)
+    && !/^(true|false|null|yes|no|on|off|~)$/i.test(s);
+  if (plain) return s;
+  return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+}
+function emitThreatYaml(t) {
+  const L = [];
+  const scalar = (k, v) => {
+    const s = v == null ? "" : String(v);
+    if (/\n/.test(s)) { L.push(`${k}: |-`); s.split("\n").forEach(ln => L.push(`  ${ln}`)); }
+    else L.push(`${k}: ${yamlScalar(s)}`);
+  };
+  const listScalars = (k, arr) => {
+    if (!arr || !arr.length) { L.push(`${k}: []`); return; }
+    L.push(`${k}:`);
+    arr.forEach(v => L.push(`- ${yamlScalar(String(v))}`));
+  };
+  const listObjs = (k, arr, fields) => {
+    if (!arr || !arr.length) { L.push(`${k}: []`); return; }
+    L.push(`${k}:`);
+    arr.forEach(o => fields.forEach(([f], idx) => {
+      const prefix = idx === 0 ? "- " : "  ";
+      const v = o[f];
+      const s = v == null ? "" : String(v);
+      if (/\n/.test(s)) { L.push(`${prefix}${f}: |-`); s.split("\n").forEach(ln => L.push(`    ${ln}`)); }
+      else L.push(`${prefix}${f}: ${yamlScalar(s)}`);
+    }));
+  };
+  scalar("id", t.id);
+  scalar("title", t.title);
+  scalar("harm", t.harm);
+  listScalars("surface", t.surface);
+  listScalars("source", t.source);
+  listObjs("weaknesses", t.weaknesses, [["component"], ["text"], ["nature"]]);
+  scalar("reachability", t.reachability);
+  listObjs("mitigations", t.mitigations, [["id"], ["strength"], ["rationale"]]);
+  listObjs("references", t.references, [["id"], ["url"]]);
+  listScalars("tags", t.tags);
+  return L.join("\n");
+}
+
+// --------------------------------------------------------------- save ------ //
+async function saveThreat() {
+  if (state.view === "yaml") return;                 // YAML view is read-only
+  if (state.validation.errors.length) return;        // blocked while errors remain
+  const d = state.draft;
+  const body = {
+    title: d.title,
+    harm: d.harm,
+    surface: d.surface,
+    source: d.source,
+    reachability: d.reachability,
+    tags: d.tags,
+    weaknesses: d.weaknesses,
+  };
+  const url = "/threats/" + encodeURIComponent(state.selected);
+  const r = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    // Map the server's Pydantic error response back into the RED channel.
+    const data = await r.json().catch(() => ({}));
+    let errs;
+    if (Array.isArray(data.detail)) {
+      errs = data.detail.map(e => ({
+        field: (e.loc || []).filter(x => x !== "body").join("."),
+        msg: e.msg || "invalid",
+      }));
+    } else {
+      errs = [{ field: "", msg: data.detail || ("PATCH " + url + " → " + r.status) }];
+    }
+    state.validation = { errors: errs, advice: state.validation.advice };
+    applyValidation();
+    toast("Save blocked — fix the errors", true);
+    return;
+  }
+  state.current = await j(url);
+  state.editing = false; state.draft = null; state.view = "structure";
+  // reflect a possible title change in the rail
+  const row = state.threats.find(r => r[0] === state.selected);
+  if (row) row[1] = state.current.title;
+  state.validation = { errors: [], advice: [] };
+  renderList(); renderDetail(); renderPreview();
+  validateDraft();
+  showSavedDialog("catalog/threats/" + state.selected + ".yaml");
+}
+
+// The write lands in a YAML file; the next step is a pull request. Name the exact
+// file (any catalog path) and, when a repo is configured, offer an "Edit on GitHub"
+// escape hatch. Shared by the threat editor and the style-guide editor.
+function showSavedDialog(path) {
+  const repo = (state.config && state.config.repo_url || "").replace(/\/+$/, "");
+  const editLink = repo
+    ? `<a href="${esc(repo)}/edit/main/${path}" target="_blank" rel="noopener">Edit on GitHub ↗</a>`
+    : "";
+  const el = document.getElementById("savedDialog");
+  el.innerHTML = `Saved to <code>${esc(path)}</code> — commit and open a pull request.
+    <div class="sd-actions">${editLink}<button class="sd-close" id="sdClose">Dismiss</button></div>`;
+  el.classList.add("show");
+  document.getElementById("sdClose").onclick = () => el.classList.remove("show");
+}
+
+// ------------------------------------------------------------- preview ----- //
+// The assembled threat as a person reads it, plus a soft Insights strip.
+function renderPreview() {
+  const el = document.getElementById("preview");
+  if (!state.current) {
+    el.innerHTML = '<p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div>';
+    return;
+  }
+  const t = assembleThreat();
+  const list = arr => (arr || []).map(esc).join(", ");
+  const surface = (t.surface || []).length ? list(t.surface) : "—";
+  const source = (t.source || []).length ? list(t.source) : "—";
+
+  const weaknesses = (t.weaknesses || []).length
+    ? `<ul>${t.weaknesses.map(w =>
+        `<li>At <b>${esc(w.component)}</b>, ${esc(w.text || "…")}${w.nature ? ` <i>(${esc(w.nature)})</i>` : ""}</li>`).join("")}</ul>`
+    : '<p class="placeholder">No weaknesses authored.</p>';
+
+  const mits = t.mitigations || [];
+  const gating = mits.filter(m => m.strength === "gating");
+  const soft = mits.filter(m => m.strength !== "gating");
+  const mitLine = grp => grp.length
+    ? `<ul>${grp.map(m => `<li>${esc((state.mitById[m.id] && state.mitById[m.id].name) || m.id)}</li>`).join("")}</ul>`
+    : '<p class="placeholder">none</p>';
+
+  // Insights — soft, never blocking: server advice + a client-side references note.
+  const notes = ((state.validation && state.validation.advice) || []).map(a => a.msg);
+  if (!(t.references || []).length) notes.push("no references yet");
+
+  el.innerHTML = `<p class="ptitle">Preview</p>
+    <div class="pv">
+      <h2 class="pv-title">${esc(t.title) || '<span class="placeholder">Untitled</span>'}</h2>
+      <p class="pv-harm">Harm: ${t.harm ? `<span class="badge harm">${esc(t.harm)}</span>` : '<span class="placeholder">none</span>'}</p>
+      <div class="pv-sec"><p class="pv-k">Surface / Source</p><p>Happens at <b>${surface}</b>, driven by <b>${source}</b>.</p></div>
+      <div class="pv-sec"><p class="pv-k">Weaknesses</p>${weaknesses}</div>
+      <div class="pv-sec"><p class="pv-k">Mitigations</p>
+        <p>Gating (${gating.length})</p>${mitLine(gating)}
+        <p>Soft (${soft.length})</p>${mitLine(soft)}
+      </div>
+      <div class="pv-sec"><p class="pv-k">Reachability carve-out</p>${
+        t.reachability ? `<div class="carve">${esc(t.reachability)}</div>` : '<p class="placeholder">not authored</p>'}</div>
+    </div>
+    <div class="insights">
+      <p class="ptitle">Insights</p>
+      ${notes.length ? `<ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : '<p class="ok">Nothing flagged.</p>'}
+    </div>`;
+}
+
+// ===================================================================== //
+// Screen switcher — two screens share the rail | editor | preview panes. //
+// ===================================================================== //
+function switchScreen(name) {
+  state.screen = name;
+  document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
+  document.getElementById("railTitle").textContent = name === "style" ? "Keel · Style guide" : "Keel · Threats";
+  document.getElementById("searchWrap").style.display = name === "style" ? "none" : "";
+  renderRail(); renderMain(); renderRight();
+}
+function renderRail() { state.screen === "style" ? renderStyleRail() : renderList(); }
+function renderMain() { state.screen === "style" ? renderStyleDetail() : renderDetail(); }
+function renderRight() { state.screen === "style" ? renderStylePreview() : renderPreview(); }
+
+// ------------------------------------------------------- style-guide screen -- //
+// Coverage completeness for a field, matched by entity_type + field_name.
+// Orphans are excluded from the coverage report, so this returns null for them.
+function coverageFor(entity, field) {
+  const ents = (state.coverage && state.coverage.entities) || [];
+  const ent = ents.find(e => e.entity_type === entity);
+  if (!ent) return null;
+  const f = (ent.fields || []).find(x => x.field_name === field);
+  return f ? f.completeness : null;
+}
+function covClass(pct) { return pct >= 67 ? "c-hi" : pct >= 34 ? "c-mid" : "c-lo"; }
+
+// Left rail: entity → field tree built from state.style.entities (schema-derived,
+// so it can never drift from the model). Every field shows — including 0% ones.
+function renderStyleRail() {
+  const el = document.getElementById("list");
+  const ents = (state.style && state.style.entities) || {};
+  let html = "";
+  let fieldCount = 0;
+  for (const [etype, ent] of Object.entries(ents)) {
+    html += `<div class="sg-group">${esc(etype)}</div>`;
+    for (const fname of Object.keys(ent.fields || {})) {
+      fieldCount++;
+      const f = ent.fields[fname];
+      const active = state.styleSel && state.styleSel.entity === etype && state.styleSel.field === fname;
+      let badge;
+      if (f.is_orphan) {
+        badge = '<span class="badge orphan" title="Schema removed this field">orphan</span>';
+      } else {
+        const pct = coverageFor(etype, fname);
+        const n = pct == null ? 0 : pct;
+        badge = `<span class="badge cov ${covClass(n)}">${n}%</span>`;
+      }
+      html += `<div class="row sg-frow ${active ? "active" : ""}" data-entity="${esc(etype)}" data-field="${esc(fname)}">
+        <span class="fname">${esc(fname)}</span>${badge}
+      </div>`;
+    }
+  }
+  el.innerHTML = html || '<div class="empty" style="margin-top:40px">No style guide.</div>';
+  document.getElementById("count").textContent = fieldCount + " fields";
+  el.querySelectorAll(".sg-frow").forEach(r => r.onclick = () => selectStyleField(r.dataset.entity, r.dataset.field));
+}
+
+// Select a field → seed the editor draft from the saved style entry (a working copy,
+// so the right-pane preview can reflect edits before they are saved).
+function selectStyleField(entity, field) {
+  state.styleSel = { entity, field };
+  const sf = styleField(entity, field) || {};
+  state.styleDraft = {
+    purpose: sf.purpose || "",
+    content_requirements: [...(sf.content_requirements || [])],
+    avoid: [...(sf.avoid || [])],
+    examples: [...(sf.examples || [])],
+    instructions: [...(sf.instructions || [])],
+  };
+  renderStyleRail(); renderStyleDetail(); renderStylePreview();
+}
+
+// The live draft as a style-field-like object (what sgHint/sgPanel consume).
+function styleDraftAsField() {
+  const d = state.styleDraft || {};
+  return {
+    purpose: d.purpose || "",
+    content_requirements: d.content_requirements || [],
+    avoid: d.avoid || [],
+    examples: d.examples || [],
+    instructions: d.instructions || [],
+  };
+}
+
+// Slots that count toward the coverage percentage (mirrors TRACKED_SLOTS server-side).
+const STYLE_SLOTS = ["purpose", "content_requirements", "instructions", "avoid", "examples"];
+function filledSlotCount(d) {
+  return STYLE_SLOTS.filter(s => {
+    const v = d[s];
+    return Array.isArray(v) ? v.length > 0 : !!(v && String(v).trim());
+  }).length;
+}
+
+// Center pane: the bar editor for the selected field's authoring slots.
+function renderStyleDetail() {
+  const m = document.getElementById("main");
+  if (!state.styleSel) { m.innerHTML = '<div class="empty">Select a field from the tree.</div>'; return; }
+  const { entity, field } = state.styleSel;
+  const sf0 = styleField(entity, field) || {};
+  const orphan = !!sf0.is_orphan;
+  const d = state.styleDraft;
+  m.innerHTML = `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">✎</div>
+      <div class="dtitle">
+        <h2>${esc(field)}</h2>
+        <div class="did">${esc(entity)}${orphan ? " · orphan — schema removed this field" : ""}</div>
+      </div>
+      <div class="hactions"><button class="btn primary" id="sgSaveBtn">✔ Save</button></div>
+    </div>
+    <section class="field">
+      <h3 class="slabel">Purpose <span class="sub">— the one-line hint shown above the input</span></h3>
+      <textarea class="f" id="sg_purpose" rows="2" placeholder="what this field is for">${esc(d.purpose)}</textarea>
+    </section>
+    ${slotListSection("content_requirements", "Content requirements", "shown as “Include” in the guidance panel")}
+    ${slotListSection("avoid", "Avoid", "shown as “Avoid” in the guidance panel")}
+    ${slotListSection("examples", "Examples", "the first powers “use example” on the Threats screen")}
+    ${slotListSection("instructions", "Instructions", "step-by-step authoring guidance")}
+  </div>`;
+  wireStyleEditor();
+}
+
+// A list-of-strings slot editor (add/remove rows) — same grammar as screen 1's
+// repeatable cards: edit in place, add/remove re-renders.
+function slotListSection(slot, label, sub) {
+  const items = state.styleDraft[slot] || [];
+  const rows = items.map((v, i) => `<li>
+    <input class="f sg-item" data-slot="${esc(slot)}" data-i="${i}" value="${esc(v)}">
+    <button class="btn ghost sm sg-item-rm" data-slot="${esc(slot)}" data-i="${i}" title="Remove">✕</button>
+  </li>`).join("");
+  return `<section class="field">
+    <h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">— ${sub}</span>` : ""}</h3>
+    <ul class="slot-list">${rows || '<li class="placeholder" style="border:none">None yet.</li>'}</ul>
+    <button class="btn ghost sm sg-item-add" data-slot="${esc(slot)}">+ Add</button>
+  </section>`;
+}
+
+function wireStyleEditor() {
+  const purpose = document.getElementById("sg_purpose");
+  if (purpose) purpose.oninput = () => { state.styleDraft.purpose = purpose.value; renderStylePreview(); };
+  document.querySelectorAll(".sg-item").forEach(inp => inp.oninput = () => {
+    state.styleDraft[inp.dataset.slot][+inp.dataset.i] = inp.value;
+    renderStylePreview();   // right pane reflects the unsaved edit live
+  });
+  document.querySelectorAll(".sg-item-rm").forEach(b => b.onclick = () => {
+    state.styleDraft[b.dataset.slot].splice(+b.dataset.i, 1);
+    renderStyleDetail(); renderStylePreview();
+  });
+  document.querySelectorAll(".sg-item-add").forEach(b => b.onclick = () => {
+    state.styleDraft[b.dataset.slot].push("");
+    renderStyleDetail(); renderStylePreview();
+  });
+  const save = document.getElementById("sgSaveBtn");
+  if (save) save.onclick = saveStyleField;
+}
+
+// Right pane: a LIVE preview of exactly what an author sees when they focus this
+// field on the Threats screen — same sgHint/sgPanel markup, fed from the in-progress
+// draft (not just the saved value), so the maintainer sees the result as they type.
+function renderStylePreview() {
+  const el = document.getElementById("preview");
+  if (!state.styleSel) {
+    el.innerHTML = '<p class="ptitle">Author preview</p><div class="empty" style="margin-top:10vh">—</div>';
+    return;
+  }
+  const { field } = state.styleSel;
+  const sf = styleDraftAsField();
+  const n = filledSlotCount(state.styleDraft);
+  const hint = sgHintFrom(sf) || '<div class="sg-hint" style="opacity:.55">No purpose yet.</div>';
+  const panel = sgPanelFrom(sf, null, { show: true });
+  el.innerHTML = `<p class="ptitle">Author preview <span class="slotcount">${n} / ${STYLE_SLOTS.length} slots</span></p>
+    <p class="hint" style="margin:0 0 12px">What an author sees when they focus <b>${esc(field)}</b> on the Threats screen.</p>
+    <div class="sg-fieldwrap field">
+      <h3 class="slabel">${esc(field)}</h3>
+      ${hint}
+      <textarea class="f" rows="2" readonly placeholder="author's ${esc(field)} goes here"></textarea>
+      ${panel}
+    </div>`;
+}
+
+// PATCH the changed slots, then refresh the guide + coverage so the tree badges move.
+async function saveStyleField() {
+  if (!state.styleSel) return;
+  const { entity, field } = state.styleSel;
+  const d = state.styleDraft;
+  const body = {
+    purpose: d.purpose,
+    content_requirements: d.content_requirements,
+    avoid: d.avoid,
+    examples: d.examples,
+    instructions: d.instructions,
+  };
+  try {
+    await api("PATCH", "/style-guide/" + encodeURIComponent(entity) + "/" + encodeURIComponent(field), body);
+    state.style = await j("/style-guide");
+    state.coverage = await j("/style-guide/coverage");
+    renderStyleRail(); renderStyleDetail(); renderStylePreview();
+    toast("Style guide saved");
+    showSavedDialog("catalog/style_guide/" + entity + ".yaml");
+  } catch (e) { toast(e.message, true); }
+}
+
+// --------------------------------------------------------------- start ----- //
+document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
+document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
+// Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
+document.getElementById("main").addEventListener("focusout", () => {
+  if (state.editing && state.view === "structure") scheduleValidate();
+});
+boot().then(renderList).catch(e =>
+  document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
+</script>
+</body>
+</html>

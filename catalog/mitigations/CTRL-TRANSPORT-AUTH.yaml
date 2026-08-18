@@ -1,26 +1,23 @@
 id: CTRL-TRANSPORT-AUTH
-title: mTLS or API Key for MCP Connections
-description: Enforces authentication of connections between the agent and MCP servers
-  through mutual TLS with client certificates or API key authentication with signing,
-  preventing man-in-the-middle attacks and connection to rogue servers. The mechanism
-  operates at the transport layer and verifies the identity of both parties to the
-  connection. This guarantees that the agent connects only to authorized MCP servers,
-  protects credentials in transit, and provides mutual authentication.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: mTLS authentication
-  complexity: high
-  description: Mutual TLS, where both parties present certificates. The agent verifies
-    the server's certificate; the server verifies the client's certificate. The certificate
-    chain, revocation status, and endpoint binding are checked during the handshake.
-- name: API key with signing
-  complexity: medium
-  description: API-key-based authentication where requests are signed with a cryptographic
-    signature. The server verifies the signature and the validity of the key. Simpler
-    than mTLS, but requires secure storage of keys.
-- name: Certificate pinning
-  complexity: medium
-  description: Each MCP server has a pinned certificate or key. The agent accepts
-    connections only from pinned identities. Protects against a compromised certificate
-    authority or misissuance of a certificate.
+name: mTLS or API Key for MCP Connections
+status: draft
+mitigation_class: gating_control
+purpose: Enforces authentication of connections between the agent and MCP servers through mutual TLS with client certificates or API key authentication with signing, preventing man-in-the-middle attacks and connection to rogue servers. The mechanism operates at the transport layer and verifies the identity of both parties to the connection. This guarantees that the agent connects only to authorized MCP servers, protects credentials in transit, and provides mutual authentication.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'mTLS authentication (high): Mutual TLS, where both parties present certificates. The agent verifies the server''s certificate; the server verifies the client''s certificate. The certificate chain, revocation status, and endpoint binding are checked during the handshake.
+
+
+  API key with signing (medium): API-key-based authentication where requests are signed with a cryptographic signature. The server verifies the signature and the validity of the key. Simpler than mTLS, but requires secure storage of keys.
+
+
+  Certificate pinning (medium): Each MCP server has a pinned certificate or key. The agent accepts connections only from pinned identities. Protects against a compromised certificate authority or misissuance of a certificate.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

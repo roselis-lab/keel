@@ -1,0 +1,27 @@
+fields:
+  component:
+    purpose: Which owned system part the weakness sits on.
+    content_requirements:
+    - One value from catalog/components.yaml — a process or data store you own.
+    avoid:
+    - An external entity or a boundary — those are the threat's source and surface, not a component.
+  text:
+    purpose: The architectural condition that makes the threat possible — the thing you would fix.
+    content_requirements:
+    - One recognizable pattern — cause + where + defect.
+    - Architectural, implementation, or operational — a property of the system, present whether or not anyone exploits it.
+    avoid:
+    - A technique (prompt injection, jailbreak) — that is the mechanism, it belongs in source/references.
+    - A consequence (data leak, RCE) — that is harm.
+    - Model behaviour as the flaw (the model "shouldn't" follow that) — model behaviour is never a weakness; assume the output can be made malicious.
+    examples:
+    - A tool builds an interpreter call from model-supplied arguments without parameterization — the boundary between parameter and command collapses.
+    - The agent holds a privileged token with broad scope; compromise grants access to everything in that scope without further checks.
+  nature:
+    purpose: Whether the attack exploits this weakness directly or is only amplified by it.
+    content_requirements:
+    - targeted = the attack directly exploits it (remove it and the attack fails).
+    - secondary = amplifies impact or likelihood but does not itself enable the attack (remove it and the attack still happens, with less effect).
+    - Independent alternative paths are each targeted, not one targeted plus amplifiers.
+    examples:
+    - An over-broad token is secondary to an IDOR — it does not open the attack, it makes the leaked data real instead of a 403.

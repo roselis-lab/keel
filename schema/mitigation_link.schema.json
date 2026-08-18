@@ -1,0 +1,31 @@
+{
+  "additionalProperties": false,
+  "description": "Link to a mitigation card, with its role for this threat.",
+  "properties": {
+    "id": {
+      "description": "A real CTRL-* mitigation id",
+      "title": "Id",
+      "type": "string"
+    },
+    "rationale": {
+      "title": "Rationale",
+      "type": "string"
+    },
+    "strength": {
+      "description": "gating (blocks) | soft (only lowers likelihood)",
+      "enum": [
+        "gating",
+        "soft"
+      ],
+      "title": "Strength",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "strength",
+    "rationale"
+  ],
+  "title": "MitigationLink",
+  "type": "object"
+}

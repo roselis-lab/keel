@@ -1,36 +1,23 @@
 id: CTRL-AGENT-REPORT
-title: Agent action audit trail
-description: Records all significant agent actions in an immutable log tied to timestamps,
-  session identifiers, and execution context, ensuring the ability to fully reconstruct
-  the chronology of events for incident investigation. The mechanism runs continuously
-  throughout the agent's entire lifecycle, intercepting tool calls, data accesses,
-  action decisions, and their results at the logging middleware or instrumentation
-  level. This makes it possible to detect anomalous behavior after the fact, conduct
-  forensic analysis of an incident, and ensure accountability of autonomous systems
-  to regulators and users.
-type: DETECTIVE
-requirement_level: MANDATORY
-implementations:
-- name: Structured logging with trace ID
-  description: 'Each agent action is logged in a structured JSON format with mandatory
-    fields: timestamp, agent_id, session_id, trace_id, action_type, parameters, result,
-    decision_rationale. Logs are collected into a centralized system (ELK, Splunk,
-    CloudWatch) with indexing across all key fields. This approach gives rich context
-    for analysis, but it requires significant storage volume and may contain sensitive
-    data that requires masking.'
-  complexity: medium
-- name: Immutable event store
-  description: All agent events are written to an append-only event store with a cryptographic
-    linkage between records (hash chain or Merkle tree), which makes it impossible
-    to delete or modify history without detection. The event store supports replay
-    to reconstruct the sequence of actions and can be used as a source of truth during
-    an investigation. The implementation is more complex than ordinary logging, but
-    it provides a judicial-grade audit trail.
-  complexity: high
-- name: Aggregation with anomaly detection
-  description: 'Audit logs are aggregated in real time to detect anomalies: unusual
-    action patterns, threshold breaches, access to sensitive data. Alerts are sent
-    to a SIEM or monitoring system for immediate response. This combines a detective
-    control with the ability to react quickly, but it requires careful tuning of detection
-    rules to avoid alert fatigue.'
-  complexity: medium
+name: Agent action audit trail
+status: draft
+mitigation_class: detector
+purpose: Records all significant agent actions in an immutable log tied to timestamps, session identifiers, and execution context, ensuring the ability to fully reconstruct the chronology of events for incident investigation. The mechanism runs continuously throughout the agent's entire lifecycle, intercepting tool calls, data accesses, action decisions, and their results at the logging middleware or instrumentation level. This makes it possible to detect anomalous behavior after the fact, conduct forensic analysis of an incident, and ensure accountability of autonomous systems to regulators and users.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Structured logging with trace ID (medium): Each agent action is logged in a structured JSON format with mandatory fields: timestamp, agent_id, session_id, trace_id, action_type, parameters, result, decision_rationale. Logs are collected into a centralized system (ELK, Splunk, CloudWatch) with indexing across all key fields. This approach gives rich context for analysis, but it requires significant storage volume and may contain sensitive data that requires masking.
+
+
+  Immutable event store (high): All agent events are written to an append-only event store with a cryptographic linkage between records (hash chain or Merkle tree), which makes it impossible to delete or modify history without detection. The event store supports replay to reconstruct the sequence of actions and can be used as a source of truth during an investigation. The implementation is more complex than ordinary logging, but it provides a judicial-grade audit trail.
+
+
+  Aggregation with anomaly detection (medium): Audit logs are aggregated in real time to detect anomalies: unusual action patterns, threshold breaches, access to sensitive data. Alerts are sent to a SIEM or monitoring system for immediate response. This combines a detective control with the ability to react quickly, but it requires careful tuning of detection rules to avoid alert fatigue.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

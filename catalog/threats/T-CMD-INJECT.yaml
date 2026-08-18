@@ -1,30 +1,28 @@
 id: T-CMD-INJECT
 title: Command injection / RCE in tools
-description: 'MCP tools unsafely interpolate model-generated arguments into shell
-  commands, SQL queries, or configuration templates, leading to RCE or data exfiltration.
-
-
-  Command injection through a client-facing bot lets an attacker execute arbitrary
-  commands on the server with the tool''s privileges.'
-impact_class: infrastructure-execution
-vulnerability:
-- A tool builds an interpreter call (shell, SQL, config template) from model-supplied
-  arguments and interpolates them without parameterization/escaping — the boundary
-  between "parameter" and "command" collapses; the control payload reaches the argument
-  via injection or an erroneous model output.
-reachability: NOT applicable if the model cannot influence the arguments (hard-coded),
-  or the interpreter runs in an environment with no valuable access/privileges.
-tags: []
+harm: code-execution
+surface:
+- agent-environment
+source:
+- external-attacker
+- hallucination
+weaknesses:
+- component: tool
+  text: A tool builds an interpreter call (shell, SQL, config template) from model-supplied arguments and interpolates them without parameterization/escaping — the boundary between "parameter" and "command" collapses; the control payload reaches the argument via injection or an erroneous model output.
+  nature: targeted
+reachability: NOT applicable if the model cannot influence the arguments (hard-coded), or the interpreter runs in an environment with no valuable access/privileges.
 mitigations:
-- mitigation_id: CTRL-INPUT-FILTERING
-  rationale: Injection is the vector for this threat; input filtering reduces the
-    likelihood of embedded instructions (soft, best-effort).
-- mitigation_id: CTRL-INPUT-PARAMETERIZATION
-  rationale: 'Parameterized queries instead of string interpolation prevent SQL and
-    command injection
+- id: CTRL-INPUT-FILTERING
+  strength: soft
+  rationale: Injection is the vector for this threat; input filtering reduces the likelihood of embedded instructions (soft, best-effort).
+- id: CTRL-INPUT-PARAMETERIZATION
+  strength: gating
+  rationale: 'Parameterized queries instead of string interpolation prevent SQL and command injection
 
 
     Escaping and validation prevent injection of shell commands via user input'
-- mitigation_id: CTRL-PROMPT-HARDENING
-  rationale: Injection is the vector for this threat; structural prompt isolation
-    makes overriding instructions harder (soft).
+- id: CTRL-PROMPT-HARDENING
+  strength: soft
+  rationale: Injection is the vector for this threat; structural prompt isolation makes overriding instructions harder (soft).
+references: []
+tags: []

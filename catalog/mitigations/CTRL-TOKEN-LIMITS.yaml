@@ -1,26 +1,23 @@
 id: CTRL-TOKEN-LIMITS
-title: Token Limits on Request and Response
-description: Limits the number of tokens in model requests and responses through maximum
-  input and output token limits with mandatory user notification on truncation, preventing
-  resource exhaustion and cost overruns from excessively large requests. The mechanism
-  operates at the API gateway and model invocation layers. This protects against DoS
-  via oversized prompts, controls infrastructure costs, and ensures predictable resource
-  consumption.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Hard limit on input tokens
-  complexity: low
-  description: A hard limit on input tokens - requests exceeding the limit are rejected
-    or truncated with explicit user notification. The user is informed when their
-    input has been truncated.
-- name: Output token limit
-  complexity: low
-  description: Output generation is bounded by a maximum number of output tokens.
-    When the limit is reached, the response is truncated with a [...truncated] marker.
-    The user can request continuation if needed.
-- name: Session-level token quotas
-  complexity: low
-  description: Cumulative tracking of tokens at the session level - total token consumption
-    is tracked and capped. The session quota prevents runaway conversations from exhausting
-    resources.
+name: Token Limits on Request and Response
+status: draft
+mitigation_class: gating_control
+purpose: Limits the number of tokens in model requests and responses through maximum input and output token limits with mandatory user notification on truncation, preventing resource exhaustion and cost overruns from excessively large requests. The mechanism operates at the API gateway and model invocation layers. This protects against DoS via oversized prompts, controls infrastructure costs, and ensures predictable resource consumption.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Hard limit on input tokens (low): A hard limit on input tokens - requests exceeding the limit are rejected or truncated with explicit user notification. The user is informed when their input has been truncated.
+
+
+  Output token limit (low): Output generation is bounded by a maximum number of output tokens. When the limit is reached, the response is truncated with a [...truncated] marker. The user can request continuation if needed.
+
+
+  Session-level token quotas (low): Cumulative tracking of tokens at the session level - total token consumption is tracked and capped. The session quota prevents runaway conversations from exhausting resources.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

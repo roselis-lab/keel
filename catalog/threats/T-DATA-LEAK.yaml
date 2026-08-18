@@ -1,45 +1,47 @@
 id: T-DATA-LEAK
 title: Sensitive data disclosure through the response
-description: 'The text of the agent''s response becomes a leakage channel: a user
-  receives fragments of another party''s context — PII, secrets, internal documents
-  — to which they have no rights. Session and memory isolation guaranteed at the infrastructure
-  level is bypassed at the model level, which combines and "paraphrases" the data
-  available to it without distinguishing "own" from "others". Any request can return
-  sensitive data if it ended up in the model''s context.'
-impact_class: data-confidentiality
-vulnerability:
-- A tool has access to sensitive data (PII, secrets, regulated) and can exfiltrate
-  it — into free-form text that enters the context, or into an external system beyond
-  the perimeter.
-- A tool with filesystem access reads sensitive files (.env, secrets, configs) on
-  the model's initiative.
-- Session context or memory is not isolated between users/tenants; one party's data
-  ends up in another's response (including cross-tenant through a shared MCP).
-- The agent holds sensitive data in context (RAG of internal information, shared MAS
-  memory) while the output audience is external; the response paraphrases it to an
-  unauthorized recipient.
-reachability: NOT applicable if there is no data under differentiated authorization
-  in the agent's context and access — everything it can reach is already available
-  to any recipient of its output (data and audience in one access zone).
-tags: []
+harm: data-exposed
+surface:
+- agent-environment
+- user-agent
+source:
+- external-attacker
+- hallucination
+weaknesses:
+- component: tool
+  text: A tool has access to sensitive data (PII, secrets, regulated) and can exfiltrate it — into free-form text that enters the context, or into an external system beyond the perimeter.
+  nature: targeted
+- component: tool
+  text: A tool with filesystem access reads sensitive files (.env, secrets, configs) on the model's initiative.
+  nature: targeted
+- component: memory
+  text: Session context or memory is not isolated between users/tenants; one party's data ends up in another's response (including cross-tenant through a shared MCP).
+  nature: targeted
+- component: model
+  text: The agent holds sensitive data in context (RAG of internal information, shared MAS memory) while the output audience is external; the response paraphrases it to an unauthorized recipient.
+  nature: targeted
+reachability: NOT applicable if there is no data under differentiated authorization in the agent's context and access — everything it can reach is already available to any recipient of its output (data and audience in one access zone).
 mitigations:
-- mitigation_id: CTRL-ACCESS-CONTROL
+- id: CTRL-ACCESS-CONTROL
+  strength: gating
   rationale: Mandatory access control segregates data between tenants
-- mitigation_id: CTRL-CONTENT-STRIPPING
-  rationale: Indirect injection via external/free-form content is the vector for this
-    threat; stripping hidden instructions reduces the likelihood (soft).
-- mitigation_id: CTRL-CONTEXT-FILTERING
-  rationale: 'Context filtering removes confidential data from tool output before
-    use
+- id: CTRL-CONTENT-STRIPPING
+  strength: soft
+  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
+- id: CTRL-CONTEXT-FILTERING
+  strength: gating
+  rationale: 'Context filtering removes confidential data from tool output before use
 
 
     Context filtering removes confidential data before it is sent to the user'
-- mitigation_id: CTRL-DATA-ACCESS-CONTROL
+- id: CTRL-DATA-ACCESS-CONTROL
+  strength: gating
   rationale: 'Access control restricts the tool''s access to only the necessary data
 
 
     Restricting the tool''s access to only the necessary directories'
-- mitigation_id: CTRL-DATA-EGRESS-MONITORING
+- id: CTRL-DATA-EGRESS-MONITORING
+  strength: gating
   rationale: 'Egress traffic monitoring detects unauthorized exfiltration of PII
 
 
@@ -47,7 +49,8 @@ mitigations:
 
 
     Monitoring of file operations reveals atypical access to sensitive files'
-- mitigation_id: CTRL-DLP
+- id: CTRL-DLP
+  strength: gating
   rationale: 'DLP filtering of PII/secrets before transmission to external systems
 
 
@@ -61,18 +64,20 @@ mitigations:
 
 
     Filtering of tool output blocks transmission of secret contents into responses'
-- mitigation_id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  rationale: Indirect injection via external content is the vector for this threat;
-    isolating external content limits its impact.
-- mitigation_id: CTRL-INPUT-FILTERING
-  rationale: Injection is the vector for this threat; input filtering reduces the
-    likelihood of embedded instructions (soft, best-effort).
-- mitigation_id: CTRL-MEMORY-ISOLATION
+- id: CTRL-EXTERNAL-CONTENT-SANDBOX
+  strength: gating
+  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
+- id: CTRL-INPUT-FILTERING
+  strength: soft
+  rationale: Injection is the vector for this threat; input filtering reduces the likelihood of embedded instructions (soft, best-effort).
+- id: CTRL-MEMORY-ISOLATION
+  strength: gating
   rationale: Memory isolation between agents prevents leakage of other users' data
-- mitigation_id: CTRL-PROMPT-HARDENING
-  rationale: Injection is the vector for this threat; structural prompt isolation
-    makes overriding instructions harder (soft).
-- mitigation_id: CTRL-SESSION-ISOLATION
+- id: CTRL-PROMPT-HARDENING
+  strength: soft
+  rationale: Injection is the vector for this threat; structural prompt isolation makes overriding instructions harder (soft).
+- id: CTRL-SESSION-ISOLATION
+  strength: gating
   rationale: 'Session isolation prevents data leakage between users
 
 
@@ -80,7 +85,11 @@ mitigations:
 
 
     Strict session isolation segregates the contexts of different users'
-- mitigation_id: CTRL-TENANT-ISOLATION
+- id: CTRL-TENANT-ISOLATION
+  strength: gating
   rationale: Logical or physical isolation of data between tenants
-- mitigation_id: CTRL-URL-ALLOWLIST
+- id: CTRL-URL-ALLOWLIST
+  strength: gating
   rationale: Allowlist of permitted external systems
+references: []
+tags: []

@@ -1,26 +1,23 @@
 id: CTRL-PLAN-VALIDATION
-title: Plan Validation
-description: Validates an agent's action plans for logical correctness, feasibility,
-  and compliance with constraints before execution, detecting reasoning errors and
-  invalid action sequences at the planning stage. The mechanism operates as a plan
-  verification layer that analyzes the proposed plan against domain rules and system
-  capabilities. This prevents execution of logically flawed plans, detects impossible
-  action sequences, and enables early detection of agent reasoning failures.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Logical consistency check
-  complexity: medium
-  description: 'The plan is analyzed for logical consistency: preconditions are met
-    for each step, there are no circular dependencies, it is achievable within system
-    constraints. Logical errors are flagged for revision by the agent or human review.'
-- name: Action feasibility verification
-  complexity: medium
-  description: 'Each action in the plan is checked for feasibility: the tool exists,
-    permissions are available, resources are sufficient. Infeasible actions are identified
-    with suggested alternatives.'
-- name: Constraint compliance validation
-  complexity: high
-  description: An ML classifier or rules engine evaluates the plan for compliance
-    with security constraints, safety guidelines, business rules. Plans that violate
-    constraints are rejected with an explanation.
+name: Plan Validation
+status: draft
+mitigation_class: detector
+purpose: Validates an agent's action plans for logical correctness, feasibility, and compliance with constraints before execution, detecting reasoning errors and invalid action sequences at the planning stage. The mechanism operates as a plan verification layer that analyzes the proposed plan against domain rules and system capabilities. This prevents execution of logically flawed plans, detects impossible action sequences, and enables early detection of agent reasoning failures.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Logical consistency check (medium): The plan is analyzed for logical consistency: preconditions are met for each step, there are no circular dependencies, it is achievable within system constraints. Logical errors are flagged for revision by the agent or human review.
+
+
+  Action feasibility verification (medium): Each action in the plan is checked for feasibility: the tool exists, permissions are available, resources are sufficient. Infeasible actions are identified with suggested alternatives.
+
+
+  Constraint compliance validation (high): An ML classifier or rules engine evaluates the plan for compliance with security constraints, safety guidelines, business rules. Plans that violate constraints are rejected with an explanation.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

@@ -7,20 +7,14 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 dependencies = [
     "fastapi>=0.109.0",
-    "uvicorn[standard]>=0.52.1",
-    "sqlalchemy>=2.0.0",
-    "alembic>=1.13.0",
+    "uvicorn[standard]>=0.27.0",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "pyyaml>=6.0",
     "mcp>=2.0.0",
-    "aiosqlite>=0.19.0",
 ]
 
 [project.optional-dependencies]
-postgres = [
-    "asyncpg>=0.29.0",
-]
 dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.23.0",
@@ -29,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-keel = "app.mcp.server:main"
+keel = "keel.mcp.server:main"
 
 [build-system]
 requires = ["hatchling>=1.32.0"]
@@ -46,7 +40,7 @@ target-version = "py311"
 select = ["E4", "E7", "E9", "F"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["keel"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

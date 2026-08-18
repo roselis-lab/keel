@@ -1,33 +1,24 @@
 id: T-METADATA-LEAK
 title: Agent metadata leak
-description: 'The agent discloses technical metadata about its implementation — the
-  model version in use, dependency names and versions, fragments of the system prompt,
-  file paths, stack traces, configuration IDs. The leak happens through detailed error
-  messages, debug output, direct agent answers to questions about its internals, or
-  through service fields in structured responses.
-
-
-  Disclosed metadata serves as reconnaissance: an attacker identifies component versions
-  and applies known CVEs, uses knowledge of the system prompt for a targeted jailbreak,
-  and picks an attack against the specific model/framework. The threat materializes
-  on any agent with user-facing output in which implementation details are not filtered
-  out.'
-impact_class: recon-exposure
-vulnerability:
-- The agent discloses technical implementation metadata — model version, dependency
-  names/versions, system-prompt fragments, paths, stack traces, configuration IDs
-  — through detailed errors, debug output, or direct answers about its internals;
-  the disclosure serves as reconnaissance for a targeted attack.
-reachability: NOT applicable if the agent's output and error messages are unreachable
-  to a potential adversary (a fully internal trusted contour with no external surface).
-tags: []
+harm: data-exposed
+surface:
+- user-agent
+source:
+- external-attacker
+weaknesses:
+- component: model
+  text: The agent discloses technical implementation metadata — model version, dependency names/versions, system-prompt fragments, paths, stack traces, configuration IDs — through detailed errors, debug output, or direct answers about its internals; the disclosure serves as reconnaissance for a targeted attack.
+  nature: targeted
+reachability: NOT applicable if the agent's output and error messages are unreachable to a potential adversary (a fully internal trusted contour with no external surface).
 mitigations:
-- mitigation_id: CTRL-METADATA-FILTERING
-  rationale: 'Filtering technical metadata from agent responses conceals implementation
-    details
+- id: CTRL-METADATA-FILTERING
+  strength: gating
+  rationale: 'Filtering technical metadata from agent responses conceals implementation details
 
 
     Hiding system metadata from responses prevents fingerprinting
 
 
     Hiding the internal system architecture from external interfaces'
+references: []
+tags: []

@@ -1,34 +1,23 @@
 id: CTRL-EXTENSION-RIGHTS
-title: Restricting IDE Extension Privileges
-description: Limits the privileges of IDE extensions to the minimally necessary set
-  of permissions through explicit declaration of capabilities in the manifest, mandatory
-  approval for extension-contributed tools, and monitoring of anomalies in extension
-  behavior. The mechanism operates at the level of the extension sandbox and the IDE
-  permissions system, checking each request for resource access against declared and
-  approved permissions. This prevents privilege escalation through malicious extensions,
-  limits the blast radius of a compromised extension, and enforces the principle of
-  least privilege even for trusted extensions.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Capability-based permissions
-  description: 'Each extension must explicitly declare all required permissions in
-    the manifest: filesystem access paths, network domains, IDE APIs, external tool
-    integrations. Runtime enforcement checks each access request against declared
-    permissions and blocks undeclared access. This gives an explicit surface area
-    for security review but requires accurate manifest declarations.'
-  complexity: low
-- name: Least privilege enforcement
-  description: 'The system applies the principle of least privilege: extensions receive
-    only the minimal privileges necessary for core functionality. Overly permissive
-    manifests are rejected at review or require justification. Periodic audits verify
-    that privileges remain current and revoke unused permissions. This minimizes potential
-    damage from a compromised extension.'
-  complexity: medium
-- name: Behavioural anomaly monitoring
-  description: 'Runtime monitoring tracks extension behavior: the frequency and patterns
-    of API calls, accessed resources, data flows. Anomalous behavior — a sudden spike
-    in file access, unexpected network connections, unusual data volumes — triggers
-    alerts or automatic suspension. This detects compromised or malicious extensions
-    post-installation.'
-  complexity: high
+name: Restricting IDE Extension Privileges
+status: draft
+mitigation_class: gating_control
+purpose: Limits the privileges of IDE extensions to the minimally necessary set of permissions through explicit declaration of capabilities in the manifest, mandatory approval for extension-contributed tools, and monitoring of anomalies in extension behavior. The mechanism operates at the level of the extension sandbox and the IDE permissions system, checking each request for resource access against declared and approved permissions. This prevents privilege escalation through malicious extensions, limits the blast radius of a compromised extension, and enforces the principle of least privilege even for trusted extensions.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Capability-based permissions (low): Each extension must explicitly declare all required permissions in the manifest: filesystem access paths, network domains, IDE APIs, external tool integrations. Runtime enforcement checks each access request against declared permissions and blocks undeclared access. This gives an explicit surface area for security review but requires accurate manifest declarations.
+
+
+  Least privilege enforcement (medium): The system applies the principle of least privilege: extensions receive only the minimal privileges necessary for core functionality. Overly permissive manifests are rejected at review or require justification. Periodic audits verify that privileges remain current and revoke unused permissions. This minimizes potential damage from a compromised extension.
+
+
+  Behavioural anomaly monitoring (high): Runtime monitoring tracks extension behavior: the frequency and patterns of API calls, accessed resources, data flows. Anomalous behavior — a sudden spike in file access, unexpected network connections, unusual data volumes — triggers alerts or automatic suspension. This detects compromised or malicious extensions post-installation.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

@@ -1,37 +1,23 @@
 id: CTRL-CROSS-AGENT-REVIEW
-title: Cross-checking of actions between agents
-description: Organizes cross-checking of decisions and actions of some agents by others
-  with an independent role or set of checks, surfacing contradictions, errors, and
-  anomalies before they propagate along the agent chain or lead to irreversible consequences.
-  The mechanism is embedded into the multi-agent system's workflow as a validation
-  checkpoint between agents or after critical decisions, where a reviewer agent analyzes
-  the rationale, outcome, and potential issues of the previous action. This provides
-  defense-in-depth against a single point of failure in an individual agent's logic,
-  detects compromise or malfunction of one agent through cross-check, and increases
-  the reliability of consensus decisions.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Supervisor agent for review
-  description: A dedicated reviewer agent with the role of auditor or supervisor checks
-    all critical actions of other agents before their commit or propagation. The reviewer
-    has access to the same data as the executor plus audit logs and policy rules,
-    but it does not participate in generating the decision. When anomalies are detected
-    - policy violations, unusual patterns, potential harm - the reviewer blocks the
-    action or flags it for human review. This gives independent oversight but adds
-    latency and requires a dedicated agent.
-  complexity: high
-- name: Consensus protocol for critical decisions
-  description: Critical decisions require agreement of M out of N agents (for example,
-    2 of 3), by analogy with multi-sig wallets. Each agent independently analyzes
-    the decision and votes for or against. The decision is made only when the agreement
-    threshold is reached. This protects against compromise or malfunction of one agent
-    but significantly increases latency and cost for each decision.
-  complexity: high
-- name: Continuous monitoring agent
-  description: 'Instead of pre-approval, continuous monitoring is used: actions are
-    logged and analyzed by a separate monitor agent for anomalies post-factum. When
-    suspicious activity is detected, the monitor can roll back changes, notify operators,
-    or put the system into safe mode. This is not a blocking control but makes it
-    possible to react quickly to detected problems.'
-  complexity: medium
+name: Cross-checking of actions between agents
+status: draft
+mitigation_class: detector
+purpose: Organizes cross-checking of decisions and actions of some agents by others with an independent role or set of checks, surfacing contradictions, errors, and anomalies before they propagate along the agent chain or lead to irreversible consequences. The mechanism is embedded into the multi-agent system's workflow as a validation checkpoint between agents or after critical decisions, where a reviewer agent analyzes the rationale, outcome, and potential issues of the previous action. This provides defense-in-depth against a single point of failure in an individual agent's logic, detects compromise or malfunction of one agent through cross-check, and increases the reliability of consensus decisions.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Supervisor agent for review (high): A dedicated reviewer agent with the role of auditor or supervisor checks all critical actions of other agents before their commit or propagation. The reviewer has access to the same data as the executor plus audit logs and policy rules, but it does not participate in generating the decision. When anomalies are detected - policy violations, unusual patterns, potential harm - the reviewer blocks the action or flags it for human review. This gives independent oversight but adds latency and requires a dedicated agent.
+
+
+  Consensus protocol for critical decisions (high): Critical decisions require agreement of M out of N agents (for example, 2 of 3), by analogy with multi-sig wallets. Each agent independently analyzes the decision and votes for or against. The decision is made only when the agreement threshold is reached. This protects against compromise or malfunction of one agent but significantly increases latency and cost for each decision.
+
+
+  Continuous monitoring agent (medium): Instead of pre-approval, continuous monitoring is used: actions are logged and analyzed by a separate monitor agent for anomalies post-factum. When suspicious activity is detected, the monitor can roll back changes, notify operators, or put the system into safe mode. This is not a blocking control but makes it possible to react quickly to detected problems.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

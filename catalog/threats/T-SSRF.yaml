@@ -1,25 +1,22 @@
 id: T-SSRF
 title: SSRF via MCP/tools
-description: 'An MCP tool becomes a network proxy from the model into internal network
-  segments: all security checks configured for user traffic are bypassed because the
-  request arrives "from the inside".
-
-
-  Internal HTTP/metadata services become reachable through a single ToolCall, and
-  address validation is effectively delegated to the tool, where it may be absent.'
-impact_class: infrastructure-execution
-vulnerability:
-- A tool with network egress accepts an address/URL from the model's arguments and
-  initiates an outbound connection (HTTP, file://) from its own network position (internal
-  vantage) rather than the user's; the address is supplied via injection or an erroneous
-  model output.
-reachability: NOT applicable if the tool makes no outbound requests, addresses are
-  hard-coded and model-independent, or internal segments, metadata (169.254.169.254),
-  and localhost are unreachable from the tool's network position (strict egress isolation).
-tags: []
+harm: code-execution
+surface:
+- agent-environment
+source:
+- external-attacker
+- hallucination
+weaknesses:
+- component: tool
+  text: A tool with network egress accepts an address/URL from the model's arguments and initiates an outbound connection (HTTP, file://) from its own network position (internal vantage) rather than the user's; the address is supplied via injection or an erroneous model output.
+  nature: targeted
+reachability: NOT applicable if the tool makes no outbound requests, addresses are hard-coded and model-independent, or internal segments, metadata (169.254.169.254), and localhost are unreachable from the tool's network position (strict egress isolation).
 mitigations:
-- mitigation_id: CTRL-SSRF-PREVENTION
+- id: CTRL-SSRF-PREVENTION
+  strength: gating
   rationale: Validation and blocking of internal IP addresses and metadata endpoints
-- mitigation_id: CTRL-URL-ALLOWLIST
-  rationale: An allowlist of permitted domains prevents SSRF attacks against internal
-    resources
+- id: CTRL-URL-ALLOWLIST
+  strength: gating
+  rationale: An allowlist of permitted domains prevents SSRF attacks against internal resources
+references: []
+tags: []

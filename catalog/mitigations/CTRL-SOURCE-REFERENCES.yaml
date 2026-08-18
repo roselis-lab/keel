@@ -1,27 +1,23 @@
 id: CTRL-SOURCE-REFERENCES
-title: Mandatory Source References
-description: Enforces mandatory attachment of inline source references to all factual
-  statements and quotations in model outputs, specifying source type, identifier,
-  and timestamp, enabling verification of information and detection of hallucinations.
-  The mechanism operates at the output generation layer and requires the model to
-  provide attribution for factual content. This increases the transparency of model
-  outputs, allows users to independently verify statements, and detects when the model
-  generates content with no real basis in the source.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Inline citation generation
-  complexity: low
-  description: Model prompts include an explicit instruction to add inline citations
-    for all factual statements in the format [source_type:identifier]. Citations are
-    generated together with the content, not after the fact.
-- name: RAG document attribution
-  complexity: medium
-  description: For RAG-based responses, the identifiers of retrieved documents and
-    relevance scores are provided. Users can verify that the answer is based on actually
-    retrieved content rather than fabricated.
-- name: Citation completeness validation
-  complexity: medium
-  description: Automated validation checks that all factual statements have accompanying
-    citations. Responses without citations for factual content are flagged or rejected.
-    This enforces compliance with attribution requirements.
+name: Mandatory Source References
+status: draft
+mitigation_class: detector
+purpose: Enforces mandatory attachment of inline source references to all factual statements and quotations in model outputs, specifying source type, identifier, and timestamp, enabling verification of information and detection of hallucinations. The mechanism operates at the output generation layer and requires the model to provide attribution for factual content. This increases the transparency of model outputs, allows users to independently verify statements, and detects when the model generates content with no real basis in the source.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Inline citation generation (low): Model prompts include an explicit instruction to add inline citations for all factual statements in the format [source_type:identifier]. Citations are generated together with the content, not after the fact.
+
+
+  RAG document attribution (medium): For RAG-based responses, the identifiers of retrieved documents and relevance scores are provided. Users can verify that the answer is based on actually retrieved content rather than fabricated.
+
+
+  Citation completeness validation (medium): Automated validation checks that all factual statements have accompanying citations. Responses without citations for factual content are flagged or rejected. This enforces compliance with attribution requirements.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

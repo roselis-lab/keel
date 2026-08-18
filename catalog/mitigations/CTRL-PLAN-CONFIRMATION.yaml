@@ -1,29 +1,23 @@
 id: CTRL-PLAN-CONFIRMATION
-title: Plan Confirmation for Multi-step Actions
-description: Enforces mandatory user confirmation of the plan for multi-step actions,
-  showing a diff/preview of changes before execution begins and allowing cancellation
-  at any stage, preventing unintended execution of malicious action sequences. The
-  mechanism operates at the planning layer and requires explicit user approval before
-  executing complex action chains. This raises user awareness of consequences, allows
-  reasoning errors to be caught before irreversible actions, and provides human control
-  over complex operations.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Plan preview with approval
-  complexity: medium
-  description: The agent generates a plan as a list of actions with a description
-    of each step. The interface shows the plan in a readable format with expected
-    outcomes. The user can approve, reject, or request modifications. Execution begins
-    only after explicit approval.
-- name: Step-by-step confirmation
-  complexity: medium
-  description: After each step in a multi-step operation, execution pauses to show
-    the results and a preview of the next step. The user confirms continuation or
-    may cancel. This provides granular control but creates significant friction for
-    long chains.
-- name: Emergency stop capability
-  complexity: low
-  description: At any point during execution the user can trigger an emergency stop
-    via a dedicated interface element or hotkey. Execution halts immediately and partial
-    state is preserved. This is a safety valve for catching errors mid-execution.
+name: Plan Confirmation for Multi-step Actions
+status: draft
+mitigation_class: gating_control
+purpose: Enforces mandatory user confirmation of the plan for multi-step actions, showing a diff/preview of changes before execution begins and allowing cancellation at any stage, preventing unintended execution of malicious action sequences. The mechanism operates at the planning layer and requires explicit user approval before executing complex action chains. This raises user awareness of consequences, allows reasoning errors to be caught before irreversible actions, and provides human control over complex operations.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Plan preview with approval (medium): The agent generates a plan as a list of actions with a description of each step. The interface shows the plan in a readable format with expected outcomes. The user can approve, reject, or request modifications. Execution begins only after explicit approval.
+
+
+  Step-by-step confirmation (medium): After each step in a multi-step operation, execution pauses to show the results and a preview of the next step. The user confirms continuation or may cancel. This provides granular control but creates significant friction for long chains.
+
+
+  Emergency stop capability (low): At any point during execution the user can trigger an emergency stop via a dedicated interface element or hotkey. Execution halts immediately and partial state is preserved. This is a safety valve for catching errors mid-execution.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

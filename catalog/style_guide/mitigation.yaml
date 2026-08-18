@@ -1,126 +1,66 @@
 fields:
-  description:
-    purpose: Explains what it controls, how exactly it protects, and at which point
-      it intercepts
+  name:
+    purpose: Name of the mitigation.
+  status:
+    purpose: Status of the card. Before the card passes verification (Stage 0 of the acceptance process) the status is draft; verified once it passes.
+  mitigation_class:
+    purpose: 'One of gating_control / detector / process / evidential_mitigation / corrective. The class is a switch: it sets how the Control mechanism and Failure behavior sections are read.'
     content_requirements:
-    - Point of application - where in the flow it intercepts (at input, at output,
-      at runtime)
-    - Mechanism - how exactly the protection works (filtering, isolation, validation)
-    - What it blocks/detects - a specific class of attacks or violations
+    - Exactly one class per card; secondary behavior is noted in prose inside Control mechanism.
+  purpose:
+    purpose: '1-3 sentences: which class of failure the mitigation prevents.'
+  formal_implementation_risk:
+    purpose: '1-3 sentences: what a useless-but-mitigation-looking implementation looks like - what happens if the mitigation is implemented ''formally''. This field sets the failure mode that the other fields are obliged to close.'
+  scope:
+    purpose: A deterministic rule for the condition under which the mitigation applies or fires, formulated through a property of the system, an operation, or an asset.
+    content_requirements:
+    - Deterministic rule - no 'by team decision' or 'by model decision'.
+    - Strictness levels, if any, set through a deterministic property (system class, criticality, chain type).
+    - Profiles (same mitigation varied by a deterministic property) described here, not as separate cards.
+    - 'Boundary: explicitly state what is out of the mitigation''s scope.'
     avoid:
-    - 'Too brief: Input validation'
-    - Marketing phrasing without mechanics
-    - Repeating the title
-    - Explicit division into blocks (point, mechanism, limitations) - the text must
-      be coherent
-    examples:
-    - Intercepts user input before it reaches the model context, using an ML detector
-      and pattern matching to identify prompt-injection attempts of the form "ignore
-      the rules", "now you are..." and encoded payloads.
-    - Runs tools in an isolated environment with network isolation and restricted
-      access rights, blocking unauthorized access to internal services.
-  implementations:
-    purpose: Specific technical approaches to implementing the control
+    - Variation dictated by the team's timeline or resources - that is a temporary exception in the acceptance log, not scope.
+  control_mechanism:
+    purpose: 'Read per mitigation_class: the concrete mechanism and the deterministic guarantee it holds.'
     content_requirements:
-    - Each item is one specific technical mechanism, not a general intent
-    - At least 2-3 implementation options
+    - 'gating_control: the enforcement point (concrete architectural component); the trust boundary at which it fires; the deterministic mechanism that guarantees it cannot be bypassed. The trigger is deterministic, not at the discretion of the model or a human ad hoc.'
+    - 'detector: what emits the signal (what is measured, signal quality, the budget of false positives and misses); who or what deterministically responds and with what SLA; which deterministic gate relies on the signal - or an explicit justification that there is none. A detector does not gate by itself; the reaction gates.'
+    - 'process: the trigger for conducting it; coverage; who evaluates sufficiency and by what criteria. Separate ''is X done'' from ''is X done well'' - sufficiency criteria are mandatory.'
+    - 'evidential_mitigation: what is stored (event types, mandatory attributes, per-event integrity anchors - ID + hash); where it is emitted (instrumentation points on the platform side); the completeness guarantee (append-only, cryptographic chain) that needed events are not lost or falsified.'
+    - 'corrective: the remediation action (concrete component / runbook performing rollback / kill-switch / containment); the trigger (deterministic, or an explicit decision authority + SLA); the deterministic guarantee it brings the system to a known-good state, not a partial or ambiguous one.'
+  failure_behavior:
+    purpose: 'Read per mitigation_class: what happens when the mitigation fails, and how that failure is discovered.'
+    content_requirements:
+    - 'gating_control: fail-closed / fail-open + justification. For blocking controls the default is fail-closed.'
+    - 'detector: what happens when detection fails (the detector is silent or unavailable); how a ''blind'' detector is discovered.'
+    - 'process: what happens if the process is skipped or not conducted on time; how this is discovered.'
+    - 'evidential_mitigation: loss of an event must not be silent - the inability to log is recorded with an explicit loss marker; a break of integrity is discovered automatically.'
+    - 'corrective: what happens if the corrective action itself fails or cannot complete - it must fail toward a safe / contained state, not leave the system mid-remediation in an ambiguous state; how a stuck or failed remediation is detected.'
+  telemetry:
+    purpose: The events that are logged, the mandatory attributes of each (including attribution to a person or subject), and where the evidence is stored.
+    content_requirements:
+    - The list of events that are logged.
+    - 'Mandatory attributes of each event, including attribution: actor, initiator, object, decision taken, result.'
+    - Where the evidence is stored.
     avoid:
-    - Names that are too general without mechanics
-    - Describing intent instead of implementation
-    - Only one implementation option
-    subfields:
-      name:
-        purpose: A technically specific name for the pattern
-        content_requirements:
-        - 2-5 words
-        - Describes the mechanism, not the intent
-        examples:
-        - Prompt-injection detector
-        - Input sanitization
-        - Human-control gateway
-      description:
-        purpose: How exactly the mechanism works, where it is implemented, and what
-          practical protective effect it provides
-        content_requirements:
-        - A coherent, expanded description of the mechanism, not a telegraphic set
-          of phrases
-        - It must explain how the mechanism works, where exactly it is implemented
-          in the architecture, and what role it plays in the defense
-        - Where necessary, indicate in which circuit or scenario the mechanism is
-          especially appropriate, and where its capabilities are insufficient
-        - If it aids understanding, you may cite specific technologies, libraries,
-          standards, or classes of solutions
-        - If the mechanism includes several substantially different steps or implementation
-          points, two paragraphs are allowed
-        - After reading, it should be clear where to deploy the mechanism and what
-          exactly to check during review
-        avoid:
-        - 'Labels without a mechanism: validation, signature, internal registry'
-        - 'Describing intent instead of implementation: protects against attacks,
-          reduces risk'
-        - 'Marketing phrasing: reliably protects, effectively prevents'
-        - Technologies without explaining what role they play in this mechanism
-        - Mixing preventive, detective, and recovery measures in one description without
-          a clear distinction
-        - 'Telegraphic style: short phrases separated by periods without coherence'
-        examples:
-        - 'Before a call is executed, the tool''s arguments are validated against
-          a predefined schema: expected fields, types, allowed value ranges, required
-          parameters, and basic constraints on string format. Such a mechanism is
-          placed at the boundary between the agent and tool execution, so that the
-          model cannot pass an arbitrary data structure into runtime or covertly substitute
-          the meaning of the call through invalid parameters. In practice this reduces
-          the risk of injections, logic bypasses, and accidental errors when the LLM
-          produces a formally similar but essentially incorrect request. This approach
-          is especially useful for tools that work with external APIs, databases,
-          or sensitive business operations, where it is important not only to permit
-          the required call but also to strictly constrain the way it is formed.'
-        - High-risk operations, such as deleting data, mass-modifying records, or
-          executing irreversible commands, are not mixed with ordinary actions and
-          are routed into a separate execution circuit with mandatory confirmation
-          from the user or from an external policy. Thanks to this, the agent cannot
-          quietly turn an ordinary scenario into a critical operation merely because
-          the model erred in its reasoning or yielded to a malicious instruction.
-          Such a mechanism is usually built in at the level of the tool registry,
-          the policy engine, and the client interface, where the criticality of an
-          action is fixed in advance and affects the very order of execution. This
-          does not remove the need for correct authorization and argument validation,
-          but it substantially reduces the likelihood that a destructive action will
-          be performed automatically and without additional oversight.
-        - 'Tools are executed not in the shared application environment but in an
-          isolated runtime with pre-restricted rights: without arbitrary access to
-          the file system, without unnecessary system calls, and only with permitted
-          network destinations. Such a mechanism is needed so that even a vulnerable,
-          compromised, or simply erroneously implemented tool cannot become a point
-          of escape beyond its function and start reading extraneous data, executing
-          arbitrary commands, or establishing external connections. In practice this
-          reduces the blast radius of an incident and makes the tool''s behavior more
-          predictable from an exploitation standpoint. The approach is especially
-          important where agentic tools work with external resources, user input,
-          or code, and where an error in one component must not automatically mean
-          the compromise of the entire circuit.'
-  requirement_level:
-    purpose: Whether application is mandatory
+    - Duplicating attributes already in Control mechanism.
+    - Listing standard identifiers (session_id, timestamp, user_id) unless they have specific requirements here.
+  anti_patterns:
+    purpose: An explicit list of implementations that look like the mitigation but are not - a clean list of 'how NOT to do it', including at minimum the 'formal' variant from Risk of formal implementation.
+  validation:
+    purpose: Pass/fail acceptance criteria with test scenarios. Base criteria are the mandatory adoption bar; additional criteria cover the mitigation's specifics.
     content_requirements:
-    - 'MANDATORY: always required'
-    - 'RECOMMENDED: recommended'
-    examples:
-    - MANDATORY
-    - RECOMMENDED
-  title:
-    purpose: Short name for the UI
-    content_requirements:
-    - 3-7 words
-    - Describes what the control does
-    avoid:
-    - Too general
-    examples:
-    - Human in the loop for critical actions
-    - User input filtering
-  type:
-    purpose: Classification by the nature of the effect
-    content_requirements:
-    - 'PREVENTIVE_HARD: technically blocks the attack (MFA, encryption, sandbox)'
-    - 'PREVENTIVE_SOFT: policies, procedures (access review, security training)'
-    - 'DETECTIVE: monitoring, audit (logging, SIEM, anomaly detection)'
-    - 'CORRECTIVE: recovery (backup, incident response)'
+    - Each criterion is a pass/fail statement; if it cannot be, it is not a criterion.
+    - Each criterion checks what the others do not. Thresholds and numeric values go here.
+    - 'A test scenario per criterion: a drill, a red-team case, or a reproducible audit check.'
+    - Run frequency is driven by the change-triggers in Review; the calendar cadence is only a safety-net.
+  review:
+    purpose: Change-triggers for revising the card + a safety-net review cadence. If the safety-net run regularly finds something, the list of change-triggers is incomplete.
+  locus:
+    purpose: Which layer the mitigation naturally belongs to - the product (application logic) or the infrastructure/platform - with a short rationale, not a bare label (the boundary is often a split). This is the shared-responsibility call.
+  maintainer:
+    purpose: Name + contact for operational communication.
+  owner:
+    purpose: Owner-role of the mitigation; if several parties are responsible, the one accountable owner of the card.
+  faq:
+    purpose: Short answers to questions that arise when implementing the mitigation - only what is not obvious from the other sections or regularly causes divergent readings.

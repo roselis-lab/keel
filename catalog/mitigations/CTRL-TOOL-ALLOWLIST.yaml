@@ -1,26 +1,23 @@
 id: CTRL-TOOL-ALLOWLIST
-title: ToolCall Allowlist
-description: Restricts the list of tools that an agent may invoke autonomously, through
-  a centralized registry of allowed tools or individual assignments per agent, implementing
-  the principle of least privilege and limiting the attack surface. The mechanism
-  operates at the tool registry layer and checks every tool invocation against the
-  allowlist. This prevents unauthorized use of tools, limits the potential damage
-  from a compromised agent, and ensures controlled expansion of capabilities.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Tool registry
-  complexity: medium
-  description: A centralized registry of allowed tools. All tool invocations are checked
-    against the registry before execution. Only tools in the registry are available
-    for use. This provides a single control surface.
-- name: Individual assignments
-  complexity: medium
-  description: Individual assignments per agent - each agent has an explicit list
-    of available tools. Assignments are configured based on the agent's role and function.
-    This provides fine-grained control but requires management overhead.
-- name: Dynamic allowlists
-  complexity: high
-  description: Dynamic allowlists that are updated at runtime based on context, session
-    state, and user permissions. Flexibility to adapt to changing conditions, but
-    adds complexity.
+name: ToolCall Allowlist
+status: draft
+mitigation_class: gating_control
+purpose: Restricts the list of tools that an agent may invoke autonomously, through a centralized registry of allowed tools or individual assignments per agent, implementing the principle of least privilege and limiting the attack surface. The mechanism operates at the tool registry layer and checks every tool invocation against the allowlist. This prevents unauthorized use of tools, limits the potential damage from a compromised agent, and ensures controlled expansion of capabilities.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Tool registry (medium): A centralized registry of allowed tools. All tool invocations are checked against the registry before execution. Only tools in the registry are available for use. This provides a single control surface.
+
+
+  Individual assignments (medium): Individual assignments per agent - each agent has an explicit list of available tools. Assignments are configured based on the agent''s role and function. This provides fine-grained control but requires management overhead.
+
+
+  Dynamic allowlists (high): Dynamic allowlists that are updated at runtime based on context, session state, and user permissions. Flexibility to adapt to changing conditions, but adds complexity.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

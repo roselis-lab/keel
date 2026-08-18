@@ -1,25 +1,23 @@
 id: CTRL-TOOL-REGISTRY-INTEGRITY
-title: Immutable Binding in the Tool Registry
-description: Enforces immutability of entries in the tool registry through cryptographic
-  integrity verification, signatures, or hash chains, preventing tampering with tool
-  definitions after registration. The mechanism operates at the registry storage layer
-  and verifies integrity on every tool retrieval. This guarantees that tools execute
-  in the form in which they were registered, detects tampering attempts, and provides
-  a chain of accountability for tool definitions.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Digital signatures
-  complexity: high
-  description: Each registry entry is signed with a private key at registration. Upon
-    retrieval, the signature is verified against the stored public key. Invalid signatures
-    reject loading of the tool.
-- name: Hash-based addressing
-  complexity: high
-  description: Content-addressable storage where the hash of the tool definition is
-    the identifier. Any modification changes the hash - breaking references. This
-    ensures cryptographic integrity.
-- name: Immutable storage
-  complexity: medium
-  description: The registry uses an append-only log or blockchain for integrity. Historical
-    entries are immutable. Changes create new versions with an audit log.
+name: Immutable Binding in the Tool Registry
+status: draft
+mitigation_class: gating_control
+purpose: Enforces immutability of entries in the tool registry through cryptographic integrity verification, signatures, or hash chains, preventing tampering with tool definitions after registration. The mechanism operates at the registry storage layer and verifies integrity on every tool retrieval. This guarantees that tools execute in the form in which they were registered, detects tampering attempts, and provides a chain of accountability for tool definitions.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Digital signatures (high): Each registry entry is signed with a private key at registration. Upon retrieval, the signature is verified against the stored public key. Invalid signatures reject loading of the tool.
+
+
+  Hash-based addressing (high): Content-addressable storage where the hash of the tool definition is the identifier. Any modification changes the hash - breaking references. This ensures cryptographic integrity.
+
+
+  Immutable storage (medium): The registry uses an append-only log or blockchain for integrity. Historical entries are immutable. Changes create new versions with an audit log.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

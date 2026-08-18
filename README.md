@@ -17,8 +17,8 @@ Keel is the operational layer that is missing: a compact, opinionated representa
 
 | Layer | What it is | Role |
 | --- | --- | --- |
-| **1. Reference model** | 13 impact-centric threats, 71 mitigations, 96 links, authored in the facet schema | The seed content: a floor to start from, not the product |
-| **2. The framework** | the facet representation (`impact_class` + `vulnerability` + `reachability`), the mitigation taxonomy (HARD/SOFT), a hard authoring style guide, and the machinery to extend it (MCP + REST + DB + browse/edit UI) | What a team adopts and grows into its own model |
+| **1. Reference model** | 13 threats, 71 mitigations, 96 links, authored in the schema | The seed content: a floor to start from, not the product |
+| **2. The framework** | the threat structure (`harm`, `surface`/`source`, `weaknesses`, and `reachability`), the mitigation-card model (class as a switch), a hard authoring style guide, and the machinery to extend it (MCP + REST + browse/edit UI over plain YAML) | What a team adopts and grows into its own model |
 | **3. The assessor** | skills that turn the static model into a repeatable pass over a real system (data-sufficiency gate, per-threat chain, delta, two-part output) | What makes the model runnable: read versus run |
 
 The reference model is deliberately small: the catalog is a floor, not a ceiling. Keel's value is the shape and the assessor, not a claim to enumerate every GenAI threat.
@@ -35,7 +35,7 @@ Keel builds on all three and reuses their framing; the assessment reports its fi
 
 Keel works a different axis from the frameworks above. It makes the language operable, lean, and shared.
 
-- It stays lean. The facet model carries only what is live (the consequence, the mechanism, and whether it is reachable), and the catalog is a floor, so you skip the overhead of a full layered methodology on a single-agent setup. It also separates what OWASP conflates: a mechanism becomes a finding only once it reaches a real asset.
+- It stays lean. The model carries only what is live (the weakness, how it is reached, the consequence, and whether it is reachable), and the catalog is a floor, so you skip the overhead of a full layered methodology on a single-agent setup. It also separates what OWASP conflates: a mechanism becomes a finding only once it reaches a real asset.
 - It is operable. The assessor walks the model against a real system and returns findings, which is what separates framework literacy from a working practice.
 - It insists on evidence. The data-sufficiency gate and the rule that "model behavior is not a mitigation" stop an assessment from claiming a control works without proof; a SOFT control that only hinders leaves the threat open.
 - It centralizes. One shared model, queried over MCP, gives every team the same definitions, so the same threats get written once and reused.
@@ -47,50 +47,87 @@ Four entities, nothing more:
 
 | Entity | Fields |
 | --- | --- |
-| **Threat** | `id`, `title`, `description`, `impact_class` (asset/damage anchor, strict enum), `vulnerability[]` (prose patterns of *how* it's exploitable, the recognition anchor), `reachability` (carve-outs: *when it is NOT a live path*, judged un-mitigated), `tags[]` |
-| **Mitigation** | `id`, `title`, `description`, `type`, `requirement_level`, `implementations[]` |
-| **ThreatMitigation** | link `threat_id` ↔ `mitigation_id` with `rationale` |
-| **StyleGuideField** | authoring methodology per content field; auto-synced from model columns |
+| **Threat** | `id`, `title`, `harm` (the consequence class, strict enum), `surface[]` (which trust boundary the untrusted influence crosses, enum), `source[]` (who or what drives it, enum), `weaknesses[]` (the predisposing conditions it rests on — see below), `reachability` (carve-outs: *when it is NOT a live path*, judged un-mitigated), `mitigations[]` (links to mitigation cards — see below), `references[]` (`{id, url}` into public catalogs), `tags[]` |
+| **Weakness** (embedded in a threat) | `component` (which owned part it sits on, enum), `text` (the architectural condition: cause + where + defect), `nature` (`targeted` \| `secondary`) |
+| **MitigationLink** (embedded in a threat) | `id` of the mitigation card, `strength` (`gating` \| `soft`), `rationale` (why it addresses this threat) |
+| **Mitigation** (card) | `id`, `name`, `mitigation_class` (a switch: sets how the rest is read), `status`, `purpose`, `scope`, `control_mechanism`, `failure_behavior`, plus owner, telemetry, anti-patterns, validation, and FAQ |
 
 Enums:
-- `Threat.impact_class`: `decision-integrity` · `data-confidentiality` · `infrastructure-execution` · `resource-availability` · `reputation-compliance` · `recon-exposure`
-- `Mitigation.type`: `PREVENTIVE_HARD` (blocks) · `PREVENTIVE_SOFT` (hinders) · `DETECTIVE` · `CORRECTIVE`
-- `Mitigation.requirement_level`: `MANDATORY` · `RECOMMENDED`
+- `Threat.harm`: `wrong-decision` · `data-exposed` · `code-execution` · `downtime` · `reputation-legal`
+- `Threat.surface`: `user-agent` · `agent-agent` · `agent-environment`
+- `Threat.source`: `external-attacker` · `internal` · `hallucination` · `error` · `accident` · `training-data`
+- `Weakness.component`: `model` · `tool` · `downstream` · `memory` · `knowledge-base` · `identity-store`
+- `Weakness.nature`: `targeted` (the attack exploits it directly) · `secondary` (it only amplifies)
+- `MitigationLink.strength`: `gating` (an architectural control that blocks the threat) · `soft` (only lowers likelihood)
+- `Mitigation.mitigation_class`: `gating_control` · `detector` · `process` · `evidential_mitigation` · `corrective`
+- `Mitigation.status`: `draft` · `verified`
 
-The catalog is impact-centric: a threat is an impact (the asset under fire), with cause, surface, and predisposing weakness woven into the `vulnerability` patterns; `reachability` carries the "when does this actually apply" judgement, assessed on the un-mitigated system.
+A threat rests on one or more weaknesses at the components you own; `surface` and `source` say how untrusted influence reaches them; `harm` is the consequence if it fires; `reachability` is the rule-out gate — when the path is not live or the asset is not material, judged on the un-mitigated architecture. A technique such as prompt injection is a mechanism, not a threat: it lives in `source` and `references`, never as a threat or weakness identity.
 
 Design principle: **methodology lives in the assessor's prompt, the model stays lean.** Per-system assessment output (actor, scenario, impact, and so on) is ephemeral and is not stored here.
 
 ## Interfaces
 
 - **MCP** (primary): `stdio` for local Claude Code, `--http` for remote clients. Tools cover threats CRUD plus mitigation links, mitigations CRUD, the style guide, and health/stats.
-- **REST** (read-only) for browsing the model: `/threats`, `/threats/{id}`, `/mitigations`, `/mitigations/{id}`, `/style-guide`, `/health`. All writes go through MCP.
+- **REST** for browsing and editing the model: reads (`/threats`, `/threats/{id}`, `/mitigations`, `/mitigations/{id}`, `/style-guide`, `/style-guide/coverage`, `/schema/{entity}`, `/health`) plus the write endpoints that back the browse/edit UI (`PATCH /threats/{id}`, threat–mitigation links, `PATCH /style-guide/{entity}/{field}`, and `POST /threats/validate`). The MCP tools and the REST writes share one service layer, so every edit lands in `catalog/*.yaml`.
 
 ## Assessment skills
 
 The assessor ships as skills under `.claude/skills/`:
 
-- **`assessing-genai-security`** is the calibrated, model-agnostic methodology: the data-sufficiency gate, the per-threat chain (source, surface, vulnerability, scenario, business impact, risk, delta), and the two-part output (analysis trail plus final assessment).
+- **`assessing-genai-security`** is the calibrated, model-agnostic methodology: the data-sufficiency gate, the per-threat chain (source, surface, weakness, scenario, business impact, risk, delta), and the two-part output (analysis trail plus final assessment).
 - **`assess-genai-with-library`** binds that methodology to Keel's MCP (candidate threats, then a `reachability` match on the target system, then mitigations), and polishes the final assessment through `tighten-text` (concision, de-bullet) and `humanizer` (natural expert voice). Both are substance-preserving.
 
 ## Run
 
-```bash
-pip install -e .            # add [postgres] for asyncpg; installs the `keel` CLI
-cp .env.example .env        # SQLite by default — zero setup
-alembic upgrade head        # create the schema
-keel seed                   # load the catalog (catalog/*.yaml) into the database
+Keel is an MCP server — for any agent or MCP client — plus a browse UI. It reads the catalog from `catalog/*.yaml` into memory on start, so there are no setup steps and no database.
 
-keel                        # MCP over stdio
-keel --http                 # MCP over Streamable HTTP (port 8001)
-uvicorn app.main:app        # read-only REST (port 8000) + browse UI at /
+One command (needs the Docker daemon) serves the UI at `http://localhost:8000/`; add `--profile mcp` for the HTTP MCP transport on `:8001`:
+
+```bash
+docker compose up
 ```
 
-With Docker, `docker compose up` builds the image, seeds the database from the catalog, and serves the UI at `http://localhost:8000/` in one command. Dependencies are pinned in `uv.lock` for reproducible installs (`uv sync`).
+Or let your agent launch it over stdio: `.mcp.json` in this repo is a ready-to-use example for MCP clients (it exposes the tools as `mcp__keel__*`).
 
-A minimal browse-and-edit UI (single static file, no build step, no npm) is served at the root, `http://localhost:8000/`: threats, mitigations, and the style guide, with cross-links between linked threats and mitigations. It supports inline editing (threat/mitigation fields, tags, implementations, threat↔mitigation links, style guide slots) via a small set of REST write endpoints that delegate to the same service layer as the MCP write tools. MCP remains the style-guide-guided authoring path; the UI is the raw editing counterpart.
+<details>
+<summary><b>Run from source / develop Keel</b></summary>
 
-For local Claude Code, `.mcp.json` registers the server as `keel`, so the assessor skill calls its tools as `mcp__keel__*`.
+Uses `uv` (pinned in `uv.lock`); `uv run` handles the virtualenv and `PATH` for you:
+
+```bash
+uv sync
+uv run uvicorn keel.main:app     # browse UI + REST at http://localhost:8000/
+uv run keel                      # stdio MCP   (uv run keel --http → HTTP MCP on :8001)
+uv run keel validate             # check the catalog YAML against the schemas
+uv run keel schema               # regenerate schema/*.json from the models (schema --check verifies freshness)
+```
+
+Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
+</details>
+
+`catalog/*.yaml` is the single source of truth — there is no database. Every write, whether from an MCP tool, the browse UI, or your text editor, is a change to those files. The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked, and its inline editing patches the YAML directly through the same service layer the MCP write tools use.
+
+## Authoring UI
+
+Running the app (see **Run** above) serves a small browse-and-edit interface at `http://localhost:8000/` — one static HTML file, no build step. A switcher at the top moves between its two screens.
+
+**Threats** browses the catalog and edits one threat at a time in a three-pane layout: the list of threats on the left, the editor in the middle, and a live preview on the right. The editor builds its form from the JSON Schema, so the fields, their order, and the fixed-vocabulary dropdowns always match the model. Weaknesses and mitigation links show as cards you can add, edit, and remove. As you work, an inline style-guide bar keeps a one-line hint under each field and opens the full guidance — what to include, what to avoid, and an example you can drop straight in — while that field has focus. Every change is checked on the server through one endpoint, `POST /threats/validate`, which returns two kinds of feedback: red blocking errors when the structure is wrong (a value outside a fixed vocabulary, a missing required field) and amber advice that never blocks a save (for example, a threat whose mitigations are all soft). A read-only YAML view shows exactly what will be written to disk.
+
+**Style guide** edits the authoring guidance itself. The left rail is a field tree derived from the model, each field carrying a coverage badge, so the guidance can't drift from the fields it describes; fields with guidance but no matching model field are flagged as orphans. The center pane edits a field's slots — purpose, what to include, what to avoid, examples — and the right pane shows precisely what an author sees on the Threats screen while you edit that same guidance.
+
+### The JSON Schema
+
+The form and its dropdowns read a JSON Schema generated from the Pydantic models — never hand-written, so it cannot drift from the code. `keel schema` regenerates the files under `schema/`, `keel schema --check` fails when they are stale (CI runs this as a gate), and `GET /schema/{entity}` serves them to the browser.
+
+### Saving is a pull request
+
+Both screens write straight to the catalog YAML through the same service layer the MCP write tools use. After a save the UI names the exact file it wrote (`catalog/threats/<id>.yaml` or `catalog/style_guide/<entity>.yaml`) and asks you to commit and open a pull request, so every change lands as a reviewable diff. Set `REPO_URL` (for example `https://github.com/org/keel`) and the confirmation gains an "Edit on GitHub" link straight to that file; leave it unset and the link stays hidden.
+
+### Deferred / not yet implemented
+
+- The raw-YAML view is read-only for now: you can see exactly what will be written, but you cannot edit the YAML there and round-trip it back into the form.
+- The UI edits existing threats; creating a brand-new threat from the UI is not built yet — add one through the MCP write tools or by hand, then edit it here.
 
 ## Tests
 
@@ -99,14 +136,14 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The suite includes a health check on the library (`tests/test_health.py`): it runs the stat counts and confirms that `check_library_health` flags content and integrity gaps, such as a threat missing its `vulnerability` or `impact_class`, a threat with no mitigation, or a dangling mitigation link. The same integrity check runs at runtime through the `check_library_health` and `get_stats` MCP tools; the REST `/health` endpoint is a simple liveness probe.
+The suite includes a health check on the library (`tests/test_health.py`): it runs the stat counts and confirms that `check_library_health` flags content and integrity gaps, such as a threat missing its `weaknesses` or `harm`, a threat with no mitigation, or a dangling mitigation link. The same integrity check runs at runtime through the `check_library_health` and `get_stats` MCP tools; the REST `/health` endpoint is a simple liveness probe.
 
 ## Make it yours
 
-Keel ships with a curated English reference model: 13 impact-centric threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, and one file per entity under `style_guide/`); `threat_library.db` is a generated artifact that `keel seed` builds from it, so content changes land as readable diffs in pull requests instead of a binary blob. `keel validate` checks the YAML against the schemas (strict enums, link integrity) before it touches the database, and runs in CI. It is meant to be forked and grown into your organization's model:
+Keel ships with a curated English reference model: 13 threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, and one file per entity under `style_guide/`), so content changes land as readable diffs in pull requests. `keel validate` checks the YAML against the schemas (strict enums, link integrity) and runs in CI. It is meant to be forked and grown into your organization's model:
 
-- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar) or the browse UI, then run `keel export` to write the changes back to `catalog/*.yaml` for review.
-- Adjust tags, implementations, and threat-to-mitigation rationale to match how your teams reason.
+- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar) or the browse UI — each write lands directly in `catalog/*.yaml` for review — or edit the files by hand.
+- Adjust tags, mitigation cards, and threat-to-mitigation rationale to match how your teams reason.
 - Drop what does not apply: the catalog is a floor, so shrinking it to a sharper model tuned to your context is the point.
 
 **Roadmap (not yet built):** per-organization state, so an org can mark a threat *not applicable* or a mitigation *already implemented* and suppress known noise without deleting the shared knowledge. For now you express that context by editing or pruning the model directly.

@@ -1,0 +1,5 @@
+# Trust boundaries — where untrusted influence crosses in. Where threats sit.
+surface:
+  user-agent:        {name: User ↔ Agent,        desc: "What the user sends the agent, and how the agent influences the user."}
+  agent-agent:       {name: Agent ↔ Agent,       desc: "Messages between agents; multi-agent coordination."}
+  agent-environment: {name: Agent ↔ Environment, desc: "Tool calls, external content, actions on the outside world."}

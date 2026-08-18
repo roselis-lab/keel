@@ -1,28 +1,23 @@
 id: CTRL-MEMORY-SANITIZATION
-title: Memory Write Filtering
-description: Filters and sanitizes data before it is written to an agent's long-term
-  memory, preventing memory poisoning via malicious content and ensuring data quality.
-  The mechanism operates at the memory write operation level and checks every write
-  request against sanitization policies. This blocks injection attacks via memory
-  poisoning, detects attempts to disclose sensitive data, and preserves the integrity
-  of stored knowledge.
-type: CORRECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Content filter on write
-  complexity: medium
-  description: 'A content filter checks every memory write for malicious patterns:
-    prompt injection payloads, executable code, hidden instructions. Detected patterns
-    are removed or flagged. This prevents poisoning of the agent''s knowledge base.'
-- name: Sensitive data prevention
-  complexity: high
-  description: A sensitive data detector scans content before it is stored in memory
-    for personal data, credentials, confidential information. Detected sensitive data
-    is either blocked from being stored, or masked or anonymized. This prevents accidental
-    disclosure of sensitive data in the agent's memory.
-- name: Source verification
-  complexity: medium
-  description: Source verification requires every memory write to have a verified
-    provenance — data source, timestamp, write authorization. Data from untrusted
-    or unknown sources is rejected. This provides a chain of accountability for the
-    agent's memory contents.
+name: Memory Write Filtering
+status: draft
+mitigation_class: corrective
+purpose: Filters and sanitizes data before it is written to an agent's long-term memory, preventing memory poisoning via malicious content and ensuring data quality. The mechanism operates at the memory write operation level and checks every write request against sanitization policies. This blocks injection attacks via memory poisoning, detects attempts to disclose sensitive data, and preserves the integrity of stored knowledge.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Content filter on write (medium): A content filter checks every memory write for malicious patterns: prompt injection payloads, executable code, hidden instructions. Detected patterns are removed or flagged. This prevents poisoning of the agent''s knowledge base.
+
+
+  Sensitive data prevention (high): A sensitive data detector scans content before it is stored in memory for personal data, credentials, confidential information. Detected sensitive data is either blocked from being stored, or masked or anonymized. This prevents accidental disclosure of sensitive data in the agent''s memory.
+
+
+  Source verification (medium): Source verification requires every memory write to have a verified provenance — data source, timestamp, write authorization. Data from untrusted or unknown sources is rejected. This provides a chain of accountability for the agent''s memory contents.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

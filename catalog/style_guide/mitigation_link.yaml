@@ -1,0 +1,15 @@
+fields:
+  strength:
+    purpose: What this control does for THIS threat (a property of the link, not of the control itself).
+    content_requirements:
+    - gating = an architectural control outside the model that blocks the threat.
+    - soft = only lowers likelihood — anti-injection, input/output filtering, prompt hardening, anything leaning on model behaviour or best-effort.
+    avoid:
+    - Marking a soft control as gating.
+  rationale:
+    purpose: Why this control addresses this threat.
+    content_requirements:
+    - Tie the control to this threat's specific weakness or harm.
+    - For a soft link, say plainly that it does not close the threat.
+    avoid:
+    - A soft control's rationale claiming it prevents or closes the threat.

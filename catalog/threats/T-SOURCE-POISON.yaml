@@ -1,109 +1,118 @@
 id: T-SOURCE-POISON
 title: Trusted-source integrity compromise (poisoning)
-description: 'An attacker corrupts a source the agent trusts on read — the RAG corpus,
-  shared memory, a tool''s output, or an entry in an agent registry. The tainted content
-  becomes part of the trusted context and systematically distorts every response and
-  decision that relies on it. The source of error is in the trusted data layer, not
-  the model: the model formally works correctly, but on compromised facts. The poisoning
-  is persistent, replicated on every request, and propagates along the chain of dependent
-  agents until detected and removed manually.'
-impact_class: decision-integrity
-vulnerability:
-- The RAG corpus is populated from a source with no provenance verification (open
-  ingestion, SEO indexing, free-form text from a tool's output); a poisoned document
-  is cited by the agent as authoritative.
-- The shared memory of a multi-agent system is writable without verification; poisoned
-  data persistently affects all subsequent decisions until removed manually.
-- A tool/MCP server is connected via a dynamic registry or a third party without integrity
-  and authenticity verification; a substituted tool or a compromised MCP returns false
-  data, and its description may carry a hidden injection for the model.
-- The agent is discovered/connected through a registry without authentication; a malicious
-  or compromised peer agent supplies false results into the chain.
-- An in-process tool or agent shares the address space with the agent with no isolation
-  boundary; compromise gives full access to its context and memory.
-- In a multi-agent chain, one node's tainted output is accepted by the next as trusted
-  and amplified at each step (cascade).
-reachability: NOT applicable if no source influencing the outputs is reachable for
-  write or substitution by the adversary (corpus, memory, tool and agent registries
-  closed to external write), or the agent relies on no external sources at all.
-tags: []
+harm: wrong-decision
+surface:
+- agent-environment
+- agent-agent
+source:
+- external-attacker
+weaknesses:
+- component: knowledge-base
+  text: The RAG corpus is populated from a source with no provenance verification (open ingestion, SEO indexing, free-form text from a tool's output); a poisoned document is cited by the agent as authoritative.
+  nature: targeted
+- component: memory
+  text: The shared memory of a multi-agent system is writable without verification; poisoned data persistently affects all subsequent decisions until removed manually.
+  nature: targeted
+- component: tool
+  text: A tool/MCP server is connected via a dynamic registry or a third party without integrity and authenticity verification; a substituted tool or a compromised MCP returns false data, and its description may carry a hidden injection for the model.
+  nature: targeted
+- component: tool
+  text: The agent is discovered/connected through a registry without authentication; a malicious or compromised peer agent supplies false results into the chain.
+  nature: targeted
+- component: tool
+  text: An in-process tool or agent shares the address space with the agent with no isolation boundary; compromise gives full access to its context and memory.
+  nature: targeted
+- component: model
+  text: In a multi-agent chain, one node's tainted output is accepted by the next as trusted and amplified at each step (cascade).
+  nature: targeted
+reachability: NOT applicable if no source influencing the outputs is reachable for write or substitution by the adversary (corpus, memory, tool and agent registries closed to external write), or the agent relies on no external sources at all.
 mitigations:
-- mitigation_id: CTRL-AGENT-AUTHENTICATION
-  rationale: Agent authentication at registration prevents substitution with malicious
-    agents
-- mitigation_id: CTRL-AGENT-ISOLATION
-  rationale: 'Isolating a compromised agent in a sandbox limits its impact on the
-    system
+- id: CTRL-AGENT-AUTHENTICATION
+  strength: gating
+  rationale: Agent authentication at registration prevents substitution with malicious agents
+- id: CTRL-AGENT-ISOLATION
+  strength: gating
+  rationale: 'Isolating a compromised agent in a sandbox limits its impact on the system
 
 
-    Sandbox isolation limits the consequences of an in-process tool compromise by
-    denying it access to the agent''s memory'
-- mitigation_id: CTRL-AGENT-REGISTRY
-  rationale: A trusted agent registry with verification prevents registration of malicious
-    agents
-- mitigation_id: CTRL-CODE-SANDBOX
+    Sandbox isolation limits the consequences of an in-process tool compromise by denying it access to the agent''s memory'
+- id: CTRL-AGENT-REGISTRY
+  strength: gating
+  rationale: A trusted agent registry with verification prevents registration of malicious agents
+- id: CTRL-CODE-SANDBOX
+  strength: gating
   rationale: Isolating tool code in a sandbox limits the consequences of compromise
-- mitigation_id: CTRL-CONTENT-STRIPPING
-  rationale: Indirect injection via external/free-form content is the vector for this
-    threat; stripping hidden instructions reduces the likelihood (soft).
-- mitigation_id: CTRL-CROSS-AGENT-REVIEW
+- id: CTRL-CONTENT-STRIPPING
+  strength: soft
+  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
+- id: CTRL-CROSS-AGENT-REVIEW
+  strength: gating
   rationale: 'Cross-checking results between agents reveals contradictions and errors
 
 
     Validating each agent''s results prevents propagation of errors along the chain'
-- mitigation_id: CTRL-DATA-EGRESS-MONITORING
+- id: CTRL-DATA-EGRESS-MONITORING
+  strength: gating
   rationale: 'Monitoring outbound data through the MCP server reveals exfiltration
 
 
     Monitoring of outbound data through MCP'
-- mitigation_id: CTRL-DATA-VALIDATION
-  rationale: 'Validating data from tool output before indexing it into RAG prevents
-    ingestion of malicious content
+- id: CTRL-DATA-VALIDATION
+  strength: gating
+  rationale: 'Validating data from tool output before indexing it into RAG prevents ingestion of malicious content
 
 
-    Validating documents before indexing them into RAG prevents ingestion of malicious
-    content'
-- mitigation_id: CTRL-EXTENSION-RIGHTS
+    Validating documents before indexing them into RAG prevents ingestion of malicious content'
+- id: CTRL-EXTENSION-RIGHTS
+  strength: gating
   rationale: Least privilege for extensions
-- mitigation_id: CTRL-EXTENSION-SANDBOX
+- id: CTRL-EXTENSION-SANDBOX
+  strength: gating
   rationale: Isolation of extensions
-- mitigation_id: CTRL-EXTENSION-UPDATE-CONTROL
-  rationale: Controlling IDE extension updates prevents automatic installation of
-    malicious updates
-- mitigation_id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  rationale: Indirect injection via external content is the vector for this threat;
-    isolating external content limits its impact.
-- mitigation_id: CTRL-IDE-EXTENSION-ALLOWLIST
+- id: CTRL-EXTENSION-UPDATE-CONTROL
+  strength: gating
+  rationale: Controlling IDE extension updates prevents automatic installation of malicious updates
+- id: CTRL-EXTERNAL-CONTENT-SANDBOX
+  strength: gating
+  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
+- id: CTRL-IDE-EXTENSION-ALLOWLIST
+  strength: gating
   rationale: Only approved extensions
-- mitigation_id: CTRL-INTEGRITY-VERIFICATION
+- id: CTRL-INTEGRITY-VERIFICATION
+  strength: gating
   rationale: 'Integrity verification of libraries before loading them into the process
 
 
     Integrity verification (hashes, signatures) of tools detects tampering'
-- mitigation_id: CTRL-MCP-REGISTRY
+- id: CTRL-MCP-REGISTRY
+  strength: gating
   rationale: 'A registry of vetted MCP servers prevents connecting to unvetted ones
 
 
     A registry of vetted MCP servers'
-- mitigation_id: CTRL-MEMORY-SANITIZATION
+- id: CTRL-MEMORY-SANITIZATION
+  strength: gating
   rationale: Sanitizing input data before storing it in memory prevents poisoning
-- mitigation_id: CTRL-MEMORY-VERSIONING
+- id: CTRL-MEMORY-VERSIONING
+  strength: gating
   rationale: Memory versioning allows rollback of changes when poisoning is detected
-- mitigation_id: CTRL-PROMPT-HARDENING
+- id: CTRL-PROMPT-HARDENING
+  strength: soft
   rationale: Hardening the system prompt against injection
-- mitigation_id: CTRL-RAG-INTEGRITY
-  rationale: 'Integrity control of the RAG knowledge base through hashing and document
-    signatures
+- id: CTRL-RAG-INTEGRITY
+  strength: gating
+  rationale: 'Integrity control of the RAG knowledge base through hashing and document signatures
 
 
-    Integrity control of the RAG knowledge base through hashing and signatures of
-    documents from tool output'
-- mitigation_id: CTRL-TOOL-DESCRIPTION-AUDIT
+    Integrity control of the RAG knowledge base through hashing and signatures of documents from tool output'
+- id: CTRL-TOOL-DESCRIPTION-AUDIT
+  strength: gating
   rationale: Auditing descriptions for instructions aimed at the model
-- mitigation_id: CTRL-TOOL-REGISTRY-INTEGRITY
-  rationale: An immutable binding in the tool registry precludes substitution during
-    dynamic binding resolution
-- mitigation_id: CTRL-TOOL-VERIFICATION
+- id: CTRL-TOOL-REGISTRY-INTEGRITY
+  strength: gating
+  rationale: An immutable binding in the tool registry precludes substitution during dynamic binding resolution
+- id: CTRL-TOOL-VERIFICATION
+  strength: gating
   rationale: 'Verification of tools from the registry before first use
 
 
@@ -117,10 +126,14 @@ mitigations:
 
 
     Verification of MCP servers via digital signatures'
-- mitigation_id: CTRL-TRANSPORT-AUTH
+- id: CTRL-TRANSPORT-AUTH
+  strength: gating
   rationale: 'mTLS or API-key authentication protects the agent-MCP channel
 
 
     mTLS or API-key authentication of MCP connections'
-- mitigation_id: CTRL-VERSION-PINNING
+- id: CTRL-VERSION-PINNING
+  strength: gating
   rationale: Pinning tool versions prevents an unexpected update to a malicious version
+references: []
+tags: []

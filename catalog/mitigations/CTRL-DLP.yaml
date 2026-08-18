@@ -1,34 +1,23 @@
 id: CTRL-DLP
-title: Data Loss Prevention (DLP)
-description: Detects and blocks the transfer of sensitive data — personal data, credentials,
-  confidential documents — through unauthorized channels or into untrusted contexts,
-  preventing accidental or malicious data exfiltration. The mechanism is deployed
-  as an inspection layer at data flow boundaries and analyzes the content being transmitted
-  for patterns of sensitive information. This protects against accidental leaks through
-  model output, detects attempts at malicious exfiltration, and ensures compliance
-  with data handling requirements.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Pattern matching for sensitive data
-  description: 'All outgoing data passes through a pattern-matching engine that searches
-    for known formats of sensitive data: credit card numbers, SSNs, email addresses,
-    API keys, passwords, internal document markers. Patterns are defined as regular
-    expressions or data fingerprinting rules. When matching content is detected, the
-    transfer is blocked or flagged. This gives high coverage on known patterns but
-    may miss novel formats.'
-  complexity: medium
-- name: ML leak classifier
-  description: An ML classifier trained on examples of sensitive and normal content
-    detects data leaks beyond regular-expression patterns — confidential documents,
-    internal communications, trade secrets. The model can identify context-dependent
-    sensitivity that patterns fail to catch. It requires ongoing training and tuning
-    to an acceptable false-positive rate.
-  complexity: high
-- name: Integration with data classification
-  description: DLP integrates with a data classification system where each data element
-    is tagged with a sensitivity level (public, internal, confidential, restricted).
-    The policy engine checks the destination context against the data classification
-    and blocks it if the destination is not authorized for the given sensitivity level.
-    This provides context-dependent protection but requires accurate data classification.
-  complexity: high
+name: Data Loss Prevention (DLP)
+status: draft
+mitigation_class: detector
+purpose: Detects and blocks the transfer of sensitive data — personal data, credentials, confidential documents — through unauthorized channels or into untrusted contexts, preventing accidental or malicious data exfiltration. The mechanism is deployed as an inspection layer at data flow boundaries and analyzes the content being transmitted for patterns of sensitive information. This protects against accidental leaks through model output, detects attempts at malicious exfiltration, and ensures compliance with data handling requirements.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Pattern matching for sensitive data (medium): All outgoing data passes through a pattern-matching engine that searches for known formats of sensitive data: credit card numbers, SSNs, email addresses, API keys, passwords, internal document markers. Patterns are defined as regular expressions or data fingerprinting rules. When matching content is detected, the transfer is blocked or flagged. This gives high coverage on known patterns but may miss novel formats.
+
+
+  ML leak classifier (high): An ML classifier trained on examples of sensitive and normal content detects data leaks beyond regular-expression patterns — confidential documents, internal communications, trade secrets. The model can identify context-dependent sensitivity that patterns fail to catch. It requires ongoing training and tuning to an acceptable false-positive rate.
+
+
+  Integration with data classification (high): DLP integrates with a data classification system where each data element is tagged with a sensitivity level (public, internal, confidential, restricted). The policy engine checks the destination context against the data classification and blocks it if the destination is not authorized for the given sensitivity level. This provides context-dependent protection but requires accurate data classification.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

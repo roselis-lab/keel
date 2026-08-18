@@ -1,38 +1,23 @@
 id: CTRL-CONTENT-STRIPPING
-title: Removal of hidden instructions
-description: Removes hidden instructions, invisible content, and potentially malicious
-  metadata from external content - HTML documents, files, API responses - before it
-  is passed to the model, preventing indirect prompt injection through embedded commands.
-  The mechanism works as a preprocessing layer at the data-ingestion boundary, parsing
-  the input content with a syntactic parser and extracting only the visible semantic
-  information without markup, comments, metadata, and other hidden elements. This
-  blocks attacks where an attacker embeds instructions in HTML comments, zero-width
-  characters, image metadata, or other hidden channels that the user does not see
-  but the model processes.
-type: PREVENTIVE_SOFT
-requirement_level: MANDATORY
-implementations:
-- name: HTML sanitization and text extraction
-  description: HTML content is passed through a sanitization library with an allowlist
-    of permitted tags and removal of all attributes except those explicitly safe.
-    The HTML is then converted to plain text through text extraction, preserving the
-    semantic structure but without markup. This eliminates XSS vectors and hidden
-    instructions in HTML comments, data URIs, or event handlers, but it may lose formatting
-    important for understanding the document.
-  complexity: low
-- name: Pattern-based instruction detector
-  description: 'Incoming content is scanned for known instruction-injection patterns:
-    imperative verbs at the start of sentences, system directives ("ignore the previous",
-    "now you are"), unusual character sequences (zero-width, RTL override). When patterns
-    are detected, the content is flagged as suspicious or subjected to additional
-    validation. This detects many injection attempts, but it can produce false positives
-    on legitimate imperative content.'
-  complexity: medium
-- name: Prompt boundary markers
-  description: 'Content is passed to the model with explicit boundary markers that
-    unambiguously delimit the user-provided data: "---BEGIN USER CONTENT---" / "---END
-    USER CONTENT---". The system prompt instructs the model to treat everything between
-    the markers as data, without following instructions from within it. This gives
-    semantic separation, but it relies on the model consistently following the boundary
-    instructions.'
-  complexity: low
+name: Removal of hidden instructions
+status: draft
+mitigation_class: process
+purpose: Removes hidden instructions, invisible content, and potentially malicious metadata from external content - HTML documents, files, API responses - before it is passed to the model, preventing indirect prompt injection through embedded commands. The mechanism works as a preprocessing layer at the data-ingestion boundary, parsing the input content with a syntactic parser and extracting only the visible semantic information without markup, comments, metadata, and other hidden elements. This blocks attacks where an attacker embeds instructions in HTML comments, zero-width characters, image metadata, or other hidden channels that the user does not see but the model processes.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'HTML sanitization and text extraction (low): HTML content is passed through a sanitization library with an allowlist of permitted tags and removal of all attributes except those explicitly safe. The HTML is then converted to plain text through text extraction, preserving the semantic structure but without markup. This eliminates XSS vectors and hidden instructions in HTML comments, data URIs, or event handlers, but it may lose formatting important for understanding the document.
+
+
+  Pattern-based instruction detector (medium): Incoming content is scanned for known instruction-injection patterns: imperative verbs at the start of sentences, system directives ("ignore the previous", "now you are"), unusual character sequences (zero-width, RTL override). When patterns are detected, the content is flagged as suspicious or subjected to additional validation. This detects many injection attempts, but it can produce false positives on legitimate imperative content.
+
+
+  Prompt boundary markers (low): Content is passed to the model with explicit boundary markers that unambiguously delimit the user-provided data: "---BEGIN USER CONTENT---" / "---END USER CONTENT---". The system prompt instructs the model to treat everything between the markers as data, without following instructions from within it. This gives semantic separation, but it relies on the model consistently following the boundary instructions.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

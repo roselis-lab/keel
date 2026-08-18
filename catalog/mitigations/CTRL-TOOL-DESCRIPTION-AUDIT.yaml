@@ -1,24 +1,23 @@
 id: CTRL-TOOL-DESCRIPTION-AUDIT
-title: Audit of Tool Descriptions at Registration
-description: Performs static analysis of tool descriptions at registration in the
-  registry for the presence of instructions to the model, hidden prompts, and obfuscated
-  commands, ensuring that only tools with clean descriptions reach production. The
-  mechanism operates as a registration gate and inspects every tool registration request.
-  This prevents tool poisoning through malicious descriptions, detects obfuscated
-  instructions, and provides quality control of tool metadata.
-type: PREVENTIVE_HARD
-requirement_level: RECOMMENDED
-implementations:
-- name: Instruction detection
-  complexity: medium
-  description: Detection of imperatives and instructions in descriptions through regular
-    expressions and machine learning. Detected patterns are flagged for manual review.
-    Automation provides scalable screening.
-- name: Unicode analysis
-  complexity: low
-  description: Analysis of invisible characters, zero-width spaces, and homoglyphs
-    that may conceal malicious content. Unicode normalization and inspection.
-- name: Schema validation
-  complexity: low
-  description: Validation of the manifest against a schema with policy checks. Invalid
-    manifests are rejected with actionable feedback.
+name: Audit of Tool Descriptions at Registration
+status: draft
+mitigation_class: gating_control
+purpose: Performs static analysis of tool descriptions at registration in the registry for the presence of instructions to the model, hidden prompts, and obfuscated commands, ensuring that only tools with clean descriptions reach production. The mechanism operates as a registration gate and inspects every tool registration request. This prevents tool poisoning through malicious descriptions, detects obfuscated instructions, and provides quality control of tool metadata.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Instruction detection (medium): Detection of imperatives and instructions in descriptions through regular expressions and machine learning. Detected patterns are flagged for manual review. Automation provides scalable screening.
+
+
+  Unicode analysis (low): Analysis of invisible characters, zero-width spaces, and homoglyphs that may conceal malicious content. Unicode normalization and inspection.
+
+
+  Schema validation (low): Validation of the manifest against a schema with policy checks. Invalid manifests are rejected with actionable feedback.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

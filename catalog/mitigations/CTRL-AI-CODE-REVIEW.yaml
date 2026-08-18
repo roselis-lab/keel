@@ -1,35 +1,23 @@
 id: CTRL-AI-CODE-REVIEW
-title: Enhanced security review for AI-generated code
-description: Ensures an in-depth security review of code generated or modified by
-  AI, with mandatory inspection of diffs exceeding an AI-content threshold, tracking
-  of security-regression patterns, and assignment of codeowners for sensitive areas
-  of the codebase. The mechanism is triggered in the CI/CD pipeline before merge and
-  at the code review stage, applying elevated requirements to AI-generated code compared
-  to code from trusted developers. This surfaces vulnerabilities that a model may
-  introduce due to hallucinating secure patterns, copying vulnerable code from the
-  training set, or insufficient understanding of the specific project's security context.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Mandatory security review for AI diffs
-  description: 'All PRs with AI-generated code above a threshold percentage (for example,
-    30% of changed lines) are automatically flagged as requiring a mandatory security
-    review from a designated security advocate or senior developer. The reviewer receives
-    a checklist of typical AI vulnerabilities: hardcoded secrets, insecure defaults,
-    missing input validation, overly permissive access. This adds delay to the merge,
-    but it substantially reduces the risk of vulnerabilities reaching main.'
-  complexity: low
-- name: Extended automated SAST
-  description: 'In addition to standard SAST, specialized scanners for AI code are
-    run: detectors for hardcoded credentials, analyzers of insecure configuration
-    patterns, checks on cryptographic API usage. Scan results block the PR when critical
-    findings are detected and are flagged in a review comment. The approach automates
-    detection of frequent AI vulnerability patterns, but it can produce false positives.'
-  complexity: medium
-- name: Codeowners for sensitive areas
-  description: For critical directories (auth, crypto, data access), mandatory approvals
-    from designated codeowners with security expertise are configured, regardless
-    of the source of the changes. AI changes in these areas require explicit approval
-    from the security team. This ensures human oversight in the most sensitive zones,
-    where the cost of an error is highest.
-  complexity: low
+name: Enhanced security review for AI-generated code
+status: draft
+mitigation_class: detector
+purpose: Ensures an in-depth security review of code generated or modified by AI, with mandatory inspection of diffs exceeding an AI-content threshold, tracking of security-regression patterns, and assignment of codeowners for sensitive areas of the codebase. The mechanism is triggered in the CI/CD pipeline before merge and at the code review stage, applying elevated requirements to AI-generated code compared to code from trusted developers. This surfaces vulnerabilities that a model may introduce due to hallucinating secure patterns, copying vulnerable code from the training set, or insufficient understanding of the specific project's security context.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Mandatory security review for AI diffs (low): All PRs with AI-generated code above a threshold percentage (for example, 30% of changed lines) are automatically flagged as requiring a mandatory security review from a designated security advocate or senior developer. The reviewer receives a checklist of typical AI vulnerabilities: hardcoded secrets, insecure defaults, missing input validation, overly permissive access. This adds delay to the merge, but it substantially reduces the risk of vulnerabilities reaching main.
+
+
+  Extended automated SAST (medium): In addition to standard SAST, specialized scanners for AI code are run: detectors for hardcoded credentials, analyzers of insecure configuration patterns, checks on cryptographic API usage. Scan results block the PR when critical findings are detected and are flagged in a review comment. The approach automates detection of frequent AI vulnerability patterns, but it can produce false positives.
+
+
+  Codeowners for sensitive areas (low): For critical directories (auth, crypto, data access), mandatory approvals from designated codeowners with security expertise are configured, regardless of the source of the changes. AI changes in these areas require explicit approval from the security team. This ensures human oversight in the most sensitive zones, where the cost of an error is highest.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

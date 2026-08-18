@@ -1,26 +1,23 @@
 id: CTRL-SSRF-PREVENTION
-title: SSRF Prevention
-description: Blocks requests to internal resources and private IP ranges through URL
-  validation and IP address filtering, preventing server-side request forgery attacks
-  via agent-initiated network requests. The mechanism operates at the network egress
-  layer and checks the destination of every outbound request. This protects internal
-  services from access via the agent, prevents exploitation of metadata endpoints,
-  and blocks attempts to access the internal network through SSRF vectors.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: URL and IP validation
-  complexity: low
-  description: 'URL validation checks that the destination does not point to internal
-    resources: localhost, 127.0.0.1, 10.x.x.x, 172.16.x.x, 192.168.x.x, link-local
-    addresses. Requests to blocked destinations are rejected with an error.'
-- name: Protection against DNS rebinding
-  complexity: medium
-  description: DNS resolution is checked after the initial URL validation - an attacker
-    can use DNS rebinding to bypass the initial check. The IP address after resolution
-    is also checked against the blocklist.
-- name: Blocking of metadata endpoints
-  complexity: low
-  description: 'Blocking of requests to cloud metadata endpoints: 169.254.169.254
-    (AWS/GCP/Azure metadata), internal Kubernetes services. These endpoints contain
-    sensitive credentials and configuration data.'
+name: SSRF Prevention
+status: draft
+mitigation_class: gating_control
+purpose: Blocks requests to internal resources and private IP ranges through URL validation and IP address filtering, preventing server-side request forgery attacks via agent-initiated network requests. The mechanism operates at the network egress layer and checks the destination of every outbound request. This protects internal services from access via the agent, prevents exploitation of metadata endpoints, and blocks attempts to access the internal network through SSRF vectors.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'URL and IP validation (low): URL validation checks that the destination does not point to internal resources: localhost, 127.0.0.1, 10.x.x.x, 172.16.x.x, 192.168.x.x, link-local addresses. Requests to blocked destinations are rejected with an error.
+
+
+  Protection against DNS rebinding (medium): DNS resolution is checked after the initial URL validation - an attacker can use DNS rebinding to bypass the initial check. The IP address after resolution is also checked against the blocklist.
+
+
+  Blocking of metadata endpoints (low): Blocking of requests to cloud metadata endpoints: 169.254.169.254 (AWS/GCP/Azure metadata), internal Kubernetes services. These endpoints contain sensitive credentials and configuration data.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

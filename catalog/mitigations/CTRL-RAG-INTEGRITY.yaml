@@ -1,27 +1,23 @@
 id: CTRL-RAG-INTEGRITY
-title: RAG Store Integrity
-description: Protects the RAG vector store from poisoning and unauthorized modification
-  through embedding integrity controls, data source verification, and access control
-  on knowledge base operations. The mechanism operates at the RAG pipeline level and
-  ensures that only verified content enters the knowledge base. This prevents knowledge
-  base corruption via malicious documents, detects embedding tampering, and ensures
-  the authenticity of retrieval results.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Embedding integrity verification
-  complexity: medium
-  description: Each document in the knowledge base has a cryptographic hash of its
-    embedding, which is verified on retrieval. A mismatch between the stored hash
-    and the computed one indicates tampering and triggers an alert. This ensures the
-    integrity of stored knowledge.
-- name: Source verification pipeline
-  complexity: medium
-  description: 'Documents can be added to RAG only from verified sources: internal
-    document management systems, approved external feeds, curated knowledge bases.
-    Source metadata is stored and checked at indexing time.'
-- name: Access control on RAG operations
-  complexity: low
-  description: Access to RAG operations — indexing, retrieval, modification — is controlled
-    through an authorization layer. Not all users or agents may modify the knowledge
-    base. Write operations require elevated permissions.
+name: RAG Store Integrity
+status: draft
+mitigation_class: gating_control
+purpose: Protects the RAG vector store from poisoning and unauthorized modification through embedding integrity controls, data source verification, and access control on knowledge base operations. The mechanism operates at the RAG pipeline level and ensures that only verified content enters the knowledge base. This prevents knowledge base corruption via malicious documents, detects embedding tampering, and ensures the authenticity of retrieval results.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Embedding integrity verification (medium): Each document in the knowledge base has a cryptographic hash of its embedding, which is verified on retrieval. A mismatch between the stored hash and the computed one indicates tampering and triggers an alert. This ensures the integrity of stored knowledge.
+
+
+  Source verification pipeline (medium): Documents can be added to RAG only from verified sources: internal document management systems, approved external feeds, curated knowledge bases. Source metadata is stored and checked at indexing time.
+
+
+  Access control on RAG operations (low): Access to RAG operations — indexing, retrieval, modification — is controlled through an authorization layer. Not all users or agents may modify the knowledge base. Write operations require elevated permissions.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

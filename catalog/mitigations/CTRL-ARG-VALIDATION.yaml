@@ -1,34 +1,23 @@
 id: CTRL-ARG-VALIDATION
-title: Strict validation of ToolCall arguments
-description: Validates ToolCall arguments against a strict JSON schema before they
-  are passed to the tool, ensuring conformance of types, required fields, permissible
-  value ranges, and formats at the boundary between the agent and execution. The mechanism
-  is deployed in a middleware or instrumentation layer, intercepting tool calls and
-  validating each parameter before it reaches the runtime. This prevents injection
-  through parameters, passing of malicious instructions in arguments, exploitation
-  of edge cases in tool logic, and manipulation through incorrect data types or structures.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: JSON Schema validation
-  description: For each tool a JSON Schema is defined with types, required fields,
-    enum values, min/max constraints, and pattern regular expressions for string fields.
-    Before a tool is called, arguments are validated against the schema with the generation
-    of informative errors on mismatch. This gives deterministic checking and a standardized
-    contract, but it requires maintaining and versioning schemas as tool APIs change.
-  complexity: low
-- name: Runtime type guards
-  description: In the tool-calling code, runtime type guards and assertion functions
-    are used to check the types and structure of arguments dynamically before passing
-    them to the tool. Guards can include business validation logic (value ranges,
-    permissible characters, references to other entities). The approach is more flexible
-    than JSON Schema for complex logic, but it adds overhead on each call and requires
-    keeping guards in sync with the API.
-  complexity: medium
-- name: Strict typing without string injection
-  description: 'Tools do not accept arbitrary strings in sensitive parameters - instead,
-    enums, UUID references, or structured objects with required fields are used. For
-    example, instead of file_path: user_input, file_id: uuid is used with subsequent
-    resolution through an internal registry. This eliminates an entire class of injection
-    vulnerabilities at the level of contract design, but it can limit tool flexibility.'
-  complexity: low
+name: Strict validation of ToolCall arguments
+status: draft
+mitigation_class: gating_control
+purpose: Validates ToolCall arguments against a strict JSON schema before they are passed to the tool, ensuring conformance of types, required fields, permissible value ranges, and formats at the boundary between the agent and execution. The mechanism is deployed in a middleware or instrumentation layer, intercepting tool calls and validating each parameter before it reaches the runtime. This prevents injection through parameters, passing of malicious instructions in arguments, exploitation of edge cases in tool logic, and manipulation through incorrect data types or structures.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'JSON Schema validation (low): For each tool a JSON Schema is defined with types, required fields, enum values, min/max constraints, and pattern regular expressions for string fields. Before a tool is called, arguments are validated against the schema with the generation of informative errors on mismatch. This gives deterministic checking and a standardized contract, but it requires maintaining and versioning schemas as tool APIs change.
+
+
+  Runtime type guards (medium): In the tool-calling code, runtime type guards and assertion functions are used to check the types and structure of arguments dynamically before passing them to the tool. Guards can include business validation logic (value ranges, permissible characters, references to other entities). The approach is more flexible than JSON Schema for complex logic, but it adds overhead on each call and requires keeping guards in sync with the API.
+
+
+  Strict typing without string injection (low): Tools do not accept arbitrary strings in sensitive parameters - instead, enums, UUID references, or structured objects with required fields are used. For example, instead of file_path: user_input, file_id: uuid is used with subsequent resolution through an internal registry. This eliminates an entire class of injection vulnerabilities at the level of contract design, but it can limit tool flexibility.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

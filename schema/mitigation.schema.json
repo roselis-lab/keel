@@ -1,0 +1,285 @@
+{
+  "$defs": {
+    "FaqItem": {
+      "properties": {
+        "answer": {
+          "title": "Answer",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "answer"
+      ],
+      "title": "FaqItem",
+      "type": "object"
+    },
+    "ValidationCheck": {
+      "description": "One pass/fail acceptance criterion with its test scenario.",
+      "properties": {
+        "base": {
+          "default": true,
+          "title": "Base",
+          "type": "boolean"
+        },
+        "criterion": {
+          "title": "Criterion",
+          "type": "string"
+        },
+        "expected_result": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Result"
+        },
+        "test_scenario": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Test Scenario"
+        }
+      },
+      "required": [
+        "criterion"
+      ],
+      "title": "ValidationCheck",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "anti_patterns": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Anti Patterns"
+    },
+    "control_mechanism": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Read per mitigation_class",
+      "title": "Control Mechanism"
+    },
+    "failure_behavior": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Read per mitigation_class",
+      "title": "Failure Behavior"
+    },
+    "faq": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/FaqItem"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Faq"
+    },
+    "formal_implementation_risk": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What a useless-but-mitigation-looking implementation looks like",
+      "title": "Formal Implementation Risk"
+    },
+    "id": {
+      "description": "Unique mitigation ID (e.g. CTRL-ACCESS-CONTROL)",
+      "title": "Id",
+      "type": "string"
+    },
+    "locus": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "product / infrastructure / split + rationale",
+      "title": "Locus"
+    },
+    "maintainer": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Maintainer"
+    },
+    "mitigation_class": {
+      "description": "Required on create",
+      "enum": [
+        "gating_control",
+        "detector",
+        "process",
+        "evidential_mitigation",
+        "corrective"
+      ],
+      "title": "Mitigation Class",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name of the mitigation",
+      "title": "Name",
+      "type": "string"
+    },
+    "owner": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner"
+    },
+    "purpose": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "1-3 sentences: which class of failure it prevents",
+      "title": "Purpose"
+    },
+    "review": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Change-triggers + safety-net review cadence",
+      "title": "Review"
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Deterministic applicability rule + profiles + boundary",
+      "title": "Scope"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "enum": [
+            "draft",
+            "verified"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "draft | verified",
+      "title": "Status"
+    },
+    "telemetry": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Telemetry"
+    },
+    "validation": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ValidationCheck"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Validation"
+    }
+  },
+  "required": [
+    "name",
+    "mitigation_class",
+    "id"
+  ],
+  "title": "MitigationCreate",
+  "type": "object"
+}

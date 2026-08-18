@@ -1,0 +1,7 @@
+# Consequence classes (was impact_class). What actually breaks. One primary per threat.
+harm:
+  wrong-decision:    {name: Wrong decision,      desc: "A wrong decision or action is taken (integrity of the output/decision)."}
+  data-exposed:      {name: Data exposed,        desc: "Data is disclosed that should not have been (incl. system metadata / recon)."}
+  code-execution:    {name: Code execution,      desc: "Code, a command, or a privileged action is executed."}
+  downtime:          {name: Downtime,            desc: "Resource exhaustion / denial of service."}
+  reputation-legal:  {name: Reputation & legal,  desc: "Reputational or regulatory/legal damage."}

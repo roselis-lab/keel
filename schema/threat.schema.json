@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "MitigationLink": {
+      "additionalProperties": false,
+      "description": "Link to a mitigation card, with its role for this threat.",
+      "properties": {
+        "id": {
+          "description": "A real CTRL-* mitigation id",
+          "title": "Id",
+          "type": "string"
+        },
+        "rationale": {
+          "title": "Rationale",
+          "type": "string"
+        },
+        "strength": {
+          "description": "gating (blocks) | soft (only lowers likelihood)",
+          "enum": [
+            "gating",
+            "soft"
+          ],
+          "title": "Strength",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "strength",
+        "rationale"
+      ],
+      "title": "MitigationLink",
+      "type": "object"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "url"
+      ],
+      "title": "Reference",
+      "type": "object"
+    },
+    "Weakness": {
+      "additionalProperties": false,
+      "description": "An architectural predisposing condition on a component.",
+      "properties": {
+        "component": {
+          "enum": [
+            "model",
+            "tool",
+            "downstream",
+            "memory",
+            "knowledge-base",
+            "identity-store"
+          ],
+          "title": "Component",
+          "type": "string"
+        },
+        "nature": {
+          "default": "targeted",
+          "enum": [
+            "targeted",
+            "secondary"
+          ],
+          "title": "Nature",
+          "type": "string"
+        },
+        "text": {
+          "description": "Architectural condition: cause + where + defect",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "text"
+      ],
+      "title": "Weakness",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Create payload \u2014 same shape, id required.",
+  "properties": {
+    "harm": {
+      "enum": [
+        "wrong-decision",
+        "data-exposed",
+        "code-execution",
+        "downtime",
+        "reputation-legal"
+      ],
+      "title": "Harm",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "mitigations": {
+      "items": {
+        "$ref": "#/$defs/MitigationLink"
+      },
+      "title": "Mitigations",
+      "type": "array"
+    },
+    "reachability": {
+      "description": "Rule-out gate on the un-mitigated arch: 'NOT applicable if\u2026'",
+      "title": "Reachability",
+      "type": "string"
+    },
+    "references": {
+      "items": {
+        "$ref": "#/$defs/Reference"
+      },
+      "title": "References",
+      "type": "array"
+    },
+    "source": {
+      "items": {
+        "enum": [
+          "external-attacker",
+          "internal",
+          "hallucination",
+          "error",
+          "accident",
+          "training-data"
+        ],
+        "type": "string"
+      },
+      "title": "Source",
+      "type": "array"
+    },
+    "surface": {
+      "items": {
+        "enum": [
+          "user-agent",
+          "agent-agent",
+          "agent-environment"
+        ],
+        "type": "string"
+      },
+      "title": "Surface",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "weaknesses": {
+      "items": {
+        "$ref": "#/$defs/Weakness"
+      },
+      "minItems": 1,
+      "title": "Weaknesses",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "harm",
+    "weaknesses",
+    "reachability"
+  ],
+  "title": "ThreatCreate",
+  "type": "object"
+}

@@ -1,25 +1,23 @@
 id: CTRL-TOOL-CALL-VALIDATION
-title: Validation and Monitoring of Tool Calls
-description: Validates and monitors tool calls before execution through argument schema
-  validation, detection of anomalous patterns, and comprehensive logging, providing
-  detective capability for incident investigation and preventive enforcement through
-  schema checks. The mechanism operates at the tool invocation layer and checks every
-  call against defined policies. This surfaces malformed or malicious tool calls,
-  provides an audit of all tool usage, and detects anomalies indicative of compromise.
-type: DETECTIVE
-requirement_level: RECOMMENDED
-implementations:
-- name: Schema validation
-  complexity: medium
-  description: JSON schema validation of arguments against the tool definition. Calls
-    with invalid arguments are rejected. Schema enforcement provides a preventive
-    control at the call boundary.
-- name: Anomaly detection
-  complexity: high
-  description: 'Statistical analysis of calls to detect anomalies: unusual target
-    domains, abnormal frequencies, suspicious patterns. Anomalies are flagged for
-    investigation.'
-- name: Comprehensive logging
-  complexity: low
-  description: All tool calls are logged with arguments, timestamp, user context,
-    and result. Logs are used for incident investigation and compliance.
+name: Validation and Monitoring of Tool Calls
+status: draft
+mitigation_class: detector
+purpose: Validates and monitors tool calls before execution through argument schema validation, detection of anomalous patterns, and comprehensive logging, providing detective capability for incident investigation and preventive enforcement through schema checks. The mechanism operates at the tool invocation layer and checks every call against defined policies. This surfaces malformed or malicious tool calls, provides an audit of all tool usage, and detects anomalies indicative of compromise.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Schema validation (medium): JSON schema validation of arguments against the tool definition. Calls with invalid arguments are rejected. Schema enforcement provides a preventive control at the call boundary.
+
+
+  Anomaly detection (high): Statistical analysis of calls to detect anomalies: unusual target domains, abnormal frequencies, suspicious patterns. Anomalies are flagged for investigation.
+
+
+  Comprehensive logging (low): All tool calls are logged with arguments, timestamp, user context, and result. Logs are used for incident investigation and compliance.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

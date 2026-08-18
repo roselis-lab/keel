@@ -1,38 +1,23 @@
 id: CTRL-AGENT-REGISTRY
-title: Agent registry with signature verification
-description: Centrally manages a registry of authorized agents with mandatory verification
-  of cryptographic signatures and checksums before an agent is registered and on each
-  launch. The mechanism operates at the deployment stage and during agent initialization,
-  checking that the registered manifest matches the code actually being launched and
-  blocking any unauthorized modifications or substitutions. This prevents injection
-  of malicious agents into the system, substitution of legitimate agents with compromised
-  versions, and execution of unsigned or unauthorized code under the guise of a trusted
-  agent.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Signed agent manifests
-  description: All agent manifests are signed with the private key of the developer
-    or the CI/CD pipeline, and the public keys are distributed through an internal
-    PKI. On registration and on each agent launch, the system verifies the manifest
-    signature and compares the hash of the executable code against the registered
-    value. This provides end-to-end integrity and makes it possible to trace the provenance
-    of each agent, but it requires a key management infrastructure and secure storage
-    of the private signing keys.
-  complexity: high
-- name: Internal registry with mandatory review
-  description: An internal agent registry with mandatory code review and approval
-    before each version is published. The registry stores version history, agent attributes
-    (author, reviewers, publication date), and static analysis results. All agents
-    are deployed only from the registry - direct launch from external sources is prohibited.
-    This gives control over the quality and security of agent code, but it increases
-    the time from development to deployment.
-  complexity: medium
-- name: Agent catalog with versioning
-  description: 'Each agent is assigned a unique identifier and version, and the system
-    maintains an up-to-date catalog with metadata: capabilities, permissions, owner,
-    security classification. When an agent is invoked, the system checks its presence
-    in the catalog, the version''s compliance with policy, and whether the calling
-    context holds the required permissions. This provides discoverability and control
-    in large multi-agent systems.'
-  complexity: medium
+name: Agent registry with signature verification
+status: draft
+mitigation_class: gating_control
+purpose: Centrally manages a registry of authorized agents with mandatory verification of cryptographic signatures and checksums before an agent is registered and on each launch. The mechanism operates at the deployment stage and during agent initialization, checking that the registered manifest matches the code actually being launched and blocking any unauthorized modifications or substitutions. This prevents injection of malicious agents into the system, substitution of legitimate agents with compromised versions, and execution of unsigned or unauthorized code under the guise of a trusted agent.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Signed agent manifests (high): All agent manifests are signed with the private key of the developer or the CI/CD pipeline, and the public keys are distributed through an internal PKI. On registration and on each agent launch, the system verifies the manifest signature and compares the hash of the executable code against the registered value. This provides end-to-end integrity and makes it possible to trace the provenance of each agent, but it requires a key management infrastructure and secure storage of the private signing keys.
+
+
+  Internal registry with mandatory review (medium): An internal agent registry with mandatory code review and approval before each version is published. The registry stores version history, agent attributes (author, reviewers, publication date), and static analysis results. All agents are deployed only from the registry - direct launch from external sources is prohibited. This gives control over the quality and security of agent code, but it increases the time from development to deployment.
+
+
+  Agent catalog with versioning (medium): Each agent is assigned a unique identifier and version, and the system maintains an up-to-date catalog with metadata: capabilities, permissions, owner, security classification. When an agent is invoked, the system checks its presence in the catalog, the version''s compliance with policy, and whether the calling context holds the required permissions. This provides discoverability and control in large multi-agent systems.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []

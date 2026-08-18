@@ -1,31 +1,23 @@
 id: CTRL-IRREVERSIBLE-ACTION-GUARD
-title: Double Confirmation for Irreversible Operations
-description: Provides additional safeguards for irreversible operations — delete,
-  drop, truncate, irreversible API calls — through a separate UI confirmation, logging
-  with a correlation ID, and a grace period for cancellation, preventing catastrophic
-  damage from mistakes or malicious actions. The mechanism operates as a mandatory
-  checkpoint before the execution of classified irreversible operations. This guarantees
-  explicit intent for destructive actions, provides an audit trail for forensic analysis,
-  and gives a recovery window to detect and cancel erroneous actions.
-type: PREVENTIVE_HARD
-requirement_level: MANDATORY
-implementations:
-- name: Two-person approval rule
-  complexity: medium
-  description: For critical irreversible operations, approval from a second authorized
-    person is required (two-person rule). The first person initiates the operation,
-    and the second must explicitly approve it through a separate interface. This eliminates
-    a single point of failure but adds significant latency and requires an available
-    second person.
-- name: Typed confirmation for destructive actions
-  complexity: low
-  description: Before executing a destructive operation, the user must explicitly
-    type the name of the operation or a confirming phrase ("DELETE production database")
-    into a separate input field. This ensures conscious acknowledgment and prevents
-    accidental clicks. A simple but effective friction mechanism.
-- name: Grace period with undo capability
-  complexity: medium
-  description: Irreversible operations are not executed immediately — instead they
-    are placed in a queue with a grace period (5–30 minutes). During the grace period,
-    the operation can be canceled. After the grace period, the operation is executed
-    automatically. This gives a recovery window when an error is detected.
+name: Double Confirmation for Irreversible Operations
+status: draft
+mitigation_class: gating_control
+purpose: Provides additional safeguards for irreversible operations — delete, drop, truncate, irreversible API calls — through a separate UI confirmation, logging with a correlation ID, and a grace period for cancellation, preventing catastrophic damage from mistakes or malicious actions. The mechanism operates as a mandatory checkpoint before the execution of classified irreversible operations. This guarantees explicit intent for destructive actions, provides an audit trail for forensic analysis, and gives a recovery window to detect and cancel erroneous actions.
+formal_implementation_risk: null
+review: null
+maintainer: null
+owner: null
+locus: null
+scope: null
+control_mechanism: 'Two-person approval rule (medium): For critical irreversible operations, approval from a second authorized person is required (two-person rule). The first person initiates the operation, and the second must explicitly approve it through a separate interface. This eliminates a single point of failure but adds significant latency and requires an available second person.
+
+
+  Typed confirmation for destructive actions (low): Before executing a destructive operation, the user must explicitly type the name of the operation or a confirming phrase ("DELETE production database") into a separate input field. This ensures conscious acknowledgment and prevents accidental clicks. A simple but effective friction mechanism.
+
+
+  Grace period with undo capability (medium): Irreversible operations are not executed immediately — instead they are placed in a queue with a grace period (5–30 minutes). During the grace period, the operation can be canceled. After the grace period, the operation is executed automatically. This gives a recovery window when an error is detected.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []
