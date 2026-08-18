@@ -150,6 +150,16 @@
   #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
   #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
 
+  /* ------ right-rail mode toggle (Preview | Guidance) ------ */
+  .rail-modes { display: inline-flex; border: 1px solid var(--navy-200); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .rail-modes button { border: none; background: #fff; color: var(--navy-600); font-size: 12px; font-weight: 600; padding: 6px 14px; }
+  .rail-modes button.on { background: var(--navy-800); color: #fff; }
+  .rail-modes button:disabled { opacity: .4; cursor: default; }
+  .rail-guide .rg-field { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 8px; }
+  .rail-guide .rg-field b { color: var(--navy-800); }
+  .rail-guide .sg-hint { white-space: normal; min-height: 0; margin-bottom: 10px; color: var(--navy-600); }
+  .rail-guide .sg-panel { display: block; margin-top: 0; }
+
   /* ------ toast ------ */
   .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(20,30,60,.2); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
   .toast.show { opacity: 1; transform: translateY(0); }
@@ -261,6 +271,8 @@ const state = {
   config: { repo_url: "" },  // GET /config
   screen: "threats",    // top-level screen: "threats" | "style"
   coverage: null,       // GET /style-guide/coverage
+  railMode: "preview",  // threats right rail: "preview" | "guidance"
+  guidance: null,       // { entity, field, targetId } of the focused form field
   styleSel: null,       // style screen: { entity, field } selected in the tree
   styleDraft: null,     // style screen: in-progress slot edits for the selected field
 };
@@ -369,6 +381,7 @@ function renderList() {
 async function select(id) {
   state.selected = id; state.editing = false; state.draft = null;
   state.view = "structure";
+  state.railMode = "preview"; state.guidance = null;
   state.validation = { errors: [], advice: [] };
   renderList();
   try {
@@ -649,7 +662,7 @@ function wireDetail() {
   const editBtn = document.getElementById("editBtn");
   if (editBtn) editBtn.onclick = enterEdit;
   const cancelBtn = document.getElementById("cancelBtn");
-  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; state.view = "structure"; renderDetail(); };
+  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; state.view = "structure"; state.railMode = "preview"; state.guidance = null; renderDetail(); renderPreview(); };
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) saveBtn.onclick = saveThreat;
   const structBtn = document.getElementById("viewStructBtn");
@@ -673,7 +686,9 @@ function enterEdit() {
     })),
   };
   state.editing = true;
+  state.railMode = "preview"; state.guidance = null;
   renderDetail();
+  renderPreview();   // repaint the rail so the Guidance toggle enables
   validateDraft();   // seed the red/amber channels for the initial draft
 }
 
@@ -694,26 +709,6 @@ function wireThreatEdit() {
   });
   wireWeaknesses();
   wireMitigations();
-  wireStyleGuide();
-}
-
-// Style-guide bar: expand a field's panel while any control inside it has focus;
-// "use example" writes the example text into the field's input/textarea.
-function wireStyleGuide() {
-  document.querySelectorAll(".field").forEach(f => {
-    const panel = f.querySelector(".sg-panel");
-    if (!panel) return;
-    f.addEventListener("focusin", () => panel.classList.add("show"));
-    f.addEventListener("focusout", e => { if (!f.contains(e.relatedTarget)) panel.classList.remove("show"); });
-  });
-  document.querySelectorAll(".sg-useex").forEach(b => b.onclick = () => {
-    const el = document.getElementById(b.dataset.target);
-    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
-      el.value = decodeURIComponent(b.dataset.example);
-      el.dispatchEvent(new Event("input"));
-      el.focus();
-    }
-  });
 }
 
 // Mitigation-link cards: link/unlink/strength/rationale are immediate server writes.
@@ -957,6 +952,7 @@ async function saveThreat() {
   }
   state.current = await j(url);
   state.editing = false; state.draft = null; state.view = "structure";
+  state.railMode = "preview"; state.guidance = null;
   // reflect a possible title change in the rail
   const row = state.threats.find(r => r[0] === state.selected);
   if (row) row[1] = state.current.title;
@@ -981,14 +977,62 @@ function showSavedDialog(path) {
   document.getElementById("sdClose").onclick = () => el.classList.remove("show");
 }
 
-// ------------------------------------------------------------- preview ----- //
-// The assembled threat as a person reads it, plus a soft Insights strip.
+// ------------------------------------------------------------- right rail -- //
+// The right rail has two modes: Preview (default) and Guidance. Guidance auto-
+// selects when a form field gains focus (see the #main focusin handler) and shows
+// that field's authoring guidance; it renders into the rail so the FORM never
+// reflows. Preview shows the assembled threat as a person reads it.
 function renderPreview() {
   const el = document.getElementById("preview");
-  if (!state.current) {
-    el.innerHTML = '<p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div>';
-    return;
-  }
+  const guiding = state.editing && state.railMode === "guidance";
+  const toggle = `<div class="rail-modes">
+      <button type="button" data-mode="preview" class="${guiding ? "" : "on"}">Preview</button>
+      <button type="button" data-mode="guidance" class="${guiding ? "on" : ""}"${state.editing ? "" : " disabled"}>Guidance</button>
+    </div>`;
+  el.innerHTML = toggle + `<div id="railBody">${guiding ? guidanceHtml() : previewHtml()}</div>`;
+  wireRail();
+}
+
+// Guidance for the currently focused field, fed live from state.style via
+// styleField/sgPanelFrom (Include / Avoid / Example + "use example"). Degrades
+// gracefully when a field has no style entry.
+function guidanceHtml() {
+  const g = state.guidance;
+  if (!g) return '<p class="placeholder">Focus a field to see its authoring guidance.</p>';
+  const sf = styleField(g.entity, g.field);
+  const head = `<p class="rg-field">Guidance · <b>${esc(g.field)}</b> <span style="text-transform:none;letter-spacing:0;font-weight:400">(${esc(g.entity)})</span></p>`;
+  if (!sf) return `<div class="rail-guide">${head}<p class="placeholder">No style-guide entry for this field yet.</p></div>`;
+  const hint = sgHintFrom(sf);
+  const panel = sgPanelFrom(sf, g.targetId, { show: true });
+  const body = (hint + panel) || '<p class="placeholder">No guidance authored yet.</p>';
+  return `<div class="rail-guide">${head}${body}</div>`;
+}
+
+// Wire the rail: mode toggle, plus the "use example" button (now living in the
+// rail) which writes into the focused field WITHOUT blurring it (mousedown guard).
+function wireRail() {
+  const el = document.getElementById("preview");
+  el.querySelectorAll(".rail-modes button").forEach(b => b.onclick = () => {
+    if (b.disabled) return;
+    state.railMode = b.dataset.mode;
+    renderPreview();
+  });
+  el.querySelectorAll(".sg-useex").forEach(b => {
+    b.onmousedown = e => e.preventDefault();   // keep focus on the field
+    b.onclick = () => {
+      const t = document.getElementById(b.dataset.target);
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
+        t.value = decodeURIComponent(b.dataset.example);
+        t.dispatchEvent(new Event("input"));
+        t.focus();
+      }
+    };
+  });
+}
+
+// The assembled threat as a person reads it, plus a soft Insights strip.
+function previewHtml() {
+  if (!state.current) return '<div class="empty" style="margin-top:10vh">—</div>';
   const t = assembleThreat();
   const list = arr => (arr || []).map(esc).join(", ");
   const surface = (t.surface || []).length ? list(t.surface) : "—";
@@ -1010,7 +1054,7 @@ function renderPreview() {
   const notes = ((state.validation && state.validation.advice) || []).map(a => a.msg);
   if (!(t.references || []).length) notes.push("no references yet");
 
-  el.innerHTML = `<p class="ptitle">Preview</p>
+  return `
     <div class="pv">
       <h2 class="pv-title">${esc(t.title) || '<span class="placeholder">Untitled</span>'}</h2>
       <p class="pv-harm">Harm: ${t.harm ? `<span class="badge harm">${esc(t.harm)}</span>` : '<span class="placeholder">none</span>'}</p>
@@ -1234,9 +1278,32 @@ async function saveStyleField() {
 // --------------------------------------------------------------- start ----- //
 document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
 document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
+// Focusing a form field switches the right rail to Guidance for THAT field. The
+// rail re-renders; the form column never reflows (all guidance lives in the rail).
+document.getElementById("main").addEventListener("focusin", e => {
+  if (!(state.screen === "threats" && state.editing && state.view === "structure")) return;
+  const field = e.target.closest && e.target.closest(".field[data-entity][data-field]");
+  if (!field) return;
+  const input = e.target.closest("input, textarea, select");
+  const targetId = input && (input.tagName === "INPUT" || input.tagName === "TEXTAREA") ? input.id : "";
+  state.guidance = { entity: field.dataset.entity, field: field.dataset.field, targetId };
+  state.railMode = "guidance";
+  renderPreview();
+});
 // Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
+// When focus leaves both the form and the rail, drop Guidance back to Preview.
 document.getElementById("main").addEventListener("focusout", () => {
   if (state.editing && state.view === "structure") scheduleValidate();
+  if (state.screen === "threats" && state.editing && state.railMode === "guidance") {
+    setTimeout(() => {
+      const a = document.activeElement;
+      const main = document.getElementById("main");
+      const prev = document.getElementById("preview");
+      if (a && ((main && main.contains(a)) || (prev && prev.contains(a)))) return;
+      state.railMode = "preview";
+      renderPreview();
+    }, 0);
+  }
 });
 boot().then(renderList).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
