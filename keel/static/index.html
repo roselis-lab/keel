@@ -241,6 +241,7 @@
 <aside>
   <nav class="screens" id="screens">
     <button data-screen="threats" class="on">Threats</button>
+    <button data-screen="mitigations">Mitigations</button>
     <button data-screen="style">Style guide</button>
   </nav>
   <header>
@@ -262,10 +263,21 @@
 <script>
 // ------------------------------------------------------------------ state --- //
 const state = {
-  schema: { threat: null, weakness: null, mitigation_link: null },
+  schema: { threat: null, weakness: null, mitigation_link: null, mitigation: null },
   style: null,
   threats: [],          // brief list: [[id, title], ...]
   mitById: {},          // id -> { id, name, mitigation_class }
+  mitList: [],          // brief list: [[id, name, class], ...]
+  mitFilter: "",        // mitigations rail filter
+  mitSelected: null,    // selected mitigation id
+  currentMit: null,     // full mitigation card from GET /mitigations/{id}
+  mitEditing: false,    // mitigations screen: edit mode
+  mitDraft: null,       // mitigations screen: in-progress edits
+  mitValidation: { errors: [], advice: [] },  // mapped from a failed PATCH/POST (no live endpoint)
+  mitApOpen: null,      // anti_patterns open-card index set
+  mitValOpen: null,     // validation open-card index set
+  mitFaqOpen: null,     // faq open-card index set
+  threatMits: null,     // [{id,title,mitigations}] — reverse index for "addresses threats"
   selected: null,       // selected threat id
   current: null,        // full threat record from GET /threats/{id}
   filter: "",
@@ -347,10 +359,11 @@ const strengthEnum = () => {
 
 // --------------------------------------------------------------- boot ------ //
 async function boot() {
-  const [sThreat, sWeak, sMitLink, style, cov, tr, mi, cfg] = await Promise.all([
+  const [sThreat, sWeak, sMitLink, sMit, style, cov, tr, mi, cfg] = await Promise.all([
     j("/schema/threat"),
     j("/schema/weakness"),
     j("/schema/mitigation_link"),
+    j("/schema/mitigation"),
     j("/style-guide"),
     j("/style-guide/coverage"),  // { overall, entities: [{entity_type, overall, fields:[{field_name, completeness, is_orphan}]}] }
     j("/threats"),          // brief: { threats: [[id, title], ...], count }
@@ -360,9 +373,11 @@ async function boot() {
   state.schema.threat = sThreat;
   state.schema.weakness = sWeak;
   state.schema.mitigation_link = sMitLink;
+  state.schema.mitigation = sMit;
   state.style = style;
   state.coverage = cov;
   state.threats = tr.threats || [];
+  state.mitList = mi.mitigations || [];
   state.mitById = Object.fromEntries(
     (mi.mitigations || []).map(([id, name, mclass]) => [id, { id, name, mitigation_class: mclass }])
   );
@@ -1223,7 +1238,7 @@ function wireRail() {
   el.querySelectorAll(".rail-modes button").forEach(b => b.onclick = () => {
     if (b.disabled) return;
     state.railMode = b.dataset.mode;
-    renderPreview();
+    renderRight();
   });
   el.querySelectorAll(".sg-useex").forEach(b => {
     b.onmousedown = e => e.preventDefault();   // keep focus on the field
@@ -1287,15 +1302,37 @@ function previewHtml() {
 function switchScreen(name) {
   state.screen = name;
   document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
-  document.getElementById("railTitle").textContent = name === "style" ? "Keel · Style guide" : "Keel · Threats";
+  const titles = { threats: "Keel · Threats", mitigations: "Keel · Mitigations", style: "Keel · Style guide" };
+  document.getElementById("railTitle").textContent = titles[name] || "Keel";
   document.getElementById("searchWrap").style.display = name === "style" ? "none" : "";
+  const search = document.getElementById("search");
+  if (search) {
+    search.placeholder = name === "mitigations" ? "Filter mitigations…" : "Filter threats…";
+    search.value = name === "mitigations" ? state.mitFilter : state.filter;
+  }
   const newBtn = document.getElementById("newThreatBtn");
-  if (newBtn) newBtn.style.display = name === "style" ? "none" : "";
+  if (newBtn) {
+    // The mitigation create control is enabled in D2; hidden here until then.
+    newBtn.style.display = (name === "style" || name === "mitigations") ? "none" : "";
+    newBtn.title = "Create a new threat";
+  }
   renderRail(); renderMain(); renderRight();
 }
-function renderRail() { state.screen === "style" ? renderStyleRail() : renderList(); }
-function renderMain() { state.screen === "style" ? renderStyleDetail() : renderDetail(); }
-function renderRight() { state.screen === "style" ? renderStylePreview() : renderPreview(); }
+function renderRail() {
+  if (state.screen === "style") return renderStyleRail();
+  if (state.screen === "mitigations") return renderMitRail();
+  return renderList();
+}
+function renderMain() {
+  if (state.screen === "style") return renderStyleDetail();
+  if (state.screen === "mitigations") return renderMitDetail();
+  return renderDetail();
+}
+function renderRight() {
+  if (state.screen === "style") return renderStylePreview();
+  if (state.screen === "mitigations") return renderMitPreview();
+  return renderPreview();
+}
 
 // ------------------------------------------------------- style-guide screen -- //
 // Coverage completeness for a field, matched by entity_type + field_name.
@@ -1485,34 +1522,272 @@ async function saveStyleField() {
   } catch (e) { toast(e.message, true); }
 }
 
+// ===================================================================== //
+// Mitigations screen — reuses the three-pane grammar, the fieldset/legend //
+// section tiers, the .ecard cards, the one-line hints, and the right-rail //
+// Preview/Guidance modes from the threat editor.                          //
+// ===================================================================== //
+
+// Enum values off the mitigation schema. status/mitigation_class are Optional /
+// required Literals, so the enum can sit directly on the prop or inside an anyOf.
+function mitProp(name) { return (state.schema.mitigation && state.schema.mitigation.properties || {})[name]; }
+function mitEnum(name) {
+  const p = mitProp(name);
+  if (!p) return [];
+  if (Array.isArray(p.enum)) return p.enum;
+  if (Array.isArray(p.anyOf)) { for (const a of p.anyOf) if (Array.isArray(a.enum)) return a.enum; }
+  return [];
+}
+
+// The mitigation edit form, grouped into readable sections. Each entry is a scalar
+// field with an input kind; the repeatable lists (anti_patterns/validation/faq) are
+// handled separately as .ecard cards. The read view groups by the same sections.
+const MIT_TEXT_FIELDS = [
+  ["purpose", "Purpose", "textarea", 3],
+  ["scope", "Scope", "textarea", 3],
+  ["control_mechanism", "Control mechanism", "textarea", 3],
+  ["failure_behavior", "Failure behavior", "textarea", 3],
+  ["formal_implementation_risk", "Risk of formal implementation", "textarea", 3],
+  ["review", "Review", "textarea", 2],
+  ["telemetry", "Telemetry", "textarea", 2],
+];
+
+// Which threats currently link a given mitigation (reverse index over state.threatMits).
+function threatsAddressing(mid) {
+  return (state.threatMits || []).filter(t => (t.mitigations || []).some(l => l.id === mid));
+}
+
+// --------------------------------------------------------- mitigations rail - //
+function renderMitRail() {
+  const el = document.getElementById("list");
+  const f = state.mitFilter.toLowerCase();
+  const items = state.mitList.filter(([id, name, mc]) =>
+    (id + " " + (name || "") + " " + (mc || "")).toLowerCase().includes(f));
+  el.innerHTML = items.length ? items.map(([id, name]) => `
+    <div class="row ${state.mitSelected === id ? "active" : ""}" data-id="${esc(id)}">
+      <span class="rid">${esc(id)}</span>
+      <span class="rtitle">${esc(name)}</span>
+    </div>`).join("") : '<div class="empty" style="margin-top:40px">No matches.</div>';
+  document.getElementById("count").textContent = items.length + " / " + state.mitList.length;
+  el.querySelectorAll(".row").forEach(r => r.onclick = () => selectMit(r.dataset.id));
+}
+
+async function selectMit(id) {
+  state.mitSelected = id; state.mitEditing = false; state.mitDraft = null;
+  state.railMode = "preview"; state.guidance = null;
+  state.mitValidation = { errors: [], advice: [] };
+  renderMitRail();
+  try {
+    state.currentMit = await j("/mitigations/" + encodeURIComponent(id));
+  } catch (e) { state.currentMit = null; toast(e.message, true); }
+  // Reverse index for "addresses threats" — one cheap call, kept fresh per select.
+  try { const d = await j("/threats?brief=false&include=mitigations"); state.threatMits = d.threats || []; }
+  catch (e) { /* leave whatever we had */ }
+  renderMitDetail(); renderMitPreview();
+  document.getElementById("main").scrollTop = 0;
+}
+
+// --------------------------------------------------------- mitigations detail //
+function renderMitDetail() {
+  const m = document.getElementById("main");
+  if (!state.mitSelected || !state.currentMit) {
+    m.innerHTML = '<div class="empty">Select a mitigation from the list.</div>';
+    return;
+  }
+  m.innerHTML = state.mitEditing ? editMitigation(state.currentMit) : readMitigation(state.currentMit);
+  wireMitDetail();
+}
+
+// Read view — the mitigation card grouped into readable sections.
+function readMitigation(mt) {
+  const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
+  const prose = (v) => v ? `<div class="prose">${esc(v)}</div>` : '<span class="placeholder">—</span>';
+  const proseSec = (label, v, sub) =>
+    `<section><h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>${prose(v)}</section>`;
+
+  const ap = (mt.anti_patterns || []).length
+    ? `<ul class="plain">${mt.anti_patterns.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`
+    : '<p class="placeholder">None.</p>';
+
+  const validation = (mt.validation || []).length
+    ? (mt.validation || []).map(v => `<div class="card">
+        <div class="chead"><span class="ctitle">${esc(v.criterion || "(criterion)")}</span>${
+          v.base === false ? '<span class="badge soft" style="margin-left:auto">extended</span>' : ""}</div>
+        ${v.test_scenario ? `<div class="cdesc"><b>Test:</b> ${esc(v.test_scenario)}</div>` : ""}
+        ${v.expected_result ? `<div class="cdesc"><b>Expected:</b> ${esc(v.expected_result)}</div>` : ""}
+      </div>`).join("")
+    : '<p class="placeholder">None.</p>';
+
+  const faq = (mt.faq || []).length
+    ? (mt.faq || []).map(q => `<div class="card">
+        <div class="chead"><span class="ctitle">${esc(q.question || "(question)")}</span></div>
+        ${q.answer ? `<div class="cdesc">${esc(q.answer)}</div>` : ""}
+      </div>`).join("")
+    : '<p class="placeholder">None.</p>';
+
+  const own = [["Maintainer", mt.maintainer], ["Owner", mt.owner], ["Locus", mt.locus]];
+  const ownership = `<ul class="plain">${own.map(([k, v]) =>
+    `<li><span class="meta">${esc(k)}</span>${v ? esc(v) : '<span class="placeholder">—</span>'}</li>`).join("")}</ul>`;
+
+  const addressing = threatsAddressing(mt.id);
+  const addressed = addressing.length
+    ? (addressing.map(t => `<div class="card"><div class="chead">
+        <span class="cid">${esc(t.id)}</span><span class="ctitle">${esc(t.title)}</span></div></div>`).join(""))
+    : '<p class="placeholder">No threats link this mitigation.</p>';
+
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">⛨</div>
+      <div class="dtitle">
+        <h2>${esc(mt.name)}</h2>
+        <div class="did">${esc(mt.id)}</div>
+        <div class="hbadges badges">
+          ${mt.mitigation_class ? badge("type", mt.mitigation_class) : ""}
+          ${mt.status ? badge("soft", mt.status) : ""}
+        </div>
+      </div>
+      ${mitHeadActions()}
+    </div>
+    ${proseSec("Purpose", mt.purpose)}
+    ${proseSec("Scope", mt.scope, "— applicability rule + boundary")}
+    ${proseSec("Control mechanism", mt.control_mechanism)}
+    ${proseSec("Failure behavior", mt.failure_behavior)}
+    ${proseSec("Risk of formal implementation", mt.formal_implementation_risk)}
+    ${proseSec("Review", mt.review)}
+    <section><h3 class="slabel">Ownership <span class="sub">— maintainer / owner / locus</span></h3>${ownership}</section>
+    ${proseSec("Telemetry", mt.telemetry)}
+    <section><h3 class="slabel">Anti-patterns</h3>${ap}</section>
+    <section><h3 class="slabel">Validation (${(mt.validation || []).length})</h3>${validation}</section>
+    <section><h3 class="slabel">FAQ (${(mt.faq || []).length})</h3>${faq}</section>
+    <section><h3 class="slabel">Addresses threats (${addressing.length})</h3>${addressed}</section>
+  </div>`;
+}
+
+// Header actions for a mitigation (Edit / Delete). Enabled in D2 (edit + create/delete).
+function mitHeadActions() {
+  return "";
+}
+
+// Wire the mitigation detail pane (read + edit).
+function wireMitDetail() {
+  const editBtn = document.getElementById("mitEditBtn");
+  if (editBtn) editBtn.onclick = enterMitEdit;
+  const delBtn = document.getElementById("mitDeleteBtn");
+  if (delBtn) delBtn.onclick = deleteMitigation;
+  const cancelBtn = document.getElementById("mitCancelBtn");
+  if (cancelBtn) cancelBtn.onclick = () => {
+    const wasNew = state.mitDraft && state.mitDraft.isNew;
+    state.mitEditing = false; state.mitDraft = null;
+    state.railMode = "preview"; state.guidance = null;
+    if (wasNew) { state.mitSelected = null; state.currentMit = null; renderMitRail(); }
+    renderMitDetail(); renderMitPreview();
+  };
+  const saveBtn = document.getElementById("mitSaveBtn");
+  if (saveBtn) saveBtn.onclick = saveMitigation;
+  if (state.mitEditing) { wireMitEdit(); applyMitValidation(); }
+}
+
+// --------------------------------------------------------- mitigations rail R //
+// Right rail — Preview (assembled card) with the shared Guidance toggle.
+function renderMitPreview() {
+  const el = document.getElementById("preview");
+  const guiding = state.mitEditing && state.railMode === "guidance";
+  const toggle = `<div class="rail-modes">
+      <button type="button" data-mode="preview" class="${guiding ? "" : "on"}">Preview</button>
+      <button type="button" data-mode="guidance" class="${guiding ? "on" : ""}"${state.mitEditing ? "" : " disabled"}>Guidance</button>
+    </div>`;
+  el.innerHTML = toggle + `<div id="railBody">${guiding ? guidanceHtml() : mitPreviewHtml()}</div>`;
+  wireRail();
+}
+
+// The assembled mitigation card as a person reads it.
+function mitPreviewHtml() {
+  if (!state.currentMit) return '<div class="empty" style="margin-top:10vh">—</div>';
+  const mt = assembleMit();
+  const line = (k, v) => `<div class="pv-sec"><p class="pv-k">${esc(k)}</p>${
+    v ? `<p>${esc(v)}</p>` : '<p class="placeholder">not authored</p>'}</div>`;
+  const addressing = threatsAddressing(mt.id);
+  return `
+    <div class="pv">
+      <h2 class="pv-title">${esc(mt.name) || '<span class="placeholder">Unnamed</span>'}</h2>
+      <p class="pv-harm">${mt.mitigation_class ? `<span class="badge type">${esc(mt.mitigation_class)}</span>` : ""}
+        ${mt.status ? `<span class="badge soft">${esc(mt.status)}</span>` : ""}</p>
+      ${line("Purpose", mt.purpose)}
+      ${line("Scope", mt.scope)}
+      ${line("Control mechanism", mt.control_mechanism)}
+      ${line("Failure behavior", mt.failure_behavior)}
+      <div class="pv-sec"><p class="pv-k">Checks</p><p>${
+        (mt.anti_patterns || []).length} anti-pattern(s) · ${(mt.validation || []).length} validation · ${(mt.faq || []).length} FAQ</p></div>
+      <div class="pv-sec"><p class="pv-k">Addresses threats</p><p>${addressing.length} threat(s) link this control.</p></div>
+    </div>`;
+}
+
+// The mitigation the way the preview reads it: the draft when editing, else the record.
+function assembleMit() {
+  const d = state.mitDraft || {};
+  const c = state.currentMit || {};
+  const pick = (k, dflt) => (d[k] !== undefined ? d[k] : (c[k] !== undefined ? c[k] : dflt));
+  return {
+    id: c.id,
+    name: pick("name", ""),
+    status: pick("status", null),
+    mitigation_class: pick("mitigation_class", ""),
+    purpose: pick("purpose", ""),
+    scope: pick("scope", ""),
+    control_mechanism: pick("control_mechanism", ""),
+    failure_behavior: pick("failure_behavior", ""),
+    formal_implementation_risk: pick("formal_implementation_risk", ""),
+    review: pick("review", ""),
+    maintainer: pick("maintainer", ""),
+    owner: pick("owner", ""),
+    locus: pick("locus", ""),
+    telemetry: pick("telemetry", ""),
+    anti_patterns: pick("anti_patterns", []),
+    validation: pick("validation", []),
+    faq: pick("faq", []),
+  };
+}
+
 // --------------------------------------------------------------- start ----- //
-document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
-document.getElementById("newThreatBtn").onclick = newThreat;
+document.getElementById("search").oninput = e => {
+  if (state.screen === "mitigations") { state.mitFilter = e.target.value; renderMitRail(); }
+  else { state.filter = e.target.value; renderList(); }
+};
+document.getElementById("newThreatBtn").onclick = () =>
+  state.screen === "mitigations" ? newMitigation() : newThreat();
 document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
 // Focusing a form field switches the right rail to Guidance for THAT field. The
 // rail re-renders; the form column never reflows (all guidance lives in the rail).
+// A form field is "guidable" when the active screen is in edit mode. Threats also
+// gate on the structure view (they have a YAML view too); mitigations have no such view.
+function guidingScreen() {
+  if (state.screen === "threats" && state.editing && state.view === "structure") return true;
+  if (state.screen === "mitigations" && state.mitEditing) return true;
+  return false;
+}
 document.getElementById("main").addEventListener("focusin", e => {
-  if (!(state.screen === "threats" && state.editing && state.view === "structure")) return;
+  if (!guidingScreen()) return;
   const field = e.target.closest && e.target.closest(".field[data-entity][data-field]");
   if (!field) return;
   const input = e.target.closest("input, textarea, select");
   const targetId = input && (input.tagName === "INPUT" || input.tagName === "TEXTAREA") ? input.id : "";
   state.guidance = { entity: field.dataset.entity, field: field.dataset.field, targetId };
   state.railMode = "guidance";
-  renderPreview();
+  renderRight();
 });
 // Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
 // When focus leaves both the form and the rail, drop Guidance back to Preview.
 document.getElementById("main").addEventListener("focusout", () => {
-  if (state.editing && state.view === "structure") scheduleValidate();
-  if (state.screen === "threats" && state.editing && state.railMode === "guidance") {
+  // Threats validate-on-blur (mitigations have no live validate endpoint).
+  if (state.screen === "threats" && state.editing && state.view === "structure") scheduleValidate();
+  if (guidingScreen() && state.railMode === "guidance") {
     setTimeout(() => {
       const a = document.activeElement;
       const main = document.getElementById("main");
       const prev = document.getElementById("preview");
       if (a && ((main && main.contains(a)) || (prev && prev.contains(a)))) return;
       state.railMode = "preview";
-      renderPreview();
+      renderRight();
     }, 0);
   }
 });
