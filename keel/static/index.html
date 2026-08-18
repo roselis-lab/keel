@@ -150,6 +150,12 @@
   .field.has-err > .slabel::after { background: var(--crimson-600); }
   .field.has-adv > .slabel::after { background: var(--amber); }
 
+  /* ------ view toggle ------ */
+  .vtoggle { display: inline-flex; border: 1px solid var(--navy-200); border-radius: 8px; overflow: hidden; }
+  .vtoggle button { border: none; background: #fff; color: var(--navy-600); font-size: 12px; font-weight: 600; padding: 6px 11px; }
+  .vtoggle button.on { background: var(--navy-800); color: #fff; }
+  textarea.yaml-view { width: 100%; min-height: 60vh; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 13px; line-height: 1.5; color: var(--navy-900); background: var(--tint); border: 1px solid var(--navy-200); border-radius: 8px; padding: 12px 14px; resize: vertical; margin-top: 16px; }
+
   /* ------ preview + insights ------ */
   #preview .pv-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: var(--navy-900); }
   #preview .pv-harm .badge { vertical-align: middle; }
@@ -194,6 +200,7 @@ const state = {
   editing: false,
   draft: null,          // in-progress edits
   validation: { errors: [], advice: [] },  // last /threats/validate result
+  view: "structure",    // editor view: "structure" | "yaml"
 };
 window.state = state;   // exposed for smoke checks / debugging
 
@@ -295,6 +302,7 @@ function renderList() {
 
 async function select(id) {
   state.selected = id; state.editing = false; state.draft = null;
+  state.view = "structure";
   state.validation = { errors: [], advice: [] };
   renderList();
   try {
@@ -413,6 +421,7 @@ const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", 
 
 function editThreat(t) {
   const d = state.draft;
+  const yaml = state.view === "yaml";
   const order = Object.keys(state.schema.threat.properties || {});
   const blocks = [];
   for (const name of order) {
@@ -423,6 +432,10 @@ function editThreat(t) {
     blocks.push(fieldEditor(name, d));
   }
 
+  const body = yaml
+    ? `<textarea class="yaml-view" id="yamlView" readonly spellcheck="false">${esc(emitThreatYaml(assembleThreat()))}</textarea>`
+    : `<div id="errSummary" class="err-summary" style="display:none"></div>${blocks.join("")}`;
+
   return `<div class="detail">
     <div class="dhead">
       <div class="dicon">▲</div>
@@ -432,12 +445,18 @@ function editThreat(t) {
         <div class="did" style="margin-top:6px">${esc(t.id)}</div>
         ${sgPanel("threat", "title", "f_title")}
       </div>
-      <div class="hactions">
-        <button class="btn primary" id="saveBtn">✔ Save</button>
-        <button class="btn ghost" id="cancelBtn">Cancel</button>
+      <div class="hactions" style="flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="vtoggle">
+          <button id="viewStructBtn" class="${yaml ? "" : "on"}">Structure</button>
+          <button id="viewYamlBtn" class="${yaml ? "on" : ""}">YAML</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" id="saveBtn"${yaml ? " disabled" : ""}>✔ Save</button>
+          <button class="btn ghost" id="cancelBtn">Cancel</button>
+        </div>
       </div>
     </div>
-    <div id="errSummary" class="err-summary" style="display:none"></div>${blocks.join("")}
+    ${body}
   </div>`;
 }
 
@@ -555,10 +574,14 @@ function wireDetail() {
   const editBtn = document.getElementById("editBtn");
   if (editBtn) editBtn.onclick = enterEdit;
   const cancelBtn = document.getElementById("cancelBtn");
-  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; renderDetail(); };
+  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; state.view = "structure"; renderDetail(); };
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) saveBtn.onclick = saveThreat;
-  if (state.editing) { wireThreatEdit(); applyValidation(); }
+  const structBtn = document.getElementById("viewStructBtn");
+  if (structBtn) structBtn.onclick = () => { state.view = "structure"; renderDetail(); };
+  const yamlBtn = document.getElementById("viewYamlBtn");
+  if (yamlBtn) yamlBtn.onclick = () => { state.view = "yaml"; renderDetail(); };
+  if (state.editing && state.view === "structure") { wireThreatEdit(); applyValidation(); }
 }
 
 function enterEdit() {
@@ -769,11 +792,60 @@ function applyValidation() {
   advice.forEach(a => place(a, "adv"));    // amber only, never in the summary, never blocking
 
   const saveBtn = document.getElementById("saveBtn");
-  if (saveBtn) saveBtn.disabled = errors.length > 0;
+  if (saveBtn) saveBtn.disabled = errors.length > 0 || state.view === "yaml";
+}
+
+// --------------------------------------------------------- YAML emitter ---- //
+// Tiny read-only emitter for the simple scalar/list/small-object shapes in a threat.
+// Field order matches the on-disk order. No YAML library.
+function yamlScalar(s) {
+  s = String(s);
+  if (s === "") return '""';
+  const plain = /^[A-Za-z0-9][A-Za-z0-9 _\-./:()'?…]*$/.test(s)
+    && !/: /.test(s) && !/:$/.test(s) && !/ #/.test(s)
+    && !/^(true|false|null|yes|no|on|off|~)$/i.test(s);
+  if (plain) return s;
+  return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+}
+function emitThreatYaml(t) {
+  const L = [];
+  const scalar = (k, v) => {
+    const s = v == null ? "" : String(v);
+    if (/\n/.test(s)) { L.push(`${k}: |-`); s.split("\n").forEach(ln => L.push(`  ${ln}`)); }
+    else L.push(`${k}: ${yamlScalar(s)}`);
+  };
+  const listScalars = (k, arr) => {
+    if (!arr || !arr.length) { L.push(`${k}: []`); return; }
+    L.push(`${k}:`);
+    arr.forEach(v => L.push(`- ${yamlScalar(String(v))}`));
+  };
+  const listObjs = (k, arr, fields) => {
+    if (!arr || !arr.length) { L.push(`${k}: []`); return; }
+    L.push(`${k}:`);
+    arr.forEach(o => fields.forEach(([f], idx) => {
+      const prefix = idx === 0 ? "- " : "  ";
+      const v = o[f];
+      const s = v == null ? "" : String(v);
+      if (/\n/.test(s)) { L.push(`${prefix}${f}: |-`); s.split("\n").forEach(ln => L.push(`    ${ln}`)); }
+      else L.push(`${prefix}${f}: ${yamlScalar(s)}`);
+    }));
+  };
+  scalar("id", t.id);
+  scalar("title", t.title);
+  scalar("harm", t.harm);
+  listScalars("surface", t.surface);
+  listScalars("source", t.source);
+  listObjs("weaknesses", t.weaknesses, [["component"], ["text"], ["nature"]]);
+  scalar("reachability", t.reachability);
+  listObjs("mitigations", t.mitigations, [["id"], ["strength"], ["rationale"]]);
+  listObjs("references", t.references, [["id"], ["url"]]);
+  listScalars("tags", t.tags);
+  return L.join("\n");
 }
 
 // --------------------------------------------------------------- save ------ //
 async function saveThreat() {
+  if (state.view === "yaml") return;                 // YAML view is read-only
   if (state.validation.errors.length) return;        // blocked while errors remain
   const d = state.draft;
   const body = {
@@ -809,7 +881,7 @@ async function saveThreat() {
     return;
   }
   state.current = await j(url);
-  state.editing = false; state.draft = null;
+  state.editing = false; state.draft = null; state.view = "structure";
   // reflect a possible title change in the rail
   const row = state.threats.find(r => r[0] === state.selected);
   if (row) row[1] = state.current.title;
@@ -871,7 +943,7 @@ function renderPreview() {
 document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
 // Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
 document.getElementById("main").addEventListener("focusout", () => {
-  if (state.editing) scheduleValidate();
+  if (state.editing && state.view === "structure") scheduleValidate();
 });
 boot().then(renderList).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
