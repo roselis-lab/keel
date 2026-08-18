@@ -523,9 +523,10 @@ function editThreat(t) {
   const order = Object.keys(state.schema.threat.properties || {});
   const blocks = [];
   for (const name of order) {
-    if (name === "id" || name === "title" || name === "references") continue;   // id/title fixed; references deferred
+    if (name === "id" || name === "title") continue;   // id/title handled in the header
     if (name === "weaknesses") { blocks.push(weaknessesEditor()); continue; }
     if (name === "mitigations") { blocks.push(mitigationsEditor()); continue; }
+    if (name === "references") { blocks.push(referencesEditor()); continue; }
     if (!EDITABLE.has(name)) continue;
     blocks.push(fieldEditor(name, d));
   }
@@ -596,6 +597,11 @@ function shiftWkOpen(removed) {
   const next = new Set();
   (state.wkOpen || new Set()).forEach(x => { if (x < removed) next.add(x); else if (x > removed) next.add(x - 1); });
   state.wkOpen = next;
+}
+function shiftRefOpen(removed) {
+  const next = new Set();
+  (state.refOpen || new Set()).forEach(x => { if (x < removed) next.add(x); else if (x > removed) next.add(x - 1); });
+  state.refOpen = next;
 }
 
 // Weaknesses — repeatable BORDERED cards bound to state.draft.weaknesses.
@@ -690,6 +696,43 @@ function mitigationsEditor() {
     <legend class="slabel">Mitigations (${links.length})</legend>${cards}${picker}</fieldset>`;
 }
 
+// References — repeatable BORDERED cards bound to state.draft.references (same grammar
+// as weaknesses). Each card holds an id + a url. First card expanded; the rest collapse
+// to a one-line summary (id · url). The section carries the threat.references data-field
+// so focusing any input shows that field's rail guidance; the per-item id/url inputs have
+// no style entry of their own, so they degrade to no hint.
+function referencesEditor() {
+  const refs = state.draft.references || [];
+  const open = state.refOpen || new Set();
+  const cards = refs.map((r, i) => {
+    const isOpen = open.has(i);
+    const summary = `${esc(r.id || "—")}${(r.url || "").trim() ? " · " + esc((r.url || "").trim().slice(0, 48)) : ""}`;
+    const head = `<div class="ecard-head" data-ridx="${i}">
+        <button type="button" class="card-toggle ref-toggle" data-ridx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${isOpen ? "Reference " + (i + 1) : summary}</span>
+        <button type="button" class="cardx ref-remove" data-ridx="${i}" title="Remove reference">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard ref-card collapsed" data-ridx="${i}">${head}</div>`;
+    return `<div class="ecard ref-card open" data-ridx="${i}">
+      ${head}
+      <div class="ecard-body">
+      <div class="field" data-field="id">
+        <h3 class="slabel">Id</h3>
+        <input class="f ref-id" data-ridx="${i}" value="${esc(r.id || "")}" placeholder="short label, e.g. owasp-llm01">
+      </div>
+      <div class="field" data-field="url">
+        <h3 class="slabel">URL</h3>
+        <input class="f ref-url" data-ridx="${i}" id="ref_url_${i}" value="${esc(r.url || "")}" placeholder="https://…">
+      </div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<fieldset class="field section ref-section" data-entity="threat" data-field="references">
+    <legend class="slabel">References <span class="sub">— sources and prior art</span></legend>
+    ${cards}
+    <button class="btn ghost" id="addReference">+ Add reference</button></fieldset>`;
+}
+
 // --------------------------------------------------------------- wiring ---- //
 function wireDetail() {
   const editBtn = document.getElementById("editBtn");
@@ -717,10 +760,12 @@ function enterEdit() {
     weaknesses: (t.weaknesses || []).map(w => ({
       component: w.component, text: w.text || "", nature: w.nature || "targeted",
     })),
+    references: (t.references || []).map(r => ({ id: r.id || "", url: r.url || "" })),
   };
   // Progressive disclosure: the FIRST repeatable card is expanded, the rest collapse.
   state.wkOpen = new Set((t.weaknesses || []).length ? [0] : []);
   state.mlOpen = new Set((t.mitigations || [])[0] ? [t.mitigations[0].id] : []);
+  state.refOpen = new Set((t.references || []).length ? [0] : []);
   state.editing = true;
   state.railMode = "preview"; state.guidance = null;
   renderDetail();
@@ -745,6 +790,7 @@ function wireThreatEdit() {
   });
   wireWeaknesses();
   wireMitigations();
+  wireReferences();
 }
 
 // Mitigation-link cards: link/unlink/strength/rationale are immediate server writes.
@@ -830,6 +876,32 @@ function wireWeaknesses() {
   };
 }
 
+// Reference cards edit state.draft.references in place; add/remove re-renders.
+function wireReferences() {
+  const d = state.draft;
+  document.querySelectorAll(".ref-card").forEach(card => {
+    const i = +card.dataset.ridx;
+    const id = card.querySelector(".ref-id");
+    const url = card.querySelector(".ref-url");
+    if (id) id.oninput = () => d.references[i].id = id.value;
+    if (url) url.oninput = () => d.references[i].url = url.value;
+    const rm = card.querySelector(".ref-remove");
+    if (rm) rm.onclick = e => { e.stopPropagation(); d.references.splice(i, 1); shiftRefOpen(i); renderDetail(); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => {
+      if (e.target.closest(".ref-remove")) return;   // remove handles itself
+      toggleSet(state.refOpen, i);
+      renderDetail();
+    };
+  });
+  const add = document.getElementById("addReference");
+  if (add) add.onclick = () => {
+    d.references.push({ id: "", url: "" });
+    (state.refOpen || (state.refOpen = new Set())).add(d.references.length - 1);   // open the new card
+    renderDetail();
+  };
+}
+
 // --------------------------------------------------- validation channels --- //
 // Assemble the full threat the way the server wants it: the draft plus the id and
 // the separately-managed pieces (mitigations/references live on state.current).
@@ -847,7 +919,7 @@ function assembleThreat() {
     weaknesses: pick("weaknesses", []),
     reachability: pick("reachability", ""),
     mitigations: c.mitigations || [],
-    references: c.references || [],
+    references: pick("references", []),
     tags: pick("tags", []),
   };
 }
@@ -876,6 +948,13 @@ function fieldEl(path) {
     return document.querySelector(
       `.wk-card[data-widx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`
     );
+  }
+  if (parts[0] === "references" && parts.length === 3) {
+    // Prefer the specific card's field (visible only when expanded); otherwise
+    // fall back to the whole references section so the error still surfaces.
+    return document.querySelector(
+      `.ref-card[data-ridx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`
+    ) || document.querySelector('.field[data-entity="threat"][data-field="references"]');
   }
   if (parts.length === 1) {
     return document.querySelector(`.field[data-entity="threat"][data-field="${CSS.escape(parts[0])}"]`);
@@ -977,6 +1056,7 @@ async function saveThreat() {
     reachability: d.reachability,
     tags: d.tags,
     weaknesses: d.weaknesses,
+    references: d.references,
   };
   const url = "/threats/" + encodeURIComponent(state.selected);
   const r = await fetch(url, {
