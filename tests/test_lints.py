@@ -14,15 +14,24 @@ def _threat(**over):
 
 
 def test_lint_flags_all_soft():
-    msgs = lint_threat(_threat())
-    assert any("no `gating` mitigation" in m for m in msgs)
+    advice = lint_threat(_threat())
+    assert any(a["field"] == "mitigations" and "no `gating`" in a["msg"] for a in advice)
 
 
 def test_lint_flags_technique_title():
-    msgs = lint_threat(_threat(title="Prompt injection"))
-    assert any("technique" in m for m in msgs)
+    advice = lint_threat(_threat(title="Prompt injection"))
+    assert any(a["field"] == "title" and "technique" in a["msg"] for a in advice)
 
 
 def test_lint_clean_threat_has_no_advice():
     t = _threat(mitigations=[{"id": "CTRL-DLP", "strength": "gating", "rationale": "blocks"}])
     assert lint_threat(t) == []
+
+
+def test_lint_technique_weakness_targets_index():
+    t = _threat(
+        mitigations=[{"id": "CTRL-DLP", "strength": "gating", "rationale": "blocks"}],
+        weaknesses=[{"component": "tool", "text": "prompt injection"}],
+    )
+    advice = lint_threat(t)
+    assert any(a["field"] == "weaknesses.0.text" and "technique" in a["msg"] for a in advice)

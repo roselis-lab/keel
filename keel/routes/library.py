@@ -37,7 +37,7 @@ async def validate_threat(payload: dict = Body(...)):
             for e in exc.errors()
         ]
         return {"ok": False, "errors": errors, "advice": []}
-    advice = [{"field": "", "msg": m} for m in lint_threat(threat)]
+    advice = [{"field": item["field"], "msg": item["msg"]} for item in lint_threat(threat)]
     return {"ok": True, "errors": [], "advice": advice}
 
 
