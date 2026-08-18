@@ -18,6 +18,11 @@ THREAT = {
     ],
     "reachability": "NOT applicable if the tool has no valuable access",
 }
+MITIGATION = {
+    "id": "CTRL-CRUD-TEST",
+    "name": "CRUD test control",
+    "mitigation_class": "gating_control",
+}
 
 
 def _temp_store(tmp_path) -> Store:
@@ -56,5 +61,29 @@ def test_delete_threat(tmp_path):
 
         assert client.get(f"/threats/{THREAT['id']}").status_code == 404
         assert client.delete("/threats/T-DOES-NOT-EXIST").status_code == 404
+    finally:
+        set_store(None)
+
+
+def test_create_and_delete_mitigation(tmp_path):
+    set_store(_temp_store(tmp_path))
+    try:
+        client = TestClient(app)
+        r = client.post("/mitigations", json=MITIGATION)
+        assert r.status_code in (200, 201), r.text
+        assert r.json()["success"] is True
+
+        got = client.get(f"/mitigations/{MITIGATION['id']}")
+        assert got.status_code == 200
+        assert got.json()["id"] == MITIGATION["id"]
+
+        dup = client.post("/mitigations", json=MITIGATION)
+        assert dup.status_code == 409
+
+        d = client.delete(f"/mitigations/{MITIGATION['id']}")
+        assert d.status_code == 200, d.text
+        assert d.json()["success"] is True
+        assert client.get(f"/mitigations/{MITIGATION['id']}").status_code == 404
+        assert client.delete(f"/mitigations/{MITIGATION['id']}").status_code == 404
     finally:
         set_store(None)

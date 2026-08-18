@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from keel.catalog import lint_threat
 from keel.config import settings
 from keel.schema_export import build_schemas
-from keel.schemas.mitigation import MitigationUpdate
+from keel.schemas.mitigation import MitigationCreate, MitigationUpdate
 from keel.schemas.threat import Threat, ThreatCreate, ThreatUpdate
 from keel.services import mitigation_service, style_guide_service, threat_service
 
@@ -104,6 +104,15 @@ async def list_mitigations(brief: bool = True, include: list[str] | None = Query
     return await mitigation_service.list_mitigations(brief=brief, include=include)
 
 
+@router.post("/mitigations", status_code=201)
+async def create_mitigation(data: MitigationCreate):
+    """Create a mitigation. Duplicate id → 409; body validation via MitigationCreate (422)."""
+    result = await mitigation_service.create_mitigation(data)
+    if not result.get("success"):
+        raise HTTPException(status_code=409, detail=result.get("error"))
+    return result
+
+
 @router.get("/mitigations/{mitigation_id}")
 async def get_mitigation(mitigation_id: str):
     result = await mitigation_service.get_mitigation(mitigation_id)
@@ -115,6 +124,15 @@ async def get_mitigation(mitigation_id: str):
 @router.patch("/mitigations/{mitigation_id}")
 async def update_mitigation(mitigation_id: str, data: MitigationUpdate):
     result = await mitigation_service.update_mitigation(mitigation_id, data)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error"))
+    return result
+
+
+@router.delete("/mitigations/{mitigation_id}")
+async def delete_mitigation(mitigation_id: str):
+    """Delete a mitigation. The service also unlinks it from any threats. 404 if missing."""
+    result = await mitigation_service.delete_mitigation(mitigation_id, confirm=True)
     if not result.get("success"):
         raise HTTPException(status_code=404, detail=result.get("error"))
     return result
