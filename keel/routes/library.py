@@ -12,7 +12,12 @@ from keel.config import settings
 from keel.schema_export import build_schemas
 from keel.schemas.mitigation import MitigationCreate, MitigationUpdate
 from keel.schemas.threat import Threat, ThreatCreate, ThreatUpdate
-from keel.services import mitigation_service, style_guide_service, threat_service
+from keel.services import (
+    health_service,
+    mitigation_service,
+    style_guide_service,
+    threat_service,
+)
 
 router = APIRouter()
 
@@ -136,6 +141,15 @@ async def delete_mitigation(mitigation_id: str):
     if not result.get("success"):
         raise HTTPException(status_code=404, detail=result.get("error"))
     return result
+
+
+# --------------------------------------------------------------------------- #
+# Health / overview
+# --------------------------------------------------------------------------- #
+@router.get("/health/library")
+async def health_library():
+    """Overview stats + issues + style-guide coverage for the overview page."""
+    return await health_service.check_library_health()
 
 
 # --------------------------------------------------------------------------- #

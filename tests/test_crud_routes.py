@@ -87,3 +87,14 @@ def test_create_and_delete_mitigation(tmp_path):
         assert client.delete(f"/mitigations/{MITIGATION['id']}").status_code == 404
     finally:
         set_store(None)
+
+
+def test_health_library_read_only():
+    # Uses the real store, read-only; writes nothing to the catalog.
+    set_store(None)
+    client = TestClient(app)
+    r = client.get("/health/library")
+    assert r.status_code == 200
+    body = r.json()
+    assert "stats" in body
+    assert "issues" in body
