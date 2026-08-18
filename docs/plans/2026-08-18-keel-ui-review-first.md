@@ -1,5 +1,7 @@
 # Keel UI — review-first redesign + full CRUD + overview
 
+> **Status: complete** (Milestones A–F). Back-end CRUD + `/health/library`; threat editor redesigned to the Design Constraints; references editor + create/delete; Mitigations editor screen (full card CRUD); Overview page + unified nav (Overview · Threats · Mitigations · Style guide); docs. Each milestone reviewed against the design rules; 29 pytest green, ruff clean, catalog untouched. Remaining: the model-working **skills** (edit + git) — separate phase.
+
 > **For Claude:** REQUIRED SUB-SKILL: superpowers:executing-plans / subagent-driven-development. Front-end tasks have no JS test harness — each ends with a headless smoke check (server serves the page, endpoints resolve, `node --check` on the extracted script) AND a best-practice conformance check against the Design Constraints below. Do NOT ask the user to click-verify; verify against the rules.
 
 **Goal:** Fix the cluttered threat editor (real page-design rules), complete the UI's CRUD (threats incl. `references`, a full Mitigations editor, create/delete for both), and add an Overview page — so the UI is a clean review + complete-fallback surface, while the LLM/MCP stays the primary editor and git stays with the LLM/harness + `gh`.

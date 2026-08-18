@@ -110,11 +110,17 @@ Without `uv`, `pip install -e .` installs the same `keel` console script, or run
 
 ## Authoring UI
 
-Running the app (see **Run** above) serves a small browse-and-edit interface at `http://localhost:8000/` — one static HTML file, no build step. A switcher at the top moves between its two screens.
+Running the app (see **Run** above) serves a small browse-and-edit interface at `http://localhost:8000/` — one static HTML file, no build step. A switcher at the top moves between four screens: Overview, Threats, Mitigations, and Style guide.
 
-**Threats** browses the catalog and edits one threat at a time in a three-pane layout: the list of threats on the left, the editor in the middle, and a live preview on the right. The editor builds its form from the JSON Schema, so the fields, their order, and the fixed-vocabulary dropdowns always match the model. Weaknesses and mitigation links show as cards you can add, edit, and remove. As you work, an inline style-guide bar keeps a one-line hint under each field and opens the full guidance — what to include, what to avoid, and an example you can drop straight in — while that field has focus. Every change is checked on the server through one endpoint, `POST /threats/validate`, which returns two kinds of feedback: red blocking errors when the structure is wrong (a value outside a fixed vocabulary, a missing required field) and amber advice that never blocks a save (for example, a threat whose mitigations are all soft). A read-only YAML view shows exactly what will be written to disk.
+The interface is review-first. The fastest way to author the model is to ask an LLM to do it through the MCP tools (it drafts to the style guide and writes the YAML for you), and committing and opening a pull request is done by your agent or plain git — the UI writes files and points you to the file to commit, it is not a git client. So the UI's main jobs are reviewing the model at a glance and hands-on edits when you want them; it carries the full create/read/update/delete for both threats and mitigations as a complete fallback.
 
-**Style guide** edits the authoring guidance itself. The left rail is a field tree derived from the model, each field carrying a coverage badge, so the guidance can't drift from the fields it describes; fields with guidance but no matching model field are flagged as orphans. The center pane edits a field's slots — purpose, what to include, what to avoid, examples — and the right pane shows precisely what an author sees on the Threats screen while you edit that same guidance.
+**Overview** is the landing screen: the counts (threats, mitigations, links), style-guide coverage overall and per entity, and a "gaps to review" list — threats missing a weakness or a harm, threats with no mitigation, dangling links — each with clickable chips that jump straight to the threat. Nothing here blocks anything; it is a place to see where the model is thin.
+
+**Threats** edits one threat at a time in a three-pane layout: the list on the left, the editor in the middle, a live preview on the right. The editor builds its form from the JSON Schema, so the fields, their order, and the fixed-vocabulary dropdowns always match the model. Each section is a clear band; weaknesses, mitigation links, and references show as cards you can add, edit, remove, and collapse. Each field keeps one quiet one-line hint, and the full "how to write this" guidance — what to include, what to avoid, an example you can drop in — lives in the right rail, which flips from Preview to Guidance when a field has focus, so guidance never pushes the form around. Every change is checked on the server through `POST /threats/validate`, which returns two kinds of feedback: red blocking errors when the structure is wrong (a value outside a fixed vocabulary, a missing required field, a bad reference URL) and amber advice that never blocks a save (for example, a threat whose mitigations are all soft). You can create a new threat or delete one, and a read-only YAML view shows exactly what will be written to disk.
+
+**Mitigations** does the same for the mitigation cards, in the same layout and with the same rules: browse, read, edit every field, and create or delete a card. Deleting a mitigation unlinks it from any threats that referenced it.
+
+**Style guide** edits the authoring guidance itself. The left rail is a field tree derived from the model, each field carrying a coverage badge, so the guidance can't drift from the fields it describes; fields with guidance but no matching model field are flagged as orphans. The center pane edits a field's slots — purpose, what to include, what to avoid, examples — and the right pane shows precisely what an author sees while you edit that same guidance.
 
 ### The JSON Schema
 
@@ -122,12 +128,13 @@ The form and its dropdowns read a JSON Schema generated from the Pydantic models
 
 ### Saving is a pull request
 
-Both screens write straight to the catalog YAML through the same service layer the MCP write tools use. After a save the UI names the exact file it wrote (`catalog/threats/<id>.yaml` or `catalog/style_guide/<entity>.yaml`) and asks you to commit and open a pull request, so every change lands as a reviewable diff. Set `REPO_URL` (for example `https://github.com/org/keel`) and the confirmation gains an "Edit on GitHub" link straight to that file; leave it unset and the link stays hidden.
+Every screen writes straight to the catalog YAML through the same service layer the MCP write tools use. After a save the UI names the exact file it wrote (`catalog/threats/<id>.yaml`, `catalog/mitigations/<id>.yaml`, or `catalog/style_guide/<entity>.yaml`) and asks you to commit and open a pull request, so every change lands as a reviewable diff. Set `REPO_URL` (for example `https://github.com/org/keel`) and the confirmation gains an "Edit on GitHub" link straight to that file; leave it unset and the link stays hidden.
+
+Git itself — branch, commit, push, open the PR — is deliberately left to your agent or plain git rather than built into the app. This is the norm for file-backed tools, and because the model is one YAML file per entry, conflicts are rare. To run against a throwaway copy while you click around, point `CATALOG_DIR` at a copy of `catalog/`; the real catalog is never touched.
 
 ### Deferred / not yet implemented
 
 - The raw-YAML view is read-only for now: you can see exactly what will be written, but you cannot edit the YAML there and round-trip it back into the form.
-- The UI edits existing threats; creating a brand-new threat from the UI is not built yet — add one through the MCP write tools or by hand, then edit it here.
 
 ## Tests
 
