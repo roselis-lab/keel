@@ -354,10 +354,7 @@ function editThreat(t) {
   for (const name of order) {
     if (name === "id" || name === "title" || name === "references") continue;   // id/title fixed; references deferred
     if (name === "weaknesses") { blocks.push(weaknessesEditor()); continue; }
-    if (name === "mitigations") {
-      blocks.push('<section><h3 class="slabel">mitigations</h3><p class="placeholder">— mitigation link editor (next task) —</p></section>');
-      continue;
-    }
+    if (name === "mitigations") { blocks.push(mitigationsEditor()); continue; }
     if (!EDITABLE.has(name)) continue;
     blocks.push(fieldEditor(name, d));
   }
@@ -431,6 +428,42 @@ function weaknessesEditor() {
     <button class="btn ghost" id="addWeakness">+ Add weakness</button></section>`;
 }
 
+// Mitigation links — cards over state.current.mitigations (immediate server writes,
+// separate from the draft/Save flow). Link/unlink/strength/rationale hit the API directly.
+function mitigationsEditor() {
+  const links = (state.current && state.current.mitigations) || [];
+  const linkedIds = new Set(links.map(l => l.id));
+  const strengths = strengthEnum();
+  const cards = links.length ? links.map(l => {
+    const mm = state.mitById[l.id];
+    const opts = strengths.map(s => `<option value="${esc(s)}" ${s === l.strength ? "selected" : ""}>${esc(s)}</option>`).join("");
+    return `<div class="ecard ml-card" data-mid="${esc(l.id)}">
+      <button class="cardx ml-unlink" title="Unlink mitigation">✕</button>
+      <div class="ml-head">
+        <span class="cid">${esc(l.id)}</span>
+        <span class="ctitle">${esc(mm ? mm.name : "(missing)")}</span>
+      </div>
+      <div class="field" data-entity="mitigation_link" data-field="strength">
+        <h3 class="slabel">Strength</h3>
+        <select class="f ml-strength">${opts}</select>
+      </div>
+      <div class="field" data-entity="mitigation_link" data-field="rationale">
+        <h3 class="slabel">Rationale</h3>
+        <textarea class="f ml-rationale" id="ml_rat_${esc(l.id)}" rows="2" placeholder="why this control addresses this threat">${esc(l.rationale || "")}</textarea>
+      </div>
+    </div>`;
+  }).join("") : '<p class="placeholder">None linked.</p>';
+
+  const unlinked = Object.values(state.mitById).filter(m => !linkedIds.has(m.id));
+  const pickOpts = unlinked.map(m => `<option value="${esc(m.id)}">${esc(m.id)} — ${esc(m.name)}</option>`).join("");
+  const picker = unlinked.length
+    ? `<div class="link-row"><select class="f" id="mlPicker">${pickOpts}</select>
+        <button class="btn ghost" id="mlLinkBtn">Link</button></div>`
+    : '<p class="placeholder">All mitigations linked.</p>';
+
+  return `<section><h3 class="slabel">Mitigations (${links.length})</h3>${cards}${picker}</section>`;
+}
+
 // --------------------------------------------------------------- wiring ---- //
 function wireDetail() {
   const editBtn = document.getElementById("editBtn");
@@ -475,6 +508,54 @@ function wireThreatEdit() {
     d[cb.dataset.set] = [...set];
   });
   wireWeaknesses();
+  wireMitigations();
+}
+
+// Mitigation-link cards: link/unlink/strength/rationale are immediate server writes.
+function wireMitigations() {
+  document.querySelectorAll(".ml-card").forEach(card => {
+    const mid = card.dataset.mid;
+    const strength = card.querySelector(".ml-strength");
+    const rationale = card.querySelector(".ml-rationale");
+    const persist = () => putMitLink(mid, strength ? strength.value : "gating", rationale ? rationale.value : "");
+    if (strength) strength.onchange = persist;
+    if (rationale) rationale.onblur = persist;
+    const unlink = card.querySelector(".ml-unlink");
+    if (unlink) unlink.onclick = () => unlinkMit(mid);
+  });
+  const linkBtn = document.getElementById("mlLinkBtn");
+  if (linkBtn) linkBtn.onclick = () => {
+    const pick = document.getElementById("mlPicker");
+    if (pick && pick.value) linkMit(pick.value);
+  };
+}
+
+async function refreshCurrent() {
+  state.current = await j("/threats/" + encodeURIComponent(state.selected));
+}
+const mitUrl = mid =>
+  "/threats/" + encodeURIComponent(state.selected) + "/mitigations/" + encodeURIComponent(mid);
+
+async function linkMit(mid) {
+  try {
+    await api("PUT", mitUrl(mid), { strength: "gating", rationale: "" });
+    await refreshCurrent(); renderDetail(); renderPreview();
+    toast("Mitigation linked");
+  } catch (e) { toast(e.message, true); }
+}
+async function unlinkMit(mid) {
+  try {
+    await api("DELETE", mitUrl(mid));
+    await refreshCurrent(); renderDetail(); renderPreview();
+    toast("Mitigation unlinked");
+  } catch (e) { toast(e.message, true); }
+}
+async function putMitLink(mid, strength, rationale) {
+  try {
+    await api("PUT", mitUrl(mid), { strength, rationale });
+    await refreshCurrent(); renderDetail(); renderPreview();
+    toast("Mitigation link updated");
+  } catch (e) { toast(e.message, true); }
 }
 
 // Weakness cards edit state.draft.weaknesses in place; add/remove re-renders.
