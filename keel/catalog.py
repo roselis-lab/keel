@@ -140,3 +140,65 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
                 errors.append(f"{rel}: expected a mapping with a 'fields' mapping")
 
     return errors
+
+
+def catalog_warnings(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
+    """Advisory quality checks over the catalog (NOT errors). These surface soft problems —
+    over-graded links, missing provenance, an unused vocabulary — without failing CI. Runs
+    read-only over the raw YAML (same load path as `validate_catalog`). Returns human-readable
+    warnings; an empty list means nothing to nudge on.
+
+    Checks:
+      1. Over-graded link strength: a `gating` link whose target control is not a
+         `gating_control` (a detector/process/advisory control does not architecturally block).
+      2. Missing references: a threat with no `references` (provenance) to map to prior art.
+      3. Unused `nature`: no weakness anywhere is marked `secondary` (the field may be dead).
+    """
+    warnings: list[str] = []
+    if not catalog_dir.exists():
+        return warnings
+
+    # Mitigation id -> mitigation_class, read straight from the YAML.
+    mit_class: dict[str, str] = {}
+    for path in sorted((catalog_dir / "mitigations").glob("*.yaml")):
+        rec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(rec, dict) and rec.get("id"):
+            mit_class[rec["id"]] = rec.get("mitigation_class")
+
+    any_secondary = False
+    for path in sorted((catalog_dir / "threats").glob("*.yaml")):
+        rec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(rec, dict):
+            continue
+        tid = rec.get("id") or path.stem
+
+        # 1. Over-graded link strength (strength vs mitigation_class).
+        for link in rec.get("mitigations") or []:
+            if not isinstance(link, dict) or link.get("strength") != "gating":
+                continue
+            mid = link.get("id")
+            cls = mit_class.get(mid)
+            if cls is not None and cls != "gating_control":
+                warnings.append(
+                    f"{tid} -> {mid}: strength 'gating' but mitigation_class is '{cls}' "
+                    "— a non-gating control should not back a gating link"
+                )
+
+        # 2. Threat missing references (provenance).
+        if not (rec.get("references") or []):
+            warnings.append(
+                f"{tid}: no references (provenance) — map to CWE/CAPEC/OWASP-LLM/ATLAS"
+            )
+
+        # 3. Track whether the `nature` field is ever used as 'secondary'.
+        for w in rec.get("weaknesses") or []:
+            if isinstance(w, dict) and w.get("nature") == "secondary":
+                any_secondary = True
+
+    if not any_secondary:
+        warnings.append(
+            "no weakness is marked 'secondary' — the nature field may be unused "
+            "(every weakness is 'targeted')"
+        )
+
+    return warnings
