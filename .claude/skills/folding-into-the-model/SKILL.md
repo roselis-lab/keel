@@ -7,6 +7,9 @@ description: Use when adding new information to the Keel model — writing a new
 
 Adding to the Keel model is rarely mechanical: the value is getting the placement right, and much of that is a judgment call. The core discipline — **make the judgment calls visible and get sign-off on the consequential ones, instead of silently deciding.** Communicating your *reasoning* is not enough; communicate your *uncertainty*.
 
+## Where you're starting from
+You may arrive here two ways: with the placement already decided (a coverage check may have already found this gap and where it likely goes), or with raw information and no decision yet. If a placement was handed to you, **take it as the starting point — confirm and refine it, do not re-run a whole is-this-covered sweep of the model.** If you are starting raw, you make the call yourself. Either way this skill's job is the same: turn a confirmed gap into a correct, on-standard entry, surfacing the judgment calls rather than resolving them silently. It does not re-do the breadth triage that finding the gap already covered.
+
 ## Surface the judgment calls — don't resolve them silently
 When you fold something in, several choices are genuinely debatable. For each, name it, state your lean and why, and flag how confident you are. Do not present a debatable choice as a settled conclusion:
 - **New entry vs. change to an existing one** — a new threat, or a new weakness on an existing threat? a new mitigation, or a link/implementation on an existing one? This is usually the biggest call.
@@ -21,7 +24,7 @@ If two reasonable modelers would disagree, the human decides, not you.
 - **Consequential — any change to an EXISTING entry's meaning or scope**: retitling a threat, broadening its applicability, re-grading a link's `strength`, deleting. These are not yours to decide silently. Present the change, the why, and the trade-off, and get explicit confirmation *before* writing. Never bury one inside an additive change as a "recommendation."
 
 ## Procedure
-1. Decide what KIND of thing it is (threat / weakness / mitigation / implementation / mechanism / out-of-scope). A mechanism or an absent control is not a new threat.
+1. Confirm what KIND of thing it is (threat / weakness / mitigation / implementation / mechanism / out-of-scope). If a coverage check already decided this, take that and sanity-check it — don't re-derive it; if you're starting raw, make the call. A mechanism or an absent control is not a new threat.
 2. Draft the smallest true change — prefer extending an existing entry over a near-duplicate.
 3. Surface the judgment calls (above): for each grey area, your lean + your uncertainty; for each consequential change, ask.
 4. Write the confirmed content through the MCP tools — the style guide is embedded there, so the wording stays on-standard. Keep provenance in `references`.
