@@ -36,17 +36,30 @@ def _fmt_err(e: ValidationError) -> str:
     return "; ".join(parts)
 
 
-def lint_threat(threat: Threat) -> list[str]:
+def lint_threat(threat: Threat) -> list[dict[str, str]]:
     """Non-blocking advice for one threat (no gating control; a technique used as identity).
-    These are the 'amber' nudges the authoring UI shows; they never block a save."""
-    out: list[str] = []
+    These are the 'amber' nudges the authoring UI shows; they never block a save. Each item
+    carries a `field` (dotted path, or "") so the UI can pin the note to the right input."""
+    out: list[dict[str, str]] = []
     if threat.mitigations and not any(m.strength == "gating" for m in threat.mitigations):
-        out.append("no `gating` mitigation (all soft) — no architectural closure")
+        out.append({
+            "field": "mitigations",
+            "msg": "no `gating` mitigation (all soft) — no architectural closure",
+        })
     for tw in _TECHNIQUE_WORDS:
         if tw in threat.title.lower():
-            out.append(f"technique {tw!r} used as the threat title — belongs in source/references")
-        elif any(tw in w.text.lower() and len(w.text) < 40 for w in threat.weaknesses):
-            out.append(f"technique {tw!r} used as a weakness identity — belongs in source/references")
+            out.append({
+                "field": "title",
+                "msg": f"technique {tw!r} used as the threat title — belongs in source/references",
+            })
+            continue
+        for i, w in enumerate(threat.weaknesses):
+            if tw in w.text.lower() and len(w.text) < 40:
+                out.append({
+                    "field": f"weaknesses.{i}.text",
+                    "msg": f"technique {tw!r} used as a weakness identity — belongs in source/references",
+                })
+                break
     return out
 
 
@@ -114,8 +127,8 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
                 errors.append(f"{rel}: mitigations[{i}] references unknown mitigation {link.id!r}")
 
         # Non-blocking authoring advice (no gating control; a technique used as identity).
-        for msg in lint_threat(threat):
-            errors.append(f"{rel}: {msg}")
+        for item in lint_threat(threat):
+            errors.append(f"{rel}: {item['msg']}")
 
     sg_dir = catalog_dir / "style_guide"
     if sg_dir.is_dir():
