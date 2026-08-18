@@ -149,6 +149,20 @@
   }
   .field.has-err > .slabel::after { background: var(--crimson-600); }
   .field.has-adv > .slabel::after { background: var(--amber); }
+
+  /* ------ preview + insights ------ */
+  #preview .pv-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: var(--navy-900); }
+  #preview .pv-harm .badge { vertical-align: middle; }
+  #preview .pv-sec { margin-top: 14px; }
+  #preview .pv-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 4px; }
+  #preview .pv p { margin: 0; color: var(--navy-700); }
+  #preview .pv ul { margin: 4px 0 0; padding-left: 16px; color: var(--navy-700); }
+  #preview .pv .carve { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 8px 11px; font-size: 13px; }
+  .insights { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .insights .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 8px; }
+  .insights ul { margin: 0; padding-left: 16px; }
+  .insights li { color: var(--amber); font-size: 12px; margin-bottom: 4px; }
+  .insights .ok { color: var(--green); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -806,16 +820,51 @@ async function saveThreat() {
 }
 
 // ------------------------------------------------------------- preview ----- //
-// Populated in a later task; for now it mirrors the selected threat's id/title.
+// The assembled threat as a person reads it, plus a soft Insights strip.
 function renderPreview() {
   const el = document.getElementById("preview");
   if (!state.current) {
     el.innerHTML = '<p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div>';
     return;
   }
+  const t = assembleThreat();
+  const list = arr => (arr || []).map(esc).join(", ");
+  const surface = (t.surface || []).length ? list(t.surface) : "—";
+  const source = (t.source || []).length ? list(t.source) : "—";
+
+  const weaknesses = (t.weaknesses || []).length
+    ? `<ul>${t.weaknesses.map(w =>
+        `<li>At <b>${esc(w.component)}</b>, ${esc(w.text || "…")}${w.nature ? ` <i>(${esc(w.nature)})</i>` : ""}</li>`).join("")}</ul>`
+    : '<p class="placeholder">No weaknesses authored.</p>';
+
+  const mits = t.mitigations || [];
+  const gating = mits.filter(m => m.strength === "gating");
+  const soft = mits.filter(m => m.strength !== "gating");
+  const mitLine = grp => grp.length
+    ? `<ul>${grp.map(m => `<li>${esc((state.mitById[m.id] && state.mitById[m.id].name) || m.id)}</li>`).join("")}</ul>`
+    : '<p class="placeholder">none</p>';
+
+  // Insights — soft, never blocking: server advice + a client-side references note.
+  const notes = ((state.validation && state.validation.advice) || []).map(a => a.msg);
+  if (!(t.references || []).length) notes.push("no references yet");
+
   el.innerHTML = `<p class="ptitle">Preview</p>
-    <div class="card"><div class="chead"><span class="cid">${esc(state.current.id)}</span></div>
-    <div class="cdesc">${esc(state.current.title)}</div></div>`;
+    <div class="pv">
+      <h2 class="pv-title">${esc(t.title) || '<span class="placeholder">Untitled</span>'}</h2>
+      <p class="pv-harm">Harm: ${t.harm ? `<span class="badge harm">${esc(t.harm)}</span>` : '<span class="placeholder">none</span>'}</p>
+      <div class="pv-sec"><p class="pv-k">Surface / Source</p><p>Happens at <b>${surface}</b>, driven by <b>${source}</b>.</p></div>
+      <div class="pv-sec"><p class="pv-k">Weaknesses</p>${weaknesses}</div>
+      <div class="pv-sec"><p class="pv-k">Mitigations</p>
+        <p>Gating (${gating.length})</p>${mitLine(gating)}
+        <p>Soft (${soft.length})</p>${mitLine(soft)}
+      </div>
+      <div class="pv-sec"><p class="pv-k">Reachability carve-out</p>${
+        t.reachability ? `<div class="carve">${esc(t.reachability)}</div>` : '<p class="placeholder">not authored</p>'}</div>
+    </div>
+    <div class="insights">
+      <p class="ptitle">Insights</p>
+      ${notes.length ? `<ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : '<p class="ok">Nothing flagged.</p>'}
+    </div>`;
 }
 
 // --------------------------------------------------------------- start ----- //
