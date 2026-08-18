@@ -11,7 +11,7 @@ from keel.catalog import lint_threat
 from keel.config import settings
 from keel.schema_export import build_schemas
 from keel.schemas.mitigation import MitigationUpdate
-from keel.schemas.threat import Threat, ThreatUpdate
+from keel.schemas.threat import Threat, ThreatCreate, ThreatUpdate
 from keel.services import mitigation_service, style_guide_service, threat_service
 
 router = APIRouter()
@@ -41,6 +41,15 @@ async def validate_threat(payload: dict = Body(...)):
     return {"ok": True, "errors": [], "advice": advice}
 
 
+@router.post("/threats", status_code=201)
+async def create_threat(data: ThreatCreate):
+    """Create a threat. Duplicate id → 409; body validation is handled by ThreatCreate (422)."""
+    result = await threat_service.create_threat(data)
+    if not result.get("success"):
+        raise HTTPException(status_code=409, detail=result.get("error"))
+    return result
+
+
 @router.get("/threats/{threat_id}")
 async def get_threat(threat_id: str):
     result = await threat_service.get_threat(threat_id)
@@ -52,6 +61,15 @@ async def get_threat(threat_id: str):
 @router.patch("/threats/{threat_id}")
 async def update_threat(threat_id: str, data: ThreatUpdate):
     result = await threat_service.update_threat(threat_id, data)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error"))
+    return result
+
+
+@router.delete("/threats/{threat_id}")
+async def delete_threat(threat_id: str):
+    """Delete a threat (and its mitigation links). 404 if missing."""
+    result = await threat_service.delete_threat(threat_id, confirm=True)
     if not result.get("success"):
         raise HTTPException(status_code=404, detail=result.get("error"))
     return result
