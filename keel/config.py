@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     # offers an "Edit on GitHub" link on save. Env var: REPO_URL. Empty = link hidden.
     repo_url: str = ""
 
+    # Optional override for the catalog directory (env var: CATALOG_DIR). Point it at a
+    # throwaway copy to click through the UI without touching the real catalog. Empty =
+    # the repo's own catalog/.
+    catalog_dir: str = ""
+
     # MCP
     mcp_server_name: str = "keel"
     mcp_server_version: str = "0.1.0"

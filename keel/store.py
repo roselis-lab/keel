@@ -107,10 +107,16 @@ _store: Store | None = None
 
 
 def get_store() -> Store:
-    """Return the process-wide store, loading the catalog on first access."""
+    """Return the process-wide store, loading the catalog on first access.
+
+    Honors `settings.catalog_dir` (env `CATALOG_DIR`) so the app can run against a
+    throwaway copy of the catalog; empty falls back to the repo's own `catalog/`.
+    """
     global _store
     if _store is None:
-        _store = Store()
+        from keel.config import settings
+
+        _store = Store(settings.catalog_dir or DEFAULT_CATALOG_DIR)
     return _store
 
 
