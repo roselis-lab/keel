@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 200" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <marker id="af" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L7,3 L0,6" fill="none" stroke="#97a0b5" stroke-width="1.6"/>
+    </marker>
+    <filter id="afsh" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#17203a" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect x="8" y="8" width="944" height="184" rx="18" fill="#ffffff" stroke="#dfe3ec"/>
+  <text x="40" y="42" fill="#97a0b5" font-size="12" font-weight="700" letter-spacing="1.6">RUNNING AN ASSESSMENT</text>
+
+  <!-- 6-step pipeline -->
+  <!-- 1 system -->
+  <rect x="30" y="64" width="134" height="76" rx="12" fill="#f6f8fc" stroke="#d7dce8"/>
+  <text x="97" y="98" text-anchor="middle" fill="#232d4a" font-size="14" font-weight="700">Your system</text>
+  <text x="97" y="117" text-anchor="middle" fill="#6b7690" font-size="11">the architecture</text>
+
+  <!-- 2 candidates -->
+  <rect x="186" y="64" width="134" height="76" rx="12" fill="#38415f"/>
+  <text x="253" y="98" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Candidates</text>
+  <text x="253" y="117" text-anchor="middle" fill="#d7dce8" font-size="11">match weaknesses</text>
+
+  <!-- 3 reachability -->
+  <rect x="342" y="64" width="134" height="76" rx="12" fill="#ffffff" stroke="#e0a021" stroke-dasharray="5 4"/>
+  <text x="409" y="98" text-anchor="middle" fill="#b9820f" font-size="14" font-weight="700">Reachability</text>
+  <text x="409" y="117" text-anchor="middle" fill="#6b7690" font-size="11">live here?</text>
+
+  <!-- 4 mitigations -->
+  <rect x="498" y="64" width="134" height="76" rx="12" fill="#eaf4ee" stroke="#bfe0cc"/>
+  <text x="565" y="98" text-anchor="middle" fill="#1f9d57" font-size="14" font-weight="700">Mitigations</text>
+  <text x="565" y="117" text-anchor="middle" fill="#4a5570" font-size="11">in place here?</text>
+
+  <!-- 5 risk -->
+  <rect x="654" y="64" width="134" height="76" rx="12" fill="#fdeef1" stroke="#f6c9d3"/>
+  <text x="721" y="98" text-anchor="middle" fill="#b81f42" font-size="14" font-weight="700">Risk</text>
+  <text x="721" y="117" text-anchor="middle" fill="#d6294e" font-size="11">likelihood × severity</text>
+
+  <!-- 6 output -->
+  <rect x="810" y="60" width="134" height="84" rx="12" fill="#d6294e" filter="url(#afsh)"/>
+  <text x="877" y="96" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">Assessment</text>
+  <text x="877" y="115" text-anchor="middle" fill="#f6c9d3" font-size="11">trail + findings</text>
+
+  <!-- arrows -->
+  <line x1="164" y1="102" x2="184" y2="102" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#af)"/>
+  <line x1="320" y1="102" x2="340" y2="102" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#af)"/>
+  <line x1="476" y1="102" x2="496" y2="102" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#af)"/>
+  <line x1="632" y1="102" x2="652" y2="102" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#af)"/>
+  <line x1="788" y1="102" x2="808" y2="102" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#af)"/>
+
+  <text x="40" y="176" fill="#97a0b5" font-size="11">Data-sufficiency gate: missing a fact — either way — means <tspan fill="#6b7690" font-weight="600">ask</tspan>, don't confirm or drop a threat on a guess.</text>
+</svg>

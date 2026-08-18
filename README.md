@@ -7,6 +7,8 @@
 
 A keel is the single load-bearing member that keeps a hull upright and on course with the least material. That is the goal here too: the smallest opinionated structure that holds a GenAI threat model together and keeps an assessment on course.
 
+<p align="center"><img src="docs/img/ui-preview.svg" alt="Keel's review-first UI — the three-pane threat editor" width="860"></p>
+
 ## The problem
 
 The public GenAI threat corpora, OWASP LLM Top 10, MITRE ATLAS, and CSA MAESTRO, are references you read. They are taxonomies, adversary knowledge bases, and layered methodologies. None of them is a model you can run against a specific system, and none adapts to your organization without a large manual lift. So every team re-derives the same threats from scratch, in prose, inconsistently, and ends up with a document that ages on a wiki instead of a model that takes part in review.
@@ -22,6 +24,18 @@ Keel is the operational layer that is missing: a compact, opinionated representa
 | **3. The assessor** | skills that turn the static model into a repeatable pass over a real system (data-sufficiency gate, per-threat chain, delta, two-part output) | What makes the model runnable: read versus run |
 
 The reference model is deliberately small: the catalog is a floor, not a ceiling. Keel's value is the shape and the assessor, not a claim to enumerate every GenAI threat.
+
+## Quickstart — run your first assessment
+
+The point of Keel is to *run* it against a real system. With the MCP connected to your agent:
+
+1. **Start Keel** as an MCP server (see [Run](#run)), or point your MCP client at the bundled `.mcp.json` — it exposes the tools as `mcp__keel__*`.
+2. **Ask your agent** (Claude Code, or any agent that has the `.claude/skills/` and the MCP): *"Assess the GenAI security of \<describe your system\>."* The `assess-genai-with-library` skill walks your system against the catalog — matching weaknesses, ruling out unreachable paths, and checking which mitigations you already have.
+3. **Read the two-part output:** an auditable analysis trail, then a final risk assessment — findings tied to your architecture, the controls you have versus the gaps, and a delta against MITRE ATLAS.
+
+<p align="center"><img src="docs/img/assessment-flow.svg" alt="How an assessment runs: your system → candidate threats → reachability filter → mitigations and implementations → risk → the two-part assessment" width="860"></p>
+
+No system to assess yet? Open the browse UI at `http://localhost:8000/` to explore the model first.
 
 ## Why not just OWASP, ATLAS, or MAESTRO
 
@@ -42,6 +56,8 @@ Keel works a different axis from the frameworks above. It makes the language ope
 - It is built to grow. Each team extends and prunes it into its own living model, carrying its edits forward as its systems change. Per-organization state (mark a threat not applicable, a mitigation already implemented) is on the roadmap.
 
 ## The model
+
+<p align="center"><img src="docs/img/threat-spine.svg" alt="How a threat is assembled: source and surface reach a weakness at a component, the threat rests on it and leads to a harm, ruled out by reachability and addressed by mitigations and implementations" width="860"></p>
 
 Four entities, nothing more:
 
