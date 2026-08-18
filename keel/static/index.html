@@ -183,6 +183,18 @@
   }
   .field.has-err > .slabel::after { background: var(--crimson-600); }
   .field.has-adv > .slabel::after { background: var(--amber); }
+  /* The title/name field has no .slabel — hang its dot off the .did line instead. */
+  .dtitle.field.has-err .did::after, .dtitle.field.has-adv .did::after {
+    content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: middle;
+  }
+  .dtitle.field.has-err .did::after { background: var(--crimson-600); }
+  .dtitle.field.has-adv .did::after { background: var(--amber); }
+  /* A collapsed repeatable card hiding an errored field still shows an error marker. */
+  .ecard.collapsed.has-err { border-color: var(--crimson-200); }
+  .ecard.collapsed.has-err .ecard-sum::after {
+    content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--crimson-600); margin-left: 8px; vertical-align: middle;
+  }
 
   /* ------ view toggle ------ */
   .vtoggle { display: inline-flex; border: 1px solid var(--navy-200); border-radius: 8px; overflow: hidden; }
@@ -269,8 +281,8 @@
 <body>
 <aside>
   <nav class="screens" id="screens">
-    <button data-screen="overview">Overview</button>
-    <button data-screen="threats" class="on">Threats</button>
+    <button data-screen="overview" class="on">Overview</button>
+    <button data-screen="threats">Threats</button>
     <button data-screen="mitigations">Mitigations</button>
     <button data-screen="style">Style guide</button>
   </nav>
@@ -316,7 +328,7 @@ const state = {
   validation: { errors: [], advice: [] },  // last /threats/validate result
   view: "structure",    // editor view: "structure" | "yaml"
   config: { repo_url: "" },  // GET /config
-  screen: "threats",    // top-level screen: "overview" | "threats" | "mitigations" | "style"
+  screen: "overview",   // top-level screen: "overview" | "threats" | "mitigations" | "style"
   coverage: null,       // GET /style-guide/coverage
   health: null,         // GET /health/library — { stats, style_guide_coverage, issues, issue_count }
   railMode: "preview",  // threats right rail: "preview" | "guidance"
@@ -1051,6 +1063,28 @@ async function validateDraft() {
   renderPreview();   // insights strip reads state.validation.advice
 }
 
+// An errored field can live inside a collapsed repeatable card, where its own
+// .field wrapper is not in the DOM. Mark the collapsed card's head so the error is
+// not silently hidden. Covers the threat (weaknesses/references) and mitigation
+// (validation/faq) card kinds; clears stale marks first.
+function markCollapsedCards(errors) {
+  document.querySelectorAll(".ecard.collapsed.has-err").forEach(c => c.classList.remove("has-err"));
+  const sel = {
+    weaknesses: p => `.wk-card.collapsed[data-widx="${CSS.escape(p)}"]`,
+    references: p => `.ref-card.collapsed[data-ridx="${CSS.escape(p)}"]`,
+    validation: p => `.validation-card.collapsed[data-idx="${CSS.escape(p)}"]`,
+    faq: p => `.faq-card.collapsed[data-idx="${CSS.escape(p)}"]`,
+  };
+  (errors || []).forEach(e => {
+    const parts = (e.field || "").split(".");
+    if (parts.length < 2) return;
+    const make = sel[parts[0]];
+    if (!make) return;
+    const card = document.querySelector(make(parts[1]));
+    if (card) card.classList.add("has-err");
+  });
+}
+
 // Map a dotted error path to the input's .field wrapper. Root/unmatched -> null.
 function fieldEl(path) {
   if (!path) return null;
@@ -1101,6 +1135,7 @@ function applyValidation() {
   };
   errors.forEach(e => place(e, "err"));    // identical text to the summary, inline
   advice.forEach(a => place(a, "adv"));    // amber only, never in the summary, never blocking
+  markCollapsedCards(errors);              // surface errors hidden inside collapsed cards
 
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) saveBtn.disabled = errors.length > 0 || state.view === "yaml";
@@ -1221,11 +1256,12 @@ async function saveThreat() {
 // escape hatch. Shared by the threat editor and the style-guide editor.
 function showSavedDialog(path) {
   const repo = (state.config && state.config.repo_url || "").replace(/\/+$/, "");
+  const p = esc(path);
   const editLink = repo
-    ? `<a href="${esc(repo)}/edit/main/${path}" target="_blank" rel="noopener">Edit on GitHub ↗</a>`
+    ? `<a href="${esc(repo)}/edit/main/${p}" target="_blank" rel="noopener">Edit on GitHub ↗</a>`
     : "";
   const el = document.getElementById("savedDialog");
-  el.innerHTML = `Saved to <code>${esc(path)}</code> — commit and open a pull request.
+  el.innerHTML = `Saved to <code>${p}</code> — commit and open a pull request.
     <div class="sd-actions">${editLink}<button class="sd-close" id="sdClose">Dismiss</button></div>`;
   el.classList.add("show");
   document.getElementById("sdClose").onclick = () => el.classList.remove("show");
@@ -1691,19 +1727,6 @@ function mitEnum(name) {
   if (Array.isArray(p.anyOf)) { for (const a of p.anyOf) if (Array.isArray(a.enum)) return a.enum; }
   return [];
 }
-
-// The mitigation edit form, grouped into readable sections. Each entry is a scalar
-// field with an input kind; the repeatable lists (anti_patterns/validation/faq) are
-// handled separately as .ecard cards. The read view groups by the same sections.
-const MIT_TEXT_FIELDS = [
-  ["purpose", "Purpose", "textarea", 3],
-  ["scope", "Scope", "textarea", 3],
-  ["control_mechanism", "Control mechanism", "textarea", 3],
-  ["failure_behavior", "Failure behavior", "textarea", 3],
-  ["formal_implementation_risk", "Risk of formal implementation", "textarea", 3],
-  ["review", "Review", "textarea", 2],
-  ["telemetry", "Telemetry", "textarea", 2],
-];
 
 // Which threats currently link a given mitigation (reverse index over state.threatMits).
 function threatsAddressing(mid) {
@@ -2243,6 +2266,7 @@ function applyMitValidation() {
     msg.textContent = item.msg;
     el.appendChild(msg);
   });
+  markCollapsedCards(errors);   // surface errors hidden inside collapsed cards
 }
 
 // Save: PATCH an existing mitigation, POST a new one. A failed request maps the
@@ -2339,7 +2363,8 @@ document.getElementById("main").addEventListener("focusout", () => {
     }, 0);
   }
 });
-boot().then(renderList).catch(e =>
+// Land on the Overview dashboard; switchScreen wires the rail/main/right and loads it.
+boot().then(() => switchScreen("overview")).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
 </script>
 </body>
