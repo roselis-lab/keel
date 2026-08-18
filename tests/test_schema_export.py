@@ -14,7 +14,21 @@ def test_threat_schema_has_frozen_vocab_enums():
 
 def test_build_schemas_covers_all_entities():
     schemas = build_schemas()
-    assert set(schemas) == {"threat", "mitigation", "weakness", "mitigation_link"}
+    assert set(schemas) == {
+        "threat", "mitigation", "weakness", "mitigation_link", "implementation",
+    }
+
+
+def test_implementation_schema_shape():
+    impl = build_schemas()["implementation"]
+    assert set(impl["properties"]) == {"title", "description", "reference"}
+    assert "title" in impl["required"]
+    assert "description" in impl["required"]
+
+
+def test_mitigation_schema_carries_implementations():
+    mitigation = build_schemas()["mitigation"]
+    assert "implementations" in mitigation["properties"]
 
 
 def test_write_and_check_roundtrip(tmp_path):

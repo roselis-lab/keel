@@ -1,0 +1,16 @@
+fields:
+  title:
+    purpose: The short label for how this org realizes the control — the "how it's done" name someone scans in a list.
+    content_requirements:
+    - A few words naming the concrete approach (e.g. "Platform-enforced tool sandbox").
+    - Specific to how you do it, not a restatement of the control's name.
+  description:
+    purpose: The concrete details of this implementation — enough for a reader to know what was actually built and how it works here.
+    content_requirements:
+    - Name the real components, services, or configuration that carry the control.
+    - Say what it does in your environment, not the control's theory.
+  reference:
+    purpose: A working link to the runbook, design doc, ticket, or code that backs this implementation. Optional.
+    content_requirements:
+    - A single URL that resolves.
+    - Point at the source of truth someone would open to verify or maintain it.

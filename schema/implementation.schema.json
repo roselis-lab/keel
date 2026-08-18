@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "description": "How an org realizes a control. Empty in the reference catalog; orgs fill it in.",
+  "properties": {
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "reference": {
+      "anyOf": [
+        {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reference"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "description"
+  ],
+  "title": "Implementation",
+  "type": "object"
+}

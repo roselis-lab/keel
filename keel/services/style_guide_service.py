@@ -11,7 +11,7 @@ from typing import Any
 
 import yaml as yaml_mod
 
-from keel.schemas.mitigation import MitigationCreate
+from keel.schemas.mitigation import Implementation, MitigationCreate
 from keel.schemas.style_guide import (
     CoverageReport,
     EntityCoverage,
@@ -33,7 +33,7 @@ SLOTS = (
     "avoid", "examples", "subfields", "allowed_values",
 )
 # Entities the style guide tracks, in display order.
-ENTITY_ORDER = ("threat", "weakness", "mitigation_link", "mitigation")
+ENTITY_ORDER = ("threat", "weakness", "mitigation_link", "mitigation", "implementation")
 
 # Fields covered by a sub-entity's own bar, so they are not repeated on the parent.
 _SUBENTITY_FIELDS = {"weaknesses", "mitigations"}
@@ -49,7 +49,10 @@ def _canonical_fields(entity_type: str) -> list[str]:
     if entity_type == "mitigation_link":
         return [f for f in MitigationLink.model_fields if f != "id"]
     if entity_type == "mitigation":
-        return [f for f in MitigationCreate.model_fields if f != "id"]
+        # implementations has its own bar, so it is not repeated on the parent.
+        return [f for f in MitigationCreate.model_fields if f not in ("id", "implementations")]
+    if entity_type == "implementation":
+        return list(Implementation.model_fields)
     return []
 
 
