@@ -17,9 +17,11 @@
   body {
     margin: 0; background: var(--bg); color: var(--navy-900);
     font: 14px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
-    display: grid; grid-template-columns: 340px 1fr; height: 100vh;
+    display: grid; grid-template-columns: 320px 1fr 360px; height: 100vh;
   }
   button { font-family: inherit; cursor: pointer; }
+
+  /* ------ left rail ------ */
   aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
   header {
     padding: 15px 18px; border-bottom: 1px solid var(--border);
@@ -27,12 +29,6 @@
   }
   header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
   header .count { color: var(--navy-400); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
-  .tabs { display: flex; padding: 10px 10px 0; gap: 4px; }
-  .tab {
-    flex: 1; padding: 8px 6px; text-align: center; border: 1px solid transparent;
-    border-radius: 8px 8px 0 0; color: var(--navy-500); font-size: 13px; user-select: none; background: none;
-  }
-  .tab.active { color: var(--navy-900); background: var(--tint); border-color: var(--border); border-bottom-color: var(--tint); font-weight: 600; }
   .search { padding: 10px 14px; border-bottom: 1px solid var(--border); }
   .search input {
     width: 100%; padding: 9px 11px; background: var(--tint); color: var(--navy-900);
@@ -45,58 +41,52 @@
   .row.active { background: var(--crimson-50); box-shadow: inset 3px 0 0 var(--crimson-600); }
   .row .rid { font-size: 11px; color: var(--navy-400); font-family: ui-monospace, "SFMono-Regular", monospace; }
   .row .rtitle { font-size: 13px; color: var(--navy-900); }
+
+  /* ------ badges ------ */
   .badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
   .badge { font-size: 10px; padding: 1px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
   .badge.soft { background: var(--navy-100); color: var(--navy-600); font-weight: 500; border-radius: 10px; }
-  .badge.type { background: var(--navy-200); color: var(--navy-700); text-transform: capitalize; }
-  .badge.req-MANDATORY { background: var(--crimson-600); color: #fff; }
-  .badge.req-RECOMMENDED { background: var(--navy-600); color: #fff; }
+  .badge.type { background: var(--navy-200); color: var(--navy-700); }
+  .badge.harm { background: var(--crimson-600); color: #fff; }
   .badge.tag { background: #eaf4ee; color: var(--green); }
+
+  /* ------ center editor ------ */
   main { overflow-y: auto; padding: 30px 40px; }
   .empty { color: var(--navy-400); margin-top: 22vh; text-align: center; }
-  .detail { max-width: 860px; }
+  .detail { max-width: 820px; }
   .dhead { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 20px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
-  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 20px; }
-  .dicon.threat { background: var(--crimson-600); }
-  .dicon.mit { background: var(--navy-700); }
+  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 20px; background: var(--crimson-600); }
   .dhead .dtitle { flex: 1; min-width: 0; }
   .dhead h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
   .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-400); font-size: 12px; margin-top: 4px; }
   .dhead .hbadges { margin-top: 8px; }
+  .hactions { display: flex; gap: 8px; flex-shrink: 0; }
   section { margin-top: 24px; }
   h3.slabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-700); margin: 0 0 9px; font-weight: 700; }
+  .slabel .sub { font-weight: 400; text-transform: none; color: var(--navy-400); }
   .prose { white-space: pre-wrap; color: var(--navy-700); font-size: 14px; line-height: 1.6; }
   .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
   .placeholder { color: var(--navy-400); font-style: italic; }
   .card { border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; margin-bottom: 10px; background: #fff; }
-  .card:hover { border-color: var(--navy-200); }
   .card .chead { display: flex; align-items: center; gap: 8px; }
   .card .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
-  .card .ctitle { font-weight: 600; color: var(--navy-900); background: none; border: none; padding: 0; font-size: 14px; }
-  .card .ctitle:hover { color: var(--crimson-600); }
+  .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
   .card .rationale { margin-top: 7px; color: var(--navy-500); font-size: 13px; font-style: italic; white-space: pre-wrap; }
   .card .cdesc { margin-top: 6px; color: var(--navy-600); font-size: 13px; white-space: pre-wrap; }
-  ul.impl { margin: 6px 0 0; padding-left: 0; list-style: none; }
-  ul.impl li { border-left: 2px solid var(--navy-200); padding: 2px 0 2px 10px; margin-bottom: 6px; }
-  ul.impl .iname { font-weight: 600; font-size: 13px; color: var(--navy-800); }
-  ul.impl .idesc { font-size: 13px; color: var(--navy-500); margin-top: 1px; white-space: pre-wrap; }
-  .collapse { margin-top: 10px; border-top: 1px solid var(--border2); padding-top: 9px; }
-  .collapse > button { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--navy-600); font-size: 12px; font-weight: 600; padding: 0; }
-  .collapse > button:hover { color: var(--crimson-600); }
+  ul.plain { margin: 6px 0 0; padding-left: 0; list-style: none; }
+  ul.plain li { border-left: 2px solid var(--navy-200); padding: 3px 0 3px 10px; margin-bottom: 7px; color: var(--navy-700); }
+  ul.plain li .meta { font-size: 11px; color: var(--navy-400); text-transform: uppercase; letter-spacing: .05em; }
 
-  /* buttons */
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; }
+  /* ------ buttons ------ */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
   .btn.primary { background: var(--crimson-600); color: #fff; }
   .btn.primary:hover { background: var(--crimson-700); }
   .btn.primary:disabled { opacity: .5; }
   .btn.ghost { background: var(--navy-100); color: var(--navy-700); }
   .btn.ghost:hover { background: var(--navy-200); }
   .btn.sm { padding: 4px 9px; font-size: 12px; }
-  .btn.danger { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
-  .btn.danger:hover { background: var(--crimson-200); }
-  .hactions { display: flex; gap: 8px; flex-shrink: 0; }
 
-  /* inputs */
+  /* ------ inputs ------ */
   input.f, textarea.f, select.f {
     width: 100%; border: 1px solid var(--navy-200); border-radius: 8px; padding: 8px 10px;
     font: inherit; font-size: 14px; color: var(--navy-900); background: #fff; outline: none;
@@ -104,70 +94,59 @@
   input.f:focus, textarea.f:focus, select.f:focus { border-color: var(--crimson-600); box-shadow: 0 0 0 3px var(--crimson-50); }
   textarea.f { resize: vertical; line-height: 1.55; }
   .titlein { font-size: 19px; font-weight: 700; }
-  .listeditor .lerow { display: flex; gap: 8px; margin-bottom: 7px; align-items: flex-start; }
-  .listeditor .lerow .grow { flex: 1; }
-  .rmx { border: 1px solid var(--border); background: #fff; color: var(--navy-400); border-radius: 8px; width: 32px; height: 32px; flex-shrink: 0; font-size: 15px; }
-  .rmx:hover { color: var(--crimson-600); border-color: var(--crimson-200); }
-  .addlink { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+  .checkset { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkset label {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px;
+    border: 1px solid var(--navy-200); border-radius: 8px; font-size: 13px; cursor: pointer; background: #fff;
+  }
+  .checkset label:hover { border-color: var(--crimson-200); }
+  .checkset input { accent-color: var(--crimson-600); }
   .hint { color: var(--navy-400); font-size: 12px; margin-top: 4px; }
+
+  /* ------ right preview ------ */
+  #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+  #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
+
+  /* ------ toast ------ */
   .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(20,30,60,.2); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.err { background: var(--crimson-700); }
-  .sg-entity { margin-bottom: 30px; }
-  .sg-entity > .ename { font-size: 16px; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .sg-field { padding: 14px 0; border-bottom: 1px solid var(--border2); }
-  .sg-field .fhead { display: flex; align-items: center; gap: 8px; }
-  .sg-field .fname { font-family: ui-monospace, monospace; color: var(--crimson-700); font-size: 13px; font-weight: 600; }
-  .sg-field .slot { margin-top: 8px; }
-  .sg-field .stag { font-size: 10px; text-transform: uppercase; color: var(--navy-400); letter-spacing: .06em; font-weight: 700; }
-  .sg-field pre { margin: 3px 0 0; white-space: pre-wrap; font-family: inherit; font-size: 13px; color: var(--navy-700); background: var(--tint); border: 1px solid var(--border2); border-radius: 7px; padding: 8px 10px; }
-  .sg-field ul.slotlist { margin: 3px 0 0; padding-left: 18px; color: var(--navy-700); font-size: 13px; }
-  .sg-field ul.slotlist li { margin-bottom: 3px; }
 </style>
 </head>
 <body>
 <aside>
   <header>
-    <h1>Keel</h1>
+    <h1>Keel · Threats</h1>
     <span class="count" id="count"></span>
   </header>
-  <div class="tabs">
-    <button class="tab active" data-tab="threats">Threats</button>
-    <button class="tab" data-tab="mitigations">Mitigations</button>
-    <button class="tab" data-tab="style">Style Guide</button>
-  </div>
-  <div class="search"><input id="search" type="search" placeholder="Filter…" autocomplete="off"></div>
+  <div class="search"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
   <div class="list" id="list"></div>
 </aside>
-<main id="main"><div class="empty">Select an item from the list.</div></main>
+
+<main id="main"><div class="empty">Select a threat from the list.</div></main>
+
+<section id="preview"><p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div></section>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const MIT_CLASSES = ["gating_control", "detector", "process", "evidential_mitigation", "corrective"];
-const MIT_STATUS = ["draft", "verified"];
-const IMPACT_CLASSES = [
-  "decision-integrity", "data-confidentiality", "infrastructure-execution",
-  "resource-availability", "reputation-compliance", "recon-exposure",
-];
-const SG_LIST_SLOTS = ["content_requirements", "instructions", "avoid", "examples"];
-const SG_DICT_SLOTS = ["subfields", "allowed_values"];
-
+// ------------------------------------------------------------------ state --- //
 const state = {
-  tab: "threats", threats: [], mitigations: [], mitById: {}, threatsByMit: {},
-  style: null, selected: null, filter: "", editing: false, draft: null,
+  schema: { threat: null, weakness: null, mitigation_link: null },
+  style: null,
+  threats: [],          // brief list: [[id, title], ...]
+  mitById: {},          // id -> { id, name, mitigation_class }
+  selected: null,       // selected threat id
+  current: null,        // full threat record from GET /threats/{id}
+  filter: "",
+  editing: false,
+  draft: null,          // in-progress edits
 };
+window.state = state;   // exposed for smoke checks / debugging
 
+// ------------------------------------------------------------- helpers ----- //
 const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const proseList = arr => Array.isArray(arr) && arr.length
-  ? `<ul class="impl">${arr.map(x => `<li><div class="idesc" style="color:var(--navy-700);font-size:14px">${esc(x)}</div></li>`).join("")}</ul>` : "";
-function proseListEditor(field, items, placeholder) {
-  const rows = (items || []).map((v, i) => `
-    <div class="lerow">
-      <textarea class="f grow" data-list="${field}:${i}" rows="2" placeholder="${esc(placeholder)}">${esc(v)}</textarea>
-      <button class="rmx" data-list-rm="${field}:${i}" title="Remove">×</button>
-    </div>`).join("");
-  return `<div class="listeditor">${rows}<button class="btn ghost sm" data-list-add="${field}">+ Add item</button></div>`;
-}
+
 async function api(method, url, body) {
   const opt = { method, headers: {} };
   if (body !== undefined) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
@@ -178,6 +157,7 @@ async function api(method, url, body) {
   return data;
 }
 const j = url => api("GET", url);
+
 let toastTimer = null;
 function toast(msg, isErr) {
   const el = document.getElementById("toast");
@@ -185,512 +165,119 @@ function toast(msg, isErr) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.className = "toast", 2200);
 }
 
-async function load() {
-  const inc = f => f.map(x => "include=" + x).join("&");
-  const [tr, mi, sg] = await Promise.all([
-    j("/threats?brief=false&" + inc(["description", "impact_class", "vulnerability", "reachability", "tags", "mitigations"])),
-    j("/mitigations?brief=false&" + inc(["status", "purpose", "formal_implementation_risk", "review", "maintainer", "owner", "locus", "scope", "control_mechanism", "failure_behavior", "telemetry", "anti_patterns", "validation", "faq"])),
+// ------------------------------------------------------- schema readers ---- //
+// The form vocabularies come from the JSON Schema, never hardcoded.
+function resolveRef(rootSchema, ref) {
+  // ref like "#/$defs/Weakness"
+  const parts = ref.replace(/^#\//, "").split("/");
+  let node = rootSchema;
+  for (const p of parts) node = node && node[p];
+  return node;
+}
+// Resolve a property node, following an items.$ref one level if present.
+function itemSchema(rootSchema, prop) {
+  if (prop && prop.items && prop.items.$ref) return resolveRef(rootSchema, prop.items.$ref);
+  return prop && prop.items ? prop.items : prop;
+}
+// Enum values for a scalar prop (properties.harm) or an array-of-enum prop (properties.surface).
+function enumValues(rootSchema, prop) {
+  if (!prop) return [];
+  if (Array.isArray(prop.enum)) return prop.enum;
+  const it = itemSchema(rootSchema, prop);
+  return (it && Array.isArray(it.enum)) ? it.enum : [];
+}
+const threatProp = name => (state.schema.threat.properties || {})[name];
+const harmEnum = () => enumValues(state.schema.threat, threatProp("harm"));
+const surfaceEnum = () => enumValues(state.schema.threat, threatProp("surface"));
+const sourceEnum = () => enumValues(state.schema.threat, threatProp("source"));
+// Weakness component enum — resolved via the standalone weakness schema.
+const componentEnum = () => {
+  const wp = state.schema.weakness && state.schema.weakness.properties;
+  return wp && wp.component && Array.isArray(wp.component.enum) ? wp.component.enum : [];
+};
+
+// --------------------------------------------------------------- boot ------ //
+async function boot() {
+  const [sThreat, sWeak, sMitLink, style, tr, mi] = await Promise.all([
+    j("/schema/threat"),
+    j("/schema/weakness"),
+    j("/schema/mitigation_link"),
     j("/style-guide"),
+    j("/threats"),          // brief: { threats: [[id, title], ...], count }
+    j("/mitigations"),      // brief: { mitigations: [[id, name, class], ...], count }
   ]);
-  state.threats = tr.threats;
-  state.mitigations = mi.mitigations;
-  state.style = sg;
-  state.mitById = Object.fromEntries(mi.mitigations.map(m => [m.id, m]));
-  state.threatsByMit = {};
-  for (const t of tr.threats) for (const l of (t.mitigations || []))
-    (state.threatsByMit[l.mitigation_id] ??= []).push(t);
+  state.schema.threat = sThreat;
+  state.schema.weakness = sWeak;
+  state.schema.mitigation_link = sMitLink;
+  state.style = style;
+  state.threats = tr.threats || [];
+  state.mitById = Object.fromEntries(
+    (mi.mitigations || []).map(([id, name, mclass]) => [id, { id, name, mitigation_class: mclass }])
+  );
 }
 
-// ------------------------------------------------------------------ list --- //
-function setTab(tab) {
-  state.tab = tab; state.selected = null; state.editing = false; state.filter = "";
-  document.getElementById("search").value = "";
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
-  document.getElementById("main").innerHTML = state.tab === "style"
-    ? "" : '<div class="empty">Select an item from the list.</div>';
-  render();
-}
-function setTabQuiet(tab) {
-  state.tab = tab; state.filter = "";
-  document.getElementById("search").value = "";
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
-}
-
-function render() {
+// --------------------------------------------------------------- rail ------ //
+function renderList() {
   const el = document.getElementById("list");
   const f = state.filter.toLowerCase();
-  const hit = (...p) => p.join(" ").toLowerCase().includes(f);
-
-  if (state.tab === "style") {
-    el.innerHTML = ""; document.getElementById("count").textContent = "";
-    document.getElementById("main").innerHTML = renderStyle();
-    wireStyle();
-    return;
-  }
-  let items, html;
-  if (state.tab === "threats") {
-    items = state.threats.filter(t => hit(t.id, t.title, t.description));
-    html = items.map(t => `
-      <div class="row ${state.selected === t.id ? "active" : ""}" data-id="${esc(t.id)}">
-        <span class="rid">${esc(t.id)}</span>
-        <span class="rtitle">${esc(t.title)}</span>
-        <div class="badges">
-          ${t.impact_class ? `<span class="badge type">${esc(t.impact_class)}</span>` : ""}
-          ${(t.tags || []).map(x => `<span class="badge tag">${esc(x)}</span>`).join("")}
-          <span class="badge soft">${(t.mitigations || []).length} mitig.</span>
-          ${(t.vulnerability && t.vulnerability.length) ? "" : '<span class="badge soft" style="color:var(--crimson-600)">no vuln</span>'}
-        </div>
-      </div>`).join("");
-  } else {
-    items = state.mitigations.filter(m => hit(m.id, m.name, m.purpose, m.mitigation_class));
-    html = items.map(m => `
-      <div class="row ${state.selected === m.id ? "active" : ""}" data-id="${esc(m.id)}">
-        <span class="rid">${esc(m.id)}</span>
-        <span class="rtitle">${esc(m.name)}</span>
-        <div class="badges">
-          <span class="badge type">${esc((m.mitigation_class || "?").replace(/_/g, " "))}</span>
-          ${m.status ? `<span class="badge req-${esc(m.status)}">${esc(m.status)}</span>` : ""}
-        </div>
-      </div>`).join("");
-  }
-  el.innerHTML = html || '<div class="empty" style="margin-top:40px">No matches.</div>';
-  document.getElementById("count").textContent = items.length + " / " +
-    (state.tab === "threats" ? state.threats.length : state.mitigations.length);
+  const items = state.threats.filter(([id, title]) => (id + " " + (title || "")).toLowerCase().includes(f));
+  el.innerHTML = items.length ? items.map(([id, title]) => `
+    <div class="row ${state.selected === id ? "active" : ""}" data-id="${esc(id)}">
+      <span class="rid">${esc(id)}</span>
+      <span class="rtitle">${esc(title)}</span>
+    </div>`).join("") : '<div class="empty" style="margin-top:40px">No matches.</div>';
+  document.getElementById("count").textContent = items.length + " / " + state.threats.length;
   el.querySelectorAll(".row").forEach(r => r.onclick = () => select(r.dataset.id));
 }
 
-function select(id) {
+async function select(id) {
   state.selected = id; state.editing = false; state.draft = null;
-  render();
+  renderList();
+  try {
+    state.current = await j("/threats/" + encodeURIComponent(id));
+  } catch (e) {
+    state.current = null; toast(e.message, true);
+  }
   renderDetail();
+  renderPreview();
   document.getElementById("main").scrollTop = 0;
 }
-function jumpMit(id) { setTabQuiet("mitigations"); select(id); }
-function jumpThreat(id) { setTabQuiet("threats"); select(id); }
 
+// ------------------------------------------------------------- detail ------ //
+// The read view and schema-driven edit form arrive in the next task; for now the
+// centre pane just confirms the selection and shows the raw fetched record.
 function renderDetail() {
   const m = document.getElementById("main");
-  if (!state.selected) { m.innerHTML = '<div class="empty">Select an item from the list.</div>'; return; }
-  m.innerHTML = state.tab === "threats" ? renderThreat() : renderMitigation();
-  wireDetail();
-}
-
-// ---------------------------------------------------------------- threats --- //
-function renderThreat() {
-  const t = state.threats.find(x => x.id === state.selected);
-  if (!t) return '<div class="empty">Not found.</div>';
-  if (state.editing) return editThreat(t);
-
-  const mits = (t.mitigations || []).map(l => {
-    const mm = state.mitById[l.mitigation_id];
-    return `<div class="card">
-      <div class="chead">
-        <span class="cid">${esc(l.mitigation_id)}</span>
-        <button class="ctitle" data-jmit="${esc(l.mitigation_id)}">${esc(mm ? mm.name : "(missing)")}</button>
-        ${mm ? `<span class="badge type" style="margin-left:auto">${esc((mm.mitigation_class||"").replace(/_/g," "))}</span>
-                ${mm.status ? `<span class="badge req-${esc(mm.status)}">${esc(mm.status)}</span>` : ""}` : ""}
-      </div>
-      ${mm && mm.purpose ? `<div class="cdesc">${esc(mm.purpose)}</div>` : ""}
-      ${l.rationale ? `<div class="rationale">${esc(l.rationale)}</div>` : ""}
-    </div>`;
-  }).join("");
-
-  return `<div class="detail">
-    <div class="dhead">
-      <div class="dicon threat">▲</div>
-      <div class="dtitle">
-        <h2>${esc(t.title)}</h2>
-        <div class="did">${esc(t.id)} · ${(t.mitigations || []).length} mitigations</div>
-        <div class="hbadges badges">
-          ${t.impact_class ? `<span class="badge type">${esc(t.impact_class)}</span>` : '<span class="badge soft" style="color:var(--crimson-600)">no impact_class</span>'}
-          ${(t.tags || []).map(x => `<span class="badge tag">${esc(x)}</span>`).join("")}
-        </div>
-      </div>
-      <div class="hactions"><button class="btn ghost" id="editBtn">✎ Edit</button></div>
-    </div>
-    <section><h3 class="slabel">Description</h3>${
-      t.description ? `<div class="prose">${esc(t.description)}</div>` : '<div class="warn">Description is empty.</div>'}</section>
-    <section><h3 class="slabel">Vulnerability <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— how it's exploitable (pattern list)</span></h3>${
-      proseList(t.vulnerability) || '<div class="warn">Vulnerability not authored yet — this is the recognition anchor.</div>'}</section>
-    <section><h3 class="slabel">Reachability <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— when NOT a live path (carve-outs, un-mitigated)</span></h3>${
-      t.reachability ? `<div class="prose">${esc(t.reachability)}</div>`
-        : '<div class="warn">Reachability carve-outs not authored yet.</div>'}</section>
-    <section><h3 class="slabel">Mitigations (${(t.mitigations || []).length})</h3>${mits || '<p class="placeholder">None linked.</p>'}</section>
-  </div>`;
-}
-
-function editThreat(t) {
-  const d = state.draft;
-  const linked = new Set((t.mitigations || []).map(l => l.mitigation_id));
-  const avail = state.mitigations.filter(m => !linked.has(m.id));
-  const links = (t.mitigations || []).map(l => {
-    const mm = state.mitById[l.mitigation_id];
-    return `<div class="card">
-      <div class="chead">
-        <span class="cid">${esc(l.mitigation_id)}</span>
-        <span class="ctitle" style="cursor:default">${esc(mm ? mm.name : "(missing)")}</span>
-        <button class="btn sm danger" style="margin-left:auto" data-unlink="${esc(l.mitigation_id)}">Unlink</button>
-      </div>
-      <textarea class="f" rows="2" style="margin-top:8px" data-rat="${esc(l.mitigation_id)}"
-        placeholder="Rationale — why this mitigation addresses this threat">${esc(l.rationale)}</textarea>
-      <div class="hint">Rationale saves on blur.</div>
-    </div>`;
-  }).join("");
-
-  return `<div class="detail">
-    <div class="dhead">
-      <div class="dicon threat">▲</div>
-      <div class="dtitle" style="width:100%">
-        <input class="f titlein" id="f_title" value="${esc(d.title)}">
-        <div class="did" style="margin-top:6px">${esc(t.id)}</div>
-      </div>
-      <div class="hactions">
-        <button class="btn primary" id="saveBtn">✔ Save</button>
-        <button class="btn ghost" id="cancelBtn">Cancel</button>
-      </div>
-    </div>
-    <section><h3 class="slabel">Impact class</h3>
-      <select class="f" id="f_impact_class">
-        <option value="">(none)</option>
-        ${IMPACT_CLASSES.map(v => `<option value="${v}" ${v === d.impact_class ? "selected" : ""}>${v}</option>`).join("")}
-      </select></section>
-    <section><h3 class="slabel">Description</h3>
-      <textarea class="f" id="f_description" rows="4">${esc(d.description)}</textarea></section>
-    <section><h3 class="slabel">Vulnerability — how it's exploitable (pattern list)</h3>
-      ${proseListEditor("vulnerability", d.vulnerability, "One recognizable pattern: cause + where + weakness; injection/hallucination taken as given")}</section>
-    <section><h3 class="slabel">Reachability — when NOT a live path (carve-outs, un-mitigated)</h3>
-      <textarea class="f" id="f_reachability" rows="4" placeholder="NOT applicable if… — reachability + asset materiality only; don't re-negate the weakness">${esc(d.reachability)}</textarea></section>
-    <section><h3 class="slabel">Tags</h3>
-      <input class="f" id="f_tags" value="${esc((d.tags || []).join(", "))}" placeholder="comma, separated">
-      <div class="hint">Comma-separated. e.g. Vibe-Coding</div></section>
-    <section><h3 class="slabel">Mitigations (${(t.mitigations || []).length})</h3>
-      ${links || '<p class="placeholder">None linked.</p>'}
-      <div class="card" style="background:var(--tint)">
-        <div class="stag" style="font-size:10px;color:var(--navy-500);text-transform:uppercase;font-weight:700">Link a mitigation</div>
-        <div class="addlink">
-          <select class="f" id="linkSel" style="flex:1">
-            ${avail.map(m => `<option value="${esc(m.id)}">${esc(m.id)} — ${esc(m.name)}</option>`).join("")}
-          </select>
-          <button class="btn ghost" id="addLinkBtn" ${avail.length ? "" : "disabled"}>+ Link</button>
-        </div>
-      </div>
-    </section>
-  </div>`;
-}
-
-// ------------------------------------------------------------ mitigations --- //
-function renderMitigation() {
-  const m = state.mitById[state.selected];
-  if (!m) return '<div class="empty">Not found.</div>';
-  if (state.editing) return editMitigation(m);
-
-  const sec = (label, val, hint) => val
-    ? `<section><h3 class="slabel">${label}${hint ? ` <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— ${hint}</span>` : ""}</h3><div class="prose">${esc(val)}</div></section>`
-    : "";
-  const listSec = (label, arr) => (Array.isArray(arr) && arr.length)
-    ? `<section><h3 class="slabel">${label}</h3><ul class="impl">${arr.map(x => `<li>${esc(typeof x === "string" ? x : JSON.stringify(x))}</li>`).join("")}</ul></section>`
-    : "";
-  const valSec = (Array.isArray(m.validation) && m.validation.length)
-    ? `<section><h3 class="slabel">Validation</h3>${m.validation.map(v => `<div class="card">
-        <div class="iname">${esc(v.criterion || "")}</div>
-        ${v.test_scenario ? `<div class="idesc"><b>Test:</b> ${esc(v.test_scenario)}</div>` : ""}
-        ${v.expected_result ? `<div class="idesc"><b>Expected:</b> ${esc(v.expected_result)}</div>` : ""}</div>`).join("")}</section>`
-    : "";
-  const faqSec = (Array.isArray(m.faq) && m.faq.length)
-    ? `<section><h3 class="slabel">FAQ</h3>${m.faq.map(f => `<div class="card">
-        <div class="iname">${esc(f.question || "")}</div>
-        <div class="idesc">${esc(f.answer || "")}</div></div>`).join("")}</section>`
-    : "";
-  const ownership = [m.maintainer && ("Maintainer: " + m.maintainer), m.owner && ("Owner: " + m.owner)].filter(Boolean).join(" · ");
-  const threats = state.threatsByMit[m.id] || [];
-  const tlist = threats.length ? threats.map(t => `<div class="card">
-      <div class="chead"><span class="cid">${esc(t.id)}</span>
-        <button class="ctitle" data-jthreat="${esc(t.id)}">${esc(t.title)}</button></div></div>`).join("")
-    : '<p class="placeholder">Not linked to any threat.</p>';
-
-  return `<div class="detail">
-    <div class="dhead">
-      <div class="dicon mit">◆</div>
-      <div class="dtitle">
-        <h2>${esc(m.name)}</h2>
-        <div class="did">${esc(m.id)}</div>
-        <div class="hbadges badges">
-          <span class="badge type">${esc((m.mitigation_class || "?").replace(/_/g, " "))}</span>
-          ${m.status ? `<span class="badge req-${esc(m.status)}">${esc(m.status)}</span>` : ""}
-        </div>
-      </div>
-      <div class="hactions"><button class="btn ghost" id="editBtn">✎ Edit</button></div>
-    </div>
-    ${m.purpose ? sec("Purpose", m.purpose) : '<section><h3 class="slabel">Purpose</h3><div class="warn">Purpose is empty.</div></section>'}
-    ${sec("Risk of formal implementation", m.formal_implementation_risk, "what a useless-but-mitigation-looking build looks like")}
-    ${sec("Scope", m.scope, "deterministic applicability rule + boundary")}
-    ${sec("Control mechanism", m.control_mechanism, "read per class")}
-    ${sec("Failure behavior", m.failure_behavior, "read per class")}
-    ${sec("Telemetry & attribution", m.telemetry)}
-    ${listSec("Anti-patterns — what does NOT count", m.anti_patterns)}
-    ${valSec}
-    ${faqSec}
-    ${sec("Locus", m.locus)}
-    ${sec("Review", m.review)}
-    ${ownership ? sec("Ownership", ownership) : ""}
-    <section><h3 class="slabel">Addresses threats (${threats.length})</h3>${tlist}</section>
-  </div>`;
-}
-
-function editMitigation(m) {
-  const d = state.draft;
-  const opt = (arr, cur) => arr.map(v => `<option value="${v}" ${v === cur ? "selected" : ""}>${v.replace(/_/g, " ")}</option>`).join("");
-
-  return `<div class="detail">
-    <div class="dhead">
-      <div class="dicon mit">◆</div>
-      <div class="dtitle" style="width:100%">
-        <input class="f titlein" id="f_name" value="${esc(d.name)}">
-        <div class="did" style="margin-top:6px">${esc(m.id)}</div>
-      </div>
-      <div class="hactions">
-        <button class="btn primary" id="saveBtn">✔ Save</button>
-        <button class="btn ghost" id="cancelBtn">Cancel</button>
-      </div>
-    </div>
-    <section style="display:flex;gap:14px">
-      <div style="flex:1"><h3 class="slabel">Mitigation class</h3>
-        <select class="f" id="f_class">${opt(MIT_CLASSES, d.mitigation_class)}</select></div>
-      <div style="flex:1"><h3 class="slabel">Status</h3>
-        <select class="f" id="f_status"><option value="">(none)</option>${opt(MIT_STATUS, d.status)}</select></div>
-    </section>
-    <section><h3 class="slabel">Purpose <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— which class of failure it prevents</span></h3>
-      <textarea class="f" id="f_purpose" rows="3">${esc(d.purpose)}</textarea></section>
-    <section><h3 class="slabel">Scope</h3>
-      <textarea class="f" id="f_scope" rows="3" placeholder="Deterministic applicability rule + profiles + boundary">${esc(d.scope)}</textarea></section>
-    <section><h3 class="slabel">Control mechanism <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— read per class</span></h3>
-      <textarea class="f" id="f_control_mechanism" rows="5">${esc(d.control_mechanism)}</textarea></section>
-    <section><h3 class="slabel">Failure behavior <span style="font-weight:400;text-transform:none;color:var(--navy-400)">— read per class</span></h3>
-      <textarea class="f" id="f_failure_behavior" rows="3">${esc(d.failure_behavior)}</textarea></section>
-    <p class="hint">Telemetry, anti-patterns, validation, FAQ, review and ownership are authored in the catalog YAML.</p>
-  </div>`;
-}
-
-// ------------------------------------------------------------ style guide --- //
-function renderStyle() {
-  const sg = state.style;
-  if (!sg || !sg.entities) return '<div class="empty">No style guide.</div>';
-  const isEmpty = v => v == null || v === "" ||
-    (Array.isArray(v) && !v.length) || (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length);
-  const body = Object.entries(sg.entities).map(([entity, ent]) => {
-    const fields = Object.entries(ent.fields || {}).filter(([, f]) => !f.is_orphan);
-    return `<div class="sg-entity">
-      <div class="ename">${esc(entity)}</div>
-      ${fields.map(([fname, f]) => {
-        if (state.editing && state.draft && state.draft.key === entity + "::" + fname) return editStyleField(entity, fname);
-        const slots = ["purpose", ...SG_LIST_SLOTS, ...SG_DICT_SLOTS].filter(s => !isEmpty(f[s]));
-        return `<div class="sg-field">
-          <div class="fhead"><span class="fname">${esc(fname)}</span>
-            <button class="btn ghost sm" style="margin-left:auto" data-sgedit="${esc(entity)}::${esc(fname)}">✎ Edit</button></div>
-          ${slots.length ? slots.map(s => `<div class="slot"><div class="stag">${s}</div>${
-            s === "purpose" ? `<div class="prose" style="font-size:13px">${esc(f[s])}</div>`
-            : Array.isArray(f[s]) ? `<ul class="slotlist">${f[s].map(x => `<li>${esc(typeof x === "string" ? x : JSON.stringify(x))}</li>`).join("")}</ul>`
-            : `<pre>${esc(JSON.stringify(f[s], null, 2))}</pre>`}</div>`).join("")
-            : '<div class="slot placeholder" style="font-size:13px">— no methodology authored —</div>'}
-        </div>`;
-      }).join("")}
-    </div>`;
-  }).join("");
-  return `<div class="detail"><h2 style="margin:0 0 6px">Style Guide</h2>
-    <p class="hint" style="margin-bottom:14px">Authoring methodology per entity field. Edits here bypass MCP's guided flow.</p>
-    ${body || '<p class="placeholder">Empty.</p>'}</div>`;
-}
-
-function editStyleField(entity, fname) {
-  const d = state.draft;
-  const listEditor = (slot) => {
-    const rows = (d[slot] || []).map((v, idx) => `
-      <div class="lerow"><input class="f grow" data-sg-item="${slot}:${idx}" value="${esc(v)}">
-        <button class="rmx" data-sg-rm="${slot}:${idx}">×</button></div>`).join("");
-    return `<div class="slot listeditor"><div class="stag">${slot}</div>
-      ${rows}<button class="btn ghost sm" data-sg-add="${slot}">+ Add</button></div>`;
-  };
-  return `<div class="sg-field" style="background:var(--tint);border-radius:10px;padding:14px 16px">
-    <div class="fhead"><span class="fname">${esc(fname)}</span>
-      <div class="hactions" style="margin-left:auto">
-        <button class="btn primary sm" data-sgsave>✔ Save</button>
-        <button class="btn ghost sm" data-sgcancel>Cancel</button></div></div>
-    <div class="slot"><div class="stag">purpose</div>
-      <textarea class="f" data-sg-purpose rows="2">${esc(d.purpose || "")}</textarea></div>
-    ${SG_LIST_SLOTS.map(listEditor).join("")}
-    ${SG_DICT_SLOTS.map(slot => `<div class="slot"><div class="stag">${slot} (JSON)</div>
-      <textarea class="f" data-sg-json="${slot}" rows="3" style="font-family:ui-monospace,monospace;font-size:12px">${
-        d[slot] ? esc(JSON.stringify(d[slot], null, 2)) : ""}</textarea></div>`).join("")}
-  </div>`;
-}
-
-// --------------------------------------------------------------- wiring ---- //
-function wireDetail() {
-  document.querySelectorAll("[data-jmit]").forEach(e => e.onclick = () => jumpMit(e.dataset.jmit));
-  document.querySelectorAll("[data-jthreat]").forEach(e => e.onclick = () => jumpThreat(e.dataset.jthreat));
-  const editBtn = document.getElementById("editBtn");
-  if (editBtn) editBtn.onclick = () => enterEdit();
-  const cancelBtn = document.getElementById("cancelBtn");
-  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; renderDetail(); };
-  const saveBtn = document.getElementById("saveBtn");
-  if (saveBtn) saveBtn.onclick = () => (state.tab === "threats" ? saveThreat() : saveMitigation());
-
-  if (state.tab === "threats" && state.editing) wireThreatEdit();
-  if (state.tab === "mitigations" && state.editing) wireMitEdit();
-}
-
-function enterEdit() {
-  if (state.tab === "threats") {
-    const t = state.threats.find(x => x.id === state.selected);
-    state.draft = {
-      title: t.title || "", description: t.description || "",
-      impact_class: t.impact_class || "", vulnerability: [...(t.vulnerability || [])],
-      reachability: t.reachability || "", tags: [...(t.tags || [])],
-    };
-  } else {
-    const m = state.mitById[state.selected];
-    state.draft = {
-      name: m.name || "", mitigation_class: m.mitigation_class || MIT_CLASSES[0],
-      status: m.status || "", purpose: m.purpose || "", scope: m.scope || "",
-      control_mechanism: m.control_mechanism || "", failure_behavior: m.failure_behavior || "",
-    };
+  const t = state.current;
+  if (!state.selected || !t) {
+    m.innerHTML = '<div class="empty">Select a threat from the list.</div>';
+    return;
   }
-  state.editing = true;
-  renderDetail();
+  m.innerHTML = `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">▲</div>
+      <div class="dtitle"><h2>${esc(t.title)}</h2><div class="did">${esc(t.id)}</div></div>
+    </div>
+    <section><p class="placeholder">— threat read view &amp; editor (next task) —</p></section>
+  </div>`;
 }
 
-function wireThreatEdit() {
-  const d = state.draft;
-  const bind = (id, key) => { const e = document.getElementById(id); if (e) e.oninput = () => d[key] = e.value; };
-  bind("f_title", "title"); bind("f_description", "description"); bind("f_reachability", "reachability");
-  const ic = document.getElementById("f_impact_class"); if (ic) ic.onchange = () => d.impact_class = ic.value;
-  // vulnerability prose-list editor
-  document.querySelectorAll("[data-list]").forEach(e => e.oninput = () => {
-    const [f, i] = e.dataset.list.split(":"); d[f][+i] = e.value;
-  });
-  document.querySelectorAll("[data-list-rm]").forEach(b => b.onclick = () => {
-    const [f, i] = b.dataset.listRm.split(":"); d[f].splice(+i, 1); renderDetail();
-  });
-  document.querySelectorAll("[data-list-add]").forEach(b => b.onclick = () => { d[b.dataset.listAdd].push(""); renderDetail(); });
-  const tags = document.getElementById("f_tags");
-  if (tags) tags.oninput = () => d.tags = tags.value.split(",").map(s => s.trim()).filter(Boolean);
-  // link ops (immediate)
-  document.querySelectorAll("[data-rat]").forEach(ta => ta.onblur = () => saveRationale(ta.dataset.rat, ta.value));
-  document.querySelectorAll("[data-unlink]").forEach(b => b.onclick = () => unlink(b.dataset.unlink));
-  const addBtn = document.getElementById("addLinkBtn");
-  if (addBtn) addBtn.onclick = () => { const sel = document.getElementById("linkSel"); if (sel && sel.value) linkMit(sel.value); };
-}
-
-function wireMitEdit() {
-  const d = state.draft;
-  const bind = (id, key) => { const e = document.getElementById(id); if (e) e.oninput = () => d[key] = e.value; };
-  bind("f_name", "name"); bind("f_purpose", "purpose"); bind("f_scope", "scope");
-  bind("f_control_mechanism", "control_mechanism"); bind("f_failure_behavior", "failure_behavior");
-  const cl = document.getElementById("f_class"); if (cl) cl.onchange = () => d.mitigation_class = cl.value;
-  const st = document.getElementById("f_status"); if (st) st.onchange = () => d.status = st.value;
-}
-
-function wireStyle() {
-  document.querySelectorAll("[data-sgedit]").forEach(b => b.onclick = () => {
-    const [entity, fname] = b.dataset.sgedit.split("::");
-    const f = state.style.entities[entity].fields[fname];
-    state.draft = {
-      key: entity + "::" + fname, entity, fname,
-      purpose: f.purpose || "",
-      content_requirements: [...(f.content_requirements || [])],
-      instructions: [...(f.instructions || [])], avoid: [...(f.avoid || [])], examples: [...(f.examples || [])],
-      subfields: f.subfields || null, allowed_values: f.allowed_values || null,
-    };
-    state.editing = true; render();
-  });
-  if (!state.editing || !state.draft) return;
-  const d = state.draft;
-  const p = document.querySelector("[data-sg-purpose]"); if (p) p.oninput = () => d.purpose = p.value;
-  document.querySelectorAll("[data-sg-item]").forEach(e => e.oninput = () => {
-    const [slot, idx] = e.dataset.sgItem.split(":"); d[slot][+idx] = e.value;
-  });
-  document.querySelectorAll("[data-sg-rm]").forEach(b => b.onclick = () => {
-    const [slot, idx] = b.dataset.sgRm.split(":"); d[slot].splice(+idx, 1); render();
-  });
-  document.querySelectorAll("[data-sg-add]").forEach(b => b.onclick = () => { d[b.dataset.sgAdd].push(""); render(); });
-  document.querySelectorAll("[data-sg-json]").forEach(e => e.oninput = () => d["_raw_" + e.dataset.sgJson] = e.value);
-  const sv = document.querySelector("[data-sgsave]"); if (sv) sv.onclick = () => saveStyleField();
-  const cx = document.querySelector("[data-sgcancel]"); if (cx) cx.onclick = () => { state.editing = false; state.draft = null; render(); };
-}
-
-// --------------------------------------------------------------- saves ---- //
-async function refresh() { await load(); }
-
-async function saveThreat() {
-  const d = state.draft;
-  const clean = a => (a || []).map(s => s.trim()).filter(Boolean);
-  const body = {
-    title: d.title, description: d.description,
-    vulnerability: clean(d.vulnerability), reachability: d.reachability, tags: d.tags,
-  };
-  // impact_class is a strict enum: send only when set (empty "" would fail Literal validation).
-  if (d.impact_class) body.impact_class = d.impact_class;
-  try {
-    await api("PATCH", "/threats/" + encodeURIComponent(state.selected), body);
-    await refresh(); state.editing = false; state.draft = null;
-    render(); renderDetail(); toast("Threat saved");
-  } catch (e) { toast(e.message, true); }
-}
-
-async function saveRationale(mid, rationale) {
-  try { await api("PUT", `/threats/${encodeURIComponent(state.selected)}/mitigations/${encodeURIComponent(mid)}`, { rationale }); await refresh(); toast("Rationale saved"); }
-  catch (e) { toast(e.message, true); }
-}
-async function unlink(mid) {
-  try { await api("DELETE", `/threats/${encodeURIComponent(state.selected)}/mitigations/${encodeURIComponent(mid)}`); await refresh(); renderDetail(); toast("Unlinked"); }
-  catch (e) { toast(e.message, true); }
-}
-async function linkMit(mid) {
-  try { await api("PUT", `/threats/${encodeURIComponent(state.selected)}/mitigations/${encodeURIComponent(mid)}`, { rationale: "" }); await refresh(); renderDetail(); toast("Linked"); }
-  catch (e) { toast(e.message, true); }
-}
-
-async function saveMitigation() {
-  const d = state.draft;
-  const body = {
-    name: d.name, mitigation_class: d.mitigation_class,
-    purpose: d.purpose, scope: d.scope,
-    control_mechanism: d.control_mechanism, failure_behavior: d.failure_behavior,
-  };
-  if (d.status) body.status = d.status;
-  try {
-    await api("PATCH", "/mitigations/" + encodeURIComponent(state.selected), body);
-    await refresh(); state.editing = false; state.draft = null;
-    render(); renderDetail(); toast("Mitigation saved");
-  } catch (e) { toast(e.message, true); }
-}
-
-async function saveStyleField() {
-  const d = state.draft;
-  const patch = {
-    purpose: d.purpose || null,
-    content_requirements: d.content_requirements, instructions: d.instructions,
-    avoid: d.avoid, examples: d.examples,
-  };
-  for (const slot of SG_DICT_SLOTS) {
-    const raw = d["_raw_" + slot];
-    if (raw === undefined) { patch[slot] = d[slot]; continue; }
-    const trimmed = raw.trim();
-    if (!trimmed) { patch[slot] = null; continue; }
-    try { patch[slot] = JSON.parse(trimmed); }
-    catch { toast(`${slot}: invalid JSON`, true); return; }
+// ------------------------------------------------------------- preview ----- //
+// Populated in a later task; for now it mirrors the selected threat's id/title.
+function renderPreview() {
+  const el = document.getElementById("preview");
+  if (!state.current) {
+    el.innerHTML = '<p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div>';
+    return;
   }
-  try {
-    await api("PATCH", `/style-guide/${encodeURIComponent(d.entity)}/${encodeURIComponent(d.fname)}`, patch);
-    state.style = await j("/style-guide");
-    state.editing = false; state.draft = null; render(); toast("Style field saved");
-  } catch (e) { toast(e.message, true); }
+  el.innerHTML = `<p class="ptitle">Preview</p>
+    <div class="card"><div class="chead"><span class="cid">${esc(state.current.id)}</span></div>
+    <div class="cdesc">${esc(state.current.title)}</div></div>`;
 }
 
-// --------------------------------------------------------------- boot ----- //
-document.querySelectorAll(".tab").forEach(t => t.onclick = () => setTab(t.dataset.tab));
-document.getElementById("search").oninput = e => { state.filter = e.target.value; render(); };
-load().then(render).catch(e =>
+// --------------------------------------------------------------- start ----- //
+document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
+boot().then(renderList).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
 </script>
 </body>
