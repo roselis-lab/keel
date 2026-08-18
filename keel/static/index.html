@@ -103,6 +103,29 @@
   .checkset input { accent-color: var(--crimson-600); }
   .hint { color: var(--navy-400); font-size: 12px; margin-top: 4px; }
 
+  /* ------ repeatable editor cards (weaknesses, mitigation links) ------ */
+  .ecard { position: relative; border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; background: var(--tint); }
+  .ecard .field + .field { margin-top: 12px; }
+  .cardx { position: absolute; top: 9px; right: 11px; border: none; background: none; color: var(--navy-400); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .cardx:hover { background: var(--crimson-50); color: var(--crimson-600); }
+  .ml-head { display: flex; align-items: center; gap: 8px; padding-right: 22px; }
+  .ml-head .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
+  .ml-head .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
+  .link-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .link-row select { flex: 1; }
+
+  /* ------ inline style-guide bar ------ */
+  .field { position: relative; }
+  .sg-hint { color: var(--navy-500); font-size: 12px; margin: 0 0 5px; }
+  .sg-panel { display: none; margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--navy-200); border-radius: 8px; font-size: 12px; }
+  .sg-panel.show { display: block; }
+  .sg-sec { margin-bottom: 8px; }
+  .sg-sec:last-child { margin-bottom: 0; }
+  .sg-k { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 10px; color: var(--navy-600); margin-bottom: 3px; }
+  .sg-panel ul { margin: 0; padding-left: 16px; color: var(--navy-600); }
+  .sg-panel ul li { margin-bottom: 2px; }
+  .sg-ex { color: var(--navy-700); font-style: italic; margin: 0 0 5px; }
+
   /* ------ right preview ------ */
   #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
   #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
@@ -194,6 +217,16 @@ const sourceEnum = () => enumValues(state.schema.threat, threatProp("source"));
 const componentEnum = () => {
   const wp = state.schema.weakness && state.schema.weakness.properties;
   return wp && wp.component && Array.isArray(wp.component.enum) ? wp.component.enum : [];
+};
+// Weakness nature enum (targeted / secondary) — from the weakness schema.
+const natureEnum = () => {
+  const wp = state.schema.weakness && state.schema.weakness.properties;
+  return wp && wp.nature && Array.isArray(wp.nature.enum) ? wp.nature.enum : [];
+};
+// Mitigation-link strength enum (gating / soft) — from the mitigation_link schema.
+const strengthEnum = () => {
+  const mp = state.schema.mitigation_link && state.schema.mitigation_link.properties;
+  return mp && mp.strength && Array.isArray(mp.strength.enum) ? mp.strength.enum : [];
 };
 
 // --------------------------------------------------------------- boot ------ //
@@ -313,7 +346,6 @@ function readThreat(t) {
 // Edit form — built by walking the threat schema's field order.
 // Only the schema-simple fields are editable here; weakness/mitigation editors are deferred.
 const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", "tags"]);
-const PLACEHOLDER_FIELDS = { weaknesses: "weakness editor (next task)", mitigations: "mitigation link editor (next task)" };
 
 function editThreat(t) {
   const d = state.draft;
@@ -321,8 +353,9 @@ function editThreat(t) {
   const blocks = [];
   for (const name of order) {
     if (name === "id" || name === "title" || name === "references") continue;   // id/title fixed; references deferred
-    if (PLACEHOLDER_FIELDS[name]) {
-      blocks.push(`<section><h3 class="slabel">${esc(name)}</h3><p class="placeholder">— ${esc(PLACEHOLDER_FIELDS[name])} —</p></section>`);
+    if (name === "weaknesses") { blocks.push(weaknessesEditor()); continue; }
+    if (name === "mitigations") {
+      blocks.push('<section><h3 class="slabel">mitigations</h3><p class="placeholder">— mitigation link editor (next task) —</p></section>');
       continue;
     }
     if (!EDITABLE.has(name)) continue;
@@ -369,6 +402,35 @@ function fieldEditor(name, d) {
   return "";
 }
 
+// Weaknesses — repeatable cards bound to state.draft.weaknesses (an array).
+function weaknessesEditor() {
+  const ws = state.draft.weaknesses || [];
+  const comps = componentEnum();
+  const nats = natureEnum();
+  const cards = ws.map((w, i) => {
+    const compOpts = comps.map(c => `<option value="${esc(c)}" ${c === w.component ? "selected" : ""}>${esc(c)}</option>`).join("");
+    const natOpts = nats.map(n => `<option value="${esc(n)}" ${n === w.nature ? "selected" : ""}>${esc(n)}</option>`).join("");
+    return `<div class="ecard wk-card" data-widx="${i}">
+      <button class="cardx wk-remove" data-widx="${i}" title="Remove weakness">✕</button>
+      <div class="field" data-entity="weakness" data-field="component">
+        <h3 class="slabel">Component</h3>
+        <select class="f wk-component" data-widx="${i}">${compOpts}</select>
+      </div>
+      <div class="field" data-entity="weakness" data-field="text">
+        <h3 class="slabel">Text</h3>
+        <textarea class="f wk-text" data-widx="${i}" id="wk_text_${i}" rows="3" placeholder="cause + where + defect">${esc(w.text || "")}</textarea>
+      </div>
+      <div class="field" data-entity="weakness" data-field="nature">
+        <h3 class="slabel">Nature</h3>
+        <select class="f wk-nature" data-widx="${i}">${natOpts}</select>
+      </div>
+    </div>`;
+  }).join("");
+  return `<section><h3 class="slabel">Weaknesses <span class="sub">— architectural conditions</span></h3>
+    ${cards}
+    <button class="btn ghost" id="addWeakness">+ Add weakness</button></section>`;
+}
+
 // --------------------------------------------------------------- wiring ---- //
 function wireDetail() {
   const editBtn = document.getElementById("editBtn");
@@ -389,6 +451,9 @@ function enterEdit() {
     source: [...(t.source || [])],
     reachability: t.reachability || "",
     tags: [...(t.tags || [])],
+    weaknesses: (t.weaknesses || []).map(w => ({
+      component: w.component, text: w.text || "", nature: w.nature || "targeted",
+    })),
   };
   state.editing = true;
   renderDetail();
@@ -409,6 +474,28 @@ function wireThreatEdit() {
     if (cb.checked) set.add(cb.value); else set.delete(cb.value);
     d[cb.dataset.set] = [...set];
   });
+  wireWeaknesses();
+}
+
+// Weakness cards edit state.draft.weaknesses in place; add/remove re-renders.
+function wireWeaknesses() {
+  const d = state.draft;
+  document.querySelectorAll(".wk-card").forEach(card => {
+    const i = +card.dataset.widx;
+    const comp = card.querySelector(".wk-component");
+    const text = card.querySelector(".wk-text");
+    const nat = card.querySelector(".wk-nature");
+    if (comp) comp.onchange = () => d.weaknesses[i].component = comp.value;
+    if (text) text.oninput = () => d.weaknesses[i].text = text.value;
+    if (nat) nat.onchange = () => d.weaknesses[i].nature = nat.value;
+    const rm = card.querySelector(".wk-remove");
+    if (rm) rm.onclick = () => { d.weaknesses.splice(i, 1); renderDetail(); };
+  });
+  const add = document.getElementById("addWeakness");
+  if (add) add.onclick = () => {
+    d.weaknesses.push({ component: componentEnum()[0] || "", text: "", nature: "targeted" });
+    renderDetail();
+  };
 }
 
 // --------------------------------------------------------------- save ------ //
@@ -421,6 +508,7 @@ async function saveThreat() {
     source: d.source,
     reachability: d.reachability,
     tags: d.tags,
+    weaknesses: d.weaknesses,
   };
   try {
     await api("PATCH", "/threats/" + encodeURIComponent(state.selected), body);
