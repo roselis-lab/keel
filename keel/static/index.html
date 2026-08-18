@@ -343,6 +343,38 @@ function readThreat(t) {
   </div>`;
 }
 
+// ---------------------------------------------------- style-guide bar ------ //
+// Live guidance read from state.style.entities.<entity>.fields.<field>.
+// Missing entries degrade gracefully (empty string, no hint, no panel).
+function styleField(entity, field) {
+  const ents = state.style && state.style.entities;
+  const ent = ents && ents[entity];
+  return (ent && ent.fields && ent.fields[field]) || null;
+}
+// One-line hint (the field's purpose), shown above the input at all times.
+function sgHint(entity, field) {
+  const sf = styleField(entity, field);
+  return (sf && sf.purpose) ? `<div class="sg-hint">${esc(sf.purpose)}</div>` : "";
+}
+// Expandable guidance panel: Include / Avoid / first example (+ "use example").
+function sgPanel(entity, field, targetId) {
+  const sf = styleField(entity, field);
+  if (!sf) return "";
+  const list = (k, items) => `<div class="sg-sec"><span class="sg-k">${k}</span><ul>${
+    items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+  const parts = [];
+  if (sf.content_requirements && sf.content_requirements.length) parts.push(list("Include", sf.content_requirements));
+  if (sf.avoid && sf.avoid.length) parts.push(list("Avoid", sf.avoid));
+  if (sf.examples && sf.examples.length) {
+    const ex = sf.examples[0];
+    const btn = targetId
+      ? `<button type="button" class="btn ghost sm sg-useex" data-target="${esc(targetId)}" data-example="${esc(encodeURIComponent(ex))}">use example</button>`
+      : "";
+    parts.push(`<div class="sg-sec"><span class="sg-k">Example</span><div class="sg-ex">${esc(ex)}</div>${btn}</div>`);
+  }
+  return parts.length ? `<div class="sg-panel">${parts.join("")}</div>` : "";
+}
+
 // Edit form — built by walking the threat schema's field order.
 // Only the schema-simple fields are editable here; weakness/mitigation editors are deferred.
 const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", "tags"]);
@@ -362,9 +394,11 @@ function editThreat(t) {
   return `<div class="detail">
     <div class="dhead">
       <div class="dicon">▲</div>
-      <div class="dtitle" style="width:100%">
+      <div class="dtitle field" data-entity="threat" data-field="title" style="width:100%">
+        ${sgHint("threat", "title")}
         <input class="f titlein" id="f_title" value="${esc(d.title)}">
         <div class="did" style="margin-top:6px">${esc(t.id)}</div>
+        ${sgPanel("threat", "title", "f_title")}
       </div>
       <div class="hactions">
         <button class="btn primary" id="saveBtn">✔ Save</button>
@@ -376,25 +410,35 @@ function editThreat(t) {
 }
 
 function fieldEditor(name, d) {
+  // Each threat field is wrapped in a .field so the style-guide bar can attach.
+  const wrap = (label, inner, targetId, sub) =>
+    `<section class="field" data-entity="threat" data-field="${esc(name)}">
+      <h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>
+      ${sgHint("threat", name)}
+      ${inner}
+      ${sgPanel("threat", name, targetId)}
+    </section>`;
   if (name === "harm") {
     const opts = harmEnum().map(v => `<option value="${esc(v)}" ${v === d.harm ? "selected" : ""}>${esc(v)}</option>`).join("");
-    return `<section><h3 class="slabel">Harm</h3><select class="f" id="f_harm">${opts}</select></section>`;
+    return wrap("Harm", `<select class="f" id="f_harm">${opts}</select>`);
   }
   if (name === "surface" || name === "source") {
     const vals = name === "surface" ? surfaceEnum() : sourceEnum();
     const chosen = new Set(d[name] || []);
     const boxes = vals.map(v => `
       <label><input type="checkbox" data-set="${name}" value="${esc(v)}" ${chosen.has(v) ? "checked" : ""}>${esc(v)}</label>`).join("");
-    return `<section><h3 class="slabel">${esc(name)}</h3><div class="checkset">${boxes}</div></section>`;
+    return wrap(name, `<div class="checkset">${boxes}</div>`);
   }
   if (name === "reachability") {
-    return `<section><h3 class="slabel">Reachability <span class="sub">— NOT applicable if…</span></h3>
-      <textarea class="f" id="f_reachability" rows="4" placeholder="NOT applicable if…">${esc(d.reachability)}</textarea></section>`;
+    return wrap("Reachability",
+      `<textarea class="f" id="f_reachability" rows="4" placeholder="NOT applicable if…">${esc(d.reachability)}</textarea>`,
+      "f_reachability", "— NOT applicable if…");
   }
   if (name === "tags") {
-    return `<section><h3 class="slabel">Tags</h3>
-      <input class="f" id="f_tags" value="${esc((d.tags || []).join(", "))}" placeholder="comma, separated">
-      <div class="hint">Comma-separated.</div></section>`;
+    return wrap("Tags",
+      `<input class="f" id="f_tags" value="${esc((d.tags || []).join(", "))}" placeholder="comma, separated">
+       <div class="hint">Comma-separated.</div>`,
+      "f_tags");
   }
   return "";
 }
@@ -411,15 +455,21 @@ function weaknessesEditor() {
       <button class="cardx wk-remove" data-widx="${i}" title="Remove weakness">✕</button>
       <div class="field" data-entity="weakness" data-field="component">
         <h3 class="slabel">Component</h3>
+        ${sgHint("weakness", "component")}
         <select class="f wk-component" data-widx="${i}">${compOpts}</select>
+        ${sgPanel("weakness", "component")}
       </div>
       <div class="field" data-entity="weakness" data-field="text">
         <h3 class="slabel">Text</h3>
+        ${sgHint("weakness", "text")}
         <textarea class="f wk-text" data-widx="${i}" id="wk_text_${i}" rows="3" placeholder="cause + where + defect">${esc(w.text || "")}</textarea>
+        ${sgPanel("weakness", "text", "wk_text_" + i)}
       </div>
       <div class="field" data-entity="weakness" data-field="nature">
         <h3 class="slabel">Nature</h3>
+        ${sgHint("weakness", "nature")}
         <select class="f wk-nature" data-widx="${i}">${natOpts}</select>
+        ${sgPanel("weakness", "nature")}
       </div>
     </div>`;
   }).join("");
@@ -445,11 +495,15 @@ function mitigationsEditor() {
       </div>
       <div class="field" data-entity="mitigation_link" data-field="strength">
         <h3 class="slabel">Strength</h3>
+        ${sgHint("mitigation_link", "strength")}
         <select class="f ml-strength">${opts}</select>
+        ${sgPanel("mitigation_link", "strength")}
       </div>
       <div class="field" data-entity="mitigation_link" data-field="rationale">
         <h3 class="slabel">Rationale</h3>
+        ${sgHint("mitigation_link", "rationale")}
         <textarea class="f ml-rationale" id="ml_rat_${esc(l.id)}" rows="2" placeholder="why this control addresses this threat">${esc(l.rationale || "")}</textarea>
+        ${sgPanel("mitigation_link", "rationale", "ml_rat_" + l.id)}
       </div>
     </div>`;
   }).join("") : '<p class="placeholder">None linked.</p>';
@@ -509,6 +563,26 @@ function wireThreatEdit() {
   });
   wireWeaknesses();
   wireMitigations();
+  wireStyleGuide();
+}
+
+// Style-guide bar: expand a field's panel while any control inside it has focus;
+// "use example" writes the example text into the field's input/textarea.
+function wireStyleGuide() {
+  document.querySelectorAll(".field").forEach(f => {
+    const panel = f.querySelector(".sg-panel");
+    if (!panel) return;
+    f.addEventListener("focusin", () => panel.classList.add("show"));
+    f.addEventListener("focusout", e => { if (!f.contains(e.relatedTarget)) panel.classList.remove("show"); });
+  });
+  document.querySelectorAll(".sg-useex").forEach(b => b.onclick = () => {
+    const el = document.getElementById(b.dataset.target);
+    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+      el.value = decodeURIComponent(b.dataset.example);
+      el.dispatchEvent(new Event("input"));
+      el.focus();
+    }
+  });
 }
 
 // Mitigation-link cards: link/unlink/strength/rationale are immediate server writes.
