@@ -178,15 +178,42 @@
   .saved-dialog a { color: var(--crimson-600); font-weight: 600; text-decoration: none; }
   .saved-dialog a:hover { text-decoration: underline; }
   .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-400); font-size: 12px; }
+
+  /* ------ screen switcher ------ */
+  .screens { display: flex; }
+  .screens button { flex: 1; border: none; background: var(--tint); color: var(--navy-500); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--border); }
+  .screens button.on { background: var(--panel); color: var(--navy-900); border-bottom-color: var(--crimson-600); }
+
+  /* ------ style-guide field tree ------ */
+  .sg-group { padding: 9px 15px 5px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--navy-500); font-weight: 700; background: var(--tint); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+  .sg-frow { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+  .sg-frow .fname { font-size: 13px; color: var(--navy-800); font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .badge.cov { font-variant-numeric: tabular-nums; }
+  .badge.cov.c-hi { background: #eaf4ee; color: var(--green); }
+  .badge.cov.c-mid { background: #fdf3e0; color: var(--amber); }
+  .badge.cov.c-lo { background: var(--crimson-50); color: var(--crimson-700); }
+  .badge.orphan { background: var(--navy-200); color: var(--navy-600); }
+
+  /* ------ style-guide bar editor ------ */
+  .slot-list { list-style: none; margin: 6px 0 0; padding: 0; }
+  .slot-list li { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
+  .slot-list li input { flex: 1; }
+  .slabel .slotcount { float: right; color: var(--navy-400); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  #preview .sg-fieldwrap { border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; background: var(--tint); }
+  #preview .sg-fieldwrap .f { background: #fff; }
 </style>
 </head>
 <body>
 <aside>
+  <nav class="screens" id="screens">
+    <button data-screen="threats" class="on">Threats</button>
+    <button data-screen="style">Style guide</button>
+  </nav>
   <header>
-    <h1>Keel · Threats</h1>
+    <h1 id="railTitle">Keel · Threats</h1>
     <span class="count" id="count"></span>
   </header>
-  <div class="search"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
+  <div class="search" id="searchWrap"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
   <div class="list" id="list"></div>
 </aside>
 
@@ -212,6 +239,10 @@ const state = {
   validation: { errors: [], advice: [] },  // last /threats/validate result
   view: "structure",    // editor view: "structure" | "yaml"
   config: { repo_url: "" },  // GET /config
+  screen: "threats",    // top-level screen: "threats" | "style"
+  coverage: null,       // GET /style-guide/coverage
+  styleSel: null,       // style screen: { entity, field } selected in the tree
+  styleDraft: null,     // style screen: in-progress slot edits for the selected field
 };
 window.state = state;   // exposed for smoke checks / debugging
 
@@ -279,11 +310,12 @@ const strengthEnum = () => {
 
 // --------------------------------------------------------------- boot ------ //
 async function boot() {
-  const [sThreat, sWeak, sMitLink, style, tr, mi, cfg] = await Promise.all([
+  const [sThreat, sWeak, sMitLink, style, cov, tr, mi, cfg] = await Promise.all([
     j("/schema/threat"),
     j("/schema/weakness"),
     j("/schema/mitigation_link"),
     j("/style-guide"),
+    j("/style-guide/coverage"),  // { overall, entities: [{entity_type, overall, fields:[{field_name, completeness, is_orphan}]}] }
     j("/threats"),          // brief: { threats: [[id, title], ...], count }
     j("/mitigations"),      // brief: { mitigations: [[id, name, class], ...], count }
     j("/config"),           // { repo_url } — empty string when unset
@@ -292,6 +324,7 @@ async function boot() {
   state.schema.weakness = sWeak;
   state.schema.mitigation_link = sMitLink;
   state.style = style;
+  state.coverage = cov;
   state.threats = tr.threats || [];
   state.mitById = Object.fromEntries(
     (mi.mitigations || []).map(([id, name, mclass]) => [id, { id, name, mitigation_class: mclass }])
@@ -405,13 +438,17 @@ function styleField(entity, field) {
   return (ent && ent.fields && ent.fields[field]) || null;
 }
 // One-line hint (the field's purpose), shown above the input at all times.
-function sgHint(entity, field) {
-  const sf = styleField(entity, field);
+// The *From variants take a style-field-like object directly, so the style-guide
+// editor's right pane can render the SAME markup fed from an in-progress draft.
+function sgHintFrom(sf) {
   return (sf && sf.purpose) ? `<div class="sg-hint">${esc(sf.purpose)}</div>` : "";
 }
+function sgHint(entity, field) {
+  return sgHintFrom(styleField(entity, field));
+}
 // Expandable guidance panel: Include / Avoid / first example (+ "use example").
-function sgPanel(entity, field, targetId) {
-  const sf = styleField(entity, field);
+// opts.show forces the panel open (used by the always-on style-guide preview).
+function sgPanelFrom(sf, targetId, opts) {
   if (!sf) return "";
   const list = (k, items) => `<div class="sg-sec"><span class="sg-k">${k}</span><ul>${
     items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
@@ -425,7 +462,11 @@ function sgPanel(entity, field, targetId) {
       : "";
     parts.push(`<div class="sg-sec"><span class="sg-k">Example</span><div class="sg-ex">${esc(ex)}</div>${btn}</div>`);
   }
-  return parts.length ? `<div class="sg-panel">${parts.join("")}</div>` : "";
+  const cls = (opts && opts.show) ? "sg-panel show" : "sg-panel";
+  return parts.length ? `<div class="${cls}">${parts.join("")}</div>` : "";
+}
+function sgPanel(entity, field, targetId) {
+  return sgPanelFrom(styleField(entity, field), targetId);
 }
 
 // Edit form — built by walking the threat schema's field order.
@@ -967,8 +1008,113 @@ function renderPreview() {
     </div>`;
 }
 
+// ===================================================================== //
+// Screen switcher — two screens share the rail | editor | preview panes. //
+// ===================================================================== //
+function switchScreen(name) {
+  state.screen = name;
+  document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
+  document.getElementById("railTitle").textContent = name === "style" ? "Keel · Style guide" : "Keel · Threats";
+  document.getElementById("searchWrap").style.display = name === "style" ? "none" : "";
+  renderRail(); renderMain(); renderRight();
+}
+function renderRail() { state.screen === "style" ? renderStyleRail() : renderList(); }
+function renderMain() { state.screen === "style" ? renderStyleDetail() : renderDetail(); }
+function renderRight() { state.screen === "style" ? renderStylePreview() : renderPreview(); }
+
+// ------------------------------------------------------- style-guide screen -- //
+// Coverage completeness for a field, matched by entity_type + field_name.
+// Orphans are excluded from the coverage report, so this returns null for them.
+function coverageFor(entity, field) {
+  const ents = (state.coverage && state.coverage.entities) || [];
+  const ent = ents.find(e => e.entity_type === entity);
+  if (!ent) return null;
+  const f = (ent.fields || []).find(x => x.field_name === field);
+  return f ? f.completeness : null;
+}
+function covClass(pct) { return pct >= 67 ? "c-hi" : pct >= 34 ? "c-mid" : "c-lo"; }
+
+// Left rail: entity → field tree built from state.style.entities (schema-derived,
+// so it can never drift from the model). Every field shows — including 0% ones.
+function renderStyleRail() {
+  const el = document.getElementById("list");
+  const ents = (state.style && state.style.entities) || {};
+  let html = "";
+  let fieldCount = 0;
+  for (const [etype, ent] of Object.entries(ents)) {
+    html += `<div class="sg-group">${esc(etype)}</div>`;
+    for (const fname of Object.keys(ent.fields || {})) {
+      fieldCount++;
+      const f = ent.fields[fname];
+      const active = state.styleSel && state.styleSel.entity === etype && state.styleSel.field === fname;
+      let badge;
+      if (f.is_orphan) {
+        badge = '<span class="badge orphan" title="Schema removed this field">orphan</span>';
+      } else {
+        const pct = coverageFor(etype, fname);
+        const n = pct == null ? 0 : pct;
+        badge = `<span class="badge cov ${covClass(n)}">${n}%</span>`;
+      }
+      html += `<div class="row sg-frow ${active ? "active" : ""}" data-entity="${esc(etype)}" data-field="${esc(fname)}">
+        <span class="fname">${esc(fname)}</span>${badge}
+      </div>`;
+    }
+  }
+  el.innerHTML = html || '<div class="empty" style="margin-top:40px">No style guide.</div>';
+  document.getElementById("count").textContent = fieldCount + " fields";
+  el.querySelectorAll(".sg-frow").forEach(r => r.onclick = () => selectStyleField(r.dataset.entity, r.dataset.field));
+}
+
+// Select a field → seed the editor draft from the saved style entry (a working copy,
+// so the right-pane preview can reflect edits before they are saved).
+function selectStyleField(entity, field) {
+  state.styleSel = { entity, field };
+  const sf = styleField(entity, field) || {};
+  state.styleDraft = {
+    purpose: sf.purpose || "",
+    content_requirements: [...(sf.content_requirements || [])],
+    avoid: [...(sf.avoid || [])],
+    examples: [...(sf.examples || [])],
+    instructions: [...(sf.instructions || [])],
+  };
+  renderStyleRail(); renderStyleDetail(); renderStylePreview();
+}
+
+// The live draft as a style-field-like object (what sgHint/sgPanel consume).
+function styleDraftAsField() {
+  const d = state.styleDraft || {};
+  return {
+    purpose: d.purpose || "",
+    content_requirements: d.content_requirements || [],
+    avoid: d.avoid || [],
+    examples: d.examples || [],
+    instructions: d.instructions || [],
+  };
+}
+
+// Slots that count toward the coverage percentage (mirrors TRACKED_SLOTS server-side).
+const STYLE_SLOTS = ["purpose", "content_requirements", "instructions", "avoid", "examples"];
+function filledSlotCount(d) {
+  return STYLE_SLOTS.filter(s => {
+    const v = d[s];
+    return Array.isArray(v) ? v.length > 0 : !!(v && String(v).trim());
+  }).length;
+}
+
+// Center + right panes for the style screen (bar editor + live preview in Task 18).
+function renderStyleDetail() {
+  const m = document.getElementById("main");
+  if (!state.styleSel) { m.innerHTML = '<div class="empty">Select a field from the tree.</div>'; return; }
+  m.innerHTML = `<div class="detail"><div class="empty">${esc(state.styleSel.entity)} · ${esc(state.styleSel.field)}</div></div>`;
+}
+function renderStylePreview() {
+  const el = document.getElementById("preview");
+  el.innerHTML = '<p class="ptitle">Author preview</p><div class="empty" style="margin-top:10vh">—</div>';
+}
+
 // --------------------------------------------------------------- start ----- //
 document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
+document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
 // Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
 document.getElementById("main").addEventListener("focusout", () => {
   if (state.editing && state.view === "structure") scheduleValidate();
