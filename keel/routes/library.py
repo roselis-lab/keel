@@ -109,6 +109,11 @@ async def get_style_guide():
     return (await style_guide_service.get_full_guide()).model_dump()
 
 
+@router.get("/style-guide/coverage")
+async def style_guide_coverage():
+    return (await style_guide_service.get_coverage()).model_dump()
+
+
 @router.patch("/style-guide/{entity_type}/{field_name}")
 async def update_style_field(entity_type: str, field_name: str, patch: dict = Body(...)):
     try:
