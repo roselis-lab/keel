@@ -942,13 +942,13 @@ async function saveThreat() {
   state.validation = { errors: [], advice: [] };
   renderList(); renderDetail(); renderPreview();
   validateDraft();
-  showSavedDialog(state.selected);
+  showSavedDialog("catalog/threats/" + state.selected + ".yaml");
 }
 
 // The write lands in a YAML file; the next step is a pull request. Name the exact
-// file and, when a repo is configured, offer an "Edit on GitHub" escape hatch.
-function showSavedDialog(threatId) {
-  const path = "catalog/threats/" + threatId + ".yaml";
+// file (any catalog path) and, when a repo is configured, offer an "Edit on GitHub"
+// escape hatch. Shared by the threat editor and the style-guide editor.
+function showSavedDialog(path) {
   const repo = (state.config && state.config.repo_url || "").replace(/\/+$/, "");
   const editLink = repo
     ? `<a href="${esc(repo)}/edit/main/${path}" target="_blank" rel="noopener">Edit on GitHub ↗</a>`
@@ -1206,6 +1206,7 @@ async function saveStyleField() {
     state.coverage = await j("/style-guide/coverage");
     renderStyleRail(); renderStyleDetail(); renderStylePreview();
     toast("Style guide saved");
+    showSavedDialog("catalog/style_guide/" + entity + ".yaml");
   } catch (e) { toast(e.message, true); }
 }
 
