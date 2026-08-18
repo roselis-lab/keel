@@ -5,10 +5,12 @@ UI's inline editing — they delegate to the same service layer the MCP write
 tools use, and every write lands directly in `catalog/*.yaml`.
 """
 from fastapi import APIRouter, Body, HTTPException, Query
+from pydantic import ValidationError
 
+from keel.catalog import lint_threat
 from keel.schema_export import build_schemas
 from keel.schemas.mitigation import MitigationUpdate
-from keel.schemas.threat import ThreatUpdate
+from keel.schemas.threat import Threat, ThreatUpdate
 from keel.services import mitigation_service, style_guide_service, threat_service
 
 router = APIRouter()
@@ -20,6 +22,22 @@ router = APIRouter()
 @router.get("/threats")
 async def list_threats(brief: bool = True, include: list[str] | None = Query(default=None)):
     return await threat_service.list_threats(brief=brief, include=include)
+
+
+@router.post("/threats/validate")
+async def validate_threat(payload: dict = Body(...)):
+    """One validator, two channels: Pydantic gives blocking structure errors; lint_threat
+    gives non-blocking advice. The browser renders these into its red and amber channels."""
+    try:
+        threat = Threat(**payload)
+    except ValidationError as exc:
+        errors = [
+            {"field": ".".join(str(x) for x in e["loc"]), "msg": e["msg"]}
+            for e in exc.errors()
+        ]
+        return {"ok": False, "errors": errors, "advice": []}
+    advice = [{"field": "", "msg": m} for m in lint_threat(threat)]
+    return {"ok": True, "errors": [], "advice": advice}
 
 
 @router.get("/threats/{threat_id}")
