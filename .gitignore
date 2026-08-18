@@ -16,6 +16,3 @@ venv/
 .mypy_cache/
 dist/
 build/
-
-# Throwaway catalog copy for UI click-testing (see CATALOG_DIR)
-.sandbox-catalog/
