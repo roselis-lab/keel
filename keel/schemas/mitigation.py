@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 # The class is a switch: it sets how control_mechanism and failure_behavior are read.
 MitigationClass = Literal[
@@ -21,6 +21,15 @@ class ValidationCheck(BaseModel):
 class FaqItem(BaseModel):
     question: str
     answer: str
+
+
+class Implementation(BaseModel):
+    """How an org realizes a control. Empty in the reference catalog; orgs fill it in."""
+
+    model_config = ConfigDict(extra="forbid")
+    title: str
+    description: str
+    reference: HttpUrl | None = None
 
 
 class MitigationBase(BaseModel):
@@ -44,6 +53,7 @@ class MitigationBase(BaseModel):
     anti_patterns: list[str] | None = None
     validation: list[ValidationCheck] | None = None
     faq: list[FaqItem] | None = None
+    implementations: list[Implementation] = Field(default_factory=list)
 
 
 class MitigationCreate(MitigationBase):
@@ -78,3 +88,4 @@ class Mitigation(BaseModel):
     anti_patterns: list[str] | None = None
     validation: list[dict] | None = None
     faq: list[dict] | None = None
+    implementations: list[dict] = Field(default_factory=list)
