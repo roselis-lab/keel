@@ -319,6 +319,7 @@ const state = {
   mitApOpen: null,      // anti_patterns open-card index set
   mitValOpen: null,     // validation open-card index set
   mitFaqOpen: null,     // faq open-card index set
+  mitImplOpen: null,    // implementations open-card index set
   threatMits: null,     // [{id,title,mitigations}] — reverse index for "addresses threats"
   selected: null,       // selected threat id
   current: null,        // full threat record from GET /threats/{id}
@@ -1074,6 +1075,7 @@ function markCollapsedCards(errors) {
     references: p => `.ref-card.collapsed[data-ridx="${CSS.escape(p)}"]`,
     validation: p => `.validation-card.collapsed[data-idx="${CSS.escape(p)}"]`,
     faq: p => `.faq-card.collapsed[data-idx="${CSS.escape(p)}"]`,
+    implementations: p => `.implementation-card.collapsed[data-idx="${CSS.escape(p)}"]`,
   };
   (errors || []).forEach(e => {
     const parts = (e.field || "").split(".");
@@ -1801,6 +1803,14 @@ function readMitigation(mt) {
       </div>`).join("")
     : '<p class="placeholder">None.</p>';
 
+  const impl = (mt.implementations || []).length
+    ? (mt.implementations || []).map(im => `<div class="card">
+        <div class="chead"><span class="ctitle">${esc(im.title || "(untitled)")}</span></div>
+        ${im.description ? `<div class="cdesc">${esc(im.description)}</div>` : ""}
+        ${im.reference ? `<div class="cdesc"><a href="${esc(im.reference)}" target="_blank" rel="noopener">${esc(im.reference)}</a></div>` : ""}
+      </div>`).join("")
+    : '<p class="placeholder">None yet — orgs add these after forking.</p>';
+
   const own = [["Maintainer", mt.maintainer], ["Owner", mt.owner], ["Locus", mt.locus]];
   const ownership = `<ul class="plain">${own.map(([k, v]) =>
     `<li><span class="meta">${esc(k)}</span>${v ? esc(v) : '<span class="placeholder">—</span>'}</li>`).join("")}</ul>`;
@@ -1835,6 +1845,7 @@ function readMitigation(mt) {
     <section><h3 class="slabel">Anti-patterns</h3>${ap}</section>
     <section><h3 class="slabel">Validation (${(mt.validation || []).length})</h3>${validation}</section>
     <section><h3 class="slabel">FAQ (${(mt.faq || []).length})</h3>${faq}</section>
+    <section><h3 class="slabel">Implementations (${(mt.implementations || []).length}) <span class="sub">— how orgs realize this control</span></h3>${impl}</section>
     <section><h3 class="slabel">Addresses threats (${addressing.length})</h3>${addressed}</section>
   </div>`;
 }
@@ -1924,6 +1935,7 @@ function assembleMit() {
     anti_patterns: pick("anti_patterns", []),
     validation: pick("validation", []),
     faq: pick("faq", []),
+    implementations: pick("implementations", []),
   };
 }
 
@@ -2063,6 +2075,47 @@ function faqEditor() {
     <button class="btn ghost" id="addFaq">+ Add question</button></fieldset>`;
 }
 
+// Implementations — repeatable bordered .ecard cards (title / description / reference).
+// Ships empty in the reference catalog; orgs fill it after forking. Each field wrapper
+// carries data-entity="implementation" so focusing it shows the implementation rail bar.
+function implementationsEditor() {
+  const items = state.mitDraft.implementations || [];
+  const open = state.mitImplOpen || new Set();
+  const cards = items.map((im, i) => {
+    const isOpen = open.has(i);
+    const summary = (im.title || "").trim() ? esc((im.title || "").trim().slice(0, 44)) : "—";
+    const head = `<div class="ecard-head" data-idx="${i}">
+        <button type="button" class="card-toggle impl-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${isOpen ? "Implementation " + (i + 1) : summary}</span>
+        <button type="button" class="cardx impl-remove" data-idx="${i}" title="Remove implementation">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard implementation-card collapsed" data-idx="${i}">${head}</div>`;
+    return `<div class="ecard implementation-card open" data-idx="${i}">${head}
+      <div class="ecard-body">
+      <div class="field" data-entity="implementation" data-field="title">
+        <h3 class="slabel">Title</h3>
+        ${hintRow("implementation", "title")}
+        <input class="f impl-title" data-idx="${i}" value="${esc(im.title || "")}" placeholder="short name for this implementation">
+      </div>
+      <div class="field" data-entity="implementation" data-field="description">
+        <h3 class="slabel">Description</h3>
+        ${hintRow("implementation", "description")}
+        <textarea class="f impl-description" data-idx="${i}" rows="3" placeholder="how the org realizes this control">${esc(im.description || "")}</textarea>
+      </div>
+      <div class="field" data-entity="implementation" data-field="reference">
+        <h3 class="slabel">Reference <span class="sub">— optional URL</span></h3>
+        ${hintRow("implementation", "reference")}
+        <input class="f impl-reference" data-idx="${i}" value="${esc(im.reference || "")}" placeholder="https://…">
+      </div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<fieldset class="field section" data-entity="implementation" data-field="title">
+    <legend class="slabel">Implementations <span class="sub">— how orgs realize this control</span></legend>
+    ${cards}
+    <button class="btn ghost" id="addImplementation">+ Add implementation</button></fieldset>`;
+}
+
 // Edit form — the mitigation card grouped into the same section tiers as the read view.
 function editMitigation(mt) {
   const d = state.mitDraft;
@@ -2079,7 +2132,8 @@ function editMitigation(mt) {
     ${mitScalarSection("telemetry", "Telemetry", "textarea", 2)}
     ${antiPatternsEditor()}
     ${validationEditor()}
-    ${faqEditor()}`;
+    ${faqEditor()}
+    ${implementationsEditor()}`;
 
   return `<div class="detail">
     <div class="dhead">
@@ -2114,10 +2168,14 @@ function enterMitEdit() {
       criterion: v.criterion || "", test_scenario: v.test_scenario || "", expected_result: v.expected_result || "",
     })),
     faq: (mt.faq || []).map(q => ({ question: q.question || "", answer: q.answer || "" })),
+    implementations: (mt.implementations || []).map(im => ({
+      title: im.title || "", description: im.description || "", reference: im.reference || "",
+    })),
   };
   state.mitApOpen = new Set((mt.anti_patterns || []).length ? [0] : []);
   state.mitValOpen = new Set((mt.validation || []).length ? [0] : []);
   state.mitFaqOpen = new Set((mt.faq || []).length ? [0] : []);
+  state.mitImplOpen = new Set((mt.implementations || []).length ? [0] : []);
   state.mitEditing = true; state.railMode = "preview"; state.guidance = null;
   state.mitValidation = { errors: [], advice: [] };
   renderMitDetail(); renderMitPreview();
@@ -2134,11 +2192,13 @@ function newMitigation() {
     id, name, status: "draft", mitigation_class: class0, purpose: "", scope: "",
     control_mechanism: "", failure_behavior: "", formal_implementation_risk: "", review: "",
     maintainer: "", owner: "", locus: "", telemetry: "", anti_patterns: [], validation: [], faq: [],
+    implementations: [],
   };
   state.mitSelected = id;
   state.currentMit = { ...blank };
   state.mitDraft = { ...blank, isNew: true };
   state.mitApOpen = new Set(); state.mitValOpen = new Set(); state.mitFaqOpen = new Set();
+  state.mitImplOpen = new Set();
   state.mitEditing = true; state.railMode = "preview"; state.guidance = null;
   state.mitValidation = { errors: [], advice: [] };
   renderMitRail(); renderMitDetail(); renderMitPreview();
@@ -2225,6 +2285,22 @@ function wireMitEdit() {
   });
   const addFaq = document.getElementById("addFaq");
   if (addFaq) addFaq.onclick = () => { d.faq.push({ question: "", answer: "" }); (state.mitFaqOpen || (state.mitFaqOpen = new Set())).add(d.faq.length - 1); renderMitDetail(); };
+  // Implementation cards
+  document.querySelectorAll(".implementation-card").forEach(card => {
+    const i = +card.dataset.idx;
+    const ti = card.querySelector(".impl-title");
+    const de = card.querySelector(".impl-description");
+    const re = card.querySelector(".impl-reference");
+    if (ti) ti.oninput = () => d.implementations[i].title = ti.value;
+    if (de) de.oninput = () => d.implementations[i].description = de.value;
+    if (re) re.oninput = () => d.implementations[i].reference = re.value;
+    const rm = card.querySelector(".impl-remove");
+    if (rm) rm.onclick = e => { e.stopPropagation(); d.implementations.splice(i, 1); state.mitImplOpen = shiftOpenSet(state.mitImplOpen, i); renderMitDetail(); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => { if (e.target.closest(".impl-remove")) return; toggleSet(state.mitImplOpen, i); renderMitDetail(); };
+  });
+  const addImpl = document.getElementById("addImplementation");
+  if (addImpl) addImpl.onclick = () => { d.implementations.push({ title: "", description: "", reference: "" }); (state.mitImplOpen || (state.mitImplOpen = new Set())).add(d.implementations.length - 1); renderMitDetail(); };
 }
 
 // Map a failed PATCH/POST error path to its .field wrapper (no live validate endpoint).
@@ -2234,6 +2310,10 @@ function fieldElMit(path) {
   if ((parts[0] === "validation" || parts[0] === "faq") && parts.length === 3) {
     return document.querySelector(`.${parts[0]}-card[data-idx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`)
       || document.querySelector(`.field[data-entity="mitigation"][data-field="${CSS.escape(parts[0])}"]`);
+  }
+  if (parts[0] === "implementations" && parts.length === 3) {
+    return document.querySelector(`.implementation-card[data-idx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`)
+      || document.querySelector('.field[data-entity="implementation"]');
   }
   if (parts[0] === "anti_patterns") {
     return document.querySelector('.field[data-entity="mitigation"][data-field="anti_patterns"]');
@@ -2287,6 +2367,8 @@ async function saveMitigation() {
     })),
     faq: (d.faq || []).filter(q => (q.question || "").trim() || (q.answer || "").trim())
       .map(q => ({ question: q.question, answer: q.answer })),
+    implementations: (d.implementations || []).filter(im => (im.title || "").trim() || (im.description || "").trim())
+      .map(im => ({ title: im.title, description: im.description, reference: (im.reference || "").trim() || null })),
   };
   const url = isNew ? "/mitigations" : "/mitigations/" + encodeURIComponent(state.mitSelected);
   if (isNew) body.id = state.mitSelected;
