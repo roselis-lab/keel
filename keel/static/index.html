@@ -134,6 +134,21 @@
   .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(20,30,60,.2); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.err { background: var(--crimson-700); }
+
+  /* ------ validation channels ------ */
+  .err-summary { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 10px 14px; margin: 16px 0 4px; font-size: 13px; }
+  .err-summary strong { display: block; margin-bottom: 5px; }
+  .err-summary ul { margin: 0; padding-left: 18px; }
+  .err-summary code { font-family: ui-monospace, monospace; font-size: 12px; }
+  .fld-msg { font-size: 12px; margin-top: 5px; line-height: 1.4; }
+  .fld-msg.err { color: var(--crimson-700); }
+  .fld-msg.adv { color: var(--amber); }
+  .field .slabel, .dtitle .did { position: relative; }
+  .field.has-err > .slabel::after, .field.has-adv > .slabel::after {
+    content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: middle;
+  }
+  .field.has-err > .slabel::after { background: var(--crimson-600); }
+  .field.has-adv > .slabel::after { background: var(--amber); }
 </style>
 </head>
 <body>
@@ -164,6 +179,7 @@ const state = {
   filter: "",
   editing: false,
   draft: null,          // in-progress edits
+  validation: { errors: [], advice: [] },  // last /threats/validate result
 };
 window.state = state;   // exposed for smoke checks / debugging
 
@@ -265,6 +281,7 @@ function renderList() {
 
 async function select(id) {
   state.selected = id; state.editing = false; state.draft = null;
+  state.validation = { errors: [], advice: [] };
   renderList();
   try {
     state.current = await j("/threats/" + encodeURIComponent(id));
@@ -274,6 +291,7 @@ async function select(id) {
   renderDetail();
   renderPreview();
   document.getElementById("main").scrollTop = 0;
+  validateDraft();   // populate advice for the Insights strip (non-blocking)
 }
 
 // ------------------------------------------------------------- detail ------ //
@@ -405,7 +423,7 @@ function editThreat(t) {
         <button class="btn ghost" id="cancelBtn">Cancel</button>
       </div>
     </div>
-    ${blocks.join("")}
+    <div id="errSummary" class="err-summary" style="display:none"></div>${blocks.join("")}
   </div>`;
 }
 
@@ -526,7 +544,7 @@ function wireDetail() {
   if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; renderDetail(); };
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) saveBtn.onclick = saveThreat;
-  if (state.editing) wireThreatEdit();
+  if (state.editing) { wireThreatEdit(); applyValidation(); }
 }
 
 function enterEdit() {
@@ -544,6 +562,7 @@ function enterEdit() {
   };
   state.editing = true;
   renderDetail();
+  validateDraft();   // seed the red/amber channels for the initial draft
 }
 
 function wireThreatEdit() {
@@ -653,8 +672,95 @@ function wireWeaknesses() {
   };
 }
 
+// --------------------------------------------------- validation channels --- //
+// Assemble the full threat the way the server wants it: the draft plus the id and
+// the separately-managed pieces (mitigations/references live on state.current).
+// Falls back to state.current when not editing, so preview/insights work in read view.
+function assembleThreat() {
+  const d = state.draft || {};
+  const c = state.current || {};
+  const pick = (k, dflt) => (d[k] !== undefined ? d[k] : (c[k] !== undefined ? c[k] : dflt));
+  return {
+    id: c.id,
+    title: pick("title", ""),
+    harm: pick("harm", undefined),
+    surface: pick("surface", []),
+    source: pick("source", []),
+    weaknesses: pick("weaknesses", []),
+    reachability: pick("reachability", ""),
+    mitigations: c.mitigations || [],
+    references: c.references || [],
+    tags: pick("tags", []),
+  };
+}
+
+let validateTimer = null;
+function scheduleValidate() { clearTimeout(validateTimer); validateTimer = setTimeout(validateDraft, 300); }
+
+// POST the assembled threat; store errors (red, blocking) + advice (amber, soft).
+async function validateDraft() {
+  if (!state.current) return;
+  try {
+    const res = await api("POST", "/threats/validate", assembleThreat());
+    state.validation = { errors: res.errors || [], advice: res.advice || [] };
+  } catch (e) {
+    state.validation = { errors: [{ field: "", msg: e.message }], advice: [] };
+  }
+  applyValidation();
+  renderPreview();   // insights strip reads state.validation.advice
+}
+
+// Map a dotted error path to the input's .field wrapper. Root/unmatched -> null.
+function fieldEl(path) {
+  if (!path) return null;
+  const parts = path.split(".");
+  if (parts[0] === "weaknesses" && parts.length === 3) {
+    return document.querySelector(
+      `.wk-card[data-widx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`
+    );
+  }
+  if (parts.length === 1) {
+    return document.querySelector(`.field[data-entity="threat"][data-field="${CSS.escape(parts[0])}"]`);
+  }
+  return null;
+}
+
+function renderErrorSummary(errors) {
+  const el = document.getElementById("errSummary");
+  if (!el) return;
+  if (!errors.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "block";
+  el.innerHTML = `<strong>Fix these before saving:</strong><ul>${errors.map(e =>
+    `<li>${e.field ? `<code>${esc(e.field)}</code> — ` : ""}${esc(e.msg)}</li>`).join("")}</ul>`;
+}
+
+// Paint the two channels onto the form: errors red (summary + inline), advice amber (inline only).
+function applyValidation() {
+  const { errors, advice } = state.validation;
+  document.querySelectorAll(".fld-msg").forEach(e => e.remove());
+  document.querySelectorAll(".field").forEach(f => f.classList.remove("has-err", "has-adv"));
+
+  renderErrorSummary(errors);   // errors — RED — also shown in full at the top
+
+  const place = (item, cls) => {
+    const el = fieldEl(item.field);
+    if (!el) return;
+    el.classList.add(cls === "err" ? "has-err" : "has-adv");
+    const msg = document.createElement("div");
+    msg.className = "fld-msg " + cls;
+    msg.textContent = item.msg;
+    el.appendChild(msg);
+  };
+  errors.forEach(e => place(e, "err"));    // identical text to the summary, inline
+  advice.forEach(a => place(a, "adv"));    // amber only, never in the summary, never blocking
+
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) saveBtn.disabled = errors.length > 0;
+}
+
 // --------------------------------------------------------------- save ------ //
 async function saveThreat() {
+  if (state.validation.errors.length) return;        // blocked while errors remain
   const d = state.draft;
   const body = {
     title: d.title,
@@ -665,16 +771,38 @@ async function saveThreat() {
     tags: d.tags,
     weaknesses: d.weaknesses,
   };
-  try {
-    await api("PATCH", "/threats/" + encodeURIComponent(state.selected), body);
-    state.current = await j("/threats/" + encodeURIComponent(state.selected));
-    state.editing = false; state.draft = null;
-    // reflect a possible title change in the rail
-    const row = state.threats.find(r => r[0] === state.selected);
-    if (row) row[1] = state.current.title;
-    renderList(); renderDetail(); renderPreview();
-    toast("Threat saved");
-  } catch (e) { toast(e.message, true); }
+  const url = "/threats/" + encodeURIComponent(state.selected);
+  const r = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    // Map the server's Pydantic error response back into the RED channel.
+    const data = await r.json().catch(() => ({}));
+    let errs;
+    if (Array.isArray(data.detail)) {
+      errs = data.detail.map(e => ({
+        field: (e.loc || []).filter(x => x !== "body").join("."),
+        msg: e.msg || "invalid",
+      }));
+    } else {
+      errs = [{ field: "", msg: data.detail || ("PATCH " + url + " → " + r.status) }];
+    }
+    state.validation = { errors: errs, advice: state.validation.advice };
+    applyValidation();
+    toast("Save blocked — fix the errors", true);
+    return;
+  }
+  state.current = await j(url);
+  state.editing = false; state.draft = null;
+  // reflect a possible title change in the rail
+  const row = state.threats.find(r => r[0] === state.selected);
+  if (row) row[1] = state.current.title;
+  state.validation = { errors: [], advice: [] };
+  renderList(); renderDetail(); renderPreview();
+  validateDraft();
+  toast("Threat saved");
 }
 
 // ------------------------------------------------------------- preview ----- //
@@ -692,6 +820,10 @@ function renderPreview() {
 
 // --------------------------------------------------------------- start ----- //
 document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
+// Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
+document.getElementById("main").addEventListener("focusout", () => {
+  if (state.editing) scheduleValidate();
+});
 boot().then(renderList).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
 </script>
