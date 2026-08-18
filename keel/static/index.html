@@ -198,7 +198,7 @@
   .slot-list { list-style: none; margin: 6px 0 0; padding: 0; }
   .slot-list li { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
   .slot-list li input { flex: 1; }
-  .slabel .slotcount { float: right; color: var(--navy-400); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .slotcount { color: var(--navy-400); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
   #preview .sg-fieldwrap { border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; background: var(--tint); }
   #preview .sg-fieldwrap .f { background: #fff; }
 </style>
@@ -1101,15 +1101,112 @@ function filledSlotCount(d) {
   }).length;
 }
 
-// Center + right panes for the style screen (bar editor + live preview in Task 18).
+// Center pane: the bar editor for the selected field's authoring slots.
 function renderStyleDetail() {
   const m = document.getElementById("main");
   if (!state.styleSel) { m.innerHTML = '<div class="empty">Select a field from the tree.</div>'; return; }
-  m.innerHTML = `<div class="detail"><div class="empty">${esc(state.styleSel.entity)} · ${esc(state.styleSel.field)}</div></div>`;
+  const { entity, field } = state.styleSel;
+  const sf0 = styleField(entity, field) || {};
+  const orphan = !!sf0.is_orphan;
+  const d = state.styleDraft;
+  m.innerHTML = `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">✎</div>
+      <div class="dtitle">
+        <h2>${esc(field)}</h2>
+        <div class="did">${esc(entity)}${orphan ? " · orphan — schema removed this field" : ""}</div>
+      </div>
+      <div class="hactions"><button class="btn primary" id="sgSaveBtn">✔ Save</button></div>
+    </div>
+    <section class="field">
+      <h3 class="slabel">Purpose <span class="sub">— the one-line hint shown above the input</span></h3>
+      <textarea class="f" id="sg_purpose" rows="2" placeholder="what this field is for">${esc(d.purpose)}</textarea>
+    </section>
+    ${slotListSection("content_requirements", "Content requirements", "shown as “Include” in the guidance panel")}
+    ${slotListSection("avoid", "Avoid", "shown as “Avoid” in the guidance panel")}
+    ${slotListSection("examples", "Examples", "the first powers “use example” on the Threats screen")}
+    ${slotListSection("instructions", "Instructions", "step-by-step authoring guidance")}
+  </div>`;
+  wireStyleEditor();
 }
+
+// A list-of-strings slot editor (add/remove rows) — same grammar as screen 1's
+// repeatable cards: edit in place, add/remove re-renders.
+function slotListSection(slot, label, sub) {
+  const items = state.styleDraft[slot] || [];
+  const rows = items.map((v, i) => `<li>
+    <input class="f sg-item" data-slot="${esc(slot)}" data-i="${i}" value="${esc(v)}">
+    <button class="btn ghost sm sg-item-rm" data-slot="${esc(slot)}" data-i="${i}" title="Remove">✕</button>
+  </li>`).join("");
+  return `<section class="field">
+    <h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">— ${sub}</span>` : ""}</h3>
+    <ul class="slot-list">${rows || '<li class="placeholder" style="border:none">None yet.</li>'}</ul>
+    <button class="btn ghost sm sg-item-add" data-slot="${esc(slot)}">+ Add</button>
+  </section>`;
+}
+
+function wireStyleEditor() {
+  const purpose = document.getElementById("sg_purpose");
+  if (purpose) purpose.oninput = () => { state.styleDraft.purpose = purpose.value; renderStylePreview(); };
+  document.querySelectorAll(".sg-item").forEach(inp => inp.oninput = () => {
+    state.styleDraft[inp.dataset.slot][+inp.dataset.i] = inp.value;
+    renderStylePreview();   // right pane reflects the unsaved edit live
+  });
+  document.querySelectorAll(".sg-item-rm").forEach(b => b.onclick = () => {
+    state.styleDraft[b.dataset.slot].splice(+b.dataset.i, 1);
+    renderStyleDetail(); renderStylePreview();
+  });
+  document.querySelectorAll(".sg-item-add").forEach(b => b.onclick = () => {
+    state.styleDraft[b.dataset.slot].push("");
+    renderStyleDetail(); renderStylePreview();
+  });
+  const save = document.getElementById("sgSaveBtn");
+  if (save) save.onclick = saveStyleField;
+}
+
+// Right pane: a LIVE preview of exactly what an author sees when they focus this
+// field on the Threats screen — same sgHint/sgPanel markup, fed from the in-progress
+// draft (not just the saved value), so the maintainer sees the result as they type.
 function renderStylePreview() {
   const el = document.getElementById("preview");
-  el.innerHTML = '<p class="ptitle">Author preview</p><div class="empty" style="margin-top:10vh">—</div>';
+  if (!state.styleSel) {
+    el.innerHTML = '<p class="ptitle">Author preview</p><div class="empty" style="margin-top:10vh">—</div>';
+    return;
+  }
+  const { field } = state.styleSel;
+  const sf = styleDraftAsField();
+  const n = filledSlotCount(state.styleDraft);
+  const hint = sgHintFrom(sf) || '<div class="sg-hint" style="opacity:.55">No purpose yet.</div>';
+  const panel = sgPanelFrom(sf, null, { show: true });
+  el.innerHTML = `<p class="ptitle">Author preview <span class="slotcount">${n} / ${STYLE_SLOTS.length} slots</span></p>
+    <p class="hint" style="margin:0 0 12px">What an author sees when they focus <b>${esc(field)}</b> on the Threats screen.</p>
+    <div class="sg-fieldwrap field">
+      <h3 class="slabel">${esc(field)}</h3>
+      ${hint}
+      <textarea class="f" rows="2" readonly placeholder="author's ${esc(field)} goes here"></textarea>
+      ${panel}
+    </div>`;
+}
+
+// PATCH the changed slots, then refresh the guide + coverage so the tree badges move.
+async function saveStyleField() {
+  if (!state.styleSel) return;
+  const { entity, field } = state.styleSel;
+  const d = state.styleDraft;
+  const body = {
+    purpose: d.purpose,
+    content_requirements: d.content_requirements,
+    avoid: d.avoid,
+    examples: d.examples,
+    instructions: d.instructions,
+  };
+  try {
+    await api("PATCH", "/style-guide/" + encodeURIComponent(entity) + "/" + encodeURIComponent(field), body);
+    state.style = await j("/style-guide");
+    state.coverage = await j("/style-guide/coverage");
+    renderStyleRail(); renderStyleDetail(); renderStylePreview();
+    toast("Style guide saved");
+  } catch (e) { toast(e.message, true); }
 }
 
 // --------------------------------------------------------------- start ----- //
