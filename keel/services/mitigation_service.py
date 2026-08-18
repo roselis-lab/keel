@@ -84,7 +84,7 @@ async def delete_mitigation(mitigation_id: str, confirm: bool = False) -> dict[s
 
     linked = [
         t["id"] for t in store.threats.values()
-        if any(link["mitigation_id"] == mitigation_id for link in (t.get("mitigations") or []))
+        if any(link["id"] == mitigation_id for link in (t.get("mitigations") or []))
     ]
     if not confirm:
         return {
@@ -95,7 +95,7 @@ async def delete_mitigation(mitigation_id: str, confirm: bool = False) -> dict[s
         for tid in linked:
             threat = store.threats[tid]
             threat["mitigations"] = [
-                link for link in threat["mitigations"] if link["mitigation_id"] != mitigation_id
+                link for link in threat["mitigations"] if link["id"] != mitigation_id
             ]
             store.write_threat(tid)
         del store.mitigations[mitigation_id]
