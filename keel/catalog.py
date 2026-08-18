@@ -36,6 +36,20 @@ def _fmt_err(e: ValidationError) -> str:
     return "; ".join(parts)
 
 
+def lint_threat(threat: Threat) -> list[str]:
+    """Non-blocking advice for one threat (no gating control; a technique used as identity).
+    These are the 'amber' nudges the authoring UI shows; they never block a save."""
+    out: list[str] = []
+    if threat.mitigations and not any(m.strength == "gating" for m in threat.mitigations):
+        out.append("no `gating` mitigation (all soft) — no architectural closure")
+    for tw in _TECHNIQUE_WORDS:
+        if tw in threat.title.lower():
+            out.append(f"technique {tw!r} used as the threat title — belongs in source/references")
+        elif any(tw in w.text.lower() and len(w.text) < 40 for w in threat.weaknesses):
+            out.append(f"technique {tw!r} used as a weakness identity — belongs in source/references")
+    return out
+
+
 def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
     """Validate catalog YAML. Checks each record against the Pydantic schema (types and
     strict enums), that a file's `id` matches its filename, that ids are unique, that no
@@ -99,17 +113,9 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
             if link.id not in mit_ids:
                 errors.append(f"{rel}: mitigations[{i}] references unknown mitigation {link.id!r}")
 
-        # Lint A — a threat with controls but none `gating` has no real closure.
-        if threat.mitigations and not any(m.strength == "gating" for m in threat.mitigations):
-            errors.append(f"{rel}: no `gating` mitigation (all soft) — no architectural closure")
-
-        # Lint B — a technique must not be the threat/weakness identity (it is a mechanism).
-        blob = " ".join([threat.title, *(w.text for w in threat.weaknesses)]).lower()
-        for tw in _TECHNIQUE_WORDS:
-            if tw in threat.title.lower():
-                errors.append(f"{rel}: technique {tw!r} used as the threat title — belongs in source/references")
-            elif tw in blob and any(tw in w.text.lower() and len(w.text) < 40 for w in threat.weaknesses):
-                errors.append(f"{rel}: technique {tw!r} used as a weakness identity — belongs in source/references")
+        # Non-blocking authoring advice (no gating control; a technique used as identity).
+        for msg in lint_threat(threat):
+            errors.append(f"{rel}: {msg}")
 
     sg_dir = catalog_dir / "style_guide"
     if sg_dir.is_dir():
