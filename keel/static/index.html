@@ -1312,9 +1312,8 @@ function switchScreen(name) {
   }
   const newBtn = document.getElementById("newThreatBtn");
   if (newBtn) {
-    // The mitigation create control is enabled in D2; hidden here until then.
-    newBtn.style.display = (name === "style" || name === "mitigations") ? "none" : "";
-    newBtn.title = "Create a new threat";
+    newBtn.style.display = name === "style" ? "none" : "";
+    newBtn.title = name === "mitigations" ? "Create a new mitigation" : "Create a new threat";
   }
   renderRail(); renderMain(); renderRight();
 }
@@ -1663,9 +1662,12 @@ function readMitigation(mt) {
   </div>`;
 }
 
-// Header actions for a mitigation (Edit / Delete). Enabled in D2 (edit + create/delete).
+// Header actions for a mitigation (Edit / Delete).
 function mitHeadActions() {
-  return "";
+  return `<div class="hactions">
+    <button class="btn ghost" id="mitEditBtn">✎ Edit</button>
+    <button class="btn ghost" id="mitDeleteBtn" title="Delete this mitigation">🗑 Delete</button>
+  </div>`;
 }
 
 // Wire the mitigation detail pane (read + edit).
@@ -1746,6 +1748,398 @@ function assembleMit() {
     validation: pick("validation", []),
     faq: pick("faq", []),
   };
+}
+
+// ------------------------------------------------------ mitigation edit ---- //
+// One input builder shared by standalone sections and grouped subfields.
+function mitInput(name, kind, rows) {
+  const d = state.mitDraft;
+  if (kind === "select") {
+    const vals = mitEnum(name);
+    const cur = d[name] || "";
+    const blank = name === "status" ? `<option value="" ${cur ? "" : "selected"}>— none —</option>` : "";
+    return `<select class="f" id="mit_${name}">${blank}${
+      vals.map(v => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>`;
+  }
+  if (kind === "textarea") {
+    return `<textarea class="f" id="mit_${name}" rows="${rows || 3}">${esc(d[name] || "")}</textarea>`;
+  }
+  return `<input class="f" id="mit_${name}" value="${esc(d[name] || "")}">`;
+}
+
+// A standalone SECTION whose legend IS the field label (fieldset/legend, no border).
+function mitScalarSection(name, label, kind, rows, sub) {
+  return `<fieldset class="field" data-entity="mitigation" data-field="${esc(name)}">
+    <legend class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</legend>
+    ${hintRow("mitigation", name)}
+    ${mitInput(name, kind, rows)}
+  </fieldset>`;
+}
+
+// A SUBFIELD inside a grouped section: a one-step-down h3 label, no border.
+function mitSubField(name, label, kind, rows) {
+  return `<div class="field" data-entity="mitigation" data-field="${esc(name)}">
+    <h3 class="slabel">${esc(label)}</h3>
+    ${hintRow("mitigation", name)}
+    ${mitInput(name, kind, rows)}
+  </div>`;
+}
+function mitGroupSection(legend, sub, inner) {
+  return `<fieldset class="section">
+    <legend class="slabel">${esc(legend)}${sub ? ` <span class="sub">${sub}</span>` : ""}</legend>
+    ${inner}
+  </fieldset>`;
+}
+
+// Anti-patterns — repeatable bordered .ecard cards, each holding one string.
+function antiPatternsEditor() {
+  const items = state.mitDraft.anti_patterns || [];
+  const open = state.mitApOpen || new Set();
+  const cards = items.map((v, i) => {
+    const isOpen = open.has(i);
+    const summary = (v || "").trim() ? esc((v || "").trim().slice(0, 48)) : "—";
+    const head = `<div class="ecard-head" data-idx="${i}">
+        <button type="button" class="card-toggle ap-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${isOpen ? "Anti-pattern " + (i + 1) : summary}</span>
+        <button type="button" class="cardx ap-remove" data-idx="${i}" title="Remove anti-pattern">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard ap-card collapsed" data-idx="${i}">${head}</div>`;
+    return `<div class="ecard ap-card open" data-idx="${i}">${head}
+      <div class="ecard-body">
+      <div class="field">
+        <textarea class="f ap-text" data-idx="${i}" rows="2" placeholder="a useless-but-plausible implementation">${esc(v || "")}</textarea>
+      </div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<fieldset class="field section" data-entity="mitigation" data-field="anti_patterns">
+    <legend class="slabel">Anti-patterns <span class="sub">— what a hollow implementation looks like</span></legend>
+    ${cards}
+    <button class="btn ghost" id="addAntiPattern">+ Add anti-pattern</button></fieldset>`;
+}
+
+// Validation — repeatable bordered .ecard cards (criterion / test / expected).
+function validationEditor() {
+  const items = state.mitDraft.validation || [];
+  const open = state.mitValOpen || new Set();
+  const cards = items.map((v, i) => {
+    const isOpen = open.has(i);
+    const summary = (v.criterion || "").trim() ? esc((v.criterion || "").trim().slice(0, 44)) : "—";
+    const head = `<div class="ecard-head" data-idx="${i}">
+        <button type="button" class="card-toggle val-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${isOpen ? "Check " + (i + 1) : summary}</span>
+        <button type="button" class="cardx val-remove" data-idx="${i}" title="Remove check">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard validation-card collapsed" data-idx="${i}">${head}</div>`;
+    return `<div class="ecard validation-card open" data-idx="${i}">${head}
+      <div class="ecard-body">
+      <div class="field" data-field="criterion">
+        <h3 class="slabel">Criterion</h3>
+        <textarea class="f val-criterion" data-idx="${i}" rows="2" placeholder="the pass/fail acceptance criterion">${esc(v.criterion || "")}</textarea>
+      </div>
+      <div class="field" data-field="test_scenario">
+        <h3 class="slabel">Test scenario</h3>
+        <textarea class="f val-test" data-idx="${i}" rows="2" placeholder="how it is exercised">${esc(v.test_scenario || "")}</textarea>
+      </div>
+      <div class="field" data-field="expected_result">
+        <h3 class="slabel">Expected result</h3>
+        <textarea class="f val-expected" data-idx="${i}" rows="2" placeholder="what a pass looks like">${esc(v.expected_result || "")}</textarea>
+      </div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<fieldset class="field section" data-entity="mitigation" data-field="validation">
+    <legend class="slabel">Validation <span class="sub">— acceptance criteria</span></legend>
+    ${cards}
+    <button class="btn ghost" id="addValidation">+ Add check</button></fieldset>`;
+}
+
+// FAQ — repeatable bordered .ecard cards (question / answer).
+function faqEditor() {
+  const items = state.mitDraft.faq || [];
+  const open = state.mitFaqOpen || new Set();
+  const cards = items.map((q, i) => {
+    const isOpen = open.has(i);
+    const summary = (q.question || "").trim() ? esc((q.question || "").trim().slice(0, 44)) : "—";
+    const head = `<div class="ecard-head" data-idx="${i}">
+        <button type="button" class="card-toggle faq-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${isOpen ? "Q " + (i + 1) : summary}</span>
+        <button type="button" class="cardx faq-remove" data-idx="${i}" title="Remove question">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard faq-card collapsed" data-idx="${i}">${head}</div>`;
+    return `<div class="ecard faq-card open" data-idx="${i}">${head}
+      <div class="ecard-body">
+      <div class="field" data-field="question">
+        <h3 class="slabel">Question</h3>
+        <input class="f faq-question" data-idx="${i}" value="${esc(q.question || "")}" placeholder="the question">
+      </div>
+      <div class="field" data-field="answer">
+        <h3 class="slabel">Answer</h3>
+        <textarea class="f faq-answer" data-idx="${i}" rows="3" placeholder="the answer">${esc(q.answer || "")}</textarea>
+      </div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<fieldset class="field section" data-entity="mitigation" data-field="faq">
+    <legend class="slabel">FAQ <span class="sub">— common questions</span></legend>
+    ${cards}
+    <button class="btn ghost" id="addFaq">+ Add question</button></fieldset>`;
+}
+
+// Edit form — the mitigation card grouped into the same section tiers as the read view.
+function editMitigation(mt) {
+  const d = state.mitDraft;
+  const body = `<div id="mitErrSummary" class="err-summary" style="display:none"></div>
+    ${mitGroupSection("Identity", "— class + status", mitSubField("mitigation_class", "Class", "select") + mitSubField("status", "Status", "select"))}
+    ${mitScalarSection("purpose", "Purpose", "textarea", 3)}
+    ${mitScalarSection("scope", "Scope", "textarea", 3, "— applicability rule + boundary")}
+    ${mitScalarSection("control_mechanism", "Control mechanism", "textarea", 3)}
+    ${mitScalarSection("failure_behavior", "Failure behavior", "textarea", 3)}
+    ${mitScalarSection("formal_implementation_risk", "Risk of formal implementation", "textarea", 3)}
+    ${mitScalarSection("review", "Review", "textarea", 2)}
+    ${mitGroupSection("Ownership", "— maintainer / owner / locus",
+      mitSubField("maintainer", "Maintainer", "text") + mitSubField("owner", "Owner", "text") + mitSubField("locus", "Locus", "text"))}
+    ${mitScalarSection("telemetry", "Telemetry", "textarea", 2)}
+    ${antiPatternsEditor()}
+    ${validationEditor()}
+    ${faqEditor()}`;
+
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">⛨</div>
+      <div class="dtitle field" data-entity="mitigation" data-field="name" style="width:100%">
+        ${hintRow("mitigation", "name")}
+        <input class="f titlein" id="mit_name" value="${esc(d.name)}">
+        <div class="did" style="margin-top:6px">${esc(mt.id)}</div>
+      </div>
+      <div class="hactions" style="flex-direction:column;align-items:flex-end;gap:8px">
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" id="mitSaveBtn">✔ Save</button>
+          <button class="btn ghost" id="mitCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function enterMitEdit() {
+  const mt = state.currentMit;
+  state.mitDraft = {
+    name: mt.name || "", status: mt.status || "",
+    mitigation_class: mt.mitigation_class || (mitEnum("mitigation_class")[0] || ""),
+    purpose: mt.purpose || "", scope: mt.scope || "", control_mechanism: mt.control_mechanism || "",
+    failure_behavior: mt.failure_behavior || "", formal_implementation_risk: mt.formal_implementation_risk || "",
+    review: mt.review || "", maintainer: mt.maintainer || "", owner: mt.owner || "", locus: mt.locus || "",
+    telemetry: mt.telemetry || "",
+    anti_patterns: [...(mt.anti_patterns || [])],
+    validation: (mt.validation || []).map(v => ({
+      criterion: v.criterion || "", test_scenario: v.test_scenario || "", expected_result: v.expected_result || "",
+    })),
+    faq: (mt.faq || []).map(q => ({ question: q.question || "", answer: q.answer || "" })),
+  };
+  state.mitApOpen = new Set((mt.anti_patterns || []).length ? [0] : []);
+  state.mitValOpen = new Set((mt.validation || []).length ? [0] : []);
+  state.mitFaqOpen = new Set((mt.faq || []).length ? [0] : []);
+  state.mitEditing = true; state.railMode = "preview"; state.guidance = null;
+  state.mitValidation = { errors: [], advice: [] };
+  renderMitDetail(); renderMitPreview();
+}
+
+// A blank draft for a new mitigation (id + name prompted; class defaults to the first enum).
+function newMitigation() {
+  const id = (window.prompt("New mitigation id (e.g. CTRL-NEW-CONTROL):") || "").trim();
+  if (!id) return;
+  if (state.mitList.some(([mid]) => mid === id)) { toast("A mitigation with that id already exists", true); return; }
+  const name = (window.prompt("Name (you can edit it below):") || "").trim();
+  const class0 = mitEnum("mitigation_class")[0] || "";
+  const blank = {
+    id, name, status: "draft", mitigation_class: class0, purpose: "", scope: "",
+    control_mechanism: "", failure_behavior: "", formal_implementation_risk: "", review: "",
+    maintainer: "", owner: "", locus: "", telemetry: "", anti_patterns: [], validation: [], faq: [],
+  };
+  state.mitSelected = id;
+  state.currentMit = { ...blank };
+  state.mitDraft = { ...blank, isNew: true };
+  state.mitApOpen = new Set(); state.mitValOpen = new Set(); state.mitFaqOpen = new Set();
+  state.mitEditing = true; state.railMode = "preview"; state.guidance = null;
+  state.mitValidation = { errors: [], advice: [] };
+  renderMitRail(); renderMitDetail(); renderMitPreview();
+}
+
+async function deleteMitigation() {
+  const id = state.mitSelected;
+  if (!id || (state.mitDraft && state.mitDraft.isNew)) return;
+  if (!window.confirm(`Delete ${id}? It will be unlinked from any threats that reference it.`)) return;
+  try { await api("DELETE", "/mitigations/" + encodeURIComponent(id)); }
+  catch (e) { toast(e.message, true); return; }
+  await refreshMitList();
+  try { const d = await j("/threats?brief=false&include=mitigations"); state.threatMits = d.threats || []; } catch (e) { /* keep */ }
+  state.mitSelected = null; state.currentMit = null; state.mitDraft = null;
+  state.mitEditing = false; state.railMode = "preview"; state.guidance = null;
+  state.mitValidation = { errors: [], advice: [] };
+  renderMitRail(); renderMitDetail(); renderMitPreview();
+  toast("Mitigation deleted");
+}
+
+async function refreshMitList() {
+  const mi = await j("/mitigations");
+  state.mitList = mi.mitigations || [];
+  state.mitById = Object.fromEntries(
+    state.mitList.map(([id, name, mc]) => [id, { id, name, mitigation_class: mc }])
+  );
+}
+
+// Wire the edit form: scalar fields, the three card lists, add/remove/collapse.
+const MIT_SCALARS = ["name", "status", "mitigation_class", "purpose", "scope", "control_mechanism",
+  "failure_behavior", "formal_implementation_risk", "review", "maintainer", "owner", "locus", "telemetry"];
+function shiftOpenSet(set, removed) {
+  const next = new Set();
+  (set || new Set()).forEach(x => { if (x < removed) next.add(x); else if (x > removed) next.add(x - 1); });
+  return next;
+}
+function wireMitEdit() {
+  const d = state.mitDraft;
+  MIT_SCALARS.forEach(n => {
+    const el = document.getElementById("mit_" + n);
+    if (!el) return;
+    const ev = el.tagName === "SELECT" ? "onchange" : "oninput";
+    el[ev] = () => { d[n] = el.value; };
+  });
+  // Anti-pattern cards
+  document.querySelectorAll(".ap-card").forEach(card => {
+    const i = +card.dataset.idx;
+    const text = card.querySelector(".ap-text");
+    if (text) text.oninput = () => d.anti_patterns[i] = text.value;
+    const rm = card.querySelector(".ap-remove");
+    if (rm) rm.onclick = e => { e.stopPropagation(); d.anti_patterns.splice(i, 1); state.mitApOpen = shiftOpenSet(state.mitApOpen, i); renderMitDetail(); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => { if (e.target.closest(".ap-remove")) return; toggleSet(state.mitApOpen, i); renderMitDetail(); };
+  });
+  const addAp = document.getElementById("addAntiPattern");
+  if (addAp) addAp.onclick = () => { d.anti_patterns.push(""); (state.mitApOpen || (state.mitApOpen = new Set())).add(d.anti_patterns.length - 1); renderMitDetail(); };
+  // Validation cards
+  document.querySelectorAll(".validation-card").forEach(card => {
+    const i = +card.dataset.idx;
+    const cr = card.querySelector(".val-criterion");
+    const ts = card.querySelector(".val-test");
+    const ex = card.querySelector(".val-expected");
+    if (cr) cr.oninput = () => d.validation[i].criterion = cr.value;
+    if (ts) ts.oninput = () => d.validation[i].test_scenario = ts.value;
+    if (ex) ex.oninput = () => d.validation[i].expected_result = ex.value;
+    const rm = card.querySelector(".val-remove");
+    if (rm) rm.onclick = e => { e.stopPropagation(); d.validation.splice(i, 1); state.mitValOpen = shiftOpenSet(state.mitValOpen, i); renderMitDetail(); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => { if (e.target.closest(".val-remove")) return; toggleSet(state.mitValOpen, i); renderMitDetail(); };
+  });
+  const addVal = document.getElementById("addValidation");
+  if (addVal) addVal.onclick = () => { d.validation.push({ criterion: "", test_scenario: "", expected_result: "" }); (state.mitValOpen || (state.mitValOpen = new Set())).add(d.validation.length - 1); renderMitDetail(); };
+  // FAQ cards
+  document.querySelectorAll(".faq-card").forEach(card => {
+    const i = +card.dataset.idx;
+    const q = card.querySelector(".faq-question");
+    const a = card.querySelector(".faq-answer");
+    if (q) q.oninput = () => d.faq[i].question = q.value;
+    if (a) a.oninput = () => d.faq[i].answer = a.value;
+    const rm = card.querySelector(".faq-remove");
+    if (rm) rm.onclick = e => { e.stopPropagation(); d.faq.splice(i, 1); state.mitFaqOpen = shiftOpenSet(state.mitFaqOpen, i); renderMitDetail(); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => { if (e.target.closest(".faq-remove")) return; toggleSet(state.mitFaqOpen, i); renderMitDetail(); };
+  });
+  const addFaq = document.getElementById("addFaq");
+  if (addFaq) addFaq.onclick = () => { d.faq.push({ question: "", answer: "" }); (state.mitFaqOpen || (state.mitFaqOpen = new Set())).add(d.faq.length - 1); renderMitDetail(); };
+}
+
+// Map a failed PATCH/POST error path to its .field wrapper (no live validate endpoint).
+function fieldElMit(path) {
+  if (!path) return null;
+  const parts = path.split(".");
+  if ((parts[0] === "validation" || parts[0] === "faq") && parts.length === 3) {
+    return document.querySelector(`.${parts[0]}-card[data-idx="${CSS.escape(parts[1])}"] .field[data-field="${CSS.escape(parts[2])}"]`)
+      || document.querySelector(`.field[data-entity="mitigation"][data-field="${CSS.escape(parts[0])}"]`);
+  }
+  if (parts[0] === "anti_patterns") {
+    return document.querySelector('.field[data-entity="mitigation"][data-field="anti_patterns"]');
+  }
+  if (parts.length === 1) {
+    return document.querySelector(`.field[data-entity="mitigation"][data-field="${CSS.escape(parts[0])}"]`);
+  }
+  return null;
+}
+function renderMitErrorSummary(errors) {
+  const el = document.getElementById("mitErrSummary");
+  if (!el) return;
+  if (!errors.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "block";
+  el.innerHTML = `<strong>Fix these before saving:</strong><ul>${errors.map(e =>
+    `<li>${e.field ? `<code>${esc(e.field)}</code> — ` : ""}${esc(e.msg)}</li>`).join("")}</ul>`;
+}
+// Same red channel the threat editor uses — mapped from the server's Pydantic errors.
+function applyMitValidation() {
+  const errors = (state.mitValidation && state.mitValidation.errors) || [];
+  document.querySelectorAll("#main .fld-msg").forEach(e => e.remove());
+  document.querySelectorAll("#main .field").forEach(f => f.classList.remove("has-err", "has-adv"));
+  renderMitErrorSummary(errors);
+  errors.forEach(item => {
+    const el = fieldElMit(item.field);
+    if (!el) return;
+    el.classList.add("has-err");
+    const msg = document.createElement("div");
+    msg.className = "fld-msg err";
+    msg.textContent = item.msg;
+    el.appendChild(msg);
+  });
+}
+
+// Save: PATCH an existing mitigation, POST a new one. A failed request maps the
+// server's Pydantic error response into the RED channel (dup id on create → 409).
+async function saveMitigation() {
+  const d = state.mitDraft;
+  const isNew = !!d.isNew;
+  const body = {
+    name: d.name,
+    status: d.status || null,
+    mitigation_class: d.mitigation_class,
+    purpose: d.purpose, scope: d.scope, control_mechanism: d.control_mechanism,
+    failure_behavior: d.failure_behavior, formal_implementation_risk: d.formal_implementation_risk,
+    review: d.review, maintainer: d.maintainer, owner: d.owner, locus: d.locus, telemetry: d.telemetry,
+    anti_patterns: (d.anti_patterns || []).map(s => (s || "").trim()).filter(Boolean),
+    validation: (d.validation || []).filter(v => (v.criterion || "").trim()).map(v => ({
+      criterion: v.criterion, test_scenario: v.test_scenario || null, expected_result: v.expected_result || null,
+    })),
+    faq: (d.faq || []).filter(q => (q.question || "").trim() || (q.answer || "").trim())
+      .map(q => ({ question: q.question, answer: q.answer })),
+  };
+  const url = isNew ? "/mitigations" : "/mitigations/" + encodeURIComponent(state.mitSelected);
+  if (isNew) body.id = state.mitSelected;
+  const r = await fetch(url, {
+    method: isNew ? "POST" : "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    let errs;
+    if (Array.isArray(data.detail)) {
+      errs = data.detail.map(e => ({
+        field: (e.loc || []).filter(x => x !== "body").join("."),
+        msg: e.msg || "invalid",
+      }));
+    } else {
+      errs = [{ field: "", msg: data.detail || ((isNew ? "POST " : "PATCH ") + url + " → " + r.status) }];
+    }
+    state.mitValidation = { errors: errs, advice: [] };
+    applyMitValidation();
+    toast("Save blocked — fix the errors", true);
+    return;
+  }
+  state.currentMit = await j("/mitigations/" + encodeURIComponent(state.mitSelected));
+  state.mitEditing = false; state.mitDraft = null;
+  state.railMode = "preview"; state.guidance = null;
+  await refreshMitList();
+  state.mitValidation = { errors: [], advice: [] };
+  renderMitRail(); renderMitDetail(); renderMitPreview();
+  showSavedDialog("catalog/mitigations/" + state.mitSelected + ".yaml");
 }
 
 // --------------------------------------------------------------- start ----- //
