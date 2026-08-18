@@ -95,12 +95,34 @@ uv sync
 uv run uvicorn keel.main:app     # browse UI + REST at http://localhost:8000/
 uv run keel                      # stdio MCP   (uv run keel --http → HTTP MCP on :8001)
 uv run keel validate             # check the catalog YAML against the schemas
+uv run keel schema               # regenerate schema/*.json from the models (schema --check verifies freshness)
 ```
 
 Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
 </details>
 
 `catalog/*.yaml` is the single source of truth — there is no database. Every write, whether from an MCP tool, the browse UI, or your text editor, is a change to those files. The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked, and its inline editing patches the YAML directly through the same service layer the MCP write tools use.
+
+## Authoring UI
+
+Running the app (see **Run** above) serves a small browse-and-edit interface at `http://localhost:8000/` — one static HTML file, no build step. A switcher at the top moves between its two screens.
+
+**Threats** browses the catalog and edits one threat at a time in a three-pane layout: the list of threats on the left, the editor in the middle, and a live preview on the right. The editor builds its form from the JSON Schema, so the fields, their order, and the fixed-vocabulary dropdowns always match the model. Weaknesses and mitigation links show as cards you can add, edit, and remove. As you work, an inline style-guide bar keeps a one-line hint under each field and opens the full guidance — what to include, what to avoid, and an example you can drop straight in — while that field has focus. Every change is checked on the server through one endpoint, `POST /threats/validate`, which returns two kinds of feedback: red blocking errors when the structure is wrong (a value outside a fixed vocabulary, a missing required field) and amber advice that never blocks a save (for example, a threat whose mitigations are all soft). A read-only YAML view shows exactly what will be written to disk.
+
+**Style guide** edits the authoring guidance itself. The left rail is a field tree derived from the model, each field carrying a coverage badge, so the guidance can't drift from the fields it describes; fields with guidance but no matching model field are flagged as orphans. The center pane edits a field's slots — purpose, what to include, what to avoid, examples — and the right pane shows precisely what an author sees on the Threats screen while you edit that same guidance.
+
+### The JSON Schema
+
+The form and its dropdowns read a JSON Schema generated from the Pydantic models — never hand-written, so it cannot drift from the code. `keel schema` regenerates the files under `schema/`, `keel schema --check` fails when they are stale (CI runs this as a gate), and `GET /schema/{entity}` serves them to the browser.
+
+### Saving is a pull request
+
+Both screens write straight to the catalog YAML through the same service layer the MCP write tools use. After a save the UI names the exact file it wrote (`catalog/threats/<id>.yaml` or `catalog/style_guide/<entity>.yaml`) and asks you to commit and open a pull request, so every change lands as a reviewable diff. Set `REPO_URL` (for example `https://github.com/org/keel`) and the confirmation gains an "Edit on GitHub" link straight to that file; leave it unset and the link stays hidden.
+
+### Deferred / not yet implemented
+
+- The raw-YAML view is read-only for now: you can see exactly what will be written, but you cannot edit the YAML there and round-trip it back into the form.
+- The UI edits existing threats; creating a brand-new threat from the UI is not built yet — add one through the MCP write tools or by hand, then edit it here.
 
 ## Tests
 

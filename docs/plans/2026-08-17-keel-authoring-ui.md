@@ -1,5 +1,7 @@
 # Keel authoring UI Implementation Plan
 
+> **Status: complete.** All five milestones (Tasks 1–20) are done and committed on `threat-model-v2`. The full gate is green: `pytest` (24 passed), `ruff check keel tests`, `keel validate`, `keel schema --check`. Deferred items (editable raw-YAML round-trip; create-new-threat from the UI) are listed under **Deferred** below and noted in the README.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Ship the schema-driven browse/edit screen and the style-guide editor described in the design doc, backed by a JSON Schema generated from the Pydantic models and one server-side validator that feeds two feedback channels (blocking structure errors vs. non-blocking advice).
