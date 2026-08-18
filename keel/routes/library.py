@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import ValidationError
 
 from keel.catalog import lint_threat
+from keel.config import settings
 from keel.schema_export import build_schemas
 from keel.schemas.mitigation import MitigationUpdate
 from keel.schemas.threat import Threat, ThreatUpdate
@@ -134,3 +135,12 @@ async def get_schema(entity: str):
     if entity not in schemas:
         raise HTTPException(status_code=404, detail=f"unknown entity {entity!r}")
     return schemas[entity]
+
+
+# --------------------------------------------------------------------------- #
+# Config
+# --------------------------------------------------------------------------- #
+@router.get("/config")
+async def get_config():
+    """UI config. `repo_url` powers the optional 'Edit on GitHub' link on save."""
+    return {"repo_url": settings.repo_url}
