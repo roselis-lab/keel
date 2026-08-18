@@ -122,13 +122,13 @@ uv run keel schema               # regenerate schema/*.json from the models (sch
 Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
 </details>
 
-`catalog/*.yaml` is the single source of truth. There is no database. Every write, whether from an MCP tool, the browse UI, or your text editor, is a change to those files. The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked, and its inline editing patches the YAML directly through the same service layer the MCP write tools use.
+`catalog/*.yaml` is the single source of truth. There is no database. Every write, whether from an MCP tool, the browse UI, or your text editor, changes those files. The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked, and its inline editing patches the YAML directly through the same service layer the MCP write tools use.
 
 ## Authoring UI
 
-Running the app (see **Run** above) serves a small browse-and-edit interface at `http://localhost:8000/`, a single static HTML file with no build step. A switcher at the top moves between four screens: Overview, Threats, Mitigations, and Style guide.
+Running the app (see **Run** above) serves a browse-and-edit interface at `http://localhost:8000/`, a single static HTML file with no build step. A switcher at the top moves between four screens: Overview, Threats, Mitigations, and Style guide.
 
-The interface is review-first. The fastest way to author the model is to ask an LLM to do it through the MCP tools (it drafts to the style guide and writes the YAML for you), and committing and opening a pull request is done by your agent or plain git. The UI writes files and points you to the file to commit; it is not a git client. So the UI's main jobs are reviewing the model at a glance and hands-on edits when you want them; it carries the full create/read/update/delete for both threats and mitigations as a complete fallback.
+The interface is review-first. The fastest way to author the model is to ask an LLM to do it through the MCP tools (it drafts to the style guide and writes the YAML for you), and your agent or plain git commits and opens the pull request. The UI writes files and points you to the file to commit; it is not a git client. So the UI's main jobs are reviewing the model at a glance and hands-on edits when you want them; it carries the full create/read/update/delete for both threats and mitigations as a complete fallback.
 
 **Overview** is the landing screen: the counts (threats, mitigations, links), style-guide coverage overall and per entity, and a "gaps to review" list (threats missing a weakness or a harm, threats with no mitigation, dangling links), each with clickable chips that jump straight to the threat. Nothing here blocks anything; it is a place to see where the model is thin.
 
