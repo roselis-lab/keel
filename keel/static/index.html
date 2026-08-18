@@ -246,6 +246,7 @@
   <header>
     <h1 id="railTitle">Keel · Threats</h1>
     <span class="count" id="count"></span>
+    <button class="btn sm ghost" id="newThreatBtn" title="Create a new threat" style="margin-left:8px">＋ New</button>
   </header>
   <div class="search" id="searchWrap"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
   <div class="list" id="list"></div>
@@ -453,7 +454,10 @@ function readThreat(t) {
           ${t.harm ? badge("harm", t.harm) : '<span class="badge soft" style="color:var(--crimson-600)">no harm</span>'}
         </div>
       </div>
-      <div class="hactions"><button class="btn ghost" id="editBtn">✎ Edit</button></div>
+      <div class="hactions">
+        <button class="btn ghost" id="editBtn">✎ Edit</button>
+        <button class="btn ghost" id="deleteBtn" title="Delete this threat">🗑 Delete</button>
+      </div>
     </div>
     <section><h3 class="slabel">Surface <span class="sub">— where the interaction happens</span></h3><div class="badges">${surface}</div></section>
     <section><h3 class="slabel">Source <span class="sub">— who or what drives it</span></h3><div class="badges">${source}</div></section>
@@ -652,6 +656,12 @@ function weaknessesEditor() {
 // Mitigation links — cards over state.current.mitigations (immediate server writes,
 // separate from the draft/Save flow). Link/unlink/strength/rationale hit the API directly.
 function mitigationsEditor() {
+  // Links are immediate server writes, so they need the threat to exist first.
+  if (state.draft && state.draft.isNew) {
+    return `<fieldset class="section ml-section">
+      <legend class="slabel">Mitigations</legend>
+      <p class="placeholder">Save the threat first, then link mitigations.</p></fieldset>`;
+  }
   const links = (state.current && state.current.mitigations) || [];
   const linkedIds = new Set(links.map(l => l.id));
   const strengths = strengthEnum();
@@ -737,8 +747,17 @@ function referencesEditor() {
 function wireDetail() {
   const editBtn = document.getElementById("editBtn");
   if (editBtn) editBtn.onclick = enterEdit;
+  const deleteBtn = document.getElementById("deleteBtn");
+  if (deleteBtn) deleteBtn.onclick = deleteThreat;
   const cancelBtn = document.getElementById("cancelBtn");
-  if (cancelBtn) cancelBtn.onclick = () => { state.editing = false; state.draft = null; state.view = "structure"; state.railMode = "preview"; state.guidance = null; renderDetail(); renderPreview(); };
+  if (cancelBtn) cancelBtn.onclick = () => {
+    // A brand-new, never-saved threat has no server record — drop the selection on cancel.
+    const wasNew = state.draft && state.draft.isNew;
+    state.editing = false; state.draft = null; state.view = "structure";
+    state.railMode = "preview"; state.guidance = null;
+    if (wasNew) { state.selected = null; state.current = null; renderList(); }
+    renderDetail(); renderPreview();
+  };
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) saveBtn.onclick = saveThreat;
   const structBtn = document.getElementById("viewStructBtn");
@@ -771,6 +790,52 @@ function enterEdit() {
   renderDetail();
   renderPreview();   // repaint the rail so the Guidance toggle enables
   validateDraft();   // seed the red/amber channels for the initial draft
+}
+
+// Create a brand-new threat: open a blank draft in edit mode. The record is only a
+// client-side stub (isNew) until Save, which POSTs it. A new threat starts with no
+// weaknesses, so validate/Save stays blocked until at least one is added — correct.
+function newThreat() {
+  const id = (window.prompt("New threat id (e.g. T-NEW-THREAT):") || "").trim();
+  if (!id) return;
+  if (state.threats.some(([tid]) => tid === id)) { toast("A threat with that id already exists", true); return; }
+  const title = (window.prompt("Title (optional — you can edit it below):") || "").trim();
+  const harm0 = harmEnum()[0] || "";
+  state.selected = id;
+  state.current = {
+    id, title, harm: harm0, surface: [], source: [],
+    weaknesses: [], reachability: "", mitigations: [], references: [], tags: [],
+  };
+  state.draft = {
+    isNew: true,
+    title, harm: harm0, surface: [], source: [],
+    reachability: "", tags: [], weaknesses: [], references: [],
+  };
+  state.wkOpen = new Set(); state.mlOpen = new Set(); state.refOpen = new Set();
+  state.editing = true; state.view = "structure";
+  state.railMode = "preview"; state.guidance = null;
+  state.validation = { errors: [], advice: [] };
+  renderList(); renderDetail(); renderPreview();
+  validateDraft();
+}
+
+// Delete an existing threat after a confirm. Removes its file server-side, then clears
+// the selection and refreshes the rail. A never-saved (isNew) threat has no server record.
+async function deleteThreat() {
+  const id = state.selected;
+  if (!id || (state.draft && state.draft.isNew)) return;
+  if (!window.confirm(`Delete ${id}? This removes the threat and its mitigation links.`)) return;
+  try {
+    await api("DELETE", "/threats/" + encodeURIComponent(id));
+  } catch (e) { toast(e.message, true); return; }
+  const tr = await j("/threats");
+  state.threats = tr.threats || [];
+  state.selected = null; state.current = null; state.draft = null;
+  state.editing = false; state.view = "structure";
+  state.railMode = "preview"; state.guidance = null;
+  state.validation = { errors: [], advice: [] };
+  renderList(); renderDetail(); renderPreview();
+  toast("Threat deleted");
 }
 
 function wireThreatEdit() {
@@ -1048,6 +1113,7 @@ async function saveThreat() {
   if (state.view === "yaml") return;                 // YAML view is read-only
   if (state.validation.errors.length) return;        // blocked while errors remain
   const d = state.draft;
+  const isNew = !!d.isNew;
   const body = {
     title: d.title,
     harm: d.harm,
@@ -1058,9 +1124,13 @@ async function saveThreat() {
     weaknesses: d.weaknesses,
     references: d.references,
   };
-  const url = "/threats/" + encodeURIComponent(state.selected);
+  // A new threat is POSTed as a full record (id required, no links yet); an existing
+  // one is PATCHed by id. Duplicate id on create → 409, surfaced in the red channel.
+  const isCreate = isNew;
+  const url = isCreate ? "/threats" : "/threats/" + encodeURIComponent(state.selected);
+  if (isCreate) { body.id = state.selected; body.mitigations = []; }
   const r = await fetch(url, {
-    method: "PATCH",
+    method: isCreate ? "POST" : "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -1081,12 +1151,19 @@ async function saveThreat() {
     toast("Save blocked — fix the errors", true);
     return;
   }
-  state.current = await j(url);
+  const getUrl = "/threats/" + encodeURIComponent(state.selected);
+  state.current = await j(getUrl);
   state.editing = false; state.draft = null; state.view = "structure";
   state.railMode = "preview"; state.guidance = null;
-  // reflect a possible title change in the rail
-  const row = state.threats.find(r => r[0] === state.selected);
-  if (row) row[1] = state.current.title;
+  if (isCreate) {
+    // Pull the fresh brief list so the new threat shows in the rail (kept sorted server-side).
+    const tr = await j("/threats");
+    state.threats = tr.threats || [];
+  } else {
+    // reflect a possible title change in the rail
+    const row = state.threats.find(r => r[0] === state.selected);
+    if (row) row[1] = state.current.title;
+  }
   state.validation = { errors: [], advice: [] };
   renderList(); renderDetail(); renderPreview();
   validateDraft();
@@ -1212,6 +1289,8 @@ function switchScreen(name) {
   document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
   document.getElementById("railTitle").textContent = name === "style" ? "Keel · Style guide" : "Keel · Threats";
   document.getElementById("searchWrap").style.display = name === "style" ? "none" : "";
+  const newBtn = document.getElementById("newThreatBtn");
+  if (newBtn) newBtn.style.display = name === "style" ? "none" : "";
   renderRail(); renderMain(); renderRight();
 }
 function renderRail() { state.screen === "style" ? renderStyleRail() : renderList(); }
@@ -1408,6 +1487,7 @@ async function saveStyleField() {
 
 // --------------------------------------------------------------- start ----- //
 document.getElementById("search").oninput = e => { state.filter = e.target.value; renderList(); };
+document.getElementById("newThreatBtn").onclick = newThreat;
 document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
 // Focusing a form field switches the right rail to Guidance for THAT field. The
 // rail re-renders; the form column never reflows (all guidance lives in the rail).
