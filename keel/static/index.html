@@ -122,14 +122,18 @@
   .hint { color: var(--navy-400); font-size: 12px; margin-top: 4px; }
 
   /* ------ repeatable editor cards (weaknesses, mitigation links) ------ */
-  .ecard { position: relative; border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; background: var(--tint); }
-  .ecard .field + .field { margin-top: 12px; }
-  .cardx { position: absolute; top: 9px; right: 11px; border: none; background: none; color: var(--navy-400); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  /* The card border is the ONLY heavy container: surface fill + border + radius + padding. */
+  .ecard { position: relative; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: var(--tint); }
+  .ecard-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; user-select: none; }
+  .ecard.collapsed .ecard-head { padding: 9px 12px; }
+  .ecard-body { padding: 2px 14px 14px; }
+  .ecard-sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--navy-700); font-weight: 600; font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .card-toggle { border: none; background: none; color: var(--navy-500); font-size: 11px; line-height: 1; padding: 2px 3px; }
+  .card-toggle:hover { color: var(--navy-800); }
+  .ecard .field + .field { margin-top: var(--field-gap); }
+  .cardx { border: none; background: none; color: var(--navy-400); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
   .cardx:hover { background: var(--crimson-50); color: var(--crimson-600); }
-  .ml-head { display: flex; align-items: center; gap: 8px; padding-right: 22px; }
-  .ml-head .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
-  .ml-head .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
-  .link-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .link-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
   .link-row select { flex: 1; }
 
   /* ------ inline style-guide bar ------ */
@@ -585,16 +589,36 @@ function fieldEditor(name, d) {
   return "";
 }
 
-// Weaknesses — repeatable cards bound to state.draft.weaknesses (an array).
+// Small helpers for card open-state (the ONLY heavy container is the card border).
+function toggleSet(set, key) { if (!set) return; if (set.has(key)) set.delete(key); else set.add(key); }
+// After splicing index `removed`, shift the remaining open indices down by one.
+function shiftWkOpen(removed) {
+  const next = new Set();
+  (state.wkOpen || new Set()).forEach(x => { if (x < removed) next.add(x); else if (x > removed) next.add(x - 1); });
+  state.wkOpen = next;
+}
+
+// Weaknesses — repeatable BORDERED cards bound to state.draft.weaknesses.
+// First card expanded; the rest collapse to a one-line summary (component · text).
 function weaknessesEditor() {
   const ws = state.draft.weaknesses || [];
   const comps = componentEnum();
   const nats = natureEnum();
+  const open = state.wkOpen || new Set();
   const cards = ws.map((w, i) => {
+    const isOpen = open.has(i);
+    const summary = `${esc(w.component || "—")}${(w.text || "").trim() ? " · " + esc((w.text || "").trim().slice(0, 40)) : ""}`;
+    const head = `<div class="ecard-head" data-widx="${i}">
+        <button type="button" class="card-toggle wk-toggle" data-widx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${isOpen ? "Weakness " + (i + 1) : summary}</span>
+        <button type="button" class="cardx wk-remove" data-widx="${i}" title="Remove weakness">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard wk-card collapsed" data-widx="${i}">${head}</div>`;
     const compOpts = comps.map(c => `<option value="${esc(c)}" ${c === w.component ? "selected" : ""}>${esc(c)}</option>`).join("");
     const natOpts = nats.map(n => `<option value="${esc(n)}" ${n === w.nature ? "selected" : ""}>${esc(n)}</option>`).join("");
-    return `<div class="ecard wk-card" data-widx="${i}">
-      <button class="cardx wk-remove" data-widx="${i}" title="Remove weakness">✕</button>
+    return `<div class="ecard wk-card open" data-widx="${i}">
+      ${head}
+      <div class="ecard-body">
       <div class="field" data-entity="weakness" data-field="component">
         <h3 class="slabel">Component</h3>
         ${hintRow("weakness", "component")}
@@ -610,6 +634,7 @@ function weaknessesEditor() {
         ${hintRow("weakness", "nature")}
         <select class="f wk-nature" data-widx="${i}">${natOpts}</select>
       </div>
+      </div>
     </div>`;
   }).join("");
   return `<fieldset class="section wk-section">
@@ -624,15 +649,22 @@ function mitigationsEditor() {
   const links = (state.current && state.current.mitigations) || [];
   const linkedIds = new Set(links.map(l => l.id));
   const strengths = strengthEnum();
+  const open = state.mlOpen || new Set();
   const cards = links.length ? links.map(l => {
     const mm = state.mitById[l.id];
+    const isOpen = open.has(l.id);
+    const summary = `${esc(l.id)} · ${esc(mm ? mm.name : "(missing)")}`;
+    const head = `<div class="ecard-head" data-mid="${esc(l.id)}">
+        <button type="button" class="card-toggle ml-toggle" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
+        <span class="ecard-sum">${summary}</span>
+        ${isOpen && l.strength ? `<span class="badge soft">${esc(l.strength)}</span>` : ""}
+        <button type="button" class="cardx ml-unlink" title="Unlink mitigation">✕</button>
+      </div>`;
+    if (!isOpen) return `<div class="ecard ml-card collapsed" data-mid="${esc(l.id)}">${head}</div>`;
     const opts = strengths.map(s => `<option value="${esc(s)}" ${s === l.strength ? "selected" : ""}>${esc(s)}</option>`).join("");
-    return `<div class="ecard ml-card" data-mid="${esc(l.id)}">
-      <button class="cardx ml-unlink" title="Unlink mitigation">✕</button>
-      <div class="ml-head">
-        <span class="cid">${esc(l.id)}</span>
-        <span class="ctitle">${esc(mm ? mm.name : "(missing)")}</span>
-      </div>
+    return `<div class="ecard ml-card open" data-mid="${esc(l.id)}">
+      ${head}
+      <div class="ecard-body">
       <div class="field" data-entity="mitigation_link" data-field="strength">
         <h3 class="slabel">Strength</h3>
         ${hintRow("mitigation_link", "strength")}
@@ -642,6 +674,7 @@ function mitigationsEditor() {
         <h3 class="slabel">Rationale</h3>
         ${hintRow("mitigation_link", "rationale")}
         <textarea class="f ml-rationale" id="ml_rat_${esc(l.id)}" rows="2" placeholder="why this control addresses this threat">${esc(l.rationale || "")}</textarea>
+      </div>
       </div>
     </div>`;
   }).join("") : '<p class="placeholder">None linked.</p>';
@@ -685,6 +718,9 @@ function enterEdit() {
       component: w.component, text: w.text || "", nature: w.nature || "targeted",
     })),
   };
+  // Progressive disclosure: the FIRST repeatable card is expanded, the rest collapse.
+  state.wkOpen = new Set((t.weaknesses || []).length ? [0] : []);
+  state.mlOpen = new Set((t.mitigations || [])[0] ? [t.mitigations[0].id] : []);
   state.editing = true;
   state.railMode = "preview"; state.guidance = null;
   renderDetail();
@@ -721,7 +757,13 @@ function wireMitigations() {
     if (strength) strength.onchange = persist;
     if (rationale) rationale.onblur = persist;
     const unlink = card.querySelector(".ml-unlink");
-    if (unlink) unlink.onclick = () => unlinkMit(mid);
+    if (unlink) unlink.onclick = e => { e.stopPropagation(); unlinkMit(mid); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => {
+      if (e.target.closest(".ml-unlink")) return;   // unlink handles itself
+      toggleSet(state.mlOpen, mid);
+      renderDetail();
+    };
   });
   const linkBtn = document.getElementById("mlLinkBtn");
   if (linkBtn) linkBtn.onclick = () => {
@@ -739,6 +781,7 @@ const mitUrl = mid =>
 async function linkMit(mid) {
   try {
     await api("PUT", mitUrl(mid), { strength: "gating", rationale: "" });
+    (state.mlOpen || (state.mlOpen = new Set())).add(mid);   // open the freshly linked card
     await refreshCurrent(); renderDetail(); renderPreview();
     toast("Mitigation linked");
   } catch (e) { toast(e.message, true); }
@@ -746,6 +789,7 @@ async function linkMit(mid) {
 async function unlinkMit(mid) {
   try {
     await api("DELETE", mitUrl(mid));
+    if (state.mlOpen) state.mlOpen.delete(mid);
     await refreshCurrent(); renderDetail(); renderPreview();
     toast("Mitigation unlinked");
   } catch (e) { toast(e.message, true); }
@@ -770,11 +814,18 @@ function wireWeaknesses() {
     if (text) text.oninput = () => d.weaknesses[i].text = text.value;
     if (nat) nat.onchange = () => d.weaknesses[i].nature = nat.value;
     const rm = card.querySelector(".wk-remove");
-    if (rm) rm.onclick = () => { d.weaknesses.splice(i, 1); renderDetail(); };
+    if (rm) rm.onclick = e => { e.stopPropagation(); d.weaknesses.splice(i, 1); shiftWkOpen(i); renderDetail(); };
+    const head = card.querySelector(".ecard-head");
+    if (head) head.onclick = e => {
+      if (e.target.closest(".wk-remove")) return;   // remove handles itself
+      toggleSet(state.wkOpen, i);
+      renderDetail();
+    };
   });
   const add = document.getElementById("addWeakness");
   if (add) add.onclick = () => {
     d.weaknesses.push({ component: componentEnum()[0] || "", text: "", nature: "targeted" });
+    (state.wkOpen || (state.wkOpen = new Set())).add(d.weaknesses.length - 1);   // open the new card
     renderDetail();
   };
 }
