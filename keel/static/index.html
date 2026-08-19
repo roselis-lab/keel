@@ -41,7 +41,7 @@
   body.rail-collapsed { --rail-w: 44px; }
   body.rail-collapsed .screens,
   body.rail-collapsed .search,
-  body.rail-collapsed .rail-filters,
+  body.rail-collapsed .facets,
   body.rail-collapsed .list,
   body.rail-collapsed header h1,
   body.rail-collapsed header .count,
@@ -53,15 +53,31 @@
     border: 1px solid var(--border); border-radius: 9px; outline: none; font-size: 13px;
   }
   .search input:focus { border-color: var(--crimson-600); background: #fff; }
-  /* compact facet row under the search (Threats screen only) */
-  .rail-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; border-bottom: 1px solid var(--border); }
-  .rf-sel { flex: 1; min-width: 92px; padding: 6px 8px; background: var(--tint); color: var(--navy-700);
-    border: 1px solid var(--border); border-radius: 8px; font-size: 12px; outline: none; }
-  .rf-sel:focus { border-color: var(--crimson-600); background: #fff; }
-  .rf-toggle { padding: 6px 10px; background: var(--tint); color: var(--navy-600);
-    border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .rf-toggle:hover { border-color: var(--crimson-200); }
-  .rf-toggle.on { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
+  /* ------ faceted filter panel (Threats + Mitigations rails) ------ */
+  /* A collapsed "Filters (N)" expander under the search; open it for grouped,
+     multi-select chip facets. Fits a ~320px rail — chips wrap, panel scrolls if tall. */
+  .facets { border-bottom: 1px solid var(--border); }
+  .facets-bar { display: flex; align-items: center; gap: 7px; padding: 8px 14px; cursor: pointer; user-select: none; }
+  .facets-bar:hover { background: var(--navy-100); }
+  .fx-caret { color: var(--navy-400); font-size: 10px; width: 10px; flex-shrink: 0; }
+  .fx-label { font-size: 12px; font-weight: 600; color: var(--navy-700); }
+  .fx-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+    background: var(--crimson-600); color: #fff; font-variant-numeric: tabular-nums; }
+  .fx-clear { margin-left: auto; border: none; background: none; color: var(--navy-500);
+    font-size: 11px; font-weight: 600; padding: 2px 4px; border-radius: 6px; }
+  .fx-clear:hover { color: var(--crimson-700); text-decoration: underline; }
+  .facets-body { display: none; padding: 2px 14px 10px; max-height: 46vh; overflow-y: auto; }
+  .facets.open .facets-body { display: block; }
+  .fx-group { margin-top: 9px; }
+  .fx-group:first-child { margin-top: 4px; }
+  .fx-gk { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500);
+    font-weight: 700; margin: 0 0 5px; }
+  .fx-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .fx-chip { font-size: 11px; padding: 2px 9px; border-radius: 20px; background: var(--tint);
+    color: var(--navy-600); border: 1px solid var(--border); font-weight: 500; white-space: nowrap; }
+  .fx-chip:hover { border-color: var(--crimson-200); color: var(--crimson-700); }
+  .fx-chip.on { background: var(--crimson-600); color: #fff; border-color: var(--crimson-600); }
+  .fx-chip.on:hover { background: var(--crimson-700); color: #fff; }
   .list { overflow-y: auto; flex: 1; min-height: 0; }
   /* Scannable rows: title is the primary line, id a readable mono secondary. */
   .row { padding: 10px 15px; border-bottom: 1px solid var(--border2); display: flex; flex-direction: column; gap: 2px; }
@@ -349,7 +365,7 @@
     <button class="btn sm ghost" id="newThreatBtn" title="Create a new threat" style="margin-left:8px">＋ New</button>
   </header>
   <div class="search" id="searchWrap"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
-  <div class="rail-filters" id="threatFilters" style="display:none"></div>
+  <div class="facets" id="facetPanel" style="display:none"></div>
   <div class="list" id="list"></div>
 </aside>
 
@@ -366,14 +382,18 @@
 const state = {
   schema: { threat: null, weakness: null, mitigation_link: null, mitigation: null },
   style: null,
-  threats: [],          // list of { id, title, harm, tags } (loaded with include=harm&tags)
-  harmFilter: "",       // threats rail: harm facet ("" = any)
-  tagFilter: "",        // threats rail: tag facet ("" = any)
-  needsAttention: false,// threats rail: show only threats flagged in /health/library
+  threats: [],          // rich rail items (harm/surface/source/weaknesses/mitigations/references/tags)
+  threatFacets: { harm: new Set(), surface: new Set(), source: new Set(), component: new Set(),
+                  nature: new Set(), mitigation: new Set(), references: new Set(),
+                  attention: new Set(), tags: new Set() },  // faceted filter — AND across groups, OR within a group
+  threatFacetsOpen: false, // is the Threats filter panel expanded
   focusField: null,     // read-view gap chip → field to focus after entering edit
   mitById: {},          // id -> { id, name, mitigation_class }
-  mitList: [],          // brief list: [[id, name, class], ...]
-  mitFilter: "",        // mitigations rail filter
+  mitList: [],          // [[id, name, class], ...] — derived from mitRich (threats editor picker)
+  mitRich: [],          // rich rail items (status/implementations/purpose) — powers the mitigations facets
+  mitFacets: { class: new Set(), status: new Set(), implementations: new Set(), linkage: new Set() },
+  mitFacetsOpen: false, // is the Mitigations filter panel expanded
+  mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
   currentMit: null,     // full mitigation card from GET /mitigations/{id}
   mitEditing: false,    // mitigations screen: edit mode
@@ -473,10 +493,10 @@ async function boot() {
     j("/schema/mitigation"),
     j("/style-guide"),
     j("/style-guide/coverage"),  // { overall, entities: [{entity_type, overall, fields:[{field_name, completeness, is_orphan}]}] }
-    j("/threats?brief=false&include=harm&include=tags"),  // [{ id, title, harm, tags }] — powers the rail facets
-    j("/mitigations"),      // brief: { mitigations: [[id, name, class], ...], count }
-    j("/config"),           // { repo_url } — empty string when unset
-    j("/health/library"),   // { stats, issues, issue_count } — seeds the "needs attention" facet
+    j(THREATS_RICH_URL),        // rich rail items — everything the Threats facets need (13 threats, fine over REST)
+    j(MITS_RICH_URL),           // rich rail items — everything the Mitigations facets need
+    j("/config"),               // { repo_url } — empty string when unset
+    j("/health/library"),       // { stats, issues, issue_count } — seeds the "needs attention" facet
   ]);
   state.schema.threat = sThreat;
   state.schema.weakness = sWeak;
@@ -485,12 +505,24 @@ async function boot() {
   state.style = style;
   state.coverage = cov;
   state.threats = tr.threats || [];
+  state.threatMits = state.threats;   // rich threats carry mitigations — powers "addresses"/linkage facet
   state.health = health;
-  state.mitList = mi.mitigations || [];
-  state.mitById = Object.fromEntries(
-    (mi.mitigations || []).map(([id, name, mclass]) => [id, { id, name, mitigation_class: mclass }])
-  );
+  setMitData(mi.mitigations || []);
   state.config = cfg || { repo_url: "" };
+}
+
+// The rich rail URLs — each item carries everything its facet panel needs.
+const THREATS_RICH_URL = "/threats?brief=false&include=harm&include=surface&include=source" +
+  "&include=weaknesses&include=mitigations&include=references&include=tags";
+const MITS_RICH_URL = "/mitigations?brief=false&include=status&include=implementations&include=purpose";
+
+// Seed mitRich (facets) plus the derived mitList/mitById the threats editor still uses.
+function setMitData(rich) {
+  state.mitRich = rich;
+  state.mitList = rich.map(m => [m.id, m.name, m.mitigation_class]);
+  state.mitById = Object.fromEntries(
+    rich.map(m => [m.id, { id: m.id, name: m.name, mitigation_class: m.mitigation_class }])
+  );
 }
 
 // --------------------------------------------------------------- rail ------ //
@@ -507,17 +539,47 @@ function attentionThreatIds() {
   return ids;
 }
 
+// Broadened text search: id, title, weakness text, reachability.
+function threatMatchesText(t, f) {
+  if (!f) return true;
+  const hay = [t.id, t.title, t.reachability, ...(t.weaknesses || []).map(w => w.text)].join(" ").toLowerCase();
+  return hay.includes(f);
+}
+// The facet-values a threat carries for a given group (used both to filter and, by
+// membership, to decide if a chip matches). OR within a group, AND across groups.
+function threatFacetValues(t, key) {
+  switch (key) {
+    case "harm": return t.harm ? [t.harm] : [];
+    case "surface": return t.surface || [];
+    case "source": return t.source || [];
+    case "component": return [...new Set((t.weaknesses || []).map(w => w.component).filter(Boolean))];
+    case "nature": return [...new Set((t.weaknesses || []).map(w => w.nature).filter(Boolean))];
+    case "mitigation": {
+      const mits = t.mitigations || [];
+      if (!mits.length) return ["none"];
+      return mits.some(m => m.strength === "gating") ? ["gating"] : ["soft"];
+    }
+    case "references": return (t.references || []).length ? ["has"] : ["none"];
+    case "attention": { const a = attentionThreatIds(); return a && a.has(t.id) ? ["attn"] : []; }
+    case "tags": return t.tags || [];
+  }
+  return [];
+}
+function threatMatchesFacets(t) {
+  const F = state.threatFacets;
+  for (const key of Object.keys(F)) {
+    const sel = F[key];
+    if (!sel || !sel.size) continue;                    // empty group = no constraint
+    const vals = threatFacetValues(t, key);
+    if (!vals.some(v => sel.has(v))) return false;      // AND across groups
+  }
+  return true;
+}
+
 function renderList() {
   const el = document.getElementById("list");
   const f = state.filter.toLowerCase();
-  const attn = state.needsAttention ? attentionThreatIds() : null;
-  const items = state.threats.filter(t => {
-    if (!(t.id + " " + (t.title || "")).toLowerCase().includes(f)) return false;
-    if (state.harmFilter && t.harm !== state.harmFilter) return false;
-    if (state.tagFilter && !(t.tags || []).includes(state.tagFilter)) return false;
-    if (attn && !attn.has(t.id)) return false;
-    return true;
-  });
+  const items = state.threats.filter(t => threatMatchesText(t, f) && threatMatchesFacets(t));
   el.innerHTML = items.length ? items.map(t => `
     <div class="row ${state.selected === t.id ? "active" : ""}" data-id="${esc(t.id)}">
       <span class="rid">${esc(t.id)}</span>
@@ -527,36 +589,73 @@ function renderList() {
   el.querySelectorAll(".row").forEach(r => r.onclick = () => select(r.dataset.id));
 }
 
-// The compact facet row under the search (Threats screen only): harm, tag, needs-attention.
-function renderThreatFilters() {
-  const el = document.getElementById("threatFilters");
+// ---- shared facet-panel machinery (both rails) ---------------------------- //
+// Renders a collapsed "Filters (N)" expander into #facetPanel; expanded it shows
+// grouped, multi-select chips. `spec`: { open, facets (state Set map), defs: [{key,
+// label, opts:[[value,label]]}], onchange }. Selected chip = crimson fill.
+function renderFacetPanel(spec) {
+  const el = document.getElementById("facetPanel");
   if (!el) return;
-  const tags = [...new Set(state.threats.flatMap(t => t.tags || []))].sort();
-  const harmOpts = `<option value="">any harm</option>` + harmEnum().map(h =>
-    `<option value="${esc(h)}" ${state.harmFilter === h ? "selected" : ""}>${esc(h)}</option>`).join("");
-  const tagOpts = `<option value="">any tag</option>` + tags.map(t =>
-    `<option value="${esc(t)}" ${state.tagFilter === t ? "selected" : ""}>${esc(t)}</option>`).join("");
+  const active = Object.values(spec.facets).reduce((n, s) => n + s.size, 0);
+  const groups = spec.defs.filter(g => g.opts.length).map(g => {
+    const sel = spec.facets[g.key];
+    const chips = g.opts.map(([value, label]) =>
+      `<button type="button" class="fx-chip ${sel.has(value) ? "on" : ""}" data-fkey="${esc(g.key)}" data-fval="${esc(value)}">${esc(label)}</button>`).join("");
+    return `<div class="fx-group"><p class="fx-gk">${esc(g.label)}</p><div class="fx-chips">${chips}</div></div>`;
+  }).join("");
+  el.className = "facets" + (spec.open ? " open" : "");
   el.innerHTML = `
-    <select class="rf-sel" id="harmFilter" title="Filter by harm">${harmOpts}</select>
-    ${tags.length ? `<select class="rf-sel" id="tagFilter" title="Filter by tag">${tagOpts}</select>` : ""}
-    <button type="button" class="rf-toggle ${state.needsAttention ? "on" : ""}" id="attnFilter"
-      title="Only threats flagged by the library health check (missing weaknesses/harm, no mitigation, dangling link)">⚠ Needs attention</button>`;
-  const harm = document.getElementById("harmFilter");
-  if (harm) harm.onchange = () => { state.harmFilter = harm.value; renderList(); };
-  const tag = document.getElementById("tagFilter");
-  if (tag) tag.onchange = () => { state.tagFilter = tag.value; renderList(); };
-  const attn = document.getElementById("attnFilter");
-  if (attn) attn.onclick = () => {
-    state.needsAttention = !state.needsAttention;
-    attn.classList.toggle("on", state.needsAttention);
-    renderList();
+    <div class="facets-bar" id="fxBar">
+      <span class="fx-caret">${spec.open ? "▾" : "▸"}</span>
+      <span class="fx-label">Filters</span>
+      ${active ? `<span class="fx-badge">${active}</span>` : ""}
+      ${active ? `<button type="button" class="fx-clear" id="fxClear">Clear all</button>` : ""}
+    </div>
+    <div class="facets-body">${groups}</div>`;
+  document.getElementById("fxBar").onclick = e => {
+    if (e.target.closest("#fxClear")) return;           // clear handled below
+    spec.onopen(!spec.open);
   };
+  const clear = document.getElementById("fxClear");
+  if (clear) clear.onclick = e => { e.stopPropagation(); spec.onclear(); };
+  el.querySelectorAll(".fx-chip").forEach(c => c.onclick = () => spec.ontoggle(c.dataset.fkey, c.dataset.fval));
 }
 
-// Refresh the threats rail list (richer shape so facets keep working) + facet options.
+// Threats facet definitions — options come from the schema (never hardcoded) + the data.
+function threatFacetDefs() {
+  const tags = [...new Set(state.threats.flatMap(t => t.tags || []))].sort();
+  return [
+    { key: "harm", label: "Harm", opts: harmEnum().map(v => [v, v]) },
+    { key: "surface", label: "Surface", opts: surfaceEnum().map(v => [v, v]) },
+    { key: "source", label: "Source", opts: sourceEnum().map(v => [v, v]) },
+    { key: "component", label: "Component", opts: componentEnum().map(v => [v, v]) },
+    { key: "nature", label: "Nature", opts: natureEnum().map(v => [v, v]) },
+    { key: "mitigation", label: "Mitigation", opts: [["gating", "has gating"], ["soft", "all soft"], ["none", "none"]] },
+    { key: "references", label: "References", opts: [["has", "has refs"], ["none", "no refs"]] },
+    { key: "attention", label: "Needs attention", opts: [["attn", "⚠ flagged"]] },
+    { key: "tags", label: "Tags", opts: tags.map(v => [v, v]) },
+  ];
+}
+function renderThreatFacets() {
+  renderFacetPanel({
+    open: state.threatFacetsOpen,
+    facets: state.threatFacets,
+    defs: threatFacetDefs(),
+    onopen: on => { state.threatFacetsOpen = on; renderThreatFacets(); },
+    onclear: () => { for (const s of Object.values(state.threatFacets)) s.clear(); renderThreatFacets(); renderList(); },
+    ontoggle: (key, val) => {
+      const s = state.threatFacets[key];
+      s.has(val) ? s.delete(val) : s.add(val);
+      renderThreatFacets(); renderList();
+    },
+  });
+}
+
+// Refresh the threats rail list (rich shape so facets keep working) + the "addresses" index.
 async function refreshThreatList() {
-  const tr = await j("/threats?brief=false&include=harm&include=tags");
+  const tr = await j(THREATS_RICH_URL);
   state.threats = tr.threats || [];
+  state.threatMits = state.threats;
 }
 async function refreshHealth() {
   try { state.health = await j("/health/library"); } catch (e) { /* keep prior */ }
@@ -1091,7 +1190,7 @@ async function deleteThreat() {
   state.editing = false; state.view = "structure";
   state.railMode = "preview"; state.guidance = null;
   state.validation = { errors: [], advice: [] };
-  renderList(); renderThreatFilters(); renderDetail(); renderPreview();
+  renderList(); renderThreatFacets(); renderDetail(); renderPreview();
   toast("Threat deleted");
 }
 
@@ -1436,17 +1535,10 @@ async function saveThreat() {
   state.current = await j(getUrl);
   state.editing = false; state.draft = null; state.view = "structure";
   state.railMode = "preview"; state.guidance = null;
-  if (isCreate) {
-    // Pull the fresh brief list so the new threat shows in the rail (kept sorted server-side).
-    const tr = await j("/threats");
-    state.threats = tr.threats || [];
-  } else {
-    // reflect a possible title change in the rail
-    const row = state.threats.find(r => r[0] === state.selected);
-    if (row) row[1] = state.current.title;
-  }
+  // Pull the fresh rich list so the rail + facets reflect the create/edit (kept sorted server-side).
+  await refreshThreatList();
   state.validation = { errors: [], advice: [] };
-  renderList(); renderDetail(); renderPreview();
+  renderList(); renderThreatFacets(); renderDetail(); renderPreview();
   validateDraft();
   showSavedDialog("catalog/threats/" + state.selected + ".yaml");
 }
@@ -1574,11 +1666,14 @@ function switchScreen(name) {
   // Overview and the style guide have no id filter; hide the search box for them.
   const noSearch = name === "style" || name === "overview";
   document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
-  // The facet row is Threats-only; (re)build it so harm/tag options stay fresh.
-  const filters = document.getElementById("threatFilters");
-  if (filters) {
-    filters.style.display = name === "threats" ? "" : "none";
-    if (name === "threats") renderThreatFilters();
+  // The faceted filter panel serves Threats + Mitigations; (re)build it per screen so
+  // its options stay fresh (schema enums + tags/values present in the data).
+  const facets = document.getElementById("facetPanel");
+  if (facets) {
+    const hasFacets = name === "threats" || name === "mitigations";
+    facets.style.display = hasFacets ? "" : "none";
+    if (name === "threats") renderThreatFacets();
+    else if (name === "mitigations") renderMitFacets();
   }
   const search = document.getElementById("search");
   if (search) {
@@ -1940,18 +2035,67 @@ function threatsAddressing(mid) {
 }
 
 // --------------------------------------------------------- mitigations rail - //
+// Text search across id + name + purpose.
+function mitMatchesText(m, f) {
+  if (!f) return true;
+  return [m.id, m.name, m.purpose].join(" ").toLowerCase().includes(f);
+}
+// A mitigation's facet-values for a group (orphan = addresses 0 threats).
+function mitFacetValues(m, key) {
+  switch (key) {
+    case "class": return m.mitigation_class ? [m.mitigation_class] : [];
+    case "status": return m.status ? [m.status] : [];
+    case "implementations": return (m.implementations || []).length ? ["has"] : ["none"];
+    case "linkage": return threatsAddressing(m.id).length ? ["linked"] : ["orphan"];
+  }
+  return [];
+}
+function mitMatchesFacets(m) {
+  const F = state.mitFacets;
+  for (const key of Object.keys(F)) {
+    const sel = F[key];
+    if (!sel || !sel.size) continue;
+    const vals = mitFacetValues(m, key);
+    if (!vals.some(v => sel.has(v))) return false;   // AND across groups, OR within
+  }
+  return true;
+}
+
 function renderMitRail() {
   const el = document.getElementById("list");
   const f = state.mitFilter.toLowerCase();
-  const items = state.mitList.filter(([id, name, mc]) =>
-    (id + " " + (name || "") + " " + (mc || "")).toLowerCase().includes(f));
-  el.innerHTML = items.length ? items.map(([id, name]) => `
-    <div class="row ${state.mitSelected === id ? "active" : ""}" data-id="${esc(id)}">
-      <span class="rid">${esc(id)}</span>
-      <span class="rtitle">${esc(name)}</span>
+  const items = state.mitRich.filter(m => mitMatchesText(m, f) && mitMatchesFacets(m));
+  el.innerHTML = items.length ? items.map(m => `
+    <div class="row ${state.mitSelected === m.id ? "active" : ""}" data-id="${esc(m.id)}">
+      <span class="rid">${esc(m.id)}</span>
+      <span class="rtitle">${esc(m.name)}</span>
     </div>`).join("") : '<div class="empty" style="margin-top:40px">No matches.</div>';
-  document.getElementById("count").textContent = items.length + " / " + state.mitList.length;
+  document.getElementById("count").textContent = items.length + " / " + state.mitRich.length;
   el.querySelectorAll(".row").forEach(r => r.onclick = () => selectMit(r.dataset.id));
+}
+
+// Mitigations facet panel — a lighter set: class, status, implementations, linkage.
+function mitFacetDefs() {
+  return [
+    { key: "class", label: "Class", opts: mitEnum("mitigation_class").map(v => [v, v]) },
+    { key: "status", label: "Status", opts: mitEnum("status").map(v => [v, v]) },
+    { key: "implementations", label: "Implementations", opts: [["has", "has"], ["none", "none"]] },
+    { key: "linkage", label: "Linkage", opts: [["linked", "linked"], ["orphan", "orphan"]] },
+  ];
+}
+function renderMitFacets() {
+  renderFacetPanel({
+    open: state.mitFacetsOpen,
+    facets: state.mitFacets,
+    defs: mitFacetDefs(),
+    onopen: on => { state.mitFacetsOpen = on; renderMitFacets(); },
+    onclear: () => { for (const s of Object.values(state.mitFacets)) s.clear(); renderMitFacets(); renderMitRail(); },
+    ontoggle: (key, val) => {
+      const s = state.mitFacets[key];
+      s.has(val) ? s.delete(val) : s.add(val);
+      renderMitFacets(); renderMitRail();
+    },
+  });
 }
 
 async function selectMit(id) {
@@ -2447,16 +2591,13 @@ async function deleteMitigation() {
   state.mitSelected = null; state.currentMit = null; state.mitDraft = null;
   state.mitEditing = false; state.railMode = "preview"; state.guidance = null;
   state.mitValidation = { errors: [], advice: [] };
-  renderMitRail(); renderMitDetail(); renderMitPreview();
+  renderMitRail(); renderMitFacets(); renderMitDetail(); renderMitPreview();
   toast("Mitigation deleted");
 }
 
 async function refreshMitList() {
-  const mi = await j("/mitigations");
-  state.mitList = mi.mitigations || [];
-  state.mitById = Object.fromEntries(
-    state.mitList.map(([id, name, mc]) => [id, { id, name, mitigation_class: mc }])
-  );
+  const mi = await j(MITS_RICH_URL);
+  setMitData(mi.mitigations || []);
 }
 
 // Wire the edit form: scalar fields, the three card lists, add/remove/collapse.
@@ -2630,7 +2771,7 @@ async function saveMitigation() {
   state.railMode = "preview"; state.guidance = null;
   await refreshMitList();
   state.mitValidation = { errors: [], advice: [] };
-  renderMitRail(); renderMitDetail(); renderMitPreview();
+  renderMitRail(); renderMitFacets(); renderMitDetail(); renderMitPreview();
   showSavedDialog("catalog/mitigations/" + state.mitSelected + ".yaml");
 }
 
