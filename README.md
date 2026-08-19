@@ -25,6 +25,33 @@ Keel is the operational layer that is missing: a compact, opinionated representa
 
 The reference model is deliberately small: the catalog is a floor, not a ceiling. Keel's value is the shape and the assessor, not a claim to enumerate every GenAI threat.
 
+## The model
+
+<p align="center"><img src="docs/img/threat-spine.svg" alt="How a threat is assembled: source and surface reach a weakness at a component, the threat rests on it and leads to a harm, ruled out by reachability and addressed by mitigations and implementations" width="860"></p>
+
+Four entities, nothing more:
+
+| Entity | Fields |
+| --- | --- |
+| **Threat** | `id`, `title`, `harm` (the consequence class, strict enum), `surface[]` (which trust boundary the untrusted influence crosses, enum), `source[]` (who or what drives it, enum), `weaknesses[]` (the predisposing conditions it rests on; see below), `reachability` (carve-outs: *when it is NOT a live path*, judged un-mitigated), `mitigations[]` (links to mitigation cards; see below), `references[]` (`{id, url}` into public catalogs), `tags[]` |
+| **Weakness** (embedded in a threat) | `component` (which owned part it sits on, enum), `text` (the architectural condition: cause + where + defect), `nature` (`targeted` \| `secondary`) |
+| **MitigationLink** (embedded in a threat) | `id` of the mitigation card, `strength` (`gating` \| `soft`), `rationale` (why it addresses this threat) |
+| **Mitigation** (card) | `id`, `name`, `mitigation_class` (a switch: sets how the rest is read), `status`, `purpose`, `scope`, `control_mechanism`, `failure_behavior`, `implementations` (how an org realizes the control; ships empty), plus owner, telemetry, anti-patterns, validation, and FAQ |
+
+Enums:
+- `Threat.harm`: `wrong-decision` · `data-exposed` · `code-execution` · `downtime` · `reputation-legal`
+- `Threat.surface`: `user-agent` · `agent-agent` · `agent-environment`
+- `Threat.source`: `external-attacker` · `internal` · `hallucination` · `error` · `accident` · `training-data`
+- `Weakness.component`: `model` · `tool` · `downstream` · `memory` · `knowledge-base` · `identity-store`
+- `Weakness.nature`: `targeted` (the attack exploits it directly) · `secondary` (it only amplifies)
+- `MitigationLink.strength`: `gating` (an architectural control that blocks the threat) · `soft` (only lowers likelihood)
+- `Mitigation.mitigation_class`: `gating_control` · `detector` · `process` · `evidential_mitigation` · `corrective`
+- `Mitigation.status`: `draft` · `verified`
+
+A threat rests on one or more weaknesses at the components you own; `surface` and `source` say how untrusted influence reaches them; `harm` is the consequence if it fires; `reachability` is the rule-out gate, used when the path is not live or the asset is not material, judged on the un-mitigated architecture. A technique such as prompt injection is a mechanism, not a threat: it lives in `source` and `references`, never as a threat or weakness identity.
+
+Design principle: **methodology lives in the assessor's prompt, the model stays lean.** Per-system assessment output (actor, scenario, impact, and so on) is ephemeral and is not stored here.
+
 ## Get started
 
 Keel is used two ways: to *assess* a system, and to *grow* a shared model with your team. Both start from a local clone.
@@ -74,33 +101,6 @@ gh pr create --fill                       # open the PR
 CI runs `keel validate` on every pull request (schema, vocabulary, link integrity, plus advisory warnings), so a broken or off-standard change is caught before a teammate reviews and merges. Everyone works off the same model, and it grows with your systems.
 
 **Roadmap (not yet built):** per-system state to mark a threat *not applicable* for a given deployment or *accept* a risk, so you can suppress known noise without deleting the shared knowledge. Until then, you express that context by editing or pruning the model directly.
-
-## The model
-
-<p align="center"><img src="docs/img/threat-spine.svg" alt="How a threat is assembled: source and surface reach a weakness at a component, the threat rests on it and leads to a harm, ruled out by reachability and addressed by mitigations and implementations" width="860"></p>
-
-Four entities, nothing more:
-
-| Entity | Fields |
-| --- | --- |
-| **Threat** | `id`, `title`, `harm` (the consequence class, strict enum), `surface[]` (which trust boundary the untrusted influence crosses, enum), `source[]` (who or what drives it, enum), `weaknesses[]` (the predisposing conditions it rests on; see below), `reachability` (carve-outs: *when it is NOT a live path*, judged un-mitigated), `mitigations[]` (links to mitigation cards; see below), `references[]` (`{id, url}` into public catalogs), `tags[]` |
-| **Weakness** (embedded in a threat) | `component` (which owned part it sits on, enum), `text` (the architectural condition: cause + where + defect), `nature` (`targeted` \| `secondary`) |
-| **MitigationLink** (embedded in a threat) | `id` of the mitigation card, `strength` (`gating` \| `soft`), `rationale` (why it addresses this threat) |
-| **Mitigation** (card) | `id`, `name`, `mitigation_class` (a switch: sets how the rest is read), `status`, `purpose`, `scope`, `control_mechanism`, `failure_behavior`, `implementations` (how an org realizes the control; ships empty), plus owner, telemetry, anti-patterns, validation, and FAQ |
-
-Enums:
-- `Threat.harm`: `wrong-decision` · `data-exposed` · `code-execution` · `downtime` · `reputation-legal`
-- `Threat.surface`: `user-agent` · `agent-agent` · `agent-environment`
-- `Threat.source`: `external-attacker` · `internal` · `hallucination` · `error` · `accident` · `training-data`
-- `Weakness.component`: `model` · `tool` · `downstream` · `memory` · `knowledge-base` · `identity-store`
-- `Weakness.nature`: `targeted` (the attack exploits it directly) · `secondary` (it only amplifies)
-- `MitigationLink.strength`: `gating` (an architectural control that blocks the threat) · `soft` (only lowers likelihood)
-- `Mitigation.mitigation_class`: `gating_control` · `detector` · `process` · `evidential_mitigation` · `corrective`
-- `Mitigation.status`: `draft` · `verified`
-
-A threat rests on one or more weaknesses at the components you own; `surface` and `source` say how untrusted influence reaches them; `harm` is the consequence if it fires; `reachability` is the rule-out gate, used when the path is not live or the asset is not material, judged on the un-mitigated architecture. A technique such as prompt injection is a mechanism, not a threat: it lives in `source` and `references`, never as a threat or weakness identity.
-
-Design principle: **methodology lives in the assessor's prompt, the model stays lean.** Per-system assessment output (actor, scenario, impact, and so on) is ephemeral and is not stored here.
 
 ## Skills
 
