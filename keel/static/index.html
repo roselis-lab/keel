@@ -2677,6 +2677,54 @@ document.getElementById("main").addEventListener("focusout", () => {
     }, 0);
   }
 });
+// ------------------------------------------------- rail collapse + resize -- //
+// Left rail collapses to a thin strip (list/search/filters hidden, only the expand
+// affordance visible); the right rail is drag-resizable on the main|preview seam.
+// Both persist to localStorage and re-apply on load. No library.
+const LS_RAIL = "keel.railCollapsed";
+const LS_PREVIEW = "keel.previewW";
+const PREVIEW_MIN = 280, PREVIEW_MAX = 640;
+
+function initRailToggle() {
+  const btn = document.getElementById("railToggle");
+  const apply = on => {
+    document.body.classList.toggle("rail-collapsed", on);
+    if (btn) { btn.textContent = on ? "»" : "«"; btn.title = on ? "Expand" : "Collapse"; }
+  };
+  apply(localStorage.getItem(LS_RAIL) === "1");
+  if (btn) btn.onclick = () => {
+    const on = !document.body.classList.contains("rail-collapsed");
+    localStorage.setItem(LS_RAIL, on ? "1" : "0");
+    apply(on);
+  };
+}
+
+function initPreviewResizer() {
+  const setW = px => document.documentElement.style.setProperty("--preview-w", px + "px");
+  const clamp = px => Math.max(PREVIEW_MIN, Math.min(PREVIEW_MAX, px));
+  const saved = parseInt(localStorage.getItem(LS_PREVIEW), 10);
+  if (saved >= PREVIEW_MIN && saved <= PREVIEW_MAX) setW(saved);
+  const handle = document.getElementById("preview-resizer");
+  if (!handle) return;
+  handle.addEventListener("mousedown", e => {
+    e.preventDefault();
+    document.body.classList.add("resizing");
+    let last = clamp(window.innerWidth - e.clientX);
+    const move = ev => { last = clamp(window.innerWidth - ev.clientX); setW(last); };
+    const up = () => {
+      document.body.classList.remove("resizing");
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+      localStorage.setItem(LS_PREVIEW, String(last));
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  });
+}
+
+initRailToggle();
+initPreviewResizer();
+
 // Land on the Overview dashboard; switchScreen wires the rail/main/right and loads it.
 boot().then(() => switchScreen("overview")).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
