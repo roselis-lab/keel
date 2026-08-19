@@ -38,7 +38,16 @@ uv sync                # install Keel (uses uv; `pip install -e .` works too)
 uv run keel validate   # optional: confirm the catalog is valid
 ```
 
-Then point your agent at the repo's `.mcp.json`. It launches Keel over stdio and exposes the tools as `mcp__keel__*`; Claude Code picks it up automatically, so there is no separate server to start.
+For the assessment path, point your agent at the repo's `.mcp.json`. It launches Keel over stdio and exposes the tools as `mcp__keel__*`; Claude Code picks it up automatically, so there is no separate server to start.
+
+To open the browse UI (and REST), run the server:
+
+```bash
+uv run uvicorn keel.main:app     # UI + REST at http://localhost:8000/
+# or: docker compose up          # same UI; add --profile mcp for the HTTP MCP transport on :8001
+```
+
+There is no database: Keel reads `catalog/*.yaml` into memory on start, and every write goes straight back to those files as a diff.
 
 ### Assess a system
 
@@ -50,7 +59,7 @@ The `assess-genai-with-library` skill walks your system against the catalog: it 
 
 ### Grow the model with your team
 
-Edit the model through the MCP write tools (guided by the style guide), the browse UI (`http://localhost:8000/`, see [Run](#run)), or by editing the YAML by hand. The catalog is a floor: add what your stack needs, adjust cards and rationale, record how your org realizes a control on the mitigation's `implementations` (they ship empty), and prune what does not apply.
+Edit the model through the MCP write tools (guided by the style guide), the browse UI (`http://localhost:8000/`, see [Install](#install)), or by editing the YAML by hand. The catalog is a floor: add what your stack needs, adjust cards and rationale, record how your org realizes a control on the mitigation's `implementations` (they ship empty), and prune what does not apply.
 
 The model lives in one shared repo, so every change is a readable YAML diff and ships as a pull request, like any code change. Ask your agent to do it ("commit this and open a PR"), or by hand:
 
@@ -65,19 +74,6 @@ gh pr create --fill                       # open the PR
 CI runs `keel validate` on every pull request (schema, vocabulary, link integrity, plus advisory warnings), so a broken or off-standard change is caught before a teammate reviews and merges. Everyone works off the same model, and it grows with your systems.
 
 **Roadmap (not yet built):** per-system state to mark a threat *not applicable* for a given deployment or *accept* a risk, so you can suppress known noise without deleting the shared knowledge. Until then, you express that context by editing or pruning the model directly.
-
-## Run
-
-Keel is an MCP server for any agent or MCP client, plus a browse UI. It reads the catalog from `catalog/*.yaml` into memory on start, so there are no setup steps and no database. For the assessment path above, the agent launches the MCP over stdio from `.mcp.json` and you need nothing else. To serve the browse UI and REST, or the HTTP MCP transport:
-
-```bash
-uv run uvicorn keel.main:app     # browse UI + REST at http://localhost:8000/
-uv run keel --http               # HTTP MCP transport on :8001 (plain `uv run keel` is stdio)
-```
-
-Or with Docker (needs the daemon): `docker compose up` serves the UI at `http://localhost:8000/`; add `--profile mcp` for the HTTP MCP transport on `:8001`.
-
-`catalog/*.yaml` is the single source of truth. Every write, whether from an MCP tool, the browse UI, or your text editor, changes those files through the same service layer, so an edit is always a reviewable diff.
 
 ## The model
 
@@ -121,7 +117,7 @@ Keel ships as skills under `.claude/skills/`, in two groups: running an assessme
 
 ## Authoring UI
 
-Running the app (see **Run** above) serves a browse-and-edit interface at `http://localhost:8000/`, a single static HTML file with no build step. A switcher at the top moves between four screens: Overview, Threats, Mitigations, and Style guide.
+The browse UI (started in [Install](#install)) is a single static HTML file with no build step, served at `http://localhost:8000/`. A switcher at the top moves between four screens: Overview, Threats, Mitigations, and Style guide.
 
 The interface is review-first. The fastest way to author the model is to ask an LLM to do it through the MCP tools (it drafts to the style guide and writes the YAML for you), and your agent or plain git commits and opens the pull request. The UI writes files and points you to the file to commit; it is not a git client. So the UI's main jobs are reviewing the model at a glance and hands-on edits when you want them; it carries the full create/read/update/delete for both threats and mitigations as a complete fallback.
 
