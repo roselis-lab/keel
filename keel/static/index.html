@@ -15,35 +15,61 @@
     /* one spacing scale (multiples of 4/8) */
     --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px;
     --field-gap: 24px; --section-gap: 44px; --input-h: 38px;
+    /* grid track widths — driven by the rail collapse toggle + the preview resizer */
+    --rail-w: 320px; --preview-w: 360px;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--navy-900);
     font: 14px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
-    display: grid; grid-template-columns: 320px 1fr 360px; height: 100vh;
+    display: grid; grid-template-columns: var(--rail-w) 1fr var(--preview-w); height: 100vh;
   }
+  body.resizing { cursor: col-resize; user-select: none; }
   button { font-family: inherit; cursor: pointer; }
 
   /* ------ left rail ------ */
-  aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   header {
     padding: 15px 18px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 8px;
   }
   header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
   header .count { color: var(--navy-400); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .rail-toggle { border: none; background: none; color: var(--navy-500); font-size: 15px; line-height: 1; padding: 3px 6px; border-radius: 6px; flex-shrink: 0; }
+  .rail-toggle:hover { background: var(--navy-100); color: var(--navy-800); }
+  /* Collapsed left rail — a thin strip that keeps only the expand affordance. */
+  body.rail-collapsed { --rail-w: 44px; }
+  body.rail-collapsed .screens,
+  body.rail-collapsed .search,
+  body.rail-collapsed .rail-filters,
+  body.rail-collapsed .list,
+  body.rail-collapsed header h1,
+  body.rail-collapsed header .count,
+  body.rail-collapsed #newThreatBtn { display: none; }
+  body.rail-collapsed header { padding: 12px 0; justify-content: center; }
   .search { padding: 10px 14px; border-bottom: 1px solid var(--border); }
   .search input {
     width: 100%; padding: 9px 11px; background: var(--tint); color: var(--navy-900);
     border: 1px solid var(--border); border-radius: 9px; outline: none; font-size: 13px;
   }
   .search input:focus { border-color: var(--crimson-600); background: #fff; }
+  /* compact facet row under the search (Threats screen only) */
+  .rail-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; border-bottom: 1px solid var(--border); }
+  .rf-sel { flex: 1; min-width: 92px; padding: 6px 8px; background: var(--tint); color: var(--navy-700);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 12px; outline: none; }
+  .rf-sel:focus { border-color: var(--crimson-600); background: #fff; }
+  .rf-toggle { padding: 6px 10px; background: var(--tint); color: var(--navy-600);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .rf-toggle:hover { border-color: var(--crimson-200); }
+  .rf-toggle.on { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
   .list { overflow-y: auto; flex: 1; min-height: 0; }
-  .row { padding: 11px 15px; border-bottom: 1px solid var(--border2); display: flex; flex-direction: column; gap: 3px; }
-  .row:hover { background: var(--tint); }
+  /* Scannable rows: title is the primary line, id a readable mono secondary. */
+  .row { padding: 10px 15px; border-bottom: 1px solid var(--border2); display: flex; flex-direction: column; gap: 2px; }
+  .row:hover { background: var(--navy-100); }
   .row.active { background: var(--crimson-50); box-shadow: inset 3px 0 0 var(--crimson-600); }
-  .row .rid { font-size: 11px; color: var(--navy-400); font-family: ui-monospace, "SFMono-Regular", monospace; }
-  .row .rtitle { font-size: 13px; color: var(--navy-900); }
+  .row.active:hover { background: var(--crimson-50); }
+  .row .rid { font-size: 11px; color: var(--navy-500); font-family: ui-monospace, "SFMono-Regular", monospace; letter-spacing: .01em; }
+  .row .rtitle { font-size: 14px; color: var(--navy-900); font-weight: 500; line-height: 1.35; }
 
   /* ------ badges ------ */
   .badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
@@ -103,6 +129,14 @@
   .readsec .prose { color: var(--navy-800); }
   .readsec .card { background: #fff; }
   .notauthored { color: var(--navy-400); font-size: 12px; font-style: italic; margin: 16px 0 0; }
+  /* ------ gaps bar (read view) — empty fields as clickable, jump-to-edit chips ------ */
+  .gaps-bar { margin-top: var(--section-gap); border-top: 1px dashed var(--border); padding-top: 14px; }
+  .gaps-k { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--navy-500); font-weight: 700; margin: 0 0 9px; }
+  .gaps-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .gap-chip { font-size: 12px; padding: 4px 11px; border-radius: 20px; background: var(--navy-100);
+    color: var(--navy-600); border: 1px solid var(--border); font-weight: 500; }
+  .gap-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
   .crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--navy-400); margin-bottom: 12px; }
   .crumb-type { border: none; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--navy-500); }
   .crumb-type:hover { color: var(--crimson-600); text-decoration: underline; }
@@ -169,6 +203,11 @@
 
   /* ------ right preview ------ */
   #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+  /* draggable divider on the main|preview border; sits fixed over the seam */
+  #preview-resizer { position: fixed; top: 0; height: 100vh; width: 9px; right: var(--preview-w);
+    margin-right: -4px; cursor: col-resize; z-index: 40; }
+  #preview-resizer::after { content: ""; position: absolute; top: 0; left: 4px; width: 1px; height: 100%; background: transparent; transition: background .12s; }
+  #preview-resizer:hover::after, body.resizing #preview-resizer::after { background: var(--crimson-600); left: 3px; width: 3px; }
   #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
 
   /* ------ right-rail mode toggle (Preview | Guidance) ------ */
@@ -304,17 +343,20 @@
     <button data-screen="style">Style guide</button>
   </nav>
   <header>
+    <button class="rail-toggle" id="railToggle" title="Collapse">«</button>
     <h1 id="railTitle">Keel · Threats</h1>
     <span class="count" id="count"></span>
     <button class="btn sm ghost" id="newThreatBtn" title="Create a new threat" style="margin-left:8px">＋ New</button>
   </header>
   <div class="search" id="searchWrap"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
+  <div class="rail-filters" id="threatFilters" style="display:none"></div>
   <div class="list" id="list"></div>
 </aside>
 
 <main id="main"><div class="empty">Select a threat from the list.</div></main>
 
 <section id="preview"><p class="ptitle">Preview</p><div class="empty" style="margin-top:10vh">—</div></section>
+<div id="preview-resizer" title="Drag to resize"></div>
 
 <div class="toast" id="toast"></div>
 <div class="saved-dialog" id="savedDialog"></div>
@@ -324,7 +366,11 @@
 const state = {
   schema: { threat: null, weakness: null, mitigation_link: null, mitigation: null },
   style: null,
-  threats: [],          // brief list: [[id, title], ...]
+  threats: [],          // list of { id, title, harm, tags } (loaded with include=harm&tags)
+  harmFilter: "",       // threats rail: harm facet ("" = any)
+  tagFilter: "",        // threats rail: tag facet ("" = any)
+  needsAttention: false,// threats rail: show only threats flagged in /health/library
+  focusField: null,     // read-view gap chip → field to focus after entering edit
   mitById: {},          // id -> { id, name, mitigation_class }
   mitList: [],          // brief list: [[id, name, class], ...]
   mitFilter: "",        // mitigations rail filter
@@ -420,16 +466,17 @@ const strengthEnum = () => {
 
 // --------------------------------------------------------------- boot ------ //
 async function boot() {
-  const [sThreat, sWeak, sMitLink, sMit, style, cov, tr, mi, cfg] = await Promise.all([
+  const [sThreat, sWeak, sMitLink, sMit, style, cov, tr, mi, cfg, health] = await Promise.all([
     j("/schema/threat"),
     j("/schema/weakness"),
     j("/schema/mitigation_link"),
     j("/schema/mitigation"),
     j("/style-guide"),
     j("/style-guide/coverage"),  // { overall, entities: [{entity_type, overall, fields:[{field_name, completeness, is_orphan}]}] }
-    j("/threats"),          // brief: { threats: [[id, title], ...], count }
+    j("/threats?brief=false&include=harm&include=tags"),  // [{ id, title, harm, tags }] — powers the rail facets
     j("/mitigations"),      // brief: { mitigations: [[id, name, class], ...], count }
     j("/config"),           // { repo_url } — empty string when unset
+    j("/health/library"),   // { stats, issues, issue_count } — seeds the "needs attention" facet
   ]);
   state.schema.threat = sThreat;
   state.schema.weakness = sWeak;
@@ -438,6 +485,7 @@ async function boot() {
   state.style = style;
   state.coverage = cov;
   state.threats = tr.threats || [];
+  state.health = health;
   state.mitList = mi.mitigations || [];
   state.mitById = Object.fromEntries(
     (mi.mitigations || []).map(([id, name, mclass]) => [id, { id, name, mitigation_class: mclass }])
@@ -446,17 +494,72 @@ async function boot() {
 }
 
 // --------------------------------------------------------------- rail ------ //
+// Threat ids flagged in /health/library (any gap). Returns null when health isn't loaded.
+function attentionThreatIds() {
+  const iss = state.health && state.health.issues;
+  if (!iss) return null;
+  const ids = new Set();
+  const add = arr => (arr || []).forEach(x => ids.add(String(x).split("::")[0]));
+  add(iss.threats_missing_weaknesses);
+  add(iss.threats_missing_harm);
+  add(iss.threats_without_mitigation);
+  add(iss.dangling_mitigation_links);
+  return ids;
+}
+
 function renderList() {
   const el = document.getElementById("list");
   const f = state.filter.toLowerCase();
-  const items = state.threats.filter(([id, title]) => (id + " " + (title || "")).toLowerCase().includes(f));
-  el.innerHTML = items.length ? items.map(([id, title]) => `
-    <div class="row ${state.selected === id ? "active" : ""}" data-id="${esc(id)}">
-      <span class="rid">${esc(id)}</span>
-      <span class="rtitle">${esc(title)}</span>
+  const attn = state.needsAttention ? attentionThreatIds() : null;
+  const items = state.threats.filter(t => {
+    if (!(t.id + " " + (t.title || "")).toLowerCase().includes(f)) return false;
+    if (state.harmFilter && t.harm !== state.harmFilter) return false;
+    if (state.tagFilter && !(t.tags || []).includes(state.tagFilter)) return false;
+    if (attn && !attn.has(t.id)) return false;
+    return true;
+  });
+  el.innerHTML = items.length ? items.map(t => `
+    <div class="row ${state.selected === t.id ? "active" : ""}" data-id="${esc(t.id)}">
+      <span class="rid">${esc(t.id)}</span>
+      <span class="rtitle">${esc(t.title)}</span>
     </div>`).join("") : '<div class="empty" style="margin-top:40px">No matches.</div>';
   document.getElementById("count").textContent = items.length + " / " + state.threats.length;
   el.querySelectorAll(".row").forEach(r => r.onclick = () => select(r.dataset.id));
+}
+
+// The compact facet row under the search (Threats screen only): harm, tag, needs-attention.
+function renderThreatFilters() {
+  const el = document.getElementById("threatFilters");
+  if (!el) return;
+  const tags = [...new Set(state.threats.flatMap(t => t.tags || []))].sort();
+  const harmOpts = `<option value="">any harm</option>` + harmEnum().map(h =>
+    `<option value="${esc(h)}" ${state.harmFilter === h ? "selected" : ""}>${esc(h)}</option>`).join("");
+  const tagOpts = `<option value="">any tag</option>` + tags.map(t =>
+    `<option value="${esc(t)}" ${state.tagFilter === t ? "selected" : ""}>${esc(t)}</option>`).join("");
+  el.innerHTML = `
+    <select class="rf-sel" id="harmFilter" title="Filter by harm">${harmOpts}</select>
+    ${tags.length ? `<select class="rf-sel" id="tagFilter" title="Filter by tag">${tagOpts}</select>` : ""}
+    <button type="button" class="rf-toggle ${state.needsAttention ? "on" : ""}" id="attnFilter"
+      title="Only threats flagged by the library health check (missing weaknesses/harm, no mitigation, dangling link)">⚠ Needs attention</button>`;
+  const harm = document.getElementById("harmFilter");
+  if (harm) harm.onchange = () => { state.harmFilter = harm.value; renderList(); };
+  const tag = document.getElementById("tagFilter");
+  if (tag) tag.onchange = () => { state.tagFilter = tag.value; renderList(); };
+  const attn = document.getElementById("attnFilter");
+  if (attn) attn.onclick = () => {
+    state.needsAttention = !state.needsAttention;
+    attn.classList.toggle("on", state.needsAttention);
+    renderList();
+  };
+}
+
+// Refresh the threats rail list (richer shape so facets keep working) + facet options.
+async function refreshThreatList() {
+  const tr = await j("/threats?brief=false&include=harm&include=tags");
+  state.threats = tr.threats || [];
+}
+async function refreshHealth() {
+  try { state.health = await j("/health/library"); } catch (e) { /* keep prior */ }
 }
 
 async function select(id) {
@@ -498,6 +601,31 @@ function notAuthoredLine(labels) {
   return labels.length
     ? `<p class="notauthored">Not authored yet: ${labels.map(l => esc(String(l).toLowerCase())).join(", ")}</p>`
     : "";
+}
+// Gaps bar (read view): the missing optional fields as clickable chips. Each chip
+// stashes its target field on state.focusField and enters the editor, which then
+// scrolls that field into view and focuses it (see focusDraftField). `gaps` is a
+// list of { label, field } — label is what the reader sees, field the edit-form
+// data-field to jump to.
+function gapsBar(gaps) {
+  if (!gaps.length) return "";
+  const chips = gaps.map(g =>
+    `<button type="button" class="gap-chip" data-gap-field="${esc(g.field)}">${esc(g.label)}</button>`).join("");
+  return `<div class="gaps-bar">
+    <span class="gaps-k">Not authored yet (${gaps.length})</span>
+    <div class="gaps-chips">${chips}</div>
+  </div>`;
+}
+// After an editor renders, jump to and focus the field a gap chip asked for (if any).
+function focusDraftField() {
+  const name = state.focusField;
+  if (!name) return;
+  state.focusField = null;
+  const f = document.querySelector(`#main .field[data-field="${CSS.escape(name)}"]`);
+  if (!f) return;
+  f.scrollIntoView({ block: "center" });
+  const input = f.querySelector("input, textarea, select");
+  if (input) input.focus();
 }
 // Breadcrumb: "<Type> › <id>"; the type word clears the selection (back to the list).
 function crumb(type, id) {
@@ -545,24 +673,25 @@ function readThreat(t) {
     : '<p class="placeholder">None linked.</p>';
 
   const omitted = [];
-  // An optional prose section: shown only when it has content; else recorded as omitted.
-  const optProse = (label, v, sub) => {
+  // An optional prose section: shown only when it has content; else recorded as a gap
+  // (with the edit-form field to jump to when its chip is clicked).
+  const optProse = (label, field, v, sub) => {
     if (v && String(v).trim()) return readsec(label, `<div class="prose">${esc(v)}</div>`, sub);
-    omitted.push(label); return "";
+    omitted.push({ label, field }); return "";
   };
   const refsHtml = (t.references || []).length
     ? readsec("References", `<ul class="plain">${t.references.map(r =>
         `<li><span class="meta">${esc(r.id)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`)
-    : (omitted.push("references"), "");
+    : (omitted.push({ label: "References", field: "references" }), "");
   const tagsHtml = (t.tags || []).length
     ? readsec("Tags", `<div class="badges">${(t.tags || []).map(x => badge("tag", x)).join(" ")}</div>`)
-    : (omitted.push("tags"), "");
+    : (omitted.push({ label: "Tags", field: "tags" }), "");
 
   const sections = [
     readsec("Surface", `<div class="badges">${surface}</div>`, "— where the interaction happens"),
     readsec("Source", `<div class="badges">${source}</div>`, "— who or what drives it"),
     readsec("Weaknesses", weaknesses, "— architectural conditions"),
-    optProse("Reachability", t.reachability, "— when NOT a live path"),
+    optProse("Reachability", "reachability", t.reachability, "— when NOT a live path"),
     readsec(`Mitigations (${(t.mitigations || []).length})`, mits),
     refsHtml,
     tagsHtml,
@@ -585,7 +714,7 @@ function readThreat(t) {
       </div>
     </div>
     ${sections}
-    ${notAuthoredLine(omitted)}
+    ${gapsBar(omitted)}
   </div>`;
 }
 
@@ -873,6 +1002,9 @@ function wireDetail() {
   if (crumbBtn) crumbBtn.onclick = clearThreatSelection;
   document.querySelectorAll("#main [data-jmit]").forEach(el =>
     el.onclick = () => jumpToMit(el.dataset.jmit));
+  // Read view only: a gap chip enters the editor and jumps to that field.
+  document.querySelectorAll("#main .gap-chip").forEach(chip =>
+    chip.onclick = () => { state.focusField = chip.dataset.gapField; enterEdit(); });
   const cancelBtn = document.getElementById("cancelBtn");
   if (cancelBtn) cancelBtn.onclick = () => {
     // A brand-new, never-saved threat has no server record — drop the selection on cancel.
@@ -913,6 +1045,7 @@ function enterEdit() {
   state.railMode = "preview"; state.guidance = null;
   renderDetail();
   renderPreview();   // repaint the rail so the Guidance toggle enables
+  focusDraftField(); // if a gap chip opened this editor, jump to + focus that field
   validateDraft();   // seed the red/amber channels for the initial draft
 }
 
@@ -922,7 +1055,7 @@ function enterEdit() {
 function newThreat() {
   const id = (window.prompt("New threat id (e.g. T-NEW-THREAT):") || "").trim();
   if (!id) return;
-  if (state.threats.some(([tid]) => tid === id)) { toast("A threat with that id already exists", true); return; }
+  if (state.threats.some(t => t.id === id)) { toast("A threat with that id already exists", true); return; }
   const title = (window.prompt("Title (optional — you can edit it below):") || "").trim();
   const harm0 = harmEnum()[0] || "";
   state.selected = id;
@@ -952,13 +1085,13 @@ async function deleteThreat() {
   try {
     await api("DELETE", "/threats/" + encodeURIComponent(id));
   } catch (e) { toast(e.message, true); return; }
-  const tr = await j("/threats");
-  state.threats = tr.threats || [];
+  await refreshThreatList();
+  await refreshHealth();
   state.selected = null; state.current = null; state.draft = null;
   state.editing = false; state.view = "structure";
   state.railMode = "preview"; state.guidance = null;
   state.validation = { errors: [], advice: [] };
-  renderList(); renderDetail(); renderPreview();
+  renderList(); renderThreatFilters(); renderDetail(); renderPreview();
   toast("Threat deleted");
 }
 
@@ -1441,6 +1574,12 @@ function switchScreen(name) {
   // Overview and the style guide have no id filter; hide the search box for them.
   const noSearch = name === "style" || name === "overview";
   document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
+  // The facet row is Threats-only; (re)build it so harm/tag options stay fresh.
+  const filters = document.getElementById("threatFilters");
+  if (filters) {
+    filters.style.display = name === "threats" ? "" : "none";
+    if (name === "threats") renderThreatFilters();
+  }
   const search = document.getElementById("search");
   if (search) {
     search.placeholder = name === "mitigations" ? "Filter mitigations…" : "Filter threats…";
@@ -1848,40 +1987,41 @@ function readMitigation(mt) {
   const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
   const omitted = [];
   const parts = [];
-  // Optional prose: rendered only when it has content; else recorded as omitted.
-  const optProse = (label, v, sub) => {
+  // Optional prose: rendered only when it has content; else recorded as a gap (with the
+  // edit-form field to jump to when its chip is clicked).
+  const optProse = (label, field, v, sub) => {
     if (v && String(v).trim()) parts.push(readsec(label, `<div class="prose">${esc(v)}</div>`, sub));
-    else omitted.push(label);
+    else omitted.push({ label, field });
   };
-  // Optional block (list/cards): rendered only when non-empty; else recorded as omitted.
+  // Optional block (list/cards): rendered only when non-empty; else recorded as a gap.
   // `count` (when given) is shown in the header of a populated block but kept out of the
-  // omitted summary, so an empty one reads "validation", not "validation (0)".
-  const optBlock = (label, has, inner, sub, count) => {
+  // gap chip, so an empty one reads "Validation", not "Validation (0)".
+  const optBlock = (label, field, has, inner, sub, count) => {
     if (has) parts.push(readsec(count === undefined ? label : `${label} (${count})`, inner, sub));
-    else omitted.push(label);
+    else omitted.push({ label, field });
   };
 
-  optProse("Purpose", mt.purpose);
-  optProse("Scope", mt.scope, "— applicability rule + boundary");
-  optProse("Control mechanism", mt.control_mechanism);
-  optProse("Failure behavior", mt.failure_behavior);
-  optProse("Risk of formal implementation", mt.formal_implementation_risk);
-  optProse("Review", mt.review);
+  optProse("Purpose", "purpose", mt.purpose);
+  optProse("Scope", "scope", mt.scope, "— applicability rule + boundary");
+  optProse("Control mechanism", "control_mechanism", mt.control_mechanism);
+  optProse("Failure behavior", "failure_behavior", mt.failure_behavior);
+  optProse("Risk of formal implementation", "formal_implementation_risk", mt.formal_implementation_risk);
+  optProse("Review", "review", mt.review);
 
   // Ownership — omit entirely when maintainer/owner/locus are all blank; else show the filled rows.
   const own = [["Maintainer", mt.maintainer], ["Owner", mt.owner], ["Locus", mt.locus]]
     .filter(([, v]) => v && String(v).trim());
-  optBlock("Ownership", own.length,
+  optBlock("Ownership", "maintainer", own.length,
     `<ul class="plain">${own.map(([k, v]) => `<li><span class="meta">${esc(k)}</span>${esc(v)}</li>`).join("")}</ul>`,
     "— maintainer / owner / locus");
 
-  optProse("Telemetry", mt.telemetry);
+  optProse("Telemetry", "telemetry", mt.telemetry);
 
-  optBlock("Anti-patterns", (mt.anti_patterns || []).length,
+  optBlock("Anti-patterns", "anti_patterns", (mt.anti_patterns || []).length,
     `<ul class="plain">${(mt.anti_patterns || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>`);
 
   const vlen = (mt.validation || []).length;
-  optBlock("Validation", vlen,
+  optBlock("Validation", "validation", vlen,
     (mt.validation || []).map(v => `<div class="card">
         <div class="chead"><span class="ctitle">${esc(v.criterion || "(criterion)")}</span>${
           v.base === false ? '<span class="badge soft" style="margin-left:auto">extended</span>' : ""}</div>
@@ -1890,7 +2030,7 @@ function readMitigation(mt) {
       </div>`).join(""), null, vlen);
 
   const flen = (mt.faq || []).length;
-  optBlock("FAQ", flen,
+  optBlock("FAQ", "faq", flen,
     (mt.faq || []).map(q => `<div class="card">
         <div class="chead"><span class="ctitle">${esc(q.question || "(question)")}</span></div>
         ${q.answer ? `<div class="cdesc">${esc(q.answer)}</div>` : ""}
@@ -1929,7 +2069,7 @@ function readMitigation(mt) {
       ${mitHeadActions()}
     </div>
     ${parts.join("")}
-    ${notAuthoredLine(omitted)}
+    ${gapsBar(omitted)}
   </div>`;
 }
 
@@ -1952,6 +2092,9 @@ function wireMitDetail() {
   if (crumbBtn) crumbBtn.onclick = clearMitSelection;
   document.querySelectorAll("#main [data-jthreat]").forEach(el =>
     el.onclick = () => jumpToThreat(el.dataset.jthreat));
+  // Read view only: a gap chip enters the editor and jumps to that field.
+  document.querySelectorAll("#main .gap-chip").forEach(chip =>
+    chip.onclick = () => { state.focusField = chip.dataset.gapField; enterMitEdit(); });
   const cancelBtn = document.getElementById("mitCancelBtn");
   if (cancelBtn) cancelBtn.onclick = () => {
     const wasNew = state.mitDraft && state.mitDraft.isNew;
@@ -2267,6 +2410,7 @@ function enterMitEdit() {
   state.mitEditing = true; state.railMode = "preview"; state.guidance = null;
   state.mitValidation = { errors: [], advice: [] };
   renderMitDetail(); renderMitPreview();
+  focusDraftField(); // if a gap chip opened this editor, jump to + focus that field
 }
 
 // A blank draft for a new mitigation (id + name prompted; class defaults to the first enum).
