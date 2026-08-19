@@ -419,6 +419,9 @@ const state = {
   guidance: null,       // { entity, field, targetId } of the focused form field
   styleSel: null,       // style screen: { entity, field } selected in the tree
   styleDraft: null,     // style screen: in-progress slot edits for the selected field
+  styleFilter: "",      // style screen: rail text filter (field name + entity)
+  styleFacets: { entity: new Set(), coverage: new Set(), orphan: new Set() },  // AND across groups, OR within
+  styleFacetsOpen: false, // is the Style-guide filter panel expanded
 };
 window.state = state;   // exposed for smoke checks / debugging
 
@@ -1663,22 +1666,25 @@ function switchScreen(name) {
   document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
   const titles = { overview: "Keel · Overview", threats: "Keel · Threats", mitigations: "Keel · Mitigations", style: "Keel · Style guide" };
   document.getElementById("railTitle").textContent = titles[name] || "Keel";
-  // Overview and the style guide have no id filter; hide the search box for them.
-  const noSearch = name === "style" || name === "overview";
+  // Only the Overview has no rail search; Threats/Mitigations/Style all filter.
+  const noSearch = name === "overview";
   document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
-  // The faceted filter panel serves Threats + Mitigations; (re)build it per screen so
-  // its options stay fresh (schema enums + tags/values present in the data).
+  // The faceted filter panel serves Threats + Mitigations + Style; (re)build it per
+  // screen so its options stay fresh (schema enums + tags/values present in the data).
   const facets = document.getElementById("facetPanel");
   if (facets) {
-    const hasFacets = name === "threats" || name === "mitigations";
+    const hasFacets = name === "threats" || name === "mitigations" || name === "style";
     facets.style.display = hasFacets ? "" : "none";
     if (name === "threats") renderThreatFacets();
     else if (name === "mitigations") renderMitFacets();
+    else if (name === "style") renderStyleFacets();
   }
   const search = document.getElementById("search");
   if (search) {
-    search.placeholder = name === "mitigations" ? "Filter mitigations…" : "Filter threats…";
-    search.value = name === "mitigations" ? state.mitFilter : state.filter;
+    search.placeholder = name === "mitigations" ? "Filter mitigations…"
+      : name === "style" ? "Filter fields…" : "Filter threats…";
+    search.value = name === "mitigations" ? state.mitFilter
+      : name === "style" ? state.styleFilter : state.filter;
   }
   const newBtn = document.getElementById("newThreatBtn");
   if (newBtn) {
@@ -1836,17 +1842,45 @@ function coverageFor(entity, field) {
 }
 function covClass(pct) { return pct >= 67 ? "c-hi" : pct >= 34 ? "c-mid" : "c-lo"; }
 
+// Text search: match the field name and its entity.
+function styleFieldMatchesText(entity, fname) {
+  const q = state.styleFilter.toLowerCase();
+  if (!q) return true;
+  return (fname + " " + entity).toLowerCase().includes(q);
+}
+// Facet-match a field: entity chips, coverage band, orphans-only. Orphan fields are
+// excluded from the coverage report (coverageFor → null), so they count as empty.
+function styleFieldMatchesFacets(entity, fname, f) {
+  const F = state.styleFacets;
+  if (F.entity.size && !F.entity.has(entity)) return false;
+  if (F.coverage.size) {
+    const pct = f.is_orphan ? 0 : (coverageFor(entity, fname) ?? 0);
+    const band = pct >= 100 ? "complete" : pct > 0 ? "partial" : "empty";
+    if (!F.coverage.has(band)) return false;
+  }
+  if (F.orphan.size && !f.is_orphan) return false;
+  return true;
+}
+
 // Left rail: entity → field tree built from state.style.entities (schema-derived,
-// so it can never drift from the model). Every field shows — including 0% ones.
+// so it can never drift from the model). Text + facets filter which fields render;
+// an entity group with no matching fields is hidden entirely.
 function renderStyleRail() {
   const el = document.getElementById("list");
   const ents = (state.style && state.style.entities) || {};
   let html = "";
-  let fieldCount = 0;
+  let total = 0, shown = 0;
   for (const [etype, ent] of Object.entries(ents)) {
+    const fnames = Object.keys(ent.fields || {});
+    const matched = fnames.filter(fname => {
+      total++;
+      const f = ent.fields[fname];
+      return styleFieldMatchesText(etype, fname) && styleFieldMatchesFacets(etype, fname, f);
+    });
+    if (!matched.length) continue;                 // hide empty entity groups
     html += `<div class="sg-group">${esc(etype)}</div>`;
-    for (const fname of Object.keys(ent.fields || {})) {
-      fieldCount++;
+    for (const fname of matched) {
+      shown++;
       const f = ent.fields[fname];
       const active = state.styleSel && state.styleSel.entity === etype && state.styleSel.field === fname;
       let badge;
@@ -1862,9 +1896,33 @@ function renderStyleRail() {
       </div>`;
     }
   }
-  el.innerHTML = html || '<div class="empty" style="margin-top:40px">No style guide.</div>';
-  document.getElementById("count").textContent = fieldCount + " fields";
+  el.innerHTML = html || '<div class="empty" style="margin-top:40px">No matches.</div>';
+  document.getElementById("count").textContent = shown + " / " + total;
   el.querySelectorAll(".sg-frow").forEach(r => r.onclick = () => selectStyleField(r.dataset.entity, r.dataset.field));
+}
+
+// Style-guide facet panel — Entity / Coverage / Orphan, same builder as the other rails.
+function styleFacetDefs() {
+  const ents = Object.keys((state.style && state.style.entities) || {});
+  return [
+    { key: "entity", label: "Entity", opts: ents.map(e => [e, e]) },
+    { key: "coverage", label: "Coverage", opts: [["complete", "complete"], ["partial", "partial"], ["empty", "empty"]] },
+    { key: "orphan", label: "Orphan", opts: [["orphan", "orphans only"]] },
+  ];
+}
+function renderStyleFacets() {
+  renderFacetPanel({
+    open: state.styleFacetsOpen,
+    facets: state.styleFacets,
+    defs: styleFacetDefs(),
+    onopen: on => { state.styleFacetsOpen = on; renderStyleFacets(); },
+    onclear: () => { for (const s of Object.values(state.styleFacets)) s.clear(); renderStyleFacets(); renderStyleRail(); },
+    ontoggle: (key, val) => {
+      const s = state.styleFacets[key];
+      s.has(val) ? s.delete(val) : s.add(val);
+      renderStyleFacets(); renderStyleRail();
+    },
+  });
 }
 
 // Select a field → seed the editor draft from the saved style entry (a working copy,
@@ -2006,7 +2064,7 @@ async function saveStyleField() {
     await api("PATCH", "/style-guide/" + encodeURIComponent(entity) + "/" + encodeURIComponent(field), body);
     state.style = await j("/style-guide");
     state.coverage = await j("/style-guide/coverage");
-    renderStyleRail(); renderStyleDetail(); renderStylePreview();
+    renderStyleRail(); renderStyleFacets(); renderStyleDetail(); renderStylePreview();
     toast("Style guide saved");
     showSavedDialog("catalog/style_guide/" + entity + ".yaml");
   } catch (e) { toast(e.message, true); }
@@ -2778,6 +2836,7 @@ async function saveMitigation() {
 // --------------------------------------------------------------- start ----- //
 document.getElementById("search").oninput = e => {
   if (state.screen === "mitigations") { state.mitFilter = e.target.value; renderMitRail(); }
+  else if (state.screen === "style") { state.styleFilter = e.target.value; renderStyleRail(); }
   else { state.filter = e.target.value; renderList(); }
 };
 document.getElementById("newThreatBtn").onclick = () =>
