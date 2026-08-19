@@ -101,13 +101,18 @@
   .detail { max-width: none; }
 
   /* ------ editor section tiers (fieldset/legend) ------ */
-  /* SECTION = fieldset + legend, no border; separated by whitespace, section gap > field gap */
-  .detail fieldset { border: 0; margin: var(--section-gap) 0 0; padding: 0; min-width: 0; }
+  /* SECTION = fieldset + legend. The top-level edit sections wear the SAME surface as
+     the read view's .readsec (tint fill, hairline border, radius, padding, spacing) so
+     toggling Edit ↔ read keeps the block framing and the eye doesn't lose its place. */
+  .detail fieldset {
+    background: var(--tint); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 12px 14px; margin: 14px 0 0; min-width: 0;
+  }
+  /* Legend matches the read section header (.readsec > h3.slabel): 11px, navy-700, no rule. */
   .detail fieldset > legend.slabel {
-    display: block; width: 100%; float: none; padding: 0 0 8px; margin: 0;
-    font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--navy-800); font-weight: 700;
-    border-bottom: 1px solid var(--border2); margin-bottom: 12px;
+    display: block; width: 100%; float: none; padding: 0; margin: 0 0 9px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--navy-700); font-weight: 700;
   }
   .detail fieldset > legend.slabel .sub { font-weight: 400; text-transform: none; color: var(--navy-400); }
   /* subsection label inside a repeatable card — one type-step down, no border */
