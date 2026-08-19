@@ -162,6 +162,31 @@
   .card.jrow { cursor: pointer; transition: background .12s, border-color .12s; }
   .card.jrow:hover { background: var(--crimson-50); border-color: var(--crimson-200); }
 
+  /* ------ read-view Git history (read-only) ------ */
+  /* A quiet provenance line under the breadcrumb, plus a collapsed History .readsec
+     at the foot of the read view: commit rows that expand an inline diff (accordion). */
+  .last-changed { font-size: 12px; color: var(--navy-400); margin: -4px 0 12px; }
+  .history-sec .history-head { display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; user-select: none; }
+  .history-sec .history-head:hover { color: var(--crimson-700); }
+  .history-sec .history-head .fx-caret { color: var(--navy-400); font-size: 10px; width: 10px; flex-shrink: 0; }
+  .history-list { margin-top: 2px; }
+  .commit { border-top: 1px solid var(--border2); }
+  .commit:first-child { border-top: none; }
+  .commit-row { padding: 8px 6px; border-radius: 6px; cursor: pointer; }
+  .commit-row:hover { background: var(--navy-100); }
+  .commit-msg { font-size: 13px; color: var(--navy-800); line-height: 1.4; }
+  .commit-meta { font-size: 11px; color: var(--navy-400); margin-top: 2px; }
+  .commit-sha { font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .commit-diff { margin: 2px 4px 8px; }
+  pre.diff { margin: 0; padding: 10px 12px; background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
+    line-height: 1.5; white-space: pre; overflow-x: auto; color: var(--navy-700); }
+  pre.diff .dl-add { color: var(--green); }
+  pre.diff .dl-del { color: var(--crimson-700); }
+  pre.diff .dl-hunk { color: var(--navy-500); }
+  pre.diff .dl-file { color: var(--navy-400); }
+  pre.diff.diff-loading { color: var(--navy-400); font-style: italic; }
+
   /* ------ buttons ------ */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
   .btn.primary { background: var(--crimson-600); color: #fff; }
@@ -396,6 +421,10 @@ const state = {
   mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
   currentMit: null,     // full mitigation card from GET /mitigations/{id}
+  mitHistory: null,     // GET /history/mitigations/{id} — { available, file, commits }
+  mitHistoryExpanded: false, // is the read-view History section itself expanded
+  mitHistoryOpen: null, // Set of commit shas whose diff is expanded (accordion)
+  mitDiffCache: {},     // sha -> diff payload (per-sha cache)
   mitEditing: false,    // mitigations screen: edit mode
   mitDraft: null,       // mitigations screen: in-progress edits
   mitValidation: { errors: [], advice: [] },  // mapped from a failed PATCH/POST (no live endpoint)
@@ -406,6 +435,10 @@ const state = {
   threatMits: null,     // [{id,title,mitigations}] — reverse index for "addresses threats"
   selected: null,       // selected threat id
   current: null,        // full threat record from GET /threats/{id}
+  history: null,        // GET /history/threats/{id} — { available, file, commits }; null until loaded
+  historyExpanded: false, // is the read-view History section itself expanded
+  historyOpen: null,    // Set of commit shas whose diff is expanded (accordion)
+  diffCache: {},        // sha -> diff payload (per-sha cache)
   filter: "",
   editing: false,
   draft: null,          // in-progress edits
@@ -669,6 +702,9 @@ async function select(id) {
   state.view = "structure";
   state.railMode = "preview"; state.guidance = null;
   state.validation = { errors: [], advice: [] };
+  // History is per-entry: clear it on select; loadHistory refetches and re-renders.
+  state.history = null; state.historyExpanded = false;
+  state.historyOpen = new Set(); state.diffCache = {};
   renderList();
   try {
     state.current = await j("/threats/" + encodeURIComponent(id));
@@ -678,7 +714,8 @@ async function select(id) {
   renderDetail();
   renderPreview();
   document.getElementById("main").scrollTop = 0;
-  validateDraft();   // populate advice for the Insights strip (non-blocking)
+  validateDraft();          // populate advice for the Insights strip (non-blocking)
+  loadHistory(threatHistoryCfg());   // fetch the commit list, then re-render (non-blocking)
 }
 
 // ------------------------------------------------------------- detail ------ //
@@ -748,6 +785,157 @@ function clearMitSelection() {
   renderMitRail(); renderMitDetail(); renderMitPreview();
 }
 
+// ---- read-only Git history (both read views) ------------------------------ //
+// The back end exposes GET /history/{entity}/{id} (commit list; available:false when
+// the catalog isn't a git repo or the file is untracked) and GET /history/{entity}/
+// {id}/{sha} (unified diff). Both read views degrade silently when unavailable.
+
+// Coarse relative time from an ISO date, computed client-side. Falls back to the raw
+// string when the date can't be parsed.
+function relTime(iso) {
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return iso || "";
+  const secs = Math.floor((Date.now() - then.getTime()) / 1000);
+  const unit = (n, w) => n + " " + w + (n === 1 ? "" : "s") + " ago";
+  if (secs < 45) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return unit(mins, "minute");
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return unit(hrs, "hour");
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return unit(days, "day");
+  const months = Math.floor(days / 30);
+  if (months < 12) return unit(months, "month");
+  return unit(Math.floor(days / 365), "year");
+}
+const firstLine = s => String(s ?? "").split("\n")[0];
+
+// The two read views wire the same history machinery through a small config that
+// names their state slice, id source, and re-render entry point.
+function threatHistoryCfg() {
+  return {
+    entity: "threats",
+    getId: () => state.selected,
+    getHist: () => state.history,
+    setHist: h => { state.history = h; },
+    getExpanded: () => state.historyExpanded,
+    setExpanded: v => { state.historyExpanded = v; },
+    getOpen: () => (state.historyOpen || (state.historyOpen = new Set())),
+    getCache: () => state.diffCache,
+    rerender: renderDetail,
+  };
+}
+function mitHistoryCfg() {
+  return {
+    entity: "mitigations",
+    getId: () => state.mitSelected,
+    getHist: () => state.mitHistory,
+    setHist: h => { state.mitHistory = h; },
+    getExpanded: () => state.mitHistoryExpanded,
+    setExpanded: v => { state.mitHistoryExpanded = v; },
+    getOpen: () => (state.mitHistoryOpen || (state.mitHistoryOpen = new Set())),
+    getCache: () => state.mitDiffCache,
+    rerender: renderMitDetail,
+  };
+}
+
+// Fetch the commit list for the current entry once and stash it; re-render when it
+// lands (guarded against a selection change mid-flight). Any error degrades to
+// "no history" so the UI simply shows nothing.
+async function loadHistory(cfg) {
+  const id = cfg.getId();
+  cfg.setHist(null);
+  cfg.getOpen().clear();
+  let h;
+  try {
+    h = await j("/history/" + cfg.entity + "/" + encodeURIComponent(id));
+  } catch (e) {
+    h = { available: false, commits: [] };
+  }
+  if (cfg.getId() !== id) return;   // selection moved on; drop this result
+  cfg.setHist(h);
+  cfg.rerender();
+}
+
+// The quiet "Last changed <when> by <who>" line from the newest commit. Omitted
+// when history is unavailable or empty.
+function lastChangedLine(hist) {
+  if (!hist || !hist.available || !(hist.commits || []).length) return "";
+  const c = hist.commits[0];
+  return `<div class="last-changed">Last changed ${esc(relTime(c.date))} by ${esc(c.author)}</div>`;
+}
+
+// Render a unified diff as a coloured, ESCAPED <pre>: + green, - red, @@ hunk muted,
+// file headers muted, context default. Inline spans keep the \n line breaks in <pre>.
+function diffHtml(text) {
+  const spans = String(text ?? "").split("\n").map(ln => {
+    let cls = "";
+    if (ln.startsWith("@@")) cls = "dl-hunk";
+    else if (ln.startsWith("+++") || ln.startsWith("---")) cls = "dl-file";
+    else if (ln.startsWith("+")) cls = "dl-add";
+    else if (ln.startsWith("-")) cls = "dl-del";
+    return cls ? `<span class="${cls}">${esc(ln)}</span>` : esc(ln);
+  }).join("\n");
+  return `<pre class="diff">${spans}</pre>`;
+}
+
+function historyRow(c, cfg) {
+  const isOpen = cfg.getOpen().has(c.sha);
+  const cached = cfg.getCache()[c.sha];
+  const short = esc(String(c.sha || "").slice(0, 7));
+  const diff = isOpen
+    ? (cached ? diffHtml(cached.diff) : `<pre class="diff diff-loading">Loading diff…</pre>`)
+    : "";
+  return `<div class="commit ${isOpen ? "open" : ""}">
+    <div class="commit-row" data-sha="${esc(c.sha)}">
+      <div class="commit-msg">${esc(firstLine(c.message)) || "(no message)"}</div>
+      <div class="commit-meta">${esc(c.author)} · ${esc(relTime(c.date))} · <span class="commit-sha">${short}</span></div>
+    </div>
+    ${isOpen ? `<div class="commit-diff">${diff}</div>` : ""}
+  </div>`;
+}
+
+// The collapsed-by-default History .readsec at the foot of a read view. Renders
+// nothing when history is unavailable or has no commits (silent degrade).
+function historySection(cfg) {
+  const hist = cfg.getHist();
+  if (!hist || !hist.available || !(hist.commits || []).length) return "";
+  const open = cfg.getExpanded();
+  const commits = hist.commits;
+  const body = open ? `<div class="history-list">${commits.map(c => historyRow(c, cfg)).join("")}</div>` : "";
+  return `<section class="readsec history-sec">
+    <h3 class="slabel history-head" data-hist-toggle="1">
+      <span class="fx-caret">${open ? "▾" : "▸"}</span>History (${commits.length})
+    </h3>
+    ${body}
+  </section>`;
+}
+
+// Wire the History section: header toggles the whole section; a commit row toggles
+// its inline diff (fetched once per sha, then cached). Selectors miss in edit mode,
+// so this is a no-op there.
+function wireHistory(cfg) {
+  const head = document.querySelector("#main [data-hist-toggle]");
+  if (head) head.onclick = () => { cfg.setExpanded(!cfg.getExpanded()); cfg.rerender(); };
+  document.querySelectorAll("#main .commit-row").forEach(row =>
+    row.onclick = () => toggleDiff(cfg, row.dataset.sha));
+}
+async function toggleDiff(cfg, sha) {
+  const open = cfg.getOpen();
+  if (open.has(sha)) { open.delete(sha); cfg.rerender(); return; }
+  open.add(sha);
+  cfg.rerender();                       // shows "Loading diff…" until the fetch lands
+  const cache = cfg.getCache();
+  if (cache[sha]) return;
+  const id = cfg.getId();
+  try {
+    cache[sha] = await j("/history/" + cfg.entity + "/" + encodeURIComponent(id) + "/" + encodeURIComponent(sha));
+  } catch (e) {
+    cache[sha] = { diff: "(diff unavailable)" };
+  }
+  if (cfg.getId() === id && open.has(sha)) cfg.rerender();
+}
+
 // Read view — the NEW threat fields.
 function readThreat(t) {
   const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
@@ -801,6 +989,7 @@ function readThreat(t) {
 
   return `<div class="detail">
     ${crumb("Threats", t.id)}
+    ${lastChangedLine(state.history)}
     <div class="dhead">
       <div class="dicon">▲</div>
       <div class="dtitle">
@@ -817,6 +1006,7 @@ function readThreat(t) {
     </div>
     ${sections}
     ${gapsBar(omitted)}
+    ${historySection(threatHistoryCfg())}
   </div>`;
 }
 
@@ -1107,6 +1297,8 @@ function wireDetail() {
   // Read view only: a gap chip enters the editor and jumps to that field.
   document.querySelectorAll("#main .gap-chip").forEach(chip =>
     chip.onclick = () => { state.focusField = chip.dataset.gapField; enterEdit(); });
+  // Read view only: the Git history section (selectors miss in edit mode).
+  wireHistory(threatHistoryCfg());
   const cancelBtn = document.getElementById("cancelBtn");
   if (cancelBtn) cancelBtn.onclick = () => {
     // A brand-new, never-saved threat has no server record — drop the selection on cancel.
@@ -2160,6 +2352,9 @@ async function selectMit(id) {
   state.mitSelected = id; state.mitEditing = false; state.mitDraft = null;
   state.railMode = "preview"; state.guidance = null;
   state.mitValidation = { errors: [], advice: [] };
+  // History is per-entry: clear it on select; loadHistory refetches and re-renders.
+  state.mitHistory = null; state.mitHistoryExpanded = false;
+  state.mitHistoryOpen = new Set(); state.mitDiffCache = {};
   renderMitRail();
   try {
     state.currentMit = await j("/mitigations/" + encodeURIComponent(id));
@@ -2169,6 +2364,7 @@ async function selectMit(id) {
   catch (e) { /* leave whatever we had */ }
   renderMitDetail(); renderMitPreview();
   document.getElementById("main").scrollTop = 0;
+  loadHistory(mitHistoryCfg());   // fetch the commit list, then re-render (non-blocking)
 }
 
 // --------------------------------------------------------- mitigations detail //
@@ -2258,6 +2454,7 @@ function readMitigation(mt) {
 
   return `<div class="detail">
     ${crumb("Mitigations", mt.id)}
+    ${lastChangedLine(state.mitHistory)}
     <div class="dhead">
       <div class="dicon">⛨</div>
       <div class="dtitle">
@@ -2272,6 +2469,7 @@ function readMitigation(mt) {
     </div>
     ${parts.join("")}
     ${gapsBar(omitted)}
+    ${historySection(mitHistoryCfg())}
   </div>`;
 }
 
@@ -2297,6 +2495,8 @@ function wireMitDetail() {
   // Read view only: a gap chip enters the editor and jumps to that field.
   document.querySelectorAll("#main .gap-chip").forEach(chip =>
     chip.onclick = () => { state.focusField = chip.dataset.gapField; enterMitEdit(); });
+  // Read view only: the Git history section (selectors miss in edit mode).
+  wireHistory(mitHistoryCfg());
   const cancelBtn = document.getElementById("mitCancelBtn");
   if (cancelBtn) cancelBtn.onclick = () => {
     const wasNew = state.mitDraft && state.mitDraft.isNew;
