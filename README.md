@@ -154,14 +154,19 @@ Keel works a different axis from the frameworks above. It makes the language ope
 - **MCP** (primary): `stdio` for local Claude Code, `--http` for remote clients. Tools cover threats CRUD plus mitigation links, mitigations CRUD, the style guide, and health/stats.
 - **REST** for browsing and editing the model: reads (`/threats`, `/threats/{id}`, `/mitigations`, `/mitigations/{id}`, `/style-guide`, `/style-guide/coverage`, `/schema/{entity}`, `/health`) plus the write endpoints that back the browse/edit UI (`PATCH /threats/{id}`, threat-mitigation links, `PATCH /style-guide/{entity}/{field}`, and `POST /threats/validate`). The MCP tools and the REST writes share one service layer, so every edit lands in `catalog/*.yaml`.
 
-## Tests
+## Development
+
+Two checks, for two different things:
+
+- **`keel validate`** checks the *catalog content*, your threats and mitigations, against the schemas: strict enums, link integrity, id/filename agreement, plus advisory warnings (an over-graded `gating` link, empty references, an unused field). This is the content gate a team relies on when growing the model.
+- **`pytest`** is the *code* test suite, for anyone modifying Keel itself (schema generation, the REST/MCP endpoints and services, CRUD, the lints):
 
 ```bash
 pip install -e ".[dev]"
 pytest
 ```
 
-The suite includes a health check on the library (`tests/test_health.py`): it runs the stat counts and confirms that `check_library_health` flags content and integrity gaps, such as a threat missing its `weaknesses` or `harm`, a threat with no mitigation, or a dangling mitigation link. The same integrity check runs at runtime through the `check_library_health` and `get_stats` MCP tools; the REST `/health` endpoint is a simple liveness probe.
+CI runs both on every pull request.
 
 ## License
 
