@@ -27,15 +27,15 @@ The reference model is deliberately small: the catalog is a floor, not a ceiling
 
 ## Quickstart: run your first assessment
 
-The point of Keel is to *run* it against a real system. With the MCP connected to your agent:
+Keel is used two ways: to *assess* a system, and to *grow* a shared model with your team. The fastest first win is an assessment.
 
-1. **Start Keel** as an MCP server (see [Run](#run)), or point your MCP client at the bundled `.mcp.json`, which exposes the tools as `mcp__keel__*`.
-2. **Ask your agent** (Claude Code, or any agent that has the `.claude/skills/` and the MCP): *"Assess the GenAI security of \<describe your system\>."* The `assess-genai-with-library` skill walks your system against the catalog: it matches weaknesses, rules out unreachable paths, and checks which mitigations you already have.
+1. **Connect the MCP.** Point your agent at the repo's `.mcp.json`. It launches Keel over stdio and exposes the tools as `mcp__keel__*`; Claude Code picks it up automatically, so there is no separate server to start. (The browse UI and other transports are under [Run](#run).)
+2. **Ask your agent** (any agent that has the `.claude/skills/` and the MCP): *"Assess the GenAI security of \<describe your system\>."* The `assess-genai-with-library` skill walks your system against the catalog: it matches weaknesses, rules out unreachable paths, and checks which mitigations you already have.
 3. **Read the two-part output:** an auditable analysis trail, then a final risk assessment. It ties findings to your architecture, separates the controls you have from the gaps, and reports a delta against MITRE ATLAS.
 
 <p align="center"><img src="docs/img/assessment-flow.svg" alt="How an assessment runs: your system to candidate threats to reachability filter to mitigations and implementations to risk to the two-part assessment" width="860"></p>
 
-No system to assess yet? Open the browse UI at `http://localhost:8000/` to explore the model first.
+Want to grow the model instead of assess with it? Explore it in the browse UI at `http://localhost:8000/` (see [Run](#run)), or jump to [Make it yours](#make-it-yours) for the team workflow.
 
 ## Run
 
@@ -127,12 +127,24 @@ Every screen writes straight to the catalog YAML through the same service layer 
 
 ## Make it yours
 
-Keel ships with a curated English reference model: 13 threats and 71 mitigations (96 links). The content is the source of truth as reviewable YAML under `catalog/` (one file per threat and per mitigation, and one file per entity under `style_guide/`), so content changes land as readable diffs in pull requests. `keel validate` checks the YAML against the schemas (strict enums, link integrity) and runs in CI. It is meant to be forked and grown into your organization's model:
+Keel is meant to be forked and grown into your team's own living model. The reference content (13 threats, 71 mitigations, 96 links) is a floor: one YAML file per threat and per mitigation under `catalog/`, so every change is a readable diff.
 
-- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar) or the browse UI, so each write lands directly in `catalog/*.yaml` for review. You can also edit the files by hand.
+**Grow the content.**
+- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar), the browse UI, or by editing the YAML by hand.
 - Record how your org realizes a control on the mitigation's `implementations` (they ship empty). An assessment reads them to tell what is already in place versus a recommendation.
-- Adjust tags, mitigation cards, and threat-to-mitigation rationale to match how your teams reason.
-- Drop what does not apply: the catalog is a floor, so shrinking it to a sharper model tuned to your context is the point.
+- Adjust tags, mitigation cards, and threat-to-mitigation rationale to match how your teams reason; drop what does not apply.
+
+**Work on it as a team.** The model lives in one shared repo, so a change is a pull request like any code change. Ask your agent to ship it ("commit this and open a PR"), or do it by hand:
+
+```bash
+git checkout -b add-tool-poisoning        # branch; never edit on main
+git add catalog/                          # your YAML change
+git commit -m "Add threat: tool description poisoning"
+git push -u origin add-tool-poisoning
+gh pr create --fill                       # open the PR
+```
+
+CI runs `keel validate` on every pull request (schema, vocabulary, link integrity, plus advisory warnings), so a broken or off-standard change is caught before a teammate reviews and merges. Everyone works off the same model, and it grows with your systems.
 
 **Roadmap (not yet built):** per-system state to mark a threat *not applicable* for a given deployment or *accept* a risk, so you can suppress known noise without deleting the shared knowledge. Until then, you express that context by editing or pruning the model directly.
 
