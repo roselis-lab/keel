@@ -95,6 +95,23 @@
   ul.plain li { border-left: 2px solid var(--navy-200); padding: 3px 0 3px 10px; margin-bottom: 7px; color: var(--navy-700); }
   ul.plain li .meta { font-size: 11px; color: var(--navy-400); text-transform: uppercase; letter-spacing: .05em; }
 
+  /* ------ read view (per-section surfaces, breadcrumb, omit-empty) ------ */
+  /* A read/document view, so each populated section sits on its own subtle surface,
+     unlike the edit form (whose only heavy container is the repeatable-card border). */
+  .readsec { background: var(--tint); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; margin-top: 14px; }
+  .readsec > h3.slabel { margin: 0 0 9px; }
+  .readsec .prose { color: var(--navy-800); }
+  .readsec .card { background: #fff; }
+  .notauthored { color: var(--navy-400); font-size: 12px; font-style: italic; margin: 16px 0 0; }
+  .crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--navy-400); margin-bottom: 12px; }
+  .crumb-type { border: none; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--navy-500); }
+  .crumb-type:hover { color: var(--crimson-600); text-decoration: underline; }
+  .crumb-sep { color: var(--navy-400); }
+  .crumb-id { font-family: ui-monospace, "SFMono-Regular", monospace; color: var(--navy-500); }
+  /* A card that jumps to a linked entity on click. */
+  .card.jrow { cursor: pointer; transition: background .12s, border-color .12s; }
+  .card.jrow:hover { background: var(--crimson-50); border-color: var(--crimson-200); }
+
   /* ------ buttons ------ */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
   .btn.primary { background: var(--crimson-600); color: #fff; }
@@ -470,6 +487,37 @@ function renderDetail() {
   wireDetail();
 }
 
+// ---- shared read-view helpers (both read views) --------------------------- //
+// Each populated section sits on its own subtle surface (.readsec). Empty optional
+// sections render NOTHING; their labels are gathered and summarized in one muted line
+// so a stub entry reads as signal, not a wall of dashes.
+function readsec(label, inner, sub) {
+  return `<section class="readsec"><h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>${inner}</section>`;
+}
+function notAuthoredLine(labels) {
+  return labels.length
+    ? `<p class="notauthored">Not authored yet: ${labels.map(l => esc(String(l).toLowerCase())).join(", ")}</p>`
+    : "";
+}
+// Breadcrumb: "<Type> › <id>"; the type word clears the selection (back to the list).
+function crumb(type, id) {
+  return `<div class="crumb"><button type="button" class="crumb-type" data-crumb="${esc(type)}">${esc(type)}</button>
+    <span class="crumb-sep">›</span><span class="crumb-id">${esc(id)}</span></div>`;
+}
+// Cross-screen jumps used by the read-view links (mirror overviewOpenThreat).
+function jumpToThreat(id) { switchScreen("threats"); select(id); }
+function jumpToMit(id) { switchScreen("mitigations"); selectMit(id); }
+function clearThreatSelection() {
+  state.selected = null; state.current = null;
+  state.editing = false; state.draft = null;
+  renderList(); renderDetail(); renderPreview();
+}
+function clearMitSelection() {
+  state.mitSelected = null; state.currentMit = null;
+  state.mitEditing = false; state.mitDraft = null;
+  renderMitRail(); renderMitDetail(); renderMitPreview();
+}
+
 // Read view — the NEW threat fields.
 function readThreat(t) {
   const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
@@ -481,10 +529,11 @@ function readThreat(t) {
         <li><div class="meta">${esc(w.component)}${w.nature ? " · " + esc(w.nature) : ""}</div>${esc(w.text)}</li>`).join("")}</ul>`
     : '<div class="warn">No weaknesses authored.</div>';
 
+  // Linked mitigations — each card jumps to that mitigation.
   const mits = (t.mitigations || []).length
     ? (t.mitigations || []).map(l => {
         const mm = state.mitById[l.id];
-        return `<div class="card">
+        return `<div class="card jrow" data-jmit="${esc(l.id)}" title="Open ${esc(l.id)}">
           <div class="chead">
             <span class="cid">${esc(l.id)}</span>
             <span class="ctitle">${esc(mm ? mm.name : "(missing)")}</span>
@@ -495,15 +544,32 @@ function readThreat(t) {
       }).join("")
     : '<p class="placeholder">None linked.</p>';
 
-  const refs = (t.references || []).length
-    ? `<ul class="plain">${t.references.map(r => `<li><span class="meta">${esc(r.id)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`
-    : '<p class="placeholder">None.</p>';
+  const omitted = [];
+  // An optional prose section: shown only when it has content; else recorded as omitted.
+  const optProse = (label, v, sub) => {
+    if (v && String(v).trim()) return readsec(label, `<div class="prose">${esc(v)}</div>`, sub);
+    omitted.push(label); return "";
+  };
+  const refsHtml = (t.references || []).length
+    ? readsec("References", `<ul class="plain">${t.references.map(r =>
+        `<li><span class="meta">${esc(r.id)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`)
+    : (omitted.push("references"), "");
+  const tagsHtml = (t.tags || []).length
+    ? readsec("Tags", `<div class="badges">${(t.tags || []).map(x => badge("tag", x)).join(" ")}</div>`)
+    : (omitted.push("tags"), "");
 
-  const tags = (t.tags || []).length
-    ? (t.tags || []).map(x => badge("tag", x)).join(" ")
-    : '<span class="placeholder">none</span>';
+  const sections = [
+    readsec("Surface", `<div class="badges">${surface}</div>`, "— where the interaction happens"),
+    readsec("Source", `<div class="badges">${source}</div>`, "— who or what drives it"),
+    readsec("Weaknesses", weaknesses, "— architectural conditions"),
+    optProse("Reachability", t.reachability, "— when NOT a live path"),
+    readsec(`Mitigations (${(t.mitigations || []).length})`, mits),
+    refsHtml,
+    tagsHtml,
+  ].join("");
 
   return `<div class="detail">
+    ${crumb("Threats", t.id)}
     <div class="dhead">
       <div class="dicon">▲</div>
       <div class="dtitle">
@@ -518,14 +584,8 @@ function readThreat(t) {
         <button class="btn ghost" id="deleteBtn" title="Delete this threat">🗑 Delete</button>
       </div>
     </div>
-    <section><h3 class="slabel">Surface <span class="sub">— where the interaction happens</span></h3><div class="badges">${surface}</div></section>
-    <section><h3 class="slabel">Source <span class="sub">— who or what drives it</span></h3><div class="badges">${source}</div></section>
-    <section><h3 class="slabel">Weaknesses <span class="sub">— architectural conditions</span></h3>${weaknesses}</section>
-    <section><h3 class="slabel">Reachability <span class="sub">— when NOT a live path</span></h3>${
-      t.reachability ? `<div class="prose">${esc(t.reachability)}</div>` : '<div class="warn">Reachability not authored.</div>'}</section>
-    <section><h3 class="slabel">Mitigations (${(t.mitigations || []).length})</h3>${mits}</section>
-    <section><h3 class="slabel">References</h3>${refs}</section>
-    <section><h3 class="slabel">Tags</h3><div class="badges">${tags}</div></section>
+    ${sections}
+    ${notAuthoredLine(omitted)}
   </div>`;
 }
 
@@ -808,6 +868,11 @@ function wireDetail() {
   if (editBtn) editBtn.onclick = enterEdit;
   const deleteBtn = document.getElementById("deleteBtn");
   if (deleteBtn) deleteBtn.onclick = deleteThreat;
+  // Read view only: breadcrumb clears the selection; mitigation cards jump across.
+  const crumbBtn = document.querySelector("#main .crumb-type");
+  if (crumbBtn) crumbBtn.onclick = clearThreatSelection;
+  document.querySelectorAll("#main [data-jmit]").forEach(el =>
+    el.onclick = () => jumpToMit(el.dataset.jmit));
   const cancelBtn = document.getElementById("cancelBtn");
   if (cancelBtn) cancelBtn.onclick = () => {
     // A brand-new, never-saved threat has no server record — drop the selection on cancel.
@@ -1777,32 +1842,61 @@ function renderMitDetail() {
 }
 
 // Read view — the mitigation card grouped into readable sections.
+// Empty optional sections are omitted (no wall of dashes) and summarized in one muted
+// line; Implementations stays visible with its intentional "orgs add these" empty state.
 function readMitigation(mt) {
   const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
-  const prose = (v) => v ? `<div class="prose">${esc(v)}</div>` : '<span class="placeholder">—</span>';
-  const proseSec = (label, v, sub) =>
-    `<section><h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</h3>${prose(v)}</section>`;
+  const omitted = [];
+  const parts = [];
+  // Optional prose: rendered only when it has content; else recorded as omitted.
+  const optProse = (label, v, sub) => {
+    if (v && String(v).trim()) parts.push(readsec(label, `<div class="prose">${esc(v)}</div>`, sub));
+    else omitted.push(label);
+  };
+  // Optional block (list/cards): rendered only when non-empty; else recorded as omitted.
+  // `count` (when given) is shown in the header of a populated block but kept out of the
+  // omitted summary, so an empty one reads "validation", not "validation (0)".
+  const optBlock = (label, has, inner, sub, count) => {
+    if (has) parts.push(readsec(count === undefined ? label : `${label} (${count})`, inner, sub));
+    else omitted.push(label);
+  };
 
-  const ap = (mt.anti_patterns || []).length
-    ? `<ul class="plain">${mt.anti_patterns.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`
-    : '<p class="placeholder">None.</p>';
+  optProse("Purpose", mt.purpose);
+  optProse("Scope", mt.scope, "— applicability rule + boundary");
+  optProse("Control mechanism", mt.control_mechanism);
+  optProse("Failure behavior", mt.failure_behavior);
+  optProse("Risk of formal implementation", mt.formal_implementation_risk);
+  optProse("Review", mt.review);
 
-  const validation = (mt.validation || []).length
-    ? (mt.validation || []).map(v => `<div class="card">
+  // Ownership — omit entirely when maintainer/owner/locus are all blank; else show the filled rows.
+  const own = [["Maintainer", mt.maintainer], ["Owner", mt.owner], ["Locus", mt.locus]]
+    .filter(([, v]) => v && String(v).trim());
+  optBlock("Ownership", own.length,
+    `<ul class="plain">${own.map(([k, v]) => `<li><span class="meta">${esc(k)}</span>${esc(v)}</li>`).join("")}</ul>`,
+    "— maintainer / owner / locus");
+
+  optProse("Telemetry", mt.telemetry);
+
+  optBlock("Anti-patterns", (mt.anti_patterns || []).length,
+    `<ul class="plain">${(mt.anti_patterns || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>`);
+
+  const vlen = (mt.validation || []).length;
+  optBlock("Validation", vlen,
+    (mt.validation || []).map(v => `<div class="card">
         <div class="chead"><span class="ctitle">${esc(v.criterion || "(criterion)")}</span>${
           v.base === false ? '<span class="badge soft" style="margin-left:auto">extended</span>' : ""}</div>
         ${v.test_scenario ? `<div class="cdesc"><b>Test:</b> ${esc(v.test_scenario)}</div>` : ""}
         ${v.expected_result ? `<div class="cdesc"><b>Expected:</b> ${esc(v.expected_result)}</div>` : ""}
-      </div>`).join("")
-    : '<p class="placeholder">None.</p>';
+      </div>`).join(""), null, vlen);
 
-  const faq = (mt.faq || []).length
-    ? (mt.faq || []).map(q => `<div class="card">
+  const flen = (mt.faq || []).length;
+  optBlock("FAQ", flen,
+    (mt.faq || []).map(q => `<div class="card">
         <div class="chead"><span class="ctitle">${esc(q.question || "(question)")}</span></div>
         ${q.answer ? `<div class="cdesc">${esc(q.answer)}</div>` : ""}
-      </div>`).join("")
-    : '<p class="placeholder">None.</p>';
+      </div>`).join(""), null, flen);
 
+  // Implementations — ALWAYS shown; its empty state is intentional and discoverable.
   const impl = (mt.implementations || []).length
     ? (mt.implementations || []).map(im => `<div class="card">
         <div class="chead"><span class="ctitle">${esc(im.title || "(untitled)")}</span></div>
@@ -1810,18 +1904,18 @@ function readMitigation(mt) {
         ${im.reference ? `<div class="cdesc"><a href="${esc(im.reference)}" target="_blank" rel="noopener">${esc(im.reference)}</a></div>` : ""}
       </div>`).join("")
     : '<p class="placeholder">None yet — orgs add these after forking.</p>';
+  parts.push(readsec(`Implementations (${(mt.implementations || []).length})`, impl, "— how orgs realize this control"));
 
-  const own = [["Maintainer", mt.maintainer], ["Owner", mt.owner], ["Locus", mt.locus]];
-  const ownership = `<ul class="plain">${own.map(([k, v]) =>
-    `<li><span class="meta">${esc(k)}</span>${v ? esc(v) : '<span class="placeholder">—</span>'}</li>`).join("")}</ul>`;
-
+  // Addresses threats — ALWAYS shown; each card jumps to that threat.
   const addressing = threatsAddressing(mt.id);
   const addressed = addressing.length
-    ? (addressing.map(t => `<div class="card"><div class="chead">
-        <span class="cid">${esc(t.id)}</span><span class="ctitle">${esc(t.title)}</span></div></div>`).join(""))
+    ? addressing.map(t => `<div class="card jrow" data-jthreat="${esc(t.id)}" title="Open ${esc(t.id)}"><div class="chead">
+        <span class="cid">${esc(t.id)}</span><span class="ctitle">${esc(t.title)}</span></div></div>`).join("")
     : '<p class="placeholder">No threats link this mitigation.</p>';
+  parts.push(readsec(`Addresses threats (${addressing.length})`, addressed));
 
   return `<div class="detail">
+    ${crumb("Mitigations", mt.id)}
     <div class="dhead">
       <div class="dicon">⛨</div>
       <div class="dtitle">
@@ -1834,19 +1928,8 @@ function readMitigation(mt) {
       </div>
       ${mitHeadActions()}
     </div>
-    ${proseSec("Purpose", mt.purpose)}
-    ${proseSec("Scope", mt.scope, "— applicability rule + boundary")}
-    ${proseSec("Control mechanism", mt.control_mechanism)}
-    ${proseSec("Failure behavior", mt.failure_behavior)}
-    ${proseSec("Risk of formal implementation", mt.formal_implementation_risk)}
-    ${proseSec("Review", mt.review)}
-    <section><h3 class="slabel">Ownership <span class="sub">— maintainer / owner / locus</span></h3>${ownership}</section>
-    ${proseSec("Telemetry", mt.telemetry)}
-    <section><h3 class="slabel">Anti-patterns</h3>${ap}</section>
-    <section><h3 class="slabel">Validation (${(mt.validation || []).length})</h3>${validation}</section>
-    <section><h3 class="slabel">FAQ (${(mt.faq || []).length})</h3>${faq}</section>
-    <section><h3 class="slabel">Implementations (${(mt.implementations || []).length}) <span class="sub">— how orgs realize this control</span></h3>${impl}</section>
-    <section><h3 class="slabel">Addresses threats (${addressing.length})</h3>${addressed}</section>
+    ${parts.join("")}
+    ${notAuthoredLine(omitted)}
   </div>`;
 }
 
@@ -1864,6 +1947,11 @@ function wireMitDetail() {
   if (editBtn) editBtn.onclick = enterMitEdit;
   const delBtn = document.getElementById("mitDeleteBtn");
   if (delBtn) delBtn.onclick = deleteMitigation;
+  // Read view only: breadcrumb clears the selection; "Addresses threats" cards jump across.
+  const crumbBtn = document.querySelector("#main .crumb-type");
+  if (crumbBtn) crumbBtn.onclick = clearMitSelection;
+  document.querySelectorAll("#main [data-jthreat]").forEach(el =>
+    el.onclick = () => jumpToThreat(el.dataset.jthreat));
   const cancelBtn = document.getElementById("mitCancelBtn");
   if (cancelBtn) cancelBtn.onclick = () => {
     const wasNew = state.mitDraft && state.mitDraft.isNew;
