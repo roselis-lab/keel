@@ -7,6 +7,7 @@ tools use, and every write lands directly in `catalog/*.yaml`.
 from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import ValidationError
 
+from keel import githistory
 from keel.catalog import lint_threat
 from keel.config import settings
 from keel.schema_export import build_schemas
@@ -185,6 +186,33 @@ async def get_schema(entity: str):
     if entity not in schemas:
         raise HTTPException(status_code=404, detail=f"unknown entity {entity!r}")
     return schemas[entity]
+
+
+# --------------------------------------------------------------------------- #
+# Git history (read-only)
+# --------------------------------------------------------------------------- #
+@router.get("/history/{entity}/{id}")
+async def entry_history(entity: str, id: str):
+    """Commit list for one entry's YAML file. 200 with `{available, ...}`.
+
+    A bad entity or an id that fails the allowlist/pattern → 404 (rejected before
+    any git call); a valid entry with no tracked history → 200 with
+    `{available: False, commits: []}`.
+    """
+    if not githistory.is_valid_ref(entity, id):
+        raise HTTPException(status_code=404, detail="unknown entity or id")
+    return githistory.history(entity, id)
+
+
+@router.get("/history/{entity}/{id}/{sha}")
+async def entry_diff(entity: str, id: str, sha: str):
+    """Unified diff for one commit, scoped to the entry's file. 404 if not found."""
+    if not githistory.is_valid_ref(entity, id):
+        raise HTTPException(status_code=404, detail="unknown entity or id")
+    result = githistory.diff(entity, id, sha)
+    if result is None:
+        raise HTTPException(status_code=404, detail="commit or entry not found")
+    return result
 
 
 # --------------------------------------------------------------------------- #
