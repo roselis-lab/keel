@@ -25,47 +25,59 @@ Keel is the operational layer that is missing: a compact, opinionated representa
 
 The reference model is deliberately small: the catalog is a floor, not a ceiling. Keel's value is the shape and the assessor, not a claim to enumerate every GenAI threat.
 
-## Quickstart: run your first assessment
+## Get started
 
-Keel is used two ways: to *assess* a system, and to *grow* a shared model with your team. The fastest first win is an assessment.
+Keel is used two ways: to *assess* a system, and to *grow* a shared model with your team. Both start from a local clone.
 
-1. **Connect the MCP.** Point your agent at the repo's `.mcp.json`. It launches Keel over stdio and exposes the tools as `mcp__keel__*`; Claude Code picks it up automatically, so there is no separate server to start. (The browse UI and other transports are under [Run](#run).)
-2. **Ask your agent** (any agent that has the `.claude/skills/` and the MCP): *"Assess the GenAI security of \<describe your system\>."* The `assess-genai-with-library` skill walks your system against the catalog: it matches weaknesses, rules out unreachable paths, and checks which mitigations you already have.
-3. **Read the two-part output:** an auditable analysis trail, then a final risk assessment. It ties findings to your architecture, separates the controls you have from the gaps, and reports a delta against MITRE ATLAS.
+### Install
+
+```bash
+git clone https://github.com/roselis-lab/keel.git
+cd keel
+uv sync                # install Keel (uses uv; `pip install -e .` works too)
+uv run keel validate   # optional: confirm the catalog is valid
+```
+
+Then point your agent at the repo's `.mcp.json`. It launches Keel over stdio and exposes the tools as `mcp__keel__*`; Claude Code picks it up automatically, so there is no separate server to start.
+
+### Assess a system
+
+Ask your agent (any agent that has the `.claude/skills/` and the MCP): *"Assess the GenAI security of \<describe your system\>."*
+
+The `assess-genai-with-library` skill walks your system against the catalog: it matches weaknesses, rules out unreachable paths, and checks which mitigations you already have. You get a two-part output: an auditable analysis trail, then a final risk assessment that ties findings to your architecture, separates the controls you have from the gaps, and reports a delta against MITRE ATLAS.
 
 <p align="center"><img src="docs/img/assessment-flow.svg" alt="How an assessment runs: your system to candidate threats to reachability filter to mitigations and implementations to risk to the two-part assessment" width="860"></p>
 
-Want to grow the model instead of assess with it? Explore it in the browse UI at `http://localhost:8000/` (see [Run](#run)), or jump to [Make it yours](#make-it-yours) for the team workflow.
+### Grow the model with your team
+
+Edit the model through the MCP write tools (guided by the style guide), the browse UI (`http://localhost:8000/`, see [Run](#run)), or by editing the YAML by hand. The catalog is a floor: add what your stack needs, adjust cards and rationale, record how your org realizes a control on the mitigation's `implementations` (they ship empty), and prune what does not apply.
+
+The model lives in one shared repo, so every change is a readable YAML diff and ships as a pull request, like any code change. Ask your agent to do it ("commit this and open a PR"), or by hand:
+
+```bash
+git checkout -b add-tool-poisoning        # branch; never edit on main
+git add catalog/                          # your YAML change
+git commit -m "Add threat: tool description poisoning"
+git push -u origin add-tool-poisoning
+gh pr create --fill                       # open the PR
+```
+
+CI runs `keel validate` on every pull request (schema, vocabulary, link integrity, plus advisory warnings), so a broken or off-standard change is caught before a teammate reviews and merges. Everyone works off the same model, and it grows with your systems.
+
+**Roadmap (not yet built):** per-system state to mark a threat *not applicable* for a given deployment or *accept* a risk, so you can suppress known noise without deleting the shared knowledge. Until then, you express that context by editing or pruning the model directly.
 
 ## Run
 
-Keel is an MCP server for any agent or MCP client, plus a browse UI. It reads the catalog from `catalog/*.yaml` into memory on start, so there are no setup steps and no database.
-
-One command (needs the Docker daemon) serves the UI at `http://localhost:8000/`; add `--profile mcp` for the HTTP MCP transport on `:8001`:
+Keel is an MCP server for any agent or MCP client, plus a browse UI. It reads the catalog from `catalog/*.yaml` into memory on start, so there are no setup steps and no database. For the assessment path above, the agent launches the MCP over stdio from `.mcp.json` and you need nothing else. To serve the browse UI and REST, or the HTTP MCP transport:
 
 ```bash
-docker compose up
-```
-
-Or let your agent launch it over stdio: `.mcp.json` in this repo is a ready-to-use example for MCP clients (it exposes the tools as `mcp__keel__*`).
-
-<details>
-<summary><b>Run from source / develop Keel</b></summary>
-
-Uses `uv` (pinned in `uv.lock`); `uv run` handles the virtualenv and `PATH` for you:
-
-```bash
-uv sync
 uv run uvicorn keel.main:app     # browse UI + REST at http://localhost:8000/
-uv run keel                      # stdio MCP   (uv run keel --http for HTTP MCP on :8001)
-uv run keel validate             # check the catalog YAML against the schemas
-uv run keel schema               # regenerate schema/*.json from the models (schema --check verifies freshness)
+uv run keel --http               # HTTP MCP transport on :8001 (plain `uv run keel` is stdio)
 ```
 
-Without `uv`, `pip install -e .` installs the same `keel` console script, or run it as `python -m keel …`.
-</details>
+Or with Docker (needs the daemon): `docker compose up` serves the UI at `http://localhost:8000/`; add `--profile mcp` for the HTTP MCP transport on `:8001`.
 
-`catalog/*.yaml` is the single source of truth. There is no database. Every write, whether from an MCP tool, the browse UI, or your text editor, changes those files. The browse UI (single static file, no build step) shows threats, mitigations, and the style guide, cross-linked, and its inline editing patches the YAML directly through the same service layer the MCP write tools use.
+`catalog/*.yaml` is the single source of truth. Every write, whether from an MCP tool, the browse UI, or your text editor, changes those files through the same service layer, so an edit is always a reviewable diff.
 
 ## The model
 
@@ -122,31 +134,6 @@ The interface is review-first. The fastest way to author the model is to ask an 
 **Style guide** edits the authoring guidance itself. The left rail is a field tree derived from the model, each field carrying a coverage badge, so the guidance can't drift from the fields it describes; fields with guidance but no matching model field are flagged as orphans. The center pane edits a field's slots (purpose, what to include, what to avoid, examples), and the right pane shows precisely what an author sees while you edit that same guidance.
 
 The form and its dropdowns read a JSON Schema generated from the Pydantic models, never hand-written, so it cannot drift from the code. `keel schema` regenerates the files under `schema/`, `keel schema --check` fails when they are stale (CI runs this as a gate), and `GET /schema/{entity}` serves them to the browser.
-
-Every screen writes straight to the catalog YAML through the same service layer the MCP write tools use. After a save the UI names the exact file it wrote (`catalog/threats/<id>.yaml`, `catalog/mitigations/<id>.yaml`, or `catalog/style_guide/<entity>.yaml`) and asks you to commit and open a pull request, so every change lands as a reviewable diff. Set `REPO_URL` (for example `https://github.com/org/keel`) and the confirmation gains an "Edit on GitHub" link straight to that file; leave it unset and the link stays hidden. Git itself (branch, commit, push, open the PR) is left to your agent or plain git rather than built into the app, which is the norm for file-backed tools; because the model is one YAML file per entry, conflicts are rare.
-
-## Make it yours
-
-Keel is meant to be forked and grown into your team's own living model. The reference content (13 threats, 71 mitigations, 96 links) is a floor: one YAML file per threat and per mitigation under `catalog/`, so every change is a readable diff.
-
-**Grow the content.**
-- Add threats and mitigations for your stack through the MCP write tools (guided by the style guide's authoring bar), the browse UI, or by editing the YAML by hand.
-- Record how your org realizes a control on the mitigation's `implementations` (they ship empty). An assessment reads them to tell what is already in place versus a recommendation.
-- Adjust tags, mitigation cards, and threat-to-mitigation rationale to match how your teams reason; drop what does not apply.
-
-**Work on it as a team.** The model lives in one shared repo, so a change is a pull request like any code change. Ask your agent to ship it ("commit this and open a PR"), or do it by hand:
-
-```bash
-git checkout -b add-tool-poisoning        # branch; never edit on main
-git add catalog/                          # your YAML change
-git commit -m "Add threat: tool description poisoning"
-git push -u origin add-tool-poisoning
-gh pr create --fill                       # open the PR
-```
-
-CI runs `keel validate` on every pull request (schema, vocabulary, link integrity, plus advisory warnings), so a broken or off-standard change is caught before a teammate reviews and merges. Everyone works off the same model, and it grows with your systems.
-
-**Roadmap (not yet built):** per-system state to mark a threat *not applicable* for a given deployment or *accept* a risk, so you can suppress known noise without deleting the shared knowledge. Until then, you express that context by editing or pruning the model directly.
 
 ## Why not just OWASP, ATLAS, or MAESTRO
 
