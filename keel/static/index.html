@@ -170,22 +170,58 @@
   .history-sec .history-head:hover { color: var(--crimson-700); }
   .history-sec .history-head .fx-caret { color: var(--navy-400); font-size: 10px; width: 10px; flex-shrink: 0; }
   .history-list { margin-top: 2px; }
+  /* commit list — GitHub-style: message is the primary line, a muted submeta row below */
   .commit { border-top: 1px solid var(--border2); }
   .commit:first-child { border-top: none; }
-  .commit-row { padding: 8px 6px; border-radius: 6px; cursor: pointer; }
+  .commit-row { padding: 9px 8px; border-radius: 6px; cursor: pointer; }
   .commit-row:hover { background: var(--navy-100); }
-  .commit-msg { font-size: 13px; color: var(--navy-800); line-height: 1.4; }
-  .commit-meta { font-size: 11px; color: var(--navy-400); margin-top: 2px; }
-  .commit-sha { font-family: ui-monospace, "SFMono-Regular", monospace; }
-  .commit-diff { margin: 2px 4px 8px; }
-  pre.diff { margin: 0; padding: 10px 12px; background: #fff; border: 1px solid var(--border);
+  .commit.open > .commit-row { background: var(--navy-100); }
+  .commit-msg { font-size: 13px; color: var(--navy-900); font-weight: 500; line-height: 1.4;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .commit-meta { font-size: 11px; color: var(--navy-500); margin-top: 3px;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .commit-meta .sep { color: var(--navy-200); }
+  .commit-sha { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 10px;
+    background: var(--navy-100); color: var(--navy-600); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px; letter-spacing: .01em; }
+  .commit-diff { margin: 4px 2px 10px; }
+
+  /* ------ unified Git diff (native GitHub look: line-number gutters + full-row tints) ------ */
+  /* Parsed from the unified-diff text into rows: two gutters (old #, new #) driven by the
+     @@ hunk headers, a content cell that keeps the +/-/space sign and preserves whitespace,
+     and a horizontally-scrolling body for long lines. File-header noise is folded into one
+     tiny caption; hunk headers render as a muted separator row that resets the counters. */
+  .diffwrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+  .diff-cap { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 11px; color: var(--navy-500);
+    padding: 6px 12px; background: var(--tint); border-bottom: 1px solid var(--border2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .diff-scroll { overflow-x: auto; }
+  .difftbl { border-collapse: collapse; width: 100%; font-family: ui-monospace, "SFMono-Regular", monospace;
+    font-size: 12px; line-height: 1.5; }
+  .difftbl td { padding: 0; vertical-align: top; }
+  .difftbl .dg { width: 1%; min-width: 42px; text-align: right; padding: 0 10px;
+    color: var(--navy-400); background: var(--tint); border-right: 1px solid var(--border2);
+    user-select: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .difftbl .dc { padding: 0 10px; white-space: pre; color: var(--navy-800); }
+  .dr-ctx .dc { color: var(--navy-700); }
+  /* additions — light green row, greener gutter, green left accent */
+  .dr-add { background: #e6ffec; }
+  .dr-add .dg { background: #cdffd8; color: #2b7d47; }
+  .dr-add .dg-o { border-left: 2px solid var(--green); }
+  .dr-add .dc { color: #17683a; }
+  /* deletions — light red row, redder gutter, crimson left accent */
+  .dr-del { background: #ffeef0; }
+  .dr-del .dg { background: #ffdce0; color: #b0374f; }
+  .dr-del .dg-o { border-left: 2px solid var(--crimson-600); }
+  .dr-del .dc { color: #9e1c3a; }
+  /* hunk header — a muted separator row spanning the width, resets the counters */
+  .dr-hunk td { background: #eef1f7; }
+  .dr-hunk .dg { color: var(--navy-400); border-right-color: var(--border); }
+  .dr-hunk .dc { color: var(--navy-500); }
+  .dr-meta .dc { color: var(--navy-400); }
+  .diff-loading { padding: 10px 12px; background: #fff; border: 1px solid var(--border);
     border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
-    line-height: 1.5; white-space: pre; overflow-x: auto; color: var(--navy-700); }
-  pre.diff .dl-add { color: var(--green); }
-  pre.diff .dl-del { color: var(--crimson-700); }
-  pre.diff .dl-hunk { color: var(--navy-500); }
-  pre.diff .dl-file { color: var(--navy-400); }
-  pre.diff.diff-loading { color: var(--navy-400); font-style: italic; }
+    color: var(--navy-400); font-style: italic; }
 
   /* ------ buttons ------ */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
@@ -865,18 +901,52 @@ function lastChangedLine(hist) {
   return `<div class="last-changed">Last changed ${esc(relTime(c.date))} by ${esc(c.author)}</div>`;
 }
 
-// Render a unified diff as a coloured, ESCAPED <pre>: + green, - red, @@ hunk muted,
-// file headers muted, context default. Inline spans keep the \n line breaks in <pre>.
+// Render a unified diff as a native GitHub-style view: a 3-column table
+// [old #][new #][content]. Line numbers are driven by each @@ hunk header —
+// a "+" advances the NEW counter (old gutter blank), a "-" advances the OLD
+// counter (new gutter blank), a context line advances BOTH. Additions get a
+// green row, deletions a red row, context is plain. Hunk headers render as a
+// muted separator row and reset the counters. File-header noise (diff --git,
+// index, --- a/, +++ b/, mode/rename lines) is hidden, with the target path
+// lifted into one tiny caption. Content is escaped and whitespace preserved
+// (white-space: pre); long lines scroll horizontally. The sign stays on the row.
+const DIFF_HUNK_RE = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/;
+function isDiffFileHeader(ln) {
+  return ln.startsWith("diff --git") || ln.startsWith("index ") ||
+    ln.startsWith("--- ") || ln.startsWith("+++ ") ||
+    ln.startsWith("new file") || ln.startsWith("deleted file") ||
+    ln.startsWith("old mode") || ln.startsWith("new mode") ||
+    ln.startsWith("similarity ") || ln.startsWith("rename ") || ln.startsWith("copy ");
+}
 function diffHtml(text) {
-  const spans = String(text ?? "").split("\n").map(ln => {
-    let cls = "";
-    if (ln.startsWith("@@")) cls = "dl-hunk";
-    else if (ln.startsWith("+++") || ln.startsWith("---")) cls = "dl-file";
-    else if (ln.startsWith("+")) cls = "dl-add";
-    else if (ln.startsWith("-")) cls = "dl-del";
-    return cls ? `<span class="${cls}">${esc(ln)}</span>` : esc(ln);
-  }).join("\n");
-  return `<pre class="diff">${spans}</pre>`;
+  const lines = String(text ?? "").split(/\r?\n/);   // tolerate CRLF checkouts
+  if (lines.length && lines[lines.length - 1] === "") lines.pop();  // drop trailing split artifact
+  const gutter = (o, n) => `<td class="dg dg-o">${o}</td><td class="dg dg-n">${n}</td>`;
+  const row = (cls, o, n, ln) => `<tr class="${cls}">${gutter(o, n)}<td class="dc">${esc(ln)}</td></tr>`;
+  let oldNo = 0, newNo = 0, filePath = "", inHunk = false;
+  const rows = [];
+  for (const ln of lines) {
+    if (ln.startsWith("@@")) {
+      const m = ln.match(DIFF_HUNK_RE);
+      if (m) { oldNo = parseInt(m[1], 10); newNo = parseInt(m[2], 10); }
+      rows.push(row("dr-hunk", "", "", ln));
+      inHunk = true;
+      continue;
+    }
+    if (isDiffFileHeader(ln)) {
+      const path = p => p.replace(/\t.*$/, "").trim();
+      if (ln.startsWith("+++ ")) { const p = path(ln.slice(4).replace(/^b\//, "")); if (p && p !== "/dev/null") filePath = p; }
+      else if (ln.startsWith("--- ") && !filePath) { const p = path(ln.slice(4).replace(/^a\//, "")); if (p && p !== "/dev/null") filePath = p; }
+      continue;
+    }
+    if (!inHunk) continue;  // preamble before the first hunk (leading blank, "commit …" lines) — noise
+    if (ln.startsWith("+")) rows.push(row("dr-add", "", newNo++, ln));
+    else if (ln.startsWith("-")) rows.push(row("dr-del", oldNo++, "", ln));
+    else if (ln.startsWith("\\")) rows.push(row("dr-meta", "", "", ln));  // "\ No newline at end of file"
+    else rows.push(row("dr-ctx", oldNo++, newNo++, ln));                  // context (leading space or blank)
+  }
+  const cap = filePath ? `<div class="diff-cap">${esc(filePath)}</div>` : "";
+  return `<div class="diffwrap">${cap}<div class="diff-scroll"><table class="difftbl"><tbody>${rows.join("")}</tbody></table></div></div>`;
 }
 
 function historyRow(c, cfg) {
@@ -884,12 +954,16 @@ function historyRow(c, cfg) {
   const cached = cfg.getCache()[c.sha];
   const short = esc(String(c.sha || "").slice(0, 7));
   const diff = isOpen
-    ? (cached ? diffHtml(cached.diff) : `<pre class="diff diff-loading">Loading diff…</pre>`)
+    ? (cached ? diffHtml(cached.diff) : `<div class="diff-loading">Loading diff…</div>`)
     : "";
   return `<div class="commit ${isOpen ? "open" : ""}">
     <div class="commit-row" data-sha="${esc(c.sha)}">
       <div class="commit-msg">${esc(firstLine(c.message)) || "(no message)"}</div>
-      <div class="commit-meta">${esc(c.author)} · ${esc(relTime(c.date))} · <span class="commit-sha">${short}</span></div>
+      <div class="commit-meta">
+        <span class="commit-author">${esc(c.author)}</span>
+        <span class="sep">·</span><span>${esc(relTime(c.date))}</span>
+        <span class="sep">·</span><span class="commit-sha">${short}</span>
+      </div>
     </div>
     ${isOpen ? `<div class="commit-diff">${diff}</div>` : ""}
   </div>`;
