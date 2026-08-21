@@ -282,13 +282,27 @@
   .sg-panel ul { margin: 0; padding-left: 16px; color: var(--navy-600); }
   .sg-panel ul li { margin-bottom: 2px; }
   .sg-ex { color: var(--navy-700); font-style: italic; margin: 0 0 5px; }
+  /* inline per-field guidance — a compact <details> that replaces the old rail mode */
+  .fguide { margin-top: 8px; }
+  .fguide > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; color: var(--navy-500); user-select: none; padding: 2px 0; }
+  .fguide > summary::-webkit-details-marker { display: none; }
+  .fguide > summary::before { content: "\24D8"; color: var(--navy-400); font-size: 13px; }
+  .fguide[open] > summary { color: var(--navy-700); }
+  .fguide > summary:hover { color: var(--crimson-600); }
+  .fguide .sg-panel { display: block; margin-top: 6px; }
+  /* "view change" affordance on the read-view provenance line — reveals the latest diff inline */
+  .lc-diff { border: none; background: none; color: var(--crimson-600); font-weight: 600; font-size: 12px;
+    padding: 0 0 0 4px; cursor: pointer; }
+  .lc-diff:hover { text-decoration: underline; }
 
   /* ------ right preview ------ */
   #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
-  /* The right rail earns its column only while it adds value (live Preview/Guidance
-     when editing, or the Style-guide author preview). Otherwise collapse the third
-     grid track to 0 and hide the rail + its resizer; the user's saved --preview-w is
-     kept on <html> and restored when the rail returns. */
+  /* The right rail earns its column only on the Style-guide screen (the live author
+     preview — a genuinely different artifact). Everywhere else it collapses: the third
+     grid track goes to 0 and the rail + its resizer hide. Threats and mitigations read
+     and edit on one surface, so there is no rail to duplicate the card. The user's saved
+     --preview-w is kept on <html> and restored when the Style screen brings the rail back. */
   body.no-preview { --preview-w: 0px; }
   body.no-preview #preview, body.no-preview #preview-resizer { display: none; }
   /* draggable divider on the main|preview border; sits fixed over the seam */
@@ -297,16 +311,6 @@
   #preview-resizer::after { content: ""; position: absolute; top: 0; left: 4px; width: 1px; height: 100%; background: transparent; transition: background .12s; }
   #preview-resizer:hover::after, body.resizing #preview-resizer::after { background: var(--crimson-600); left: 3px; width: 3px; }
   #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
-
-  /* ------ right-rail mode toggle (Preview | Guidance) ------ */
-  .rail-modes { display: inline-flex; border: 1px solid var(--navy-200); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
-  .rail-modes button { border: none; background: #fff; color: var(--navy-600); font-size: 12px; font-weight: 600; padding: 6px 14px; }
-  .rail-modes button.on { background: var(--navy-800); color: #fff; }
-  .rail-modes button:disabled { opacity: .4; cursor: default; }
-  .rail-guide .rg-field { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 8px; }
-  .rail-guide .rg-field b { color: var(--navy-800); }
-  .rail-guide .sg-hint { white-space: normal; min-height: 0; margin-bottom: 10px; color: var(--navy-600); }
-  .rail-guide .sg-panel { display: block; margin-top: 0; }
 
   /* ------ toast ------ */
   .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(20,30,60,.2); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
@@ -339,26 +343,6 @@
     content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     background: var(--crimson-600); margin-left: 8px; vertical-align: middle;
   }
-
-  /* ------ view toggle ------ */
-  .vtoggle { display: inline-flex; border: 1px solid var(--navy-200); border-radius: 8px; overflow: hidden; }
-  .vtoggle button { border: none; background: #fff; color: var(--navy-600); font-size: 12px; font-weight: 600; padding: 6px 11px; }
-  .vtoggle button.on { background: var(--navy-800); color: #fff; }
-  textarea.yaml-view { width: 100%; min-height: 60vh; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 13px; line-height: 1.5; color: var(--navy-900); background: var(--tint); border: 1px solid var(--navy-200); border-radius: 8px; padding: 12px 14px; resize: vertical; margin-top: 16px; }
-
-  /* ------ preview + insights ------ */
-  #preview .pv-title { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: var(--navy-900); }
-  #preview .pv-harm .badge { vertical-align: middle; }
-  #preview .pv-sec { margin-top: 14px; }
-  #preview .pv-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 4px; }
-  #preview .pv p { margin: 0; color: var(--navy-700); }
-  #preview .pv ul { margin: 4px 0 0; padding-left: 16px; color: var(--navy-700); }
-  #preview .pv .carve { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 8px 11px; font-size: 13px; }
-  .insights { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
-  .insights .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 8px; }
-  .insights ul { margin: 0; padding-left: 16px; }
-  .insights li { color: var(--amber); font-size: 12px; margin-bottom: 4px; }
-  .insights .ok { color: var(--green); font-size: 12px; }
 
   /* ------ saved dialog ------ */
   .saved-dialog { position: fixed; bottom: 20px; right: 22px; max-width: 340px; background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--green); color: var(--navy-800); padding: 13px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 10px 30px rgba(20,30,60,.18); z-index: 60; display: none; }
@@ -909,7 +893,7 @@ async function loadHistory(cfg) {
 function lastChangedLine(hist) {
   if (!hist || !hist.available || !(hist.commits || []).length) return "";
   const c = hist.commits[0];
-  return `<div class="last-changed">Last changed ${esc(relTime(c.date))} by ${esc(c.author)}</div>`;
+  return `<div class="last-changed">Last changed ${esc(relTime(c.date))} by ${esc(c.author)}<button type="button" class="lc-diff" data-hist-newest="${esc(c.sha)}">view diff</button></div>`;
 }
 
 // Render a unified diff as a native GitHub-style view: a 3-column table
@@ -1004,6 +988,10 @@ function wireHistory(cfg) {
   if (head) head.onclick = () => { cfg.setExpanded(!cfg.getExpanded()); cfg.rerender(); };
   document.querySelectorAll("#main .commit-row").forEach(row =>
     row.onclick = () => toggleDiff(cfg, row.dataset.sha));
+  // "view diff" on the provenance line: open the History section and reveal the
+  // newest commit's diff inline, right in the card — no separate history trip.
+  const newest = document.querySelector("#main [data-hist-newest]");
+  if (newest) newest.onclick = () => { cfg.setExpanded(true); toggleDiff(cfg, newest.dataset.histNewest); };
 }
 async function toggleDiff(cfg, sha) {
   const open = cfg.getOpen();
@@ -1142,13 +1130,39 @@ function sgPanel(entity, field, targetId) {
   return sgPanelFrom(styleField(entity, field), targetId);
 }
 
+// Inline, per-field authoring guidance — the replacement for the old right-rail
+// "Guidance" mode. A compact <details> that reveals this field's Include / Avoid /
+// Example (+ "use example") in place, so the editor never needs a second column and
+// the guidance sits right where you are typing. Renders nothing when the field has
+// no style-guide entry, so it adds no clutter to fields without guidance.
+function inlineGuidance(entity, field, targetId) {
+  const panel = sgPanelFrom(styleField(entity, field), targetId, { show: true });
+  if (!panel) return "";
+  return `<details class="fguide"><summary>Guidance</summary>${panel}</details>`;
+}
+// Wire the "use example" buttons inside any inline guidance panels: write the example
+// into the target input without stealing/dropping focus (mousedown guard). Safe to
+// call from any edit view; a no-op when there are no such buttons.
+function wireInlineGuidance() {
+  document.querySelectorAll("#main .sg-useex").forEach(b => {
+    b.onmousedown = e => e.preventDefault();   // keep focus on the field
+    b.onclick = () => {
+      const t = document.getElementById(b.dataset.target);
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
+        t.value = decodeURIComponent(b.dataset.example);
+        t.dispatchEvent(new Event("input"));
+        t.focus();
+      }
+    };
+  });
+}
+
 // Edit form — built by walking the threat schema's field order.
 // Only the schema-simple fields are editable here; weakness/mitigation editors are deferred.
 const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", "tags"]);
 
 function editThreat(t) {
   const d = state.draft;
-  const yaml = state.view === "yaml";
   const order = Object.keys(state.schema.threat.properties || {});
   const blocks = [];
   for (const name of order) {
@@ -1160,9 +1174,7 @@ function editThreat(t) {
     blocks.push(fieldEditor(name, d));
   }
 
-  const body = yaml
-    ? `<textarea class="yaml-view" id="yamlView" readonly spellcheck="false">${esc(emitThreatYaml(assembleThreat()))}</textarea>`
-    : `<div id="errSummary" class="err-summary" style="display:none"></div>${blocks.join("")}`;
+  const body = `<div id="errSummary" class="err-summary" style="display:none"></div>${blocks.join("")}`;
 
   return `<div class="detail">
     <div class="dhead">
@@ -1172,15 +1184,9 @@ function editThreat(t) {
         <input class="f titlein" id="f_title" value="${esc(d.title)}">
         <div class="did" style="margin-top:6px">${esc(t.id)}</div>
       </div>
-      <div class="hactions" style="flex-direction:column;align-items:flex-end;gap:8px">
-        <div class="vtoggle">
-          <button id="viewStructBtn" class="${yaml ? "" : "on"}">Structure</button>
-          <button id="viewYamlBtn" class="${yaml ? "on" : ""}">YAML</button>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn primary" id="saveBtn"${yaml ? " disabled" : ""}>✔ Save</button>
-          <button class="btn ghost" id="cancelBtn">Cancel</button>
-        </div>
+      <div class="hactions">
+        <button class="btn primary" id="saveBtn">✔ Save</button>
+        <button class="btn ghost" id="cancelBtn">Cancel</button>
       </div>
     </div>
     ${body}
@@ -1190,11 +1196,13 @@ function editThreat(t) {
 function fieldEditor(name, d) {
   // Each threat field is a SECTION: a semantic fieldset/legend (no card border).
   // The one-line hint reserves its row; verbose guidance lives in the right rail.
+  const tId = ["harm", "reachability", "tags", "title"].includes(name) ? "f_" + name : "";
   const wrap = (label, inner, sub) =>
     `<fieldset class="field" data-entity="threat" data-field="${esc(name)}">
       <legend class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</legend>
       ${hintRow("threat", name)}
       ${inner}
+      ${inlineGuidance("threat", name, tId)}
     </fieldset>`;
   if (name === "harm") {
     const opts = harmEnum().map(v => `<option value="${esc(v)}" ${v === d.harm ? "selected" : ""}>${esc(v)}</option>`).join("");
@@ -1395,11 +1403,7 @@ function wireDetail() {
   };
   const saveBtn = document.getElementById("saveBtn");
   if (saveBtn) saveBtn.onclick = saveThreat;
-  const structBtn = document.getElementById("viewStructBtn");
-  if (structBtn) structBtn.onclick = () => { state.view = "structure"; renderDetail(); };
-  const yamlBtn = document.getElementById("viewYamlBtn");
-  if (yamlBtn) yamlBtn.onclick = () => { state.view = "yaml"; renderDetail(); };
-  if (state.editing && state.view === "structure") { wireThreatEdit(); applyValidation(); }
+  if (state.editing) { wireThreatEdit(); wireInlineGuidance(); applyValidation(); }
 }
 
 function enterEdit() {
@@ -1720,54 +1724,6 @@ function applyValidation() {
   if (saveBtn) saveBtn.disabled = errors.length > 0 || state.view === "yaml";
 }
 
-// --------------------------------------------------------- YAML emitter ---- //
-// Tiny read-only emitter for the simple scalar/list/small-object shapes in a threat.
-// Field order matches the on-disk order. No YAML library.
-function yamlScalar(s) {
-  s = String(s);
-  if (s === "") return '""';
-  const plain = /^[A-Za-z0-9][A-Za-z0-9 _\-./:()'?…]*$/.test(s)
-    && !/: /.test(s) && !/:$/.test(s) && !/ #/.test(s)
-    && !/^(true|false|null|yes|no|on|off|~)$/i.test(s);
-  if (plain) return s;
-  return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
-}
-function emitThreatYaml(t) {
-  const L = [];
-  const scalar = (k, v) => {
-    const s = v == null ? "" : String(v);
-    if (/\n/.test(s)) { L.push(`${k}: |-`); s.split("\n").forEach(ln => L.push(`  ${ln}`)); }
-    else L.push(`${k}: ${yamlScalar(s)}`);
-  };
-  const listScalars = (k, arr) => {
-    if (!arr || !arr.length) { L.push(`${k}: []`); return; }
-    L.push(`${k}:`);
-    arr.forEach(v => L.push(`- ${yamlScalar(String(v))}`));
-  };
-  const listObjs = (k, arr, fields) => {
-    if (!arr || !arr.length) { L.push(`${k}: []`); return; }
-    L.push(`${k}:`);
-    arr.forEach(o => fields.forEach(([f], idx) => {
-      const prefix = idx === 0 ? "- " : "  ";
-      const v = o[f];
-      const s = v == null ? "" : String(v);
-      if (/\n/.test(s)) { L.push(`${prefix}${f}: |-`); s.split("\n").forEach(ln => L.push(`    ${ln}`)); }
-      else L.push(`${prefix}${f}: ${yamlScalar(s)}`);
-    }));
-  };
-  scalar("id", t.id);
-  scalar("title", t.title);
-  scalar("harm", t.harm);
-  listScalars("surface", t.surface);
-  listScalars("source", t.source);
-  listObjs("weaknesses", t.weaknesses, [["component"], ["text"], ["nature"]]);
-  scalar("reachability", t.reachability);
-  listObjs("mitigations", t.mitigations, [["id"], ["strength"], ["rationale"]]);
-  listObjs("references", t.references, [["id"], ["url"]]);
-  listScalars("tags", t.tags);
-  return L.join("\n");
-}
-
 // --------------------------------------------------------------- save ------ //
 async function saveThreat() {
   if (state.view === "yaml") return;                 // YAML view is read-only
@@ -1840,100 +1796,13 @@ function showSavedDialog(path) {
 }
 
 // ------------------------------------------------------------- right rail -- //
-// The right rail has two modes: Preview (default) and Guidance. Guidance auto-
-// selects when a form field gains focus (see the #main focusin handler) and shows
-// that field's authoring guidance; it renders into the rail so the FORM never
-// reflows. Preview shows the assembled threat as a person reads it.
+// Threats have no right rail any more: the read view is the canonical surface and
+// serves as its own preview, and authoring guidance lives inline under each field
+// (see inlineGuidance). This is kept as a thin shim so the many call sites that
+// repaint the "right" pane just re-evaluate whether the rail should show at all
+// (only the Style-guide screen keeps one).
 function renderPreview() {
   applyPreviewVisibility();
-  const el = document.getElementById("preview");
-  const guiding = state.editing && state.railMode === "guidance";
-  const toggle = `<div class="rail-modes">
-      <button type="button" data-mode="preview" class="${guiding ? "" : "on"}">Preview</button>
-      <button type="button" data-mode="guidance" class="${guiding ? "on" : ""}"${state.editing ? "" : " disabled"}>Guidance</button>
-    </div>`;
-  el.innerHTML = toggle + `<div id="railBody">${guiding ? guidanceHtml() : previewHtml()}</div>`;
-  wireRail();
-}
-
-// Guidance for the currently focused field, fed live from state.style via
-// styleField/sgPanelFrom (Include / Avoid / Example + "use example"). Degrades
-// gracefully when a field has no style entry.
-function guidanceHtml() {
-  const g = state.guidance;
-  if (!g) return '<p class="placeholder">Focus a field to see its authoring guidance.</p>';
-  const sf = styleField(g.entity, g.field);
-  const head = `<p class="rg-field">Guidance · <b>${esc(g.field)}</b> <span style="text-transform:none;letter-spacing:0;font-weight:400">(${esc(g.entity)})</span></p>`;
-  if (!sf) return `<div class="rail-guide">${head}<p class="placeholder">No style-guide entry for this field yet.</p></div>`;
-  const hint = sgHintFrom(sf);
-  const panel = sgPanelFrom(sf, g.targetId, { show: true });
-  const body = (hint + panel) || '<p class="placeholder">No guidance authored yet.</p>';
-  return `<div class="rail-guide">${head}${body}</div>`;
-}
-
-// Wire the rail: mode toggle, plus the "use example" button (now living in the
-// rail) which writes into the focused field WITHOUT blurring it (mousedown guard).
-function wireRail() {
-  const el = document.getElementById("preview");
-  el.querySelectorAll(".rail-modes button").forEach(b => b.onclick = () => {
-    if (b.disabled) return;
-    state.railMode = b.dataset.mode;
-    renderRight();
-  });
-  el.querySelectorAll(".sg-useex").forEach(b => {
-    b.onmousedown = e => e.preventDefault();   // keep focus on the field
-    b.onclick = () => {
-      const t = document.getElementById(b.dataset.target);
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
-        t.value = decodeURIComponent(b.dataset.example);
-        t.dispatchEvent(new Event("input"));
-        t.focus();
-      }
-    };
-  });
-}
-
-// The assembled threat as a person reads it, plus a soft Insights strip.
-function previewHtml() {
-  if (!state.current) return '<div class="empty" style="margin-top:10vh">—</div>';
-  const t = assembleThreat();
-  const list = arr => (arr || []).map(esc).join(", ");
-  const surface = (t.surface || []).length ? list(t.surface) : "—";
-  const source = (t.source || []).length ? list(t.source) : "—";
-
-  const weaknesses = (t.weaknesses || []).length
-    ? `<ul>${t.weaknesses.map(w =>
-        `<li>At <b>${esc(w.component)}</b>, ${esc(w.text || "…")}${w.nature ? ` <i>(${esc(w.nature)})</i>` : ""}</li>`).join("")}</ul>`
-    : '<p class="placeholder">No weaknesses authored.</p>';
-
-  const mits = t.mitigations || [];
-  const gating = mits.filter(m => m.strength === "gating");
-  const soft = mits.filter(m => m.strength !== "gating");
-  const mitLine = grp => grp.length
-    ? `<ul>${grp.map(m => `<li>${esc((state.mitById[m.id] && state.mitById[m.id].name) || m.id)}</li>`).join("")}</ul>`
-    : '<p class="placeholder">none</p>';
-
-  // Insights — soft, never blocking: server advice + a client-side references note.
-  const notes = ((state.validation && state.validation.advice) || []).map(a => a.msg);
-  if (!(t.references || []).length) notes.push("no references yet");
-
-  return `
-    <div class="pv">
-      <h2 class="pv-title">${esc(t.title) || '<span class="placeholder">Untitled</span>'}</h2>
-      <p class="pv-harm">Harm: ${t.harm ? `<span class="badge harm">${esc(t.harm)}</span>` : '<span class="placeholder">none</span>'}</p>
-      <div class="pv-sec"><p class="pv-k">Surface / Source</p><p>Happens at <b>${surface}</b>, driven by <b>${source}</b>.</p></div>
-      <div class="pv-sec"><p class="pv-k">Weaknesses</p>${weaknesses}</div>
-      <div class="pv-sec"><p class="pv-k">Mitigations</p>
-        <p>Gating (${gating.length})</p>${mitLine(gating)}
-        <p>Soft (${soft.length})</p>${mitLine(soft)}
-      </div>
-      <div class="pv-sec"><p class="pv-k">Reachability carve-out</p>${
-        t.reachability ? `<div class="carve">${esc(t.reachability)}</div>` : '<p class="placeholder">not authored</p>'}</div>
-    </div>
-    <div class="insights">
-      <p class="ptitle">Insights</p>
-      ${notes.length ? `<ul>${notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : '<p class="ok">Nothing flagged.</p>'}
-    </div>`;
 }
 
 // ===================================================================== //
@@ -1997,10 +1866,11 @@ function renderRight() {
 // Style-guide screen's live author preview. Otherwise collapse its grid column (see
 // body.no-preview). Called from every right-rail render, so it tracks each mode change.
 function previewVisible() {
-  if (state.screen === "style") return true;
-  if (state.screen === "threats" && state.editing) return true;
-  if (state.screen === "mitigations" && state.mitEditing) return true;
-  return false;
+  // The right rail exists ONLY for the Style-guide author preview — a genuinely
+  // different artifact (what a threat author sees). Threats and mitigations read
+  // and edit on ONE surface: the read view IS the preview, so there is no rail to
+  // duplicate it and nothing slides in when you click Edit.
+  return state.screen === "style";
 }
 function applyPreviewVisibility() {
   document.body.classList.toggle("no-preview", !previewVisible());
@@ -2037,15 +1907,9 @@ function renderOverviewMain() {
 }
 
 function renderOverviewRight() {
+  // The Overview has no right rail (previewVisible() is false); this just collapses
+  // the third grid column. The coverage-band legend now lives inline on the screen.
   applyPreviewVisibility();
-  const el = document.getElementById("preview");
-  el.innerHTML = `<p class="ptitle">Legend</p>
-    <div class="ov-legend">
-      <p class="ov-leg-k">Coverage bands</p>
-      <p><span class="badge cov c-hi">67%+</span> good &nbsp; <span class="badge cov c-mid">34–66%</span> partial &nbsp; <span class="badge cov c-lo">&lt;34%</span> thin</p>
-      <p class="ov-leg-k" style="margin-top:14px">Gaps to review</p>
-      <p>Soft prompts, never blockers. Click any id to open that threat and close the gap.</p>
-    </div>`;
 }
 
 // The gap groups the health endpoint reports, in review order. "No gating mitigation"
@@ -2609,70 +2473,15 @@ function wireMitDetail() {
   };
   const saveBtn = document.getElementById("mitSaveBtn");
   if (saveBtn) saveBtn.onclick = saveMitigation;
-  if (state.mitEditing) { wireMitEdit(); applyMitValidation(); }
+  if (state.mitEditing) { wireMitEdit(); wireInlineGuidance(); applyMitValidation(); }
 }
 
 // --------------------------------------------------------- mitigations rail R //
-// Right rail — Preview (assembled card) with the shared Guidance toggle.
+// Mitigations have no right rail either — the read view is the canonical surface
+// and its own preview, and guidance is inline (see inlineGuidance). Thin shim so
+// the repaint call sites just re-check whether any rail should show (only Style).
 function renderMitPreview() {
   applyPreviewVisibility();
-  const el = document.getElementById("preview");
-  const guiding = state.mitEditing && state.railMode === "guidance";
-  const toggle = `<div class="rail-modes">
-      <button type="button" data-mode="preview" class="${guiding ? "" : "on"}">Preview</button>
-      <button type="button" data-mode="guidance" class="${guiding ? "on" : ""}"${state.mitEditing ? "" : " disabled"}>Guidance</button>
-    </div>`;
-  el.innerHTML = toggle + `<div id="railBody">${guiding ? guidanceHtml() : mitPreviewHtml()}</div>`;
-  wireRail();
-}
-
-// The assembled mitigation card as a person reads it.
-function mitPreviewHtml() {
-  if (!state.currentMit) return '<div class="empty" style="margin-top:10vh">—</div>';
-  const mt = assembleMit();
-  const line = (k, v) => `<div class="pv-sec"><p class="pv-k">${esc(k)}</p>${
-    v ? `<p>${esc(v)}</p>` : '<p class="placeholder">not authored</p>'}</div>`;
-  const addressing = threatsAddressing(mt.id);
-  return `
-    <div class="pv">
-      <h2 class="pv-title">${esc(mt.name) || '<span class="placeholder">Unnamed</span>'}</h2>
-      <p class="pv-harm">${mt.mitigation_class ? `<span class="badge type">${esc(mt.mitigation_class)}</span>` : ""}
-        ${mt.status ? `<span class="badge soft">${esc(mt.status)}</span>` : ""}</p>
-      ${line("Purpose", mt.purpose)}
-      ${line("Scope", mt.scope)}
-      ${line("Control mechanism", mt.control_mechanism)}
-      ${line("Failure behavior", mt.failure_behavior)}
-      <div class="pv-sec"><p class="pv-k">Checks</p><p>${
-        (mt.anti_patterns || []).length} anti-pattern(s) · ${(mt.validation || []).length} validation · ${(mt.faq || []).length} FAQ</p></div>
-      <div class="pv-sec"><p class="pv-k">Addresses threats</p><p>${addressing.length} threat(s) link this control.</p></div>
-    </div>`;
-}
-
-// The mitigation the way the preview reads it: the draft when editing, else the record.
-function assembleMit() {
-  const d = state.mitDraft || {};
-  const c = state.currentMit || {};
-  const pick = (k, dflt) => (d[k] !== undefined ? d[k] : (c[k] !== undefined ? c[k] : dflt));
-  return {
-    id: c.id,
-    name: pick("name", ""),
-    status: pick("status", null),
-    mitigation_class: pick("mitigation_class", ""),
-    purpose: pick("purpose", ""),
-    scope: pick("scope", ""),
-    control_mechanism: pick("control_mechanism", ""),
-    failure_behavior: pick("failure_behavior", ""),
-    formal_implementation_risk: pick("formal_implementation_risk", ""),
-    review: pick("review", ""),
-    maintainer: pick("maintainer", ""),
-    owner: pick("owner", ""),
-    locus: pick("locus", ""),
-    telemetry: pick("telemetry", ""),
-    anti_patterns: pick("anti_patterns", []),
-    validation: pick("validation", []),
-    faq: pick("faq", []),
-    implementations: pick("implementations", []),
-  };
 }
 
 // ------------------------------------------------------ mitigation edit ---- //
@@ -2698,6 +2507,7 @@ function mitScalarSection(name, label, kind, rows, sub) {
     <legend class="slabel">${esc(label)}${sub ? ` <span class="sub">${sub}</span>` : ""}</legend>
     ${hintRow("mitigation", name)}
     ${mitInput(name, kind, rows)}
+    ${inlineGuidance("mitigation", name, "mit_" + name)}
   </fieldset>`;
 }
 
@@ -2707,6 +2517,7 @@ function mitSubField(name, label, kind, rows) {
     <h3 class="slabel">${esc(label)}</h3>
     ${hintRow("mitigation", name)}
     ${mitInput(name, kind, rows)}
+    ${inlineGuidance("mitigation", name, "mit_" + name)}
   </div>`;
 }
 function mitGroupSection(legend, sub, inner) {
@@ -3145,40 +2956,11 @@ document.getElementById("search").oninput = e => {
 document.getElementById("newThreatBtn").onclick = () =>
   state.screen === "mitigations" ? newMitigation() : newThreat();
 document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
-// Focusing a form field switches the right rail to Guidance for THAT field. The
-// rail re-renders; the form column never reflows (all guidance lives in the rail).
-// A form field is "guidable" when the active screen is in edit mode. Threats also
-// gate on the structure view (they have a YAML view too); mitigations have no such view.
-function guidingScreen() {
-  if (state.screen === "threats" && state.editing && state.view === "structure") return true;
-  if (state.screen === "mitigations" && state.mitEditing) return true;
-  return false;
-}
-document.getElementById("main").addEventListener("focusin", e => {
-  if (!guidingScreen()) return;
-  const field = e.target.closest && e.target.closest(".field[data-entity][data-field]");
-  if (!field) return;
-  const input = e.target.closest("input, textarea, select");
-  const targetId = input && (input.tagName === "INPUT" || input.tagName === "TEXTAREA") ? input.id : "";
-  state.guidance = { entity: field.dataset.entity, field: field.dataset.field, targetId };
-  state.railMode = "guidance";
-  renderRight();
-});
-// Validate + refresh preview on BLUR of any edit field (debounced, never per keystroke).
-// When focus leaves both the form and the rail, drop Guidance back to Preview.
+// Validate the threat draft on BLUR of any edit field (debounced, never per keystroke).
+// Authoring guidance is now inline under each field (see inlineGuidance), so focus no
+// longer drives a right-rail mode — nothing to switch here.
 document.getElementById("main").addEventListener("focusout", () => {
-  // Threats validate-on-blur (mitigations have no live validate endpoint).
-  if (state.screen === "threats" && state.editing && state.view === "structure") scheduleValidate();
-  if (guidingScreen() && state.railMode === "guidance") {
-    setTimeout(() => {
-      const a = document.activeElement;
-      const main = document.getElementById("main");
-      const prev = document.getElementById("preview");
-      if (a && ((main && main.contains(a)) || (prev && prev.contains(a)))) return;
-      state.railMode = "preview";
-      renderRight();
-    }, 0);
-  }
+  if (state.screen === "threats" && state.editing) scheduleValidate();
 });
 // ------------------------------------------------- rail collapse + resize -- //
 // Left rail collapses to a thin strip (list/search/filters hidden, only the expand
