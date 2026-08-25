@@ -71,6 +71,13 @@ fields:
     - Run frequency is driven by the change-triggers in Review; the calendar cadence is only a safety-net.
   review:
     purpose: Change-triggers for revising the card + a safety-net review cadence. If the safety-net run regularly finds something, the list of change-triggers is incomplete.
+    content_requirements:
+    - List concrete, control-specific change-triggers — events that make this card's scope/mechanism stale (e.g. a new component type appears, a linked threat's weakness changes, the enforcement point moves) — not generic 'when things change'.
+    - State that a calendar cadence exists as a safety net, sized to the org's own risk tier and pace of change — not a fixed number of weeks/months/years baked into the card.
+    avoid:
+    - A calendar cadence with no named triggers — exposure from a real change then sits uncaught until the next date.
+    - Hardcoding a specific frequency (monthly/quarterly/annual) — org size and risk tolerance vary; that's the org's call at implementation time, not the catalog's.
+    - Re-describing operational re-testing of a deployed instance — that's validation's job, not this field's.
   locus:
     purpose: Which layer the mitigation naturally belongs to - the product (application logic) or the infrastructure/platform - with a short rationale, not a bare label (the boundary is often a split). This is the shared-responsibility call.
   maintainer:
