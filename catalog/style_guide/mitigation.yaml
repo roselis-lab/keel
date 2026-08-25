@@ -9,8 +9,23 @@ fields:
     - Exactly one class per card; secondary behavior is noted in prose inside Control mechanism.
   purpose:
     purpose: '1-3 sentences: which class of failure the mitigation prevents.'
+    content_requirements:
+    - 1-3 sentences naming the specific class of failure or risk that goes away if this mitigation works — not a restated title, not an aspiration.
+    - Answer 'what breaks without this' in terms of harm or attack pattern, not in terms of a technology or vendor.
+    avoid:
+    - Naming the mechanism or technology used to achieve it (encryption, sandboxing, allowlisting) — that's control_mechanism's job.
+    - Unmeasurable aspirations ('be more secure', 'prevent all X') with no bounded failure class.
+    - Restating the mitigation's name or class.
   formal_implementation_risk:
     purpose: '1-3 sentences: what a useless-but-mitigation-looking implementation looks like - what happens if the mitigation is implemented ''formally''. This field sets the failure mode that the other fields are obliged to close.'
+    content_requirements:
+    - Name ONE concrete way THIS mitigation can be technically present yet not close the gap it claims to close — a coverage gap (scope narrower than the weakness it's meant to cover), an enforcement gap (a bypass or exception path nobody monitors), or an evidence gap (existence is provable, effectiveness is not).
+    - Specific to this control's mechanism — a reader should not be able to paste the same sentence onto a different mitigation card.
+    avoid:
+    - Restating failure_behavior — that's a correctly-built control breaking at runtime; this field is a control that was never built to spec in the first place.
+    - Vague phrasing ('if not implemented properly', 'if done superficially') without naming the concrete gap.
+    examples:
+    - An allowlist is enforced at request time but never re-synced after new tools are registered, so anything added after initial rollout is silently permitted.
   scope:
     purpose: A deterministic rule for the condition under which the mitigation applies or fires, formulated through a property of the system, an operation, or an asset.
     content_requirements:
