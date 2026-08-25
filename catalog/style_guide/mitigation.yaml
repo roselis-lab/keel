@@ -73,16 +73,27 @@ fields:
     purpose: Change-triggers for revising the card + a safety-net review cadence. If the safety-net run regularly finds something, the list of change-triggers is incomplete.
     content_requirements:
     - List concrete, control-specific change-triggers — events that make this card's scope/mechanism stale (e.g. a new component type appears, a linked threat's weakness changes, the enforcement point moves) — not generic 'when things change'.
-    - State that a calendar cadence exists as a safety net, sized to the org's own risk tier and pace of change — not a fixed number of weeks/months/years baked into the card.
+    - State that a periodic safety-net review exists alongside the triggers, without a specific frequency — cadence is set where implementation specifics live, not on the card.
     avoid:
     - A calendar cadence with no named triggers — exposure from a real change then sits uncaught until the next date.
-    - Hardcoding a specific frequency (monthly/quarterly/annual) — org size and risk tolerance vary; that's the org's call at implementation time, not the catalog's.
+    - A fixed frequency (monthly/quarterly/annual) written into the card.
     - Re-describing operational re-testing of a deployed instance — that's validation's job, not this field's.
   locus:
     purpose: Which layer the mitigation naturally belongs to - the product (application logic) or the infrastructure/platform - with a short rationale, not a bare label (the boundary is often a split). This is the shared-responsibility call.
   maintainer:
     purpose: Name + contact for operational communication.
+    content_requirements:
+    - Name + contact of whoever maintains this catalog entry — kept it accurate, answers questions about the card itself.
+    avoid:
+    - The org-side role that operates the mitigation day to day — that's `owner`, a different axis (this card vs. the real deployment).
   owner:
     purpose: Owner-role of the mitigation; if several parties are responsible, the one accountable owner of the card.
+    content_requirements:
+    - Name ONE accountable role (not a person, not a committee) — the role that signs off on this control's effectiveness and answers when it fails, per the RACI 'single Accountable' rule.
+    - A role by function, portable across organizations (e.g. 'platform security engineering', 'the team owning the tool integration') — never a named individual.
+    avoid:
+    - Multiple roles or 'shared ownership' — that dilutes accountability to nobody; people who execute but don't answer for failure are Responsible, not this field.
+    - A named individual instead of a role.
+    - Restating locus's product/infra split — owner is WHO is accountable, not WHICH layer the control sits in.
   faq:
     purpose: Short answers to questions that arise when implementing the mitigation - only what is not obvious from the other sections or regularly causes divergent readings.
