@@ -142,19 +142,15 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
     return errors
 
 
-def catalog_warnings(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
-    """Advisory quality checks over the catalog (NOT errors). These surface soft problems —
-    over-graded links, missing provenance, an unused vocabulary — without failing CI. Runs
-    read-only over the raw YAML (same load path as `validate_catalog`). Returns human-readable
-    warnings; an empty list means nothing to nudge on.
+def catalog_warnings_structured(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[dict[str, str | None]]:
+    """Advisory quality checks over the catalog (NOT errors) — structured form.
 
-    Checks:
-      1. Over-graded link strength: a `gating` link whose target control is not a
-         `gating_control` (a detector/process/advisory control does not architecturally block).
-      2. Missing references: a threat with no `references` (provenance) to map to prior art.
-      3. Unused `nature`: no weakness anywhere is marked `secondary` (the field may be dead).
+    Each item is `{"category", "entity_type", "entity_id", "message"}`. `entity_type`/
+    `entity_id` are `None` for a library-wide finding with no single owning entity
+    (e.g. the unused-`nature` check). See `catalog_warnings()` for the CLI-facing
+    string form and the check descriptions.
     """
-    warnings: list[str] = []
+    warnings: list[dict[str, str | None]] = []
     if not catalog_dir.exists():
         return warnings
 
@@ -179,16 +175,24 @@ def catalog_warnings(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
             mid = link.get("id")
             cls = mit_class.get(mid)
             if cls is not None and cls != "gating_control":
-                warnings.append(
-                    f"{tid} -> {mid}: strength 'gating' but mitigation_class is '{cls}' "
-                    "— a non-gating control should not back a gating link"
-                )
+                warnings.append({
+                    "category": "over_graded_strength",
+                    "entity_type": "threat",
+                    "entity_id": tid,
+                    "message": (
+                        f"{tid} -> {mid}: strength 'gating' but mitigation_class is '{cls}' "
+                        "— a non-gating control should not back a gating link"
+                    ),
+                })
 
         # 2. Threat missing references (provenance).
         if not (rec.get("references") or []):
-            warnings.append(
-                f"{tid}: no references (provenance) — map to CWE/CAPEC/OWASP-LLM/ATLAS"
-            )
+            warnings.append({
+                "category": "missing_references",
+                "entity_type": "threat",
+                "entity_id": tid,
+                "message": f"{tid}: no references (provenance) — map to CWE/CAPEC/OWASP-LLM/ATLAS",
+            })
 
         # 3. Track whether the `nature` field is ever used as 'secondary'.
         for w in rec.get("weaknesses") or []:
@@ -196,9 +200,29 @@ def catalog_warnings(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
                 any_secondary = True
 
     if not any_secondary:
-        warnings.append(
-            "no weakness is marked 'secondary' — the nature field may be unused "
-            "(every weakness is 'targeted')"
-        )
+        warnings.append({
+            "category": "unused_nature",
+            "entity_type": None,
+            "entity_id": None,
+            "message": (
+                "no weakness is marked 'secondary' — the nature field may be unused "
+                "(every weakness is 'targeted')"
+            ),
+        })
 
     return warnings
+
+
+def catalog_warnings(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
+    """Advisory quality checks over the catalog (NOT errors). These surface soft problems —
+    over-graded links, missing provenance, an unused vocabulary — without failing CI. Runs
+    read-only over the raw YAML (same load path as `validate_catalog`). Returns human-readable
+    warnings; an empty list means nothing to nudge on.
+
+    Checks:
+      1. Over-graded link strength: a `gating` link whose target control is not a
+         `gating_control` (a detector/process/advisory control does not architecturally block).
+      2. Missing references: a threat with no `references` (provenance) to map to prior art.
+      3. Unused `nature`: no weakness anywhere is marked `secondary` (the field may be dead).
+    """
+    return [w["message"] for w in catalog_warnings_structured(catalog_dir)]

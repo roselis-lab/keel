@@ -56,3 +56,31 @@ def test_validate_strict_exits_one_on_warnings():
     )
     assert r.returncode == 1, r.stderr
     assert "Warning" in r.stderr, r.stderr
+
+
+def test_structured_warnings_carry_entity_refs():
+    from keel.catalog import catalog_warnings_structured
+
+    items = catalog_warnings_structured()
+    over_graded = [w for w in items if w["category"] == "over_graded_strength"]
+    assert over_graded, items
+    hit = next(w for w in over_graded if w["entity_id"] == "T-CRED-THEFT")
+    assert hit["entity_type"] == "threat"
+    assert "CTRL-AUDIT-LOGGING" in hit["message"]
+
+    missing_refs = [w for w in items if w["category"] == "missing_references"]
+    assert len(missing_refs) == 13, missing_refs
+    assert all(w["entity_type"] == "threat" and w["entity_id"] for w in missing_refs)
+
+    unused_nature = [w for w in items if w["category"] == "unused_nature"]
+    assert len(unused_nature) == 1, unused_nature
+    assert unused_nature[0]["entity_type"] is None
+    assert unused_nature[0]["entity_id"] is None
+
+
+def test_catalog_warnings_strings_match_structured_messages():
+    """catalog_warnings() must stay a pure projection of the structured data —
+    same messages, same order, nothing lost in the format-string round trip."""
+    from keel.catalog import catalog_warnings_structured
+
+    assert catalog_warnings() == [w["message"] for w in catalog_warnings_structured()]
