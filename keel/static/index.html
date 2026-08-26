@@ -94,6 +94,7 @@
   .badge.type { background: var(--navy-200); color: var(--navy-700); }
   .badge.harm { background: var(--crimson-600); color: #fff; }
   .badge.tag { background: #eaf4ee; color: var(--green); }
+  .badge.shared { background: #eaf4ee; color: var(--green); margin-left: 6px; }
 
   /* ------ center editor ------ */
   main { overflow-y: auto; padding: 30px 40px; min-width: 0; }
@@ -1044,7 +1045,7 @@ function readThreat(t) {
   };
   const refsHtml = (t.references || []).length
     ? readsec("References", `<ul class="plain">${t.references.map(r =>
-        `<li><span class="meta">${esc(r.id)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`)
+        `<li><span class="meta">${esc(r.title)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`)
     : (omitted.push({ label: "References", field: "references" }), "");
   const tagsHtml = (t.tags || []).length
     ? readsec("Tags", `<div class="badges">${(t.tags || []).map(x => badge("tag", x)).join(" ")}</div>`)
@@ -1340,16 +1341,16 @@ function mitigationsEditor() {
 }
 
 // References — repeatable BORDERED cards bound to state.draft.references (same grammar
-// as weaknesses). Each card holds an id + a url. First card expanded; the rest collapse
-// to a one-line summary (id · url). The section carries the threat.references data-field
-// so focusing any input shows that field's rail guidance; the per-item id/url inputs have
+// as weaknesses). Each card holds a title + a url. First card expanded; the rest collapse
+// to a one-line summary (title · url). The section carries the threat.references data-field
+// so focusing any input shows that field's rail guidance; the per-item title/url inputs have
 // no style entry of their own, so they degrade to no hint.
 function referencesEditor() {
   const refs = state.draft.references || [];
   const open = state.refOpen || new Set();
   const cards = refs.map((r, i) => {
     const isOpen = open.has(i);
-    const summary = `${esc(r.id || "—")}${(r.url || "").trim() ? " · " + esc((r.url || "").trim().slice(0, 48)) : ""}`;
+    const summary = `${esc(r.title || "—")}${(r.url || "").trim() ? " · " + esc((r.url || "").trim().slice(0, 48)) : ""}`;
     const head = `<div class="ecard-head" data-ridx="${i}">
         <button type="button" class="card-toggle ref-toggle" data-ridx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Reference " + (i + 1) : summary}</span>
@@ -1359,9 +1360,9 @@ function referencesEditor() {
     return `<div class="ecard ref-card open" data-ridx="${i}">
       ${head}
       <div class="ecard-body">
-      <div class="field" data-field="id">
-        <h3 class="slabel">Id</h3>
-        <input class="f ref-id" data-ridx="${i}" value="${esc(r.id || "")}" placeholder="short label, e.g. owasp-llm01">
+      <div class="field" data-field="title">
+        <h3 class="slabel">Title</h3>
+        <input class="f ref-title" data-ridx="${i}" value="${esc(r.title || "")}" placeholder="source name, e.g. OWASP LLM01: Prompt Injection">
       </div>
       <div class="field" data-field="url">
         <h3 class="slabel">URL</h3>
@@ -1418,7 +1419,7 @@ function enterEdit() {
     weaknesses: (t.weaknesses || []).map(w => ({
       component: w.component, text: w.text || "", nature: w.nature || "targeted",
     })),
-    references: (t.references || []).map(r => ({ id: r.id || "", url: r.url || "" })),
+    references: (t.references || []).map(r => ({ title: r.title || "", url: r.url || "" })),
   };
   // Progressive disclosure: the FIRST repeatable card is expanded, the rest collapse.
   state.wkOpen = new Set((t.weaknesses || []).length ? [0] : []);
@@ -1586,9 +1587,9 @@ function wireReferences() {
   const d = state.draft;
   document.querySelectorAll(".ref-card").forEach(card => {
     const i = +card.dataset.ridx;
-    const id = card.querySelector(".ref-id");
+    const title = card.querySelector(".ref-title");
     const url = card.querySelector(".ref-url");
-    if (id) id.oninput = () => d.references[i].id = id.value;
+    if (title) title.oninput = () => d.references[i].title = title.value;
     if (url) url.oninput = () => d.references[i].url = url.value;
     const rm = card.querySelector(".ref-remove");
     if (rm) rm.onclick = e => { e.stopPropagation(); d.references.splice(i, 1); shiftRefOpen(i); renderDetail(); };
@@ -1601,7 +1602,7 @@ function wireReferences() {
   });
   const add = document.getElementById("addReference");
   if (add) add.onclick = () => {
-    d.references.push({ id: "", url: "" });
+    d.references.push({ title: "", url: "" });
     (state.refOpen || (state.refOpen = new Set())).add(d.references.length - 1);   // open the new card
     renderDetail();
   };
@@ -2403,8 +2404,9 @@ function readMitigation(mt) {
   // Implementations — ALWAYS shown; its empty state is intentional and discoverable.
   const impl = (mt.implementations || []).length
     ? (mt.implementations || []).map(im => `<div class="card">
-        <div class="chead"><span class="ctitle">${esc(im.title || "(untitled)")}</span></div>
+        <div class="chead"><span class="ctitle">${esc(im.title || "(untitled)")}</span>${im.coverage === "shared" ? `<span class="badge shared">shared</span>` : ""}</div>
         ${im.description ? `<div class="cdesc">${esc(im.description)}</div>` : ""}
+        ${im.coverage === "shared" && im.covers ? `<div class="cdesc">Covers: ${esc(im.covers)}</div>` : ""}
         ${im.reference ? `<div class="cdesc"><a href="${esc(im.reference)}" target="_blank" rel="noopener">${esc(im.reference)}</a></div>` : ""}
       </div>`).join("")
     : '<p class="placeholder">None yet — orgs add these after forking.</p>';
@@ -2654,6 +2656,19 @@ function implementationsEditor() {
         ${hintRow("implementation", "reference")}
         <input class="f impl-reference" data-idx="${i}" value="${esc(im.reference || "")}" placeholder="https://…">
       </div>
+      <div class="field" data-entity="implementation" data-field="coverage">
+        <h3 class="slabel">Coverage</h3>
+        ${hintRow("implementation", "coverage")}
+        <select class="f impl-coverage" data-idx="${i}">
+          <option value="local" ${(im.coverage || "local") === "local" ? "selected" : ""}>local — covers only what's described above</option>
+          <option value="shared" ${im.coverage === "shared" ? "selected" : ""}>shared — covers everything within a stated boundary</option>
+        </select>
+      </div>
+      ${im.coverage === "shared" ? `<div class="field" data-entity="implementation" data-field="covers">
+        <h3 class="slabel">Covers <span class="sub">— the boundary this instance covers</span></h3>
+        ${hintRow("implementation", "covers")}
+        <input class="f impl-covers" data-idx="${i}" value="${esc(im.covers || "")}" placeholder="e.g. all agents on the Agent Platform">
+      </div>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -2717,6 +2732,7 @@ function enterMitEdit() {
     faq: (mt.faq || []).map(q => ({ question: q.question || "", answer: q.answer || "" })),
     implementations: (mt.implementations || []).map(im => ({
       title: im.title || "", description: im.description || "", reference: im.reference || "",
+      coverage: im.coverage || "local", covers: im.covers || "",
     })),
   };
   state.mitApOpen = new Set((mt.anti_patterns || []).length ? [0] : []);
@@ -2836,16 +2852,20 @@ function wireMitEdit() {
     const ti = card.querySelector(".impl-title");
     const de = card.querySelector(".impl-description");
     const re = card.querySelector(".impl-reference");
+    const cv = card.querySelector(".impl-coverage");
+    const cvs = card.querySelector(".impl-covers");
     if (ti) ti.oninput = () => d.implementations[i].title = ti.value;
     if (de) de.oninput = () => d.implementations[i].description = de.value;
     if (re) re.oninput = () => d.implementations[i].reference = re.value;
+    if (cv) cv.onchange = () => { d.implementations[i].coverage = cv.value; if (cv.value === "local") d.implementations[i].covers = ""; renderMitDetail(); };
+    if (cvs) cvs.oninput = () => d.implementations[i].covers = cvs.value;
     const rm = card.querySelector(".impl-remove");
     if (rm) rm.onclick = e => { e.stopPropagation(); d.implementations.splice(i, 1); state.mitImplOpen = shiftOpenSet(state.mitImplOpen, i); renderMitDetail(); };
     const head = card.querySelector(".ecard-head");
     if (head) head.onclick = e => { if (e.target.closest(".impl-remove")) return; toggleSet(state.mitImplOpen, i); renderMitDetail(); };
   });
   const addImpl = document.getElementById("addImplementation");
-  if (addImpl) addImpl.onclick = () => { d.implementations.push({ title: "", description: "", reference: "" }); (state.mitImplOpen || (state.mitImplOpen = new Set())).add(d.implementations.length - 1); renderMitDetail(); };
+  if (addImpl) addImpl.onclick = () => { d.implementations.push({ title: "", description: "", reference: "", coverage: "local", covers: "" }); (state.mitImplOpen || (state.mitImplOpen = new Set())).add(d.implementations.length - 1); renderMitDetail(); };
 }
 
 // Map a failed PATCH/POST error path to its .field wrapper (no live validate endpoint).
@@ -2913,7 +2933,11 @@ async function saveMitigation() {
     faq: (d.faq || []).filter(q => (q.question || "").trim() || (q.answer || "").trim())
       .map(q => ({ question: q.question, answer: q.answer })),
     implementations: (d.implementations || []).filter(im => (im.title || "").trim() || (im.description || "").trim())
-      .map(im => ({ title: im.title, description: im.description, reference: (im.reference || "").trim() || null })),
+      .map(im => ({
+        title: im.title, description: im.description, reference: (im.reference || "").trim() || null,
+        coverage: im.coverage || "local",
+        covers: im.coverage === "shared" ? (im.covers || "").trim() || null : null,
+      })),
   };
   const url = isNew ? "/mitigations" : "/mitigations/" + encodeURIComponent(state.mitSelected);
   if (isNew) body.id = state.mitSelected;

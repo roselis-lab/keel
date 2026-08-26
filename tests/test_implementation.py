@@ -37,6 +37,27 @@ def test_reference_is_optional():
     assert impl.reference is None
 
 
+def test_implementation_defaults_to_local_coverage():
+    impl = Implementation(title="t", description="d")
+    assert impl.coverage == "local"
+    assert impl.covers is None
+
+
+def test_shared_coverage_requires_covers():
+    with pytest.raises(ValidationError):
+        Implementation(title="t", description="d", coverage="shared")
+
+
+def test_shared_coverage_with_covers_parses():
+    impl = Implementation(title="t", description="d", coverage="shared", covers="all agents on the Agent Platform")
+    assert impl.covers == "all agents on the Agent Platform"
+
+
+def test_local_coverage_rejects_covers():
+    with pytest.raises(ValidationError):
+        Implementation(title="t", description="d", coverage="local", covers="all agents on the Agent Platform")
+
+
 def test_mitigation_default_implementations_is_empty():
     m = MitigationCreate(id="CTRL-X", name="X", mitigation_class="gating_control")
     assert m.implementations == []
@@ -76,5 +97,8 @@ async def test_get_mitigation_round_trips_implementations(temp_store):
     got = await get_mitigation("CTRL-RT")
     assert got["success"] is True
     assert got["implementations"] == [
-        {"title": "Platform sandbox", "description": "locked-down container", "reference": None}
+        {
+            "title": "Platform sandbox", "description": "locked-down container", "reference": None,
+            "coverage": "local", "covers": None,
+        }
     ]

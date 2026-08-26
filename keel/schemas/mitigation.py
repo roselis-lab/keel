@@ -1,12 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 # The class is a switch: it sets how control_mechanism and failure_behavior are read.
 MitigationClass = Literal[
     "gating_control", "detector", "process", "evidential_mitigation", "corrective"
 ]
 MitigationStatus = Literal["draft", "verified"]
+ImplementationCoverage = Literal["shared", "local"]
 
 
 class ValidationCheck(BaseModel):
@@ -30,6 +31,18 @@ class Implementation(BaseModel):
     title: str
     description: str
     reference: HttpUrl | None = None
+    coverage: ImplementationCoverage = "local"
+    covers: str | None = Field(
+        None, description="Required when coverage='shared': the boundary this instance covers"
+    )
+
+    @model_validator(mode="after")
+    def _covers_required_when_shared(self) -> "Implementation":
+        if self.coverage == "shared" and not (self.covers or "").strip():
+            raise ValueError("covers is required when coverage is 'shared'")
+        if self.coverage == "local" and self.covers:
+            raise ValueError("covers only applies when coverage is 'shared'")
+        return self
 
 
 class MitigationBase(BaseModel):

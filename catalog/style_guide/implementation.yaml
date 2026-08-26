@@ -14,3 +14,16 @@ fields:
     content_requirements:
     - A single URL that resolves.
     - Point at the source of truth someone would open to verify or maintain it.
+  coverage:
+    purpose: Whether this implementation instance covers only what's described here (local) or extends automatically to everything within a stated boundary (shared).
+    content_requirements:
+    - "'shared' only when this same deployed instance genuinely closes the mitigation for other consumers too, not just the system that built it — default to 'local'."
+    - Pick based on what this instance actually reaches today, not what the approach could be reused for in principle.
+    avoid:
+    - "'shared' as an aspiration or a description of the approach's reusability rather than a fact about what this instance currently reaches."
+  covers:
+    purpose: The boundary of what 'shared' actually covers — who or what else this instance closes the mitigation for.
+    content_requirements:
+    - Name the actual population this instance reaches (e.g. 'all agents on the Agent Platform', 'every service behind the shared API gateway') — required whenever coverage is 'shared', left empty when coverage is 'local'.
+    avoid:
+    - A vague boundary ('the whole company', 'everyone') that can't be checked against a specific system at assessment time.

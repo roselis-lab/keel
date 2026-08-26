@@ -22,6 +22,28 @@
       "additionalProperties": false,
       "description": "How an org realizes a control. Empty in the reference catalog; orgs fill it in.",
       "properties": {
+        "coverage": {
+          "default": "local",
+          "enum": [
+            "shared",
+            "local"
+          ],
+          "title": "Coverage",
+          "type": "string"
+        },
+        "covers": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Required when coverage='shared': the boundary this instance covers",
+          "title": "Covers"
+        },
         "description": {
           "title": "Description",
           "type": "string"
