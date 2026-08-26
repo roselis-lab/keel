@@ -191,6 +191,13 @@ async def get_schema(entity: str):
 # --------------------------------------------------------------------------- #
 # Git history (read-only)
 # --------------------------------------------------------------------------- #
+@router.get("/history/recent")
+async def recent_history(limit: int = Query(default=20, ge=1, le=100)):
+    """Recent commits across the whole catalog. Always 200; `available: False` when
+    git is unavailable or the catalog isn't inside a git repo."""
+    return githistory.recent_activity(limit=limit)
+
+
 @router.get("/history/{entity}/{id}")
 async def entry_history(entity: str, id: str):
     """Commit list for one entry's YAML file. 200 with `{available, ...}`.

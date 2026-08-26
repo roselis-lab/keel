@@ -112,6 +112,71 @@ def history(entity: str, id: str) -> dict:
     return {"available": True, "file": relpath, "commits": commits}
 
 
+_ENTITY_PATH_RE = re.compile(r"^(?:.*/)?(threats|mitigations)/([A-Za-z0-9._-]+)\.yaml$")
+
+
+def recent_activity(limit: int = 20) -> dict:
+    """Recent commits across the whole catalog (both threats/ and mitigations/), newest
+    first. Each commit is `{"sha", "author", "date", "message", "entities": [...]}`, where
+    `entities` is `[{"entity_type", "entity_id"}, ...]` for every tracked file the commit
+    touched (a commit that touched only non-catalog files is skipped and does not count
+    against `limit`).
+
+    Unavailable (git missing, catalog not inside a git repo) -> `{"available": False,
+    "commits": []}`. `limit` bounds commits RETURNED, not commits scanned - a quiet
+    catalog section deep in history beyond the internal scan buffer may return fewer
+    than `limit` even if more exist; this is a soft recency feed, not a full log.
+    """
+    catalog_dir = get_store().dir
+    proc = _run(["git", "-C", str(catalog_dir), "rev-parse", "--show-toplevel"])
+    if proc is None:
+        return {"available": False, "commits": []}
+    repo_root = proc.stdout.strip()
+    if not repo_root:
+        return {"available": False, "commits": []}
+
+    try:
+        catalog_relpath = Path(catalog_dir).resolve().relative_to(Path(repo_root).resolve()).as_posix()
+    except ValueError:
+        return {"available": False, "commits": []}
+
+    limit = max(limit, 1)
+    proc = _run([
+        "git", "-C", repo_root, "log",
+        f"--format=__COMMIT__{_FORMAT}", "--name-status",
+        "-n", str(limit * 5),  # buffer: not every commit touches threats/mitigations
+        "--", f"{catalog_relpath}/threats", f"{catalog_relpath}/mitigations",
+    ])
+    if proc is None:
+        return {"available": False, "commits": []}
+
+    commits: list[dict] = []
+    current: dict | None = None
+
+    def _flush():
+        if current and current["entities"] and len(commits) < limit:
+            commits.append(current)
+
+    for line in proc.stdout.splitlines():
+        if line.startswith("__COMMIT__"):
+            _flush()
+            if len(commits) >= limit:
+                current = None
+                break
+            meta = _parse_meta(line[len("__COMMIT__"):])
+            current = {**meta, "entities": []}
+            continue
+        if not line.strip() or current is None:
+            continue
+        path = line.split("\t")[-1]  # "--name-status": "<status>\t<path>" (renames: 2 paths, last wins)
+        m = _ENTITY_PATH_RE.match(path)
+        if m:
+            current["entities"].append({"entity_type": m.group(1), "entity_id": m.group(2)})
+    _flush()
+
+    return {"available": True, "commits": commits}
+
+
 def diff(entity: str, id: str, sha: str) -> dict | None:
     """Unified diff for one commit, scoped to the entry's YAML file.
 

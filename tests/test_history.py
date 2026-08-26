@@ -120,3 +120,35 @@ def test_route_diff_ok_and_bad_sha_404():
     assert isinstance(ok.json()["diff"], str)
 
     assert client.get("/history/threats/T-CMD-INJECT/zzzz").status_code == 404
+
+
+# --------------------------------------------------------------------------- #
+# Recent activity (whole-catalog feed)
+# --------------------------------------------------------------------------- #
+def test_recent_activity_lists_commits_with_entities():
+    set_store(None)
+    result = githistory.recent_activity(limit=5)
+    assert result["available"] is True
+    assert 1 <= len(result["commits"]) <= 5
+    for c in result["commits"]:
+        assert c["sha"] and c["author"] and c["date"] and c["message"]
+        assert c["entities"], c  # every returned commit touched at least one tracked entity
+        for e in c["entities"]:
+            assert e["entity_type"] in ("threats", "mitigations")
+            assert e["entity_id"]
+
+
+def test_recent_activity_respects_limit():
+    set_store(None)
+    result = githistory.recent_activity(limit=1)
+    assert len(result["commits"]) == 1
+
+
+def test_route_recent_activity_ok():
+    set_store(None)
+    client = TestClient(app)
+    r = client.get("/history/recent?limit=3")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["available"] is True
+    assert len(body["commits"]) <= 3
