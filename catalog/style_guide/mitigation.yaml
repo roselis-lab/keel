@@ -62,6 +62,14 @@ fields:
     - Listing standard identifiers (session_id, timestamp, user_id) unless they have specific requirements here.
   anti_patterns:
     purpose: An explicit list of implementations that look like the mitigation but are not - a clean list of 'how NOT to do it', including at minimum the 'formal' variant from Risk of formal implementation.
+    content_requirements:
+    - Each entry names a concrete, plausible-looking implementation AND the diagnostic signal that exposes it — something checkable in config, logs, or behavior, not an abstract 'if done carelessly'.
+    - Reference the formal_implementation_risk variant briefly (don't re-copy it verbatim) as one entry, plus at least one further entry that is a genuinely different failure shape — a list with only the formal variant restated isn't a list.
+    instructions:
+    - 'For each candidate entry, ask: could a reviewer catch this from evidence (config, logs, a test), or does it require trusting a self-report? If only the latter, sharpen it until there''s a concrete signal.'
+    avoid:
+    - A vague 'if implemented poorly' entry with no diagnostic signal — a reader must be able to go check for it.
+    - Anti_patterns as a verbatim copy-paste of formal_implementation_risk with no added entry.
   validation:
     purpose: Pass/fail acceptance criteria with test scenarios. Base criteria are the mandatory adoption bar; additional criteria cover the mitigation's specifics.
     content_requirements:
@@ -103,3 +111,9 @@ fields:
     - Restating locus's product/infra split — owner is WHO is accountable, not WHICH layer the control sits in.
   faq:
     purpose: Short answers to questions that arise when implementing the mitigation - only what is not obvious from the other sections or regularly causes divergent readings.
+    content_requirements:
+    - Each question is a real point of recurring confusion or divergent reading among people implementing this control — not an invented question added to pad the list.
+    - Short, direct answers — no restating purpose/scope/control_mechanism/etc.; if the other fields already answer it, it doesn't belong here.
+    avoid:
+    - Duplicating content that lives in another field — the FAQ exists for exactly what those fields don't cover.
+    - Sneaking a new requirement, threshold, or scope change into an answer — that belongs in scope/validation, not here.
