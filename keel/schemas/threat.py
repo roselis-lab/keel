@@ -33,11 +33,16 @@ class MitigationLink(BaseModel):
     id: str = Field(..., description="A real CTRL-* mitigation id")
     strength: Strength = Field(..., description="gating (blocks) | soft (only lowers likelihood)")
     rationale: str
+    exception: str | None = Field(
+        None,
+        description="Rare, narrow carve-out where this control doesn't apply to this threat "
+        "(the threat itself stays live) — NOT a restatement of reachability",
+    )
 
 
 class Reference(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    id: str
+    title: str
     url: HttpUrl
 
 

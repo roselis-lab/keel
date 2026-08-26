@@ -87,10 +87,13 @@ async def batch_update_threats(updates: list[dict], confirm: bool = False) -> di
 @register_tool(annotations=_WRITE)
 async def add_threat_mitigation(
     threat_id: str, mitigation_id: str, strength: Strength, rationale: str,
+    exception: str | None = None,
 ) -> dict:
     """Link a mitigation to a threat. strength ∈ {gating (blocks), soft (only lowers likelihood)};
-    a soft control does not close the threat."""
-    return await _add_mitigation(threat_id, mitigation_id, strength, rationale)
+    a soft control does not close the threat. exception (optional, rare): a narrow case where
+    this specific control doesn't apply to this specific threat, even though the threat stays
+    live — not a restatement of the threat's reachability."""
+    return await _add_mitigation(threat_id, mitigation_id, strength, rationale, exception)
 
 
 @register_tool(annotations=_WRITE)

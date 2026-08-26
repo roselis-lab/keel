@@ -1047,6 +1047,7 @@ function readThreat(t) {
             <span class="badge soft" style="margin-left:auto">${esc(l.strength || "")}</span>
           </div>
           ${l.rationale ? `<div class="rationale">${esc(l.rationale)}</div>` : ""}
+          ${l.exception ? `<div class="rationale">Exception: ${esc(l.exception)}</div>` : ""}
         </div>`;
       }).join("")
     : '<p class="placeholder">None linked.</p>';
@@ -1340,6 +1341,11 @@ function mitigationsEditor() {
         ${hintRow("mitigation_link", "rationale")}
         <textarea class="f ml-rationale" id="ml_rat_${esc(l.id)}" rows="2" placeholder="why this control addresses this threat">${esc(l.rationale || "")}</textarea>
       </div>
+      <div class="field" data-entity="mitigation_link" data-field="exception">
+        <h3 class="slabel">Exception <span class="sub">— optional, rare</span></h3>
+        ${hintRow("mitigation_link", "exception")}
+        <textarea class="f ml-exception" id="ml_exc_${esc(l.id)}" rows="2" placeholder="narrow case where this control doesn't apply to this threat">${esc(l.exception || "")}</textarea>
+      </div>
       </div>
     </div>`;
   }).join("") : '<p class="placeholder">None linked.</p>';
@@ -1520,9 +1526,14 @@ function wireMitigations() {
     const mid = card.dataset.mid;
     const strength = card.querySelector(".ml-strength");
     const rationale = card.querySelector(".ml-rationale");
-    const persist = () => putMitLink(mid, strength ? strength.value : "gating", rationale ? rationale.value : "");
+    const exception = card.querySelector(".ml-exception");
+    const persist = () => putMitLink(
+      mid, strength ? strength.value : "gating", rationale ? rationale.value : "",
+      exception ? exception.value : "",
+    );
     if (strength) strength.onchange = persist;
     if (rationale) rationale.onblur = persist;
+    if (exception) exception.onblur = persist;
     const unlink = card.querySelector(".ml-unlink");
     if (unlink) unlink.onclick = e => { e.stopPropagation(); unlinkMit(mid); };
     const head = card.querySelector(".ecard-head");
@@ -1561,9 +1572,9 @@ async function unlinkMit(mid) {
     toast("Mitigation unlinked");
   } catch (e) { toast(e.message, true); }
 }
-async function putMitLink(mid, strength, rationale) {
+async function putMitLink(mid, strength, rationale, exception) {
   try {
-    await api("PUT", mitUrl(mid), { strength, rationale });
+    await api("PUT", mitUrl(mid), { strength, rationale, exception: exception || null });
     await refreshCurrent(); renderDetail(); renderPreview();
     toast("Mitigation link updated");
   } catch (e) { toast(e.message, true); }

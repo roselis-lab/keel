@@ -131,8 +131,9 @@ async def add_mitigation(
     mitigation_id: str,
     strength: str,
     rationale: str,
+    exception: str | None = None,
 ) -> dict[str, Any]:
-    """Link a mitigation to a threat (UPSERTs strength + rationale)."""
+    """Link a mitigation to a threat (UPSERTs strength + rationale + exception)."""
     store = get_store()
     if threat_id not in store.threats:
         return {"error": f"Threat '{threat_id}' not found", "success": False}
@@ -147,9 +148,16 @@ async def add_mitigation(
             if link["id"] == mitigation_id:
                 link["strength"] = strength
                 link["rationale"] = rationale
+                if exception:
+                    link["exception"] = exception
+                else:
+                    link.pop("exception", None)
                 break
         else:
-            links.append({"id": mitigation_id, "strength": strength, "rationale": rationale})
+            new_link = {"id": mitigation_id, "strength": strength, "rationale": rationale}
+            if exception:
+                new_link["exception"] = exception
+            links.append(new_link)
         links.sort(key=lambda x: x["id"])
         store.write_threat(threat_id)
     return {"success": True, "threat_id": threat_id, "mitigation_id": mitigation_id}

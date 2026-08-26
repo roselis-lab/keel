@@ -4,6 +4,19 @@
       "additionalProperties": false,
       "description": "Link to a mitigation card, with its role for this threat.",
       "properties": {
+        "exception": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Rare, narrow carve-out where this control doesn't apply to this threat (the threat itself stays live) \u2014 NOT a restatement of reachability",
+          "title": "Exception"
+        },
         "id": {
           "description": "A real CTRL-* mitigation id",
           "title": "Id",
@@ -34,8 +47,8 @@
     "Reference": {
       "additionalProperties": false,
       "properties": {
-        "id": {
-          "title": "Id",
+        "title": {
+          "title": "Title",
           "type": "string"
         },
         "url": {
@@ -47,7 +60,7 @@
         }
       },
       "required": [
-        "id",
+        "title",
         "url"
       ],
       "title": "Reference",
