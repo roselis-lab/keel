@@ -415,6 +415,18 @@
   .ov-activity-row:last-child { border-bottom: none; }
   .ov-activity-msg { color: var(--navy-800); }
   .ov-activity-meta { color: var(--navy-500); font-size: 12px; }
+
+  /* ------ reports screen ------ */
+  /* Requirement rows: checkbox and text on one line. A dedicated class, not .cdesc,
+     because that carries white-space: pre-wrap and would keep the template's newlines. */
+  .req-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 7px; font-size: 13px; color: var(--navy-700); }
+  .req-row input { margin: 3px 0 0; flex-shrink: 0; }
+  .req-row label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+  .req-note { margin: 3px 0 0 24px; color: var(--navy-500); font-size: 12px; font-style: italic; }
+  .req-ignored { margin-top: 7px; color: var(--navy-500); font-size: 12px; font-style: italic; }
+  .rep-facts { margin-top: 6px; color: var(--navy-500); font-size: 12px; font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .rep-qa { margin-top: 5px; font-size: 13px; color: var(--navy-700); }
+  .rep-qa .meta { display: inline-block; min-width: 18px; font-weight: 700; color: var(--navy-500); }
   .ov-rail-legend { padding: 16px 15px; color: var(--navy-500); font-size: 13px; line-height: 1.6; }
   .ov-legend .ov-leg-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 6px; }
   .ov-legend p { color: var(--navy-600); font-size: 12px; margin: 0 0 4px; line-height: 1.7; }
@@ -2194,22 +2206,19 @@ function reportFindingHtml(f) {
     const label = r.mitigation_id || r.description || "(unnamed requirement)";
     const covered = r.coverage_status === "already_covered";
     const statusBadge = r.coverage_status !== "needs_implementation"
-      ? ` <span class="badge soft">${esc(r.coverage_status)}</span>` : "";
-    return `<div class="cdesc"><label>
-      <input type="checkbox" class="req-include" data-fid="${esc(f.id)}" data-ri="${ri}" ${covered ? "" : "checked"}>
-      ${esc(label)}${statusBadge}</label>
-      ${r.coverage_note ? `<div class="rationale">${esc(r.coverage_note)}</div>` : ""}
-    </div>`;
+      ? `<span class="badge soft">${esc(r.coverage_status)}</span>` : "";
+    return `<div class="req-row"><label><input type="checkbox" class="req-include" data-fid="${esc(f.id)}" data-ri="${ri}" ${covered ? "" : "checked"}><span>${esc(label)} ${statusBadge}</span></label></div>`
+      + (r.coverage_note ? `<div class="req-note">${esc(r.coverage_note)}</div>` : "");
   }).join("");
   const ignored = (f.ignored_mitigations || []).map(im =>
-    `<div class="rationale">Not applied: ${esc(im.mitigation_id)} — ${esc(im.reason)}</div>`).join("");
+    `<div class="req-ignored">Not applied: ${esc(im.mitigation_id)} — ${esc(im.reason)}</div>`).join("");
   return `<div class="card">
     <div class="chead">
       <span class="ctitle">${esc(f.id)}</span>
       <span class="badge cov ${sevClass}" style="margin-left:auto">${esc(f.risk.severity)}</span>
     </div>
     <div class="cdesc">${esc(f.scenario)}</div>
-    <div class="rationale">${esc(f.harm)} · ${esc(f.attack_surface)} · ${esc(f.source.who)} · exploitation ${esc(f.exploitation_complexity)}</div>
+    <div class="rep-facts">${esc(f.harm)} · ${esc(f.attack_surface)} · ${esc(f.source.who)} · exploitation ${esc(f.exploitation_complexity)}</div>
     ${reqs}${ignored}
   </div>`;
 }
@@ -2235,8 +2244,8 @@ function reportDetailHtml(rep) {
 
   const dialogue = (rep.dialogue || []).length
     ? rep.dialogue.map(d => `<div class="card">
-        <div class="cdesc"><span class="meta">Q</span>${esc(d.question)}</div>
-        <div class="cdesc"><span class="meta">A</span>${esc(d.answer)}</div>
+        <div class="rep-qa"><span class="meta">Q</span>${esc(d.question)}</div>
+        <div class="rep-qa"><span class="meta">A</span>${esc(d.answer)}</div>
         <div class="rationale">${esc(d.impact)}</div>
       </div>`).join("")
     : '<p class="placeholder">No recorded exchanges.</p>';
@@ -2286,22 +2295,57 @@ async function resolveMitigationsForReport(rep) {
   return out;
 }
 
+// Requirements the specialist left checked, as markdown. Without explanations it's one
+// flat list — the product team just needs the asks. With explanations the list is
+// grouped under each finding's scenario, so the prose that leads to a set of
+// requirements is stated once rather than repeated under every one of them.
 function buildRequirementsMarkdown(rep, mitInfo, withExplanations) {
+  const included = f => (f.requirements || []).filter((r, ri) => {
+    const cb = document.querySelector(
+      `.req-include[data-fid="${CSS.escape(f.id)}"][data-ri="${ri}"]`
+    );
+    return !cb || cb.checked;
+  });
+  const line = r => {
+    const info = r.mitigation_id ? mitInfo[r.mitigation_id] : null;
+    const label = info ? info.name : (r.description || r.mitigation_id);
+    return `- ${label}${info && info.owner ? ` (owner: ${info.owner})` : ""}`;
+  };
+
   const lines = [`# Security requirements — ${rep.system_name} (${rep.date})`, ""];
+  let any = false;
   for (const f of rep.findings || []) {
-    (f.requirements || []).forEach((r, ri) => {
-      const cb = document.querySelector(
-        `.req-include[data-fid="${CSS.escape(f.id)}"][data-ri="${ri}"]`
-      );
-      if (cb && !cb.checked) return;
-      const info = r.mitigation_id ? mitInfo[r.mitigation_id] : null;
-      const label = info ? info.name : (r.description || r.mitigation_id);
-      lines.push(`- ${label}${info && info.owner ? ` (owner: ${info.owner})` : ""}`);
-      if (withExplanations) lines.push(`  ${f.scenario}`);
-    });
+    const reqs = included(f);
+    if (!reqs.length) continue;
+    any = true;
+    if (withExplanations) {
+      lines.push(f.scenario, "");
+      lines.push(...reqs.map(line));
+      lines.push("");
+    } else {
+      lines.push(...reqs.map(line));
+    }
   }
-  if (lines.length === 2) lines.push("_No requirements selected._");
-  return lines.join("\n");
+  if (!any) lines.push("_No requirements selected._");
+  return lines.join("\n").trimEnd();
+}
+
+// navigator.clipboard only exists in a secure context, so it is absent when someone
+// serves Keel to their team over plain http on a LAN address. Fall back to the old
+// execCommand path there rather than losing the feature.
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+  document.body.appendChild(ta);
+  ta.select();
+  const ok = document.execCommand("copy");
+  document.body.removeChild(ta);
+  if (!ok) throw new Error("Copy failed — select the text and copy it manually");
 }
 
 function wireReportDetail() {
@@ -2315,7 +2359,7 @@ function wireReportDetail() {
       try {
         const mitInfo = await resolveMitigationsForReport(state.currentReport);
         const md = buildRequirementsMarkdown(state.currentReport, mitInfo, withExplanations);
-        await navigator.clipboard.writeText(md);
+        await copyText(md);
         toast("Copied to clipboard");
       } catch (e) { toast(e.message, true); }
     };
