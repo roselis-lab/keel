@@ -427,6 +427,7 @@
     <button data-screen="threats">Threats</button>
     <button data-screen="mitigations">Mitigations</button>
     <button data-screen="style">Style guide</button>
+    <button data-screen="reports">Reports</button>
   </nav>
   <header>
     <button class="rail-toggle" id="railToggle" title="Collapse">«</button>
@@ -464,6 +465,10 @@ const state = {
   mitFacets: { class: new Set(), status: new Set(), implementations: new Set(), linkage: new Set() },
   warnings: [],          // GET /health/warnings — structured advisory list for the overview
   recentActivity: { available: false, commits: [] },   // GET /history/recent
+  reportsList: [],       // GET /reports — [{system_id, system_name, latest_date, report_count, has_delta}]
+  reportSeries: {},      // system_id -> GET /reports/{id} series, cached as each system is opened
+  reportSelected: null,  // {system_id, date} of the open report
+  currentReport: null,   // GET /reports/{id}/{date}
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
   mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
@@ -1838,10 +1843,10 @@ function renderPreview() {
 function switchScreen(name) {
   state.screen = name;
   document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
-  const titles = { overview: "Keel · Overview", threats: "Keel · Threats", mitigations: "Keel · Mitigations", style: "Keel · Style guide" };
+  const titles = { overview: "Keel · Overview", threats: "Keel · Threats", mitigations: "Keel · Mitigations", style: "Keel · Style guide", reports: "Keel · Reports" };
   document.getElementById("railTitle").textContent = titles[name] || "Keel";
-  // Only the Overview has no rail search; Threats/Mitigations/Style all filter.
-  const noSearch = name === "overview";
+  // Overview and Reports have no rail search; Threats/Mitigations/Style all filter.
+  const noSearch = name === "overview" || name === "reports";
   document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
   // The faceted filter panel serves Threats + Mitigations + Style; (re)build it per
   // screen so its options stay fresh (schema enums + tags/values present in the data).
@@ -1863,26 +1868,32 @@ function switchScreen(name) {
   const newBtn = document.getElementById("newThreatBtn");
   if (newBtn) {
     // ＋ New only makes sense on the two entity screens.
-    newBtn.style.display = (name === "style" || name === "overview") ? "none" : "";
+    newBtn.style.display = (name === "style" || name === "overview" || name === "reports") ? "none" : "";
     newBtn.title = name === "mitigations" ? "Create a new mitigation" : "Create a new threat";
   }
   renderRail(); renderMain(); renderRight();
   if (name === "overview") loadOverview();   // refresh the dashboard on each entry
+  if (name === "reports") loadReports();
 }
 function renderRail() {
   if (state.screen === "overview") return renderOverviewRail();
+  if (state.screen === "reports") return renderReportsRail();
   if (state.screen === "style") return renderStyleRail();
   if (state.screen === "mitigations") return renderMitRail();
   return renderList();
 }
 function renderMain() {
   if (state.screen === "overview") return renderOverviewMain();
+  if (state.screen === "reports") return renderReportsMain();
   if (state.screen === "style") return renderStyleDetail();
   if (state.screen === "mitigations") return renderMitDetail();
   return renderDetail();
 }
 function renderRight() {
   if (state.screen === "overview") return renderOverviewRight();
+  // Reports are read-only, so there is nothing a live preview would add; collapse the
+  // third column the same way the Overview does.
+  if (state.screen === "reports") return renderOverviewRight();
   if (state.screen === "style") return renderStylePreview();
   if (state.screen === "mitigations") return renderMitPreview();
   return renderPreview();
@@ -2109,6 +2120,208 @@ function overviewOpenMitigationsFiltered(facetKey, value) {
   sel.clear();
   sel.add(value);
   switchScreen("mitigations");
+}
+
+// ===================================================================== //
+// Reports screen — a read-only archive of assessment runs. Reports are    //
+// written to disk by the assessment skill, never edited here, so this     //
+// screen has no draft/save flow: load, render, copy.                      //
+// ===================================================================== //
+// critical/high read as "important"; medium/low sit below the fold.
+const REPORT_IMPORTANT = new Set(["critical", "high"]);
+
+async function loadReports() {
+  try {
+    state.reportsList = (await j("/reports")).reports;
+  } catch (e) {
+    toast(e.message, true);
+    state.reportsList = [];
+  }
+  if (state.screen === "reports") { renderReportsRail(); renderReportsMain(); }
+}
+
+function renderReportsRail() {
+  const el = document.getElementById("list");
+  const items = state.reportsList || [];
+  el.innerHTML = items.length ? items.map(s => {
+    const sel = state.reportSelected && state.reportSelected.system_id === s.system_id;
+    const plural = s.report_count === 1 ? "report" : "reports";
+    return `<div class="row ${sel ? "active" : ""}" data-system="${esc(s.system_id)}">
+      <span class="rid">${esc(s.system_id)}</span>
+      <span class="rtitle">${esc(s.system_name)} · ${s.report_count} ${plural}${s.has_delta ? " · Δ" : ""}</span>
+    </div>`;
+  }).join("") : '<div class="empty" style="margin-top:40px">No reports yet.</div>';
+  document.getElementById("count").textContent = items.length ? String(items.length) : "";
+  el.querySelectorAll(".row").forEach(r => r.onclick = () => openReportSystem(r.dataset.system));
+}
+
+function renderReportsMain() {
+  const m = document.getElementById("main");
+  if (!state.currentReport) {
+    m.innerHTML = '<div class="empty">Select a system from the list.</div>';
+    return;
+  }
+  m.innerHTML = reportDetailHtml(state.currentReport);
+  wireReportDetail();
+}
+
+// Open a system's most recent report (or a specific date). The series is fetched once
+// per system and cached, since an archive never changes under us mid-session.
+async function openReportSystem(systemId, date) {
+  try {
+    if (!state.reportSeries[systemId]) {
+      state.reportSeries[systemId] = (await j("/reports/" + encodeURIComponent(systemId))).series;
+    }
+    const series = state.reportSeries[systemId];
+    const pick = date || (series[0] && series[0].date);
+    if (!pick) { state.currentReport = null; state.reportSelected = null; renderReportsMain(); return; }
+    state.currentReport = await j(
+      "/reports/" + encodeURIComponent(systemId) + "/" + encodeURIComponent(pick)
+    );
+    state.reportSelected = { system_id: systemId, date: pick };
+  } catch (e) {
+    toast(e.message, true);
+    return;
+  }
+  renderReportsRail(); renderReportsMain();
+}
+
+// One finding card. The inclusion checkbox is copy-time UI only — it is never written
+// back, so a finished report can't be reopened later in a differently-edited state.
+function reportFindingHtml(f) {
+  const sevClass = REPORT_IMPORTANT.has(f.risk.severity) ? "c-lo" : "c-mid";
+  const reqs = (f.requirements || []).map((r, ri) => {
+    const label = r.mitigation_id || r.description || "(unnamed requirement)";
+    const covered = r.coverage_status === "already_covered";
+    const statusBadge = r.coverage_status !== "needs_implementation"
+      ? ` <span class="badge soft">${esc(r.coverage_status)}</span>` : "";
+    return `<div class="cdesc"><label>
+      <input type="checkbox" class="req-include" data-fid="${esc(f.id)}" data-ri="${ri}" ${covered ? "" : "checked"}>
+      ${esc(label)}${statusBadge}</label>
+      ${r.coverage_note ? `<div class="rationale">${esc(r.coverage_note)}</div>` : ""}
+    </div>`;
+  }).join("");
+  const ignored = (f.ignored_mitigations || []).map(im =>
+    `<div class="rationale">Not applied: ${esc(im.mitigation_id)} — ${esc(im.reason)}</div>`).join("");
+  return `<div class="card">
+    <div class="chead">
+      <span class="ctitle">${esc(f.id)}</span>
+      <span class="badge cov ${sevClass}" style="margin-left:auto">${esc(f.risk.severity)}</span>
+    </div>
+    <div class="cdesc">${esc(f.scenario)}</div>
+    <div class="rationale">${esc(f.harm)} · ${esc(f.attack_surface)} · ${esc(f.source.who)} · exploitation ${esc(f.exploitation_complexity)}</div>
+    ${reqs}${ignored}
+  </div>`;
+}
+
+function reportDetailHtml(rep) {
+  const sel = state.reportSelected || {};
+  const series = state.reportSeries[sel.system_id] || [];
+  const dateChips = series.length > 1
+    ? `<div class="ov-chips">${series.map(s =>
+        `<span class="ov-chip" data-date="${esc(s.date)}" title="Open ${esc(s.date)}">${esc(s.date)}</span>`
+      ).join("")}</div>`
+    : "";
+
+  const findings = rep.findings || [];
+  const important = findings.filter(f => REPORT_IMPORTANT.has(f.risk.severity));
+  const lesser = findings.filter(f => !REPORT_IMPORTANT.has(f.risk.severity));
+  const group = list => list.length ? list.map(reportFindingHtml).join("") : '<p class="placeholder">None.</p>';
+
+  const discarded = (rep.discarded || []).length
+    ? `<details><summary class="ov-gap-desc">Ruled out (${rep.discarded.length})</summary>
+        ${rep.discarded.map(d => `<div class="rationale">${esc(d.id)} — ${esc(d.reason)}</div>`).join("")}</details>`
+    : '<p class="placeholder">Nothing ruled out.</p>';
+
+  const dialogue = (rep.dialogue || []).length
+    ? rep.dialogue.map(d => `<div class="card">
+        <div class="cdesc"><span class="meta">Q</span>${esc(d.question)}</div>
+        <div class="cdesc"><span class="meta">A</span>${esc(d.answer)}</div>
+        <div class="rationale">${esc(d.impact)}</div>
+      </div>`).join("")
+    : '<p class="placeholder">No recorded exchanges.</p>';
+
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon" style="background:var(--navy-700)">▤</div>
+      <div class="dtitle">
+        <h2>${esc(rep.system_name)}</h2>
+        <div class="did">${esc(rep.date)} · ${esc(rep.assessor)}</div>
+      </div>
+    </div>
+    ${dateChips}
+    <section><h3 class="slabel">System</h3><p>${esc(rep.system_description)}</p></section>
+    ${rep.delta_summary ? `<section><h3 class="slabel">What changed</h3><p>${esc(rep.delta_summary)}</p></section>` : ""}
+    <section><h3 class="slabel">Important <span class="sub">— critical / high</span></h3>${group(important)}</section>
+    <section><h3 class="slabel">Lower severity <span class="sub">— medium / low</span></h3>${group(lesser)}</section>
+    <section><h3 class="slabel">Ruled out</h3>${discarded}</section>
+    <section><h3 class="slabel">Dialogue <span class="sub">— what the specialist changed</span></h3>${dialogue}</section>
+    <section><h3 class="slabel">Send to the product team</h3>
+      <div class="link-row">
+        <button class="btn ghost" id="copyRequirements">Copy requirements</button>
+        <button class="btn ghost" id="copyRequirementsExplained">Copy with explanations</button>
+      </div>
+      <p class="ov-gap-desc">Only the checked requirements above are copied. Nothing is saved.</p>
+    </section>
+  </div>`;
+}
+
+// Resolve each referenced mitigation's display name and the owner accountable for it
+// HERE — owner lives on the implementation (a real deployment), not on the card, so
+// prefer a shared implementation's owner, else the first one recorded.
+async function resolveMitigationsForReport(rep) {
+  const ids = [...new Set((rep.findings || [])
+    .flatMap(f => (f.requirements || []).map(r => r.mitigation_id).filter(Boolean)))];
+  if (!ids.length) return {};
+  const all = (await j("/mitigations?brief=false&include=implementations")).mitigations;
+  const byId = Object.fromEntries(all.map(m => [m.id, m]));
+  const out = {};
+  for (const id of ids) {
+    const m = byId[id];
+    if (!m) continue;
+    const impls = m.implementations || [];
+    const pick = impls.find(i => i.coverage === "shared") || impls[0] || {};
+    out[id] = { name: m.name || id, owner: (pick.owner || "").trim() || null };
+  }
+  return out;
+}
+
+function buildRequirementsMarkdown(rep, mitInfo, withExplanations) {
+  const lines = [`# Security requirements — ${rep.system_name} (${rep.date})`, ""];
+  for (const f of rep.findings || []) {
+    (f.requirements || []).forEach((r, ri) => {
+      const cb = document.querySelector(
+        `.req-include[data-fid="${CSS.escape(f.id)}"][data-ri="${ri}"]`
+      );
+      if (cb && !cb.checked) return;
+      const info = r.mitigation_id ? mitInfo[r.mitigation_id] : null;
+      const label = info ? info.name : (r.description || r.mitigation_id);
+      lines.push(`- ${label}${info && info.owner ? ` (owner: ${info.owner})` : ""}`);
+      if (withExplanations) lines.push(`  ${f.scenario}`);
+    });
+  }
+  if (lines.length === 2) lines.push("_No requirements selected._");
+  return lines.join("\n");
+}
+
+function wireReportDetail() {
+  document.querySelectorAll(".ov-chip[data-date]").forEach(chip =>
+    chip.onclick = () => openReportSystem(state.reportSelected.system_id, chip.dataset.date));
+
+  const wireCopy = (id, withExplanations) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.onclick = async () => {
+      try {
+        const mitInfo = await resolveMitigationsForReport(state.currentReport);
+        const md = buildRequirementsMarkdown(state.currentReport, mitInfo, withExplanations);
+        await navigator.clipboard.writeText(md);
+        toast("Copied to clipboard");
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+  wireCopy("copyRequirements", false);
+  wireCopy("copyRequirementsExplained", true);
 }
 
 // ------------------------------------------------------- style-guide screen -- //
