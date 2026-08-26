@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # the repo's own catalog/.
     catalog_dir: str = ""
 
+    # Optional override for the reports directory (env var: REPORTS_DIR). Empty = the
+    # repo's own reports/, sibling to catalog/.
+    reports_dir: str = ""
+
     # MCP
     mcp_server_name: str = "keel"
     mcp_server_version: str = "0.1.0"
