@@ -1938,6 +1938,13 @@ const OV_GAP_GROUPS = [
   { key: "dangling_mitigation_links", label: "Dangling links", desc: "a link points at a missing mitigation" },
 ];
 
+// Categories `catalog_warnings_structured()` can emit — mirrors keel/catalog.py.
+const OV_WARNING_LABELS = {
+  over_graded_strength: "Over-graded links",
+  missing_references: "Missing references",
+  unused_nature: "Unused vocabulary",
+};
+
 function overviewHtml() {
   const h = state.health || {};
   const stats = h.stats || {};
@@ -1980,6 +1987,65 @@ function overviewHtml() {
         <p><b>Nothing flagged.</b> Every threat has weaknesses, a classified harm, and at least one linked mitigation — and no link dangles.</p></div>`
     : gapCards;
 
+  // A compact multi-segment bar (verified/draft/unset or shared/local/none) with a
+  // legend below it; legend entries that carry filterKey/filterValue are clickable —
+  // they jump to Mitigations with that facet value pre-selected (see wireOverview).
+  const bar = (segments, legendItems) => {
+    const total = segments.reduce((s, x) => s + x.n, 0) || 1;
+    const segHtml = segments.map(s => `<div class="ov-bar-seg ${s.cls}" style="width:${(100 * s.n / total).toFixed(1)}%"></div>`).join("");
+    const legend = legendItems.map(l => `<span ${l.filterKey ? `data-ov-filter="${esc(l.filterKey)}" data-ov-value="${esc(l.filterValue)}" style="cursor:pointer"` : ""}><span class="dot" style="background:var(${l.color})"></span>${esc(l.label)}: ${l.n}</span>`).join("");
+    return `<div class="ov-bar">${segHtml}</div><div class="ov-bar-legend">${legend}</div>`;
+  };
+
+  const sc = h.mitigation_status_counts || { draft: 0, verified: 0, unset: 0 };
+  const draftVerified = `<div class="card">${bar(
+    [{ n: sc.verified, cls: "verified" }, { n: sc.draft, cls: "draft" }, { n: sc.unset, cls: "unset" }],
+    [
+      { label: "verified", n: sc.verified, color: "--green", filterKey: "status", filterValue: "verified" },
+      { label: "draft", n: sc.draft, color: "--amber", filterKey: "status", filterValue: "draft" },
+      { label: "unset", n: sc.unset, color: "--navy-200" },
+    ]
+  )}</div>`;
+
+  const ic = h.implementation_coverage_counts || { shared: 0, local_only: 0, none: 0 };
+  const implCoverage = `<div class="card">${bar(
+    [{ n: ic.shared, cls: "shared" }, { n: ic.local_only, cls: "local" }, { n: ic.none, cls: "none" }],
+    [
+      { label: "shared", n: ic.shared, color: "--green", filterKey: "implementations", filterValue: "shared" },
+      { label: "local only", n: ic.local_only, color: "--amber" },
+      { label: "none", n: ic.none, color: "--navy-200", filterKey: "implementations", filterValue: "none" },
+    ]
+  )}</div>`;
+
+  // Warnings/activity chips reuse .ov-chip but carry data-warn-* (not data-threat), so
+  // wireOverview can tell them apart from the Gaps chips above (threats only).
+  const warnChip = w => w.entity_id
+    ? `<span class="ov-chip" data-warn-entity="${esc(w.entity_type)}" data-warn-id="${esc(w.entity_id)}" title="Open ${esc(w.entity_id)}">${esc(w.entity_id)}</span>`
+    : "";
+  const warningsByCat = {};
+  for (const w of (state.warnings || [])) (warningsByCat[w.category] || (warningsByCat[w.category] = [])).push(w);
+  const warningCards = Object.entries(OV_WARNING_LABELS).map(([cat, label]) => {
+    const items = warningsByCat[cat] || [];
+    if (!items.length) return "";
+    return `<div class="card ov-gap-group">
+      <div class="ov-gap-head"><span class="gname">${esc(label)}</span><span class="badge soft">${items.length}</span></div>
+      <div class="ov-chips">${items.map(warnChip).join("")}</div>
+    </div>`;
+  }).join("");
+  const warningCount = (state.warnings || []).length;
+  const warningsSection = warningCount
+    ? warningCards
+    : `<div class="ov-clean"><span class="ok-i">✓</span><p><b>Nothing flagged.</b> No advisory warnings across the catalog.</p></div>`;
+
+  const act = state.recentActivity || { available: false, commits: [] };
+  const activityRows = act.available && act.commits.length
+    ? act.commits.map(c => `<div class="ov-activity-row">
+        <span class="ov-activity-msg">${esc(c.message)}</span>
+        <span class="ov-activity-meta">${esc(c.author)} · ${esc((c.date || "").slice(0, 10))}</span>
+        ${(c.entities || []).map(e => `<span class="ov-chip" data-warn-entity="${esc(e.entity_type)}" data-warn-id="${esc(e.entity_id)}">${esc(e.entity_id)}</span>`).join("")}
+      </div>`).join("")
+    : `<p class="placeholder">${act.available ? "No recent changes." : "Git history unavailable."}</p>`;
+
   return `<div class="detail">
     <div class="dhead">
       <div class="dicon" style="background:var(--navy-700)">◈</div>
@@ -1988,9 +2054,19 @@ function overviewHtml() {
         <div class="did">A snapshot to review — nothing here blocks a save.</div>
       </div>
     </div>
-    <section><h3 class="slabel">Counts</h3>${counts}</section>
-    <section><h3 class="slabel">Style-guide coverage</h3>${coverage}</section>
+    <div class="ov-grid2">
+      <div>
+        <section><h3 class="slabel">Counts</h3>${counts}</section>
+        <section><h3 class="slabel">Draft / verified</h3>${draftVerified}</section>
+      </div>
+      <div>
+        <section><h3 class="slabel">Style-guide coverage</h3>${coverage}</section>
+        <section><h3 class="slabel">Implementation coverage</h3>${implCoverage}</section>
+      </div>
+    </div>
     <section><h3 class="slabel">Gaps to review${h.issue_count ? ` <span class="sub">— ${h.issue_count} across the library</span>` : ""}</h3>${gaps}</section>
+    <section><h3 class="slabel">Catalog warnings${warningCount ? ` <span class="sub">— ${warningCount} across the library</span>` : ""}</h3>${warningsSection}</section>
+    <section><h3 class="slabel">Recent activity</h3>${activityRows}</section>
   </div>`;
 }
 
