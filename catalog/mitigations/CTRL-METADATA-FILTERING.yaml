@@ -6,7 +6,6 @@ purpose: Removes technical metadata — system paths, internal URLs, server vers
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Automatic metadata scrubbing (medium): Output passes through a metadata scrubber that removes known patterns: file paths, internal hostnames, version strings, error traces. The scrubber applies regular expressions and context-aware rules. This removes obvious metadata but may miss novel patterns.

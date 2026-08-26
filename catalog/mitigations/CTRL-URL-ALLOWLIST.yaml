@@ -6,7 +6,6 @@ purpose: The control restricts the set of URLs that agent tools may send network
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'DNS resolution with IP check (medium): The system performs DNS resolution of the target domain and checks that the resolved IP does not belong to private ranges or blocked networks. After a successful check, establishment of the HTTP connection is permitted. The method detects SSRF via DNS rebinding and spoofing.

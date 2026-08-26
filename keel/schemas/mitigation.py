@@ -35,6 +35,9 @@ class Implementation(BaseModel):
     covers: str | None = Field(
         None, description="Required when coverage='shared': the boundary this instance covers"
     )
+    owner: str | None = Field(
+        None, description="Accountable role for THIS deployed instance (RACI single-Accountable)"
+    )
 
     @model_validator(mode="after")
     def _covers_required_when_shared(self) -> "Implementation":
@@ -57,7 +60,6 @@ class MitigationBase(BaseModel):
     )
     review: str | None = Field(None, description="Change-triggers + safety-net review cadence")
     maintainer: str | None = None
-    owner: str | None = None
     locus: str | None = Field(None, description="product / infrastructure / split + rationale")
     scope: str | None = Field(None, description="Deterministic applicability rule + profiles + boundary")
     control_mechanism: str | None = Field(None, description="Read per mitigation_class")
@@ -92,7 +94,6 @@ class Mitigation(BaseModel):
     formal_implementation_risk: str | None = None
     review: str | None = None
     maintainer: str | None = None
-    owner: str | None = None
     locus: str | None = None
     scope: str | None = None
     control_mechanism: str | None = None

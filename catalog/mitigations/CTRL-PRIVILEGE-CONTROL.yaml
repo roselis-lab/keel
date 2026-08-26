@@ -6,7 +6,6 @@ purpose: Restricts the privileges of tokens and service accounts to the minimum 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Permission minimization review (medium): Each token and service account undergoes a review for the minimum necessary permissions. Unused permissions are revoked. Regular audits check accumulated privileges and surface least-privilege violations.

@@ -6,7 +6,6 @@ purpose: Performs static analysis of tool descriptions at registration in the re
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Instruction detection (medium): Detection of imperatives and instructions in descriptions through regular expressions and machine learning. Detected patterns are flagged for manual review. Automation provides scalable screening.

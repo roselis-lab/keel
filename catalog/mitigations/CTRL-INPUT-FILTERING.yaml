@@ -6,7 +6,6 @@ purpose: Validates and sanitizes all user and external input before processing b
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'ML injection detector (high): An ML model trained on known prompt injection and jailbreak patterns classifies each input as safe, suspicious, or malicious. Suspicious inputs are flagged for review or processed with additional protections. Malicious inputs are blocked entirely. This enables detection of novel variations but depends on the quality of the training data and may produce false positives.

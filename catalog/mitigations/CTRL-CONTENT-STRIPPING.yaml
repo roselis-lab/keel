@@ -6,7 +6,6 @@ purpose: Removes hidden instructions, invisible content, and potentially malicio
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'HTML sanitization and text extraction (low): HTML content is passed through a sanitization library with an allowlist of permitted tags and removal of all attributes except those explicitly safe. The HTML is then converted to plain text through text extraction, preserving the semantic structure but without markup. This eliminates XSS vectors and hidden instructions in HTML comments, data URIs, or event handlers, but it may lose formatting important for understanding the document.

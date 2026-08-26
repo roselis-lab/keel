@@ -6,7 +6,6 @@ purpose: Restricts the execution of shell commands to a strictly defined allowli
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Shell wrapper with allowlist (medium): All shell calls pass through a centralized wrapper that checks the base command (the first token) against an allowlist of permitted utilities. For each command in the allowlist, permissible flags and argument patterns are defined. Commands outside the list are rejected with the attempt logged. The wrapper can be implemented as a shell function, a sudoers policy, or a dedicated command proxy service.

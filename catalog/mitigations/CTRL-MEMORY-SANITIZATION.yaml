@@ -6,7 +6,6 @@ purpose: Filters and sanitizes data before it is written to an agent's long-term
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Content filter on write (medium): A content filter checks every memory write for malicious patterns: prompt injection payloads, executable code, hidden instructions. Detected patterns are removed or flagged. This prevents poisoning of the agent''s knowledge base.

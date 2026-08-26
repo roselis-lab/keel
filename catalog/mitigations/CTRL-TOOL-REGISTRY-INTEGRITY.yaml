@@ -6,7 +6,6 @@ purpose: Enforces immutability of entries in the tool registry through cryptogra
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Digital signatures (high): Each registry entry is signed with a private key at registration. Upon retrieval, the signature is verified against the stored public key. Invalid signatures reject loading of the tool.

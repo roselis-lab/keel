@@ -6,7 +6,6 @@ purpose: Isolates the agent's execution environment within a constrained perimet
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Container isolation with resource limits (high): Each agent is deployed in its own Docker container with explicitly set resource limits (CPU, memory, I/O), a read-only file system for critical directories, and restricted capabilities. Network access is regulated through separate network namespaces and firewall rules, and volume access through volume policies. This gives strong isolation with relatively low overhead, but it requires orchestration and lifecycle management of many containers.

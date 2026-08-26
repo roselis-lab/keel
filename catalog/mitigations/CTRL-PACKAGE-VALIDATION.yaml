@@ -6,7 +6,6 @@ purpose: Verifies a package's existence in the registry and assesses its reputat
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Registry API query (low): Before allowing an install command, the system makes an API call to the package registry (npm, PyPI, Maven Central) to confirm that the package exists and its metadata matches the request. Non-existent packages are blocked with a warning. This is a simple but effective defense against hallucinated package names.

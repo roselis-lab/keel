@@ -6,7 +6,6 @@ purpose: Isolates the processing of external content — documents, HTML pages, 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Strict CORS isolation (low): External content is loaded and processed in an isolated context with strict CORS policies — only same-origin requests or explicitly whitelisted domains. JavaScript execution is disabled while parsing HTML. This prevents script execution and unauthorized data exfiltration but may break legitimate embedded content.

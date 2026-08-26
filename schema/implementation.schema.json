@@ -28,6 +28,19 @@
       "title": "Description",
       "type": "string"
     },
+    "owner": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Accountable role for THIS deployed instance (RACI single-Accountable)",
+      "title": "Owner"
+    },
     "reference": {
       "anyOf": [
         {

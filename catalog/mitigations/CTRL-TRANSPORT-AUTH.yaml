@@ -6,7 +6,6 @@ purpose: Enforces authentication of connections between the agent and MCP server
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'mTLS authentication (high): Mutual TLS, where both parties present certificates. The agent verifies the server''s certificate; the server verifies the client''s certificate. The certificate chain, revocation status, and endpoint binding are checked during the handshake.

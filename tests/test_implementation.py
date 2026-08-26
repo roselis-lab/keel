@@ -58,6 +58,23 @@ def test_local_coverage_rejects_covers():
         Implementation(title="t", description="d", coverage="local", covers="all agents on the Agent Platform")
 
 
+def test_implementation_owner_defaults_to_none():
+    impl = Implementation(title="t", description="d")
+    assert impl.owner is None
+
+
+def test_implementation_accepts_owner():
+    impl = Implementation(title="t", description="d", owner="platform security engineering")
+    assert impl.owner == "platform security engineering"
+
+
+def test_mitigation_has_no_owner_field():
+    """owner lives on Implementation now (accountable per real deployment), not on the
+    abstract mitigation card — see keel/schemas/mitigation.py MitigationBase."""
+    m = MitigationCreate(id="CTRL-X", name="X", mitigation_class="gating_control")
+    assert not hasattr(m, "owner")
+
+
 def test_mitigation_default_implementations_is_empty():
     m = MitigationCreate(id="CTRL-X", name="X", mitigation_class="gating_control")
     assert m.implementations == []
@@ -99,6 +116,6 @@ async def test_get_mitigation_round_trips_implementations(temp_store):
     assert got["implementations"] == [
         {
             "title": "Platform sandbox", "description": "locked-down container", "reference": None,
-            "coverage": "local", "covers": None,
+            "coverage": "local", "covers": None, "owner": None,
         }
     ]

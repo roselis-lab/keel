@@ -6,7 +6,6 @@ purpose: Organizes cross-checking of decisions and actions of some agents by oth
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Supervisor agent for review (high): A dedicated reviewer agent with the role of auditor or supervisor checks all critical actions of other agents before their commit or propagation. The reviewer has access to the same data as the executor plus audit logs and policy rules, but it does not participate in generating the decision. When anomalies are detected - policy violations, unusual patterns, potential harm - the reviewer blocks the action or flags it for human review. This gives independent oversight but adds latency and requires a dedicated agent.

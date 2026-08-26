@@ -6,7 +6,6 @@ purpose: Applies proper output encoding — HTML entity encoding, JavaScript esc
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'HTML entity encoding (low): HTML output passes through an entity encoder that converts special characters (<, >, &, \", '') into HTML entities. This prevents the browser from interpreting the output as HTML/JS. Encoding is applied consistently to all user-facing HTML output.

@@ -6,7 +6,6 @@ purpose: Limits the rate of approval requests from the agent to the user and gro
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Batched approval queue (medium): Approval requests are aggregated in queues and presented to the user in batches of several homogeneous operations. Instead of "confirm deletion of file A?", "confirm deletion of file B?", the user sees "confirm deletion of 5 files matching mask X?". This reduces the number of interruptions and lets the user assess the cumulative effect of the operations. Suitable for homogeneous actions with a similar level of risk.

@@ -6,7 +6,6 @@ purpose: The control pins the specific versions of tools, MCP servers, and model
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Manifest-based pinning (medium): The agent configuration contains a manifest with exact versions of all dependencies: tool@1.2.3, mcp-server@abc123def, model@claude-3-opus-20240229. A mismatch blocks loading. The manifest is cryptographically signed to protect against tampering.

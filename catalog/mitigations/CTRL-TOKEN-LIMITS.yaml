@@ -6,7 +6,6 @@ purpose: Limits the number of tokens in model requests and responses through max
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Hard limit on input tokens (low): A hard limit on input tokens - requests exceeding the limit are rejected or truncated with explicit user notification. The user is informed when their input has been truncated.

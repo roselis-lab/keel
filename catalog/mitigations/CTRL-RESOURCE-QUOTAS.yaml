@@ -6,7 +6,6 @@ purpose: Sets hard limits on CPU, memory, storage, and network bandwidth consump
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Container resource limits (medium): Container-level resource limits via Docker/Kubernetes: CPU shares, memory limits, disk quotas. Limits are enforced at the kernel level — processes exceeding the limits are terminated or throttled. This provides deterministic resource bounds.

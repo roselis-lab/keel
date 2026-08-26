@@ -2500,12 +2500,12 @@ function readMitigation(mt) {
   optProse("Risk of formal implementation", "formal_implementation_risk", mt.formal_implementation_risk);
   optProse("Review", "review", mt.review);
 
-  // Ownership — omit entirely when maintainer/owner/locus are all blank; else show the filled rows.
-  const own = [["Maintainer", mt.maintainer], ["Owner", mt.owner], ["Locus", mt.locus]]
+  // Ownership — omit entirely when maintainer/locus are all blank; else show the filled rows.
+  const own = [["Maintainer", mt.maintainer], ["Locus", mt.locus]]
     .filter(([, v]) => v && String(v).trim());
   optBlock("Ownership", "maintainer", own.length,
     `<ul class="plain">${own.map(([k, v]) => `<li><span class="meta">${esc(k)}</span>${esc(v)}</li>`).join("")}</ul>`,
-    "— maintainer / owner / locus");
+    "— maintainer / locus");
 
   optProse("Telemetry", "telemetry", mt.telemetry);
 
@@ -2534,6 +2534,7 @@ function readMitigation(mt) {
         <div class="chead"><span class="ctitle">${esc(im.title || "(untitled)")}</span>${im.coverage === "shared" ? `<span class="badge shared">shared</span>` : ""}</div>
         ${im.description ? `<div class="cdesc">${esc(im.description)}</div>` : ""}
         ${im.coverage === "shared" && im.covers ? `<div class="cdesc">Covers: ${esc(im.covers)}</div>` : ""}
+        ${im.owner ? `<div class="cdesc">Owner: ${esc(im.owner)}</div>` : ""}
         ${im.reference ? `<div class="cdesc"><a href="${esc(im.reference)}" target="_blank" rel="noopener">${esc(im.reference)}</a></div>` : ""}
       </div>`).join("")
     : '<p class="placeholder">None yet — orgs add these after forking.</p>';
@@ -2796,6 +2797,11 @@ function implementationsEditor() {
         ${hintRow("implementation", "covers")}
         <input class="f impl-covers" data-idx="${i}" value="${esc(im.covers || "")}" placeholder="e.g. all agents on the Agent Platform">
       </div>` : ""}
+      <div class="field" data-entity="implementation" data-field="owner">
+        <h3 class="slabel">Owner <span class="sub">— optional</span></h3>
+        ${hintRow("implementation", "owner")}
+        <input class="f impl-owner" data-idx="${i}" value="${esc(im.owner || "")}" placeholder="accountable role for this deployment">
+      </div>
       </div>
     </div>`;
   }).join("");
@@ -2816,8 +2822,8 @@ function editMitigation(mt) {
     ${mitScalarSection("failure_behavior", "Failure behavior", "textarea", 3)}
     ${mitScalarSection("formal_implementation_risk", "Risk of formal implementation", "textarea", 3)}
     ${mitScalarSection("review", "Review", "textarea", 2)}
-    ${mitGroupSection("Ownership", "— maintainer / owner / locus",
-      mitSubField("maintainer", "Maintainer", "text") + mitSubField("owner", "Owner", "text") + mitSubField("locus", "Locus", "text"))}
+    ${mitGroupSection("Ownership", "— maintainer / locus",
+      mitSubField("maintainer", "Maintainer", "text") + mitSubField("locus", "Locus", "text"))}
     ${mitScalarSection("telemetry", "Telemetry", "textarea", 2)}
     ${antiPatternsEditor()}
     ${validationEditor()}
@@ -2850,7 +2856,7 @@ function enterMitEdit() {
     mitigation_class: mt.mitigation_class || (mitEnum("mitigation_class")[0] || ""),
     purpose: mt.purpose || "", scope: mt.scope || "", control_mechanism: mt.control_mechanism || "",
     failure_behavior: mt.failure_behavior || "", formal_implementation_risk: mt.formal_implementation_risk || "",
-    review: mt.review || "", maintainer: mt.maintainer || "", owner: mt.owner || "", locus: mt.locus || "",
+    review: mt.review || "", maintainer: mt.maintainer || "", locus: mt.locus || "",
     telemetry: mt.telemetry || "",
     anti_patterns: [...(mt.anti_patterns || [])],
     validation: (mt.validation || []).map(v => ({
@@ -2859,7 +2865,7 @@ function enterMitEdit() {
     faq: (mt.faq || []).map(q => ({ question: q.question || "", answer: q.answer || "" })),
     implementations: (mt.implementations || []).map(im => ({
       title: im.title || "", description: im.description || "", reference: im.reference || "",
-      coverage: im.coverage || "local", covers: im.covers || "",
+      coverage: im.coverage || "local", covers: im.covers || "", owner: im.owner || "",
     })),
   };
   state.mitApOpen = new Set((mt.anti_patterns || []).length ? [0] : []);
@@ -2882,7 +2888,7 @@ function newMitigation() {
   const blank = {
     id, name, status: "draft", mitigation_class: class0, purpose: "", scope: "",
     control_mechanism: "", failure_behavior: "", formal_implementation_risk: "", review: "",
-    maintainer: "", owner: "", locus: "", telemetry: "", anti_patterns: [], validation: [], faq: [],
+    maintainer: "", locus: "", telemetry: "", anti_patterns: [], validation: [], faq: [],
     implementations: [],
   };
   state.mitSelected = id;
@@ -2917,7 +2923,7 @@ async function refreshMitList() {
 
 // Wire the edit form: scalar fields, the three card lists, add/remove/collapse.
 const MIT_SCALARS = ["name", "status", "mitigation_class", "purpose", "scope", "control_mechanism",
-  "failure_behavior", "formal_implementation_risk", "review", "maintainer", "owner", "locus", "telemetry"];
+  "failure_behavior", "formal_implementation_risk", "review", "maintainer", "locus", "telemetry"];
 function shiftOpenSet(set, removed) {
   const next = new Set();
   (set || new Set()).forEach(x => { if (x < removed) next.add(x); else if (x > removed) next.add(x - 1); });
@@ -2981,18 +2987,20 @@ function wireMitEdit() {
     const re = card.querySelector(".impl-reference");
     const cv = card.querySelector(".impl-coverage");
     const cvs = card.querySelector(".impl-covers");
+    const ow = card.querySelector(".impl-owner");
     if (ti) ti.oninput = () => d.implementations[i].title = ti.value;
     if (de) de.oninput = () => d.implementations[i].description = de.value;
     if (re) re.oninput = () => d.implementations[i].reference = re.value;
     if (cv) cv.onchange = () => { d.implementations[i].coverage = cv.value; if (cv.value === "local") d.implementations[i].covers = ""; renderMitDetail(); };
     if (cvs) cvs.oninput = () => d.implementations[i].covers = cvs.value;
+    if (ow) ow.oninput = () => d.implementations[i].owner = ow.value;
     const rm = card.querySelector(".impl-remove");
     if (rm) rm.onclick = e => { e.stopPropagation(); d.implementations.splice(i, 1); state.mitImplOpen = shiftOpenSet(state.mitImplOpen, i); renderMitDetail(); };
     const head = card.querySelector(".ecard-head");
     if (head) head.onclick = e => { if (e.target.closest(".impl-remove")) return; toggleSet(state.mitImplOpen, i); renderMitDetail(); };
   });
   const addImpl = document.getElementById("addImplementation");
-  if (addImpl) addImpl.onclick = () => { d.implementations.push({ title: "", description: "", reference: "", coverage: "local", covers: "" }); (state.mitImplOpen || (state.mitImplOpen = new Set())).add(d.implementations.length - 1); renderMitDetail(); };
+  if (addImpl) addImpl.onclick = () => { d.implementations.push({ title: "", description: "", reference: "", coverage: "local", covers: "", owner: "" }); (state.mitImplOpen || (state.mitImplOpen = new Set())).add(d.implementations.length - 1); renderMitDetail(); };
 }
 
 // Map a failed PATCH/POST error path to its .field wrapper (no live validate endpoint).
@@ -3052,7 +3060,7 @@ async function saveMitigation() {
     mitigation_class: d.mitigation_class,
     purpose: d.purpose, scope: d.scope, control_mechanism: d.control_mechanism,
     failure_behavior: d.failure_behavior, formal_implementation_risk: d.formal_implementation_risk,
-    review: d.review, maintainer: d.maintainer, owner: d.owner, locus: d.locus, telemetry: d.telemetry,
+    review: d.review, maintainer: d.maintainer, locus: d.locus, telemetry: d.telemetry,
     anti_patterns: (d.anti_patterns || []).map(s => (s || "").trim()).filter(Boolean),
     validation: (d.validation || []).filter(v => (v.criterion || "").trim()).map(v => ({
       criterion: v.criterion, test_scenario: v.test_scenario || null, expected_result: v.expected_result || null,
@@ -3064,6 +3072,7 @@ async function saveMitigation() {
         title: im.title, description: im.description, reference: (im.reference || "").trim() || null,
         coverage: im.coverage || "local",
         covers: im.coverage === "shared" ? (im.covers || "").trim() || null : null,
+        owner: (im.owner || "").trim() || null,
       })),
   };
   const url = isNew ? "/mitigations" : "/mitigations/" + encodeURIComponent(state.mitSelected);

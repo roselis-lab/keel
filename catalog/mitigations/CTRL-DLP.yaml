@@ -6,7 +6,6 @@ purpose: Detects and blocks the transfer of sensitive data — personal data, cr
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Pattern matching for sensitive data (medium): All outgoing data passes through a pattern-matching engine that searches for known formats of sensitive data: credit card numbers, SSNs, email addresses, API keys, passwords, internal document markers. Patterns are defined as regular expressions or data fingerprinting rules. When matching content is detected, the transfer is blocked or flagged. This gives high coverage on known patterns but may miss novel formats.

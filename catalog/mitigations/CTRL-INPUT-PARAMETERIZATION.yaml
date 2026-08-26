@@ -6,7 +6,6 @@ purpose: Ensures that all commands, queries, and API calls are formed through pa
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Prepared statements and ORM (low): All database queries use prepared statements or ORM query builders that automatically parameterize inputs. External data is passed as query parameters, not interpolated into the SQL string. This eliminates the SQL injection attack vector entirely when the ORM/query builder APIs are used correctly.

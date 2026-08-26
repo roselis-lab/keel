@@ -23,7 +23,7 @@ _TECHNIQUE_WORDS = ("prompt injection", "jailbreak")
 
 _MITIGATION_KEYS = {
     "id", "name", "status", "mitigation_class", "purpose", "formal_implementation_risk",
-    "review", "maintainer", "owner", "locus", "scope", "control_mechanism",
+    "review", "maintainer", "locus", "scope", "control_mechanism",
     "failure_behavior", "telemetry", "anti_patterns", "validation", "faq",
     "implementations",
 }

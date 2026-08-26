@@ -6,7 +6,6 @@ purpose: Blocks the automatic execution of LLM-generated install commands withou
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Install command blocklist (low): A blocklist of install commands (npm install, pip install, yarn add, apt-get install, etc.) that cannot be executed directly by the agent. When execution of a blocked command is attempted, the system shows the user information about the command and requires explicit approval. This prevents automatic installation but can be bypassed through aliases or alternative package managers.

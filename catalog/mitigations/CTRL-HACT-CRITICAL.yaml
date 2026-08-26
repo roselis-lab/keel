@@ -6,7 +6,6 @@ purpose: Enforces mandatory human approval for critical actions regardless of ot
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Mandatory allowlist (low): An explicit allowlist of critical tools and actions that always require human approval is defined: file deletion, dropping databases, production deployment, access to secrets, privileged commands. The allowlist is hard-coded into policy and cannot be changed at runtime. Any invocation of a tool from the list automatically triggers an approval flow that cannot be bypassed.

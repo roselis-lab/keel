@@ -6,7 +6,6 @@ purpose: Provides cryptographic authenticity verification of agents when they es
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Mutual TLS between agents (high): Each agent receives a unique client certificate issued by an internal CA and uses it for two-way authentication on every connection with other agents. Certificates carry the agent''s identifier and its role, which lets the receiving side verify not only authenticity but also the calling agent''s authority. This approach provides a high level of security and does not require passing tokens on every request, but it creates operational overhead for managing the certificate lifecycle and their rotation.

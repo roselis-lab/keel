@@ -6,7 +6,6 @@ purpose: Validates and monitors tool calls before execution through argument sch
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Schema validation (medium): JSON schema validation of arguments against the tool definition. Calls with invalid arguments are rejected. Schema enforcement provides a preventive control at the call boundary.

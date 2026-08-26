@@ -6,7 +6,6 @@ purpose: Verifies the integrity of components by checking cryptographic signatur
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'SHA256 checksum verification (medium): For each downloaded component, the system verifies the SHA256 hash against the known-good value from a trusted source (package registry, internal artifact store, vendor signature). A hash mismatch blocks the download and generates an alert. This provides cryptographic verification of integrity but requires infrastructure for managing a hash database.

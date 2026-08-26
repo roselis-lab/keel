@@ -6,7 +6,6 @@ purpose: Blocks requests to internal resources and private IP ranges through URL
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'URL and IP validation (low): URL validation checks that the destination does not point to internal resources: localhost, 127.0.0.1, 10.x.x.x, 172.16.x.x, 192.168.x.x, link-local addresses. Requests to blocked destinations are rejected with an error.

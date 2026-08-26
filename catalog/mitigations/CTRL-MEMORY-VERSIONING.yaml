@@ -6,7 +6,6 @@ purpose: Provides versioning of an agent's long-term memory with the ability to 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Periodic memory snapshots (medium): Memory state is regularly snapshotted to immutable storage. Snapshots are retained for a configured retention period. When needed, an agent''s memory can be restored to any snapshot. This provides point-in-time recovery but incurs storage overhead.

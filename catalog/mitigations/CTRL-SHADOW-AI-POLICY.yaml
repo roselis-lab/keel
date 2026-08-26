@@ -6,7 +6,6 @@ purpose: Defines a corporate policy for the use of external AI services with exp
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Allowlist of AI services (medium): An explicit allowlist of external AI services is maintained with documented security assessments, data handling practices, and compliance status. Services not on the list are prohibited for use with business data. The list is regularly reviewed and updated.

@@ -6,7 +6,6 @@ purpose: Provides additional safeguards for irreversible operations — delete, 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Two-person approval rule (medium): For critical irreversible operations, approval from a second authorized person is required (two-person rule). The first person initiates the operation, and the second must explicitly approve it through a separate interface. This eliminates a single point of failure but adds significant latency and requires an available second person.

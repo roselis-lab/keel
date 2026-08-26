@@ -6,7 +6,6 @@ purpose: Defines and enforces rules of acceptable content across all input and o
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Content moderation API (low): Integration with external content moderation APIs (OpenAI Moderation, Azure Content Safety, Perspective API) to classify content by harm categories: hate speech, violence, self-harm, sexual content, harassment. When the threshold for any category is exceeded, the content is blocked or flagged for review. This gives access to state-of-the-art moderation without ML expertise, but it adds latency and an external dependency.

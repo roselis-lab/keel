@@ -6,7 +6,6 @@ purpose: Restricts the installation of IDE extensions to only those approved fro
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Internal curated marketplace (high): The organization maintains an internal extension marketplace or a curated list of approved extensions. Users can install only extensions from this approved catalog. The catalog includes security-reviewed extensions with documented permissions and an audit trail of the review process. This gives maximum control but requires ongoing curation effort.

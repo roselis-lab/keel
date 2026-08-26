@@ -6,7 +6,6 @@ purpose: Enforces mandatory automated security checks on every PR and commit —
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'SAST pipeline (medium): Static code analysis on every commit surfaces security vulnerabilities, code quality issues, and compliance violations. Tools: Semgrep, CodeQL, SonarQube. Failed checks block merge. Trade-off: false positives require triage.

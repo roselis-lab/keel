@@ -6,7 +6,6 @@ purpose: Records all tool calls, agent decisions, data accesses, and operation r
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Append-only audit storage (medium): All events are written to a dedicated append-only store (a dedicated database table with RESTRICT deletes, object storage with a WORM policy, or a dedicated audit log service). Each record contains timestamp, event type, actor ID, session ID, resource, action, outcome, and relevant context. Deleting and modifying records is technically impossible or requires a privileged break-glass procedure. This provides baseline protection of audit trail integrity at moderate cost.

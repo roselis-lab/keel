@@ -6,7 +6,6 @@ purpose: Protects authentication tokens and credentials from theft and leakage t
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Encryption at rest (high): Tokens are encrypted at rest using KMS-managed keys. Plaintext tokens are never stored - only encrypted values. Decryption occurs in memory only when needed.

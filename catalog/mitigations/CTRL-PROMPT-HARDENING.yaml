@@ -6,7 +6,6 @@ purpose: Hardens system prompts against manipulation and injection attacks throu
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Structural instruction isolation (medium): System instructions are structurally isolated from user content via delimiter markers, separate message roles, or XML-like tags. The model is trained to treat content between markers as data, not instructions. This creates a semantic boundary between system intent and user input.

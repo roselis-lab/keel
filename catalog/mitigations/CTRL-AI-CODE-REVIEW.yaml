@@ -6,7 +6,6 @@ purpose: Ensures an in-depth security review of code generated or modified by AI
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Mandatory security review for AI diffs (low): All PRs with AI-generated code above a threshold percentage (for example, 30% of changed lines) are automatically flagged as requiring a mandatory security review from a designated security advocate or senior developer. The reviewer receives a checklist of typical AI vulnerabilities: hardcoded secrets, insecure defaults, missing input validation, overly permissive access. This adds delay to the merge, but it substantially reduces the risk of vulnerabilities reaching main.

@@ -6,7 +6,6 @@ purpose: Limits the privileges of IDE extensions to the minimally necessary set 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Capability-based permissions (low): Each extension must explicitly declare all required permissions in the manifest: filesystem access paths, network domains, IDE APIs, external tool integrations. Runtime enforcement checks each access request against declared permissions and blocks undeclared access. This gives an explicit surface area for security review but requires accurate manifest declarations.

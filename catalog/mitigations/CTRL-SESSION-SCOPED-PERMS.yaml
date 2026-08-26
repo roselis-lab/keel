@@ -6,7 +6,6 @@ purpose: Grants permissions at the session level rather than per action, with a 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Session permission cache (medium): Permissions approved by the user are cached for the duration of the session with a time-to-live. After the initial approval, action categories are executed without repeated confirmations. Once the time-to-live expires, re-approval is required. This balances security with usability.

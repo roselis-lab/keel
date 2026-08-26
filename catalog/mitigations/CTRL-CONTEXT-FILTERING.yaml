@@ -6,7 +6,6 @@ purpose: Cleanses the model's context of confidential data, personal data, secre
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Automatic removal of personal data (medium): Automatic detection and masking of personal data (names, email addresses, phone numbers, addresses, card numbers, SSN/SNILS) through regular-expression patterns or NER models before the data is included in the context. Detected entities are replaced with tokens of the form [EMAIL_REDACTED] or anonymized values. This prevents leakage of personal data, but it may lose context important for the task.

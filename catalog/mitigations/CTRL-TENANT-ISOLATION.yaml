@@ -6,7 +6,6 @@ purpose: Enforces strict data isolation between tenants in multi-tenant systems 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Enforcement of row-level security (high): Database row-level security policies automatically filter all queries by tenant identifier from the session context. Even direct database access or SQL injection cannot bypass tenant boundaries.

@@ -6,7 +6,6 @@ purpose: Records all significant agent actions in an immutable log tied to times
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Structured logging with trace ID (medium): Each agent action is logged in a structured JSON format with mandatory fields: timestamp, agent_id, session_id, trace_id, action_type, parameters, result, decision_rationale. Logs are collected into a centralized system (ELK, Splunk, CloudWatch) with indexing across all key fields. This approach gives rich context for analysis, but it requires significant storage volume and may contain sensitive data that requires masking.

@@ -6,7 +6,6 @@ purpose: Verifies factual claims in model output through cross-reference with au
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Source cross-reference verification (high): Checkable factual claims (names, dates, numbers, statements of fact) are extracted from the model output, and each claim is verified through lookup in trusted sources: knowledge bases, authoritative APIs (Wikipedia, Wolfram Alpha), web search. Claims that find no confirmation or contradict the sources are flagged. This gives objective verification but adds latency and depends on the availability of sources.

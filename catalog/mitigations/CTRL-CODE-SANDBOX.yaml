@@ -6,7 +6,6 @@ purpose: Isolates the execution of code generated or modified by the model in a 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Isolated interpreter (medium): Code is executed in an interpreter with dangerous functions disabled: no file system access (isolated or in-memory only), no network calls, no subprocess spawning, no reflection into private APIs. In Python this is achieved through restricted globals, AST filtering, or specialized sandbox libraries. The approach gives minimal overhead and fast startup, but it limits functionality and may have escape vectors through an insufficiently strict sandbox.

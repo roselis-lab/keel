@@ -6,7 +6,6 @@ purpose: Validates and sanitizes all data from external sources - user input, AP
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Input sanitization pipeline (low): All incoming data passes through a sanitization pipeline that removes or escapes potentially dangerous content: HTML/JS tags, SQL metacharacters, shell special characters, control characters. Sanitization is adaptive to context - data for SQL uses parameter escaping, for HTML entity encoding, for shell argument quoting. This prevents injection attacks but may alter legitimate data in edge cases.

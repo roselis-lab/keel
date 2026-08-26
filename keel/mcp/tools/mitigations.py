@@ -23,7 +23,7 @@ _DESTRUCTIVE = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint"
 async def list_mitigations(brief: bool = True, include: list[str] | None = None) -> dict:
     """List mitigations. brief=True → [id, name, mitigation_class] triples; else include any of:
     status, purpose, scope, control_mechanism, failure_behavior, telemetry, anti_patterns,
-    validation, faq, review, maintainer, owner, locus, formal_implementation_risk."""
+    validation, faq, review, maintainer, locus, formal_implementation_risk."""
     return await _list_mitigations(brief=brief, include=include)
 
 

@@ -6,7 +6,6 @@ purpose: Monitors all of the system's outbound traffic - API calls, file uploads
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'DLP scanning of outbound traffic (high): All outbound traffic is passed through a DLP scanner that checks the content for personal data, credentials, and confidential documents via pattern matching and ML classifiers. When a transfer of sensitive data is detected, it is blocked or flagged for review with an alert to the security team. This gives content-aware protection, but it adds latency to all outbound communications.

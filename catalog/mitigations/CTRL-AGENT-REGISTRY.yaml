@@ -6,7 +6,6 @@ purpose: Centrally manages a registry of authorized agents with mandatory verifi
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Signed agent manifests (high): All agent manifests are signed with the private key of the developer or the CI/CD pipeline, and the public keys are distributed through an internal PKI. On registration and on each agent launch, the system verifies the manifest signature and compares the hash of the executable code against the registered value. This provides end-to-end integrity and makes it possible to trace the provenance of each agent, but it requires a key management infrastructure and secure storage of the private signing keys.

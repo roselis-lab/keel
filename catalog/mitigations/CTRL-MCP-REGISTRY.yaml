@@ -6,7 +6,6 @@ purpose: Centrally manages a registry of MCP servers with mandatory verification
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Internal MCP server catalog (high): All MCP servers must be registered in an internal catalog with verified metadata: publisher, capabilities, security assessment, audit history. Agents may connect only to servers in the catalog. This provides complete control over the MCP surface area but requires a curation process.

@@ -27,3 +27,11 @@ fields:
     - Name the actual population this instance reaches (e.g. 'all agents on the Agent Platform', 'every service behind the shared API gateway') — required whenever coverage is 'shared', left empty when coverage is 'local'.
     avoid:
     - A vague boundary ('the whole company', 'everyone') that can't be checked against a specific system at assessment time.
+  owner:
+    purpose: The single accountable role for THIS deployed instance — who signs off on its effectiveness and answers when it fails, per the RACI 'single Accountable' rule. Optional.
+    content_requirements:
+    - Name ONE accountable role (not a person, not a committee), specific to this real deployment (e.g. 'platform security engineering', 'the checkout team').
+    - A role, not a named individual — the org fills in an actual name/contact through its own channels.
+    avoid:
+    - Multiple roles or 'shared ownership' — that dilutes accountability to nobody.
+    - Confusing this with the mitigation card's `maintainer` (who authored/maintains the catalog entry itself) — this field is about who's accountable for this specific real-world deployment, not the card.

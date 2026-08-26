@@ -6,7 +6,6 @@ purpose: Bounds the number of iterations, recursion depth, and total steps an ag
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Absolute step limit (low): An absolute limit on the number of tool calls or action steps an agent may perform per session. When the limit is reached, execution stops with an error. The limit is set based on expected task complexity and resource constraints. This provides a deterministic bound on execution.

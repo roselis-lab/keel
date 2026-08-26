@@ -6,7 +6,6 @@ purpose: Monitors patterns in the user's responses to confirmation prompts to id
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Approval pattern analytics (high): The system collects metrics for each approval decision: time to respond, action approved/rejected, request context, session history. An ML model or rules engine analyzes patterns for anomalies: unusually fast responses, approve-everything behavior, deviations from the user''s historical patterns. When an anomaly is detected, the system can require re-authentication, apply a mandatory cooldown, or alert the security team.

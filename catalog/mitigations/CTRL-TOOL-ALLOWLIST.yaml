@@ -6,7 +6,6 @@ purpose: Restricts the list of tools that an agent may invoke autonomously, thro
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Tool registry (medium): A centralized registry of allowed tools. All tool invocations are checked against the registry before execution. Only tools in the registry are available for use. This provides a single control surface.

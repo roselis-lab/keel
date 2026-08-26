@@ -6,7 +6,6 @@ purpose: Enforces strict separation of data between user sessions through isolat
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Per-session context isolation (medium): Each session receives a unique session-scoped context that is not shared with other sessions. The context includes conversation history, agent state, and cached data. Isolation is enforced at the infrastructure level - there is no cross-session access to data.

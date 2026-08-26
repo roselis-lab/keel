@@ -6,7 +6,6 @@ purpose: Verifies tool attestations - digital signatures, hashes, security scan 
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Attestation generation (high): At tool registration, an attestation is generated: a signature from a trusted key, a hash of the implementation, and scan results. Attestations are checked before loading the tool at runtime.

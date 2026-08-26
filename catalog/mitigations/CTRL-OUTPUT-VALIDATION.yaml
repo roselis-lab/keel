@@ -6,7 +6,6 @@ purpose: Validates model output against the expected format, content policies, a
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Schema validation for structured output (medium): Structured outputs are validated against a JSON Schema or equivalent schema definition. The schema defines required fields, types, value ranges, allowed values. Outputs that do not conform to the schema are rejected or flagged for regeneration. This ensures downstream consumers receive a predictable format.

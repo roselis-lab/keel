@@ -6,7 +6,6 @@ purpose: Manages the IDE extension update process through version pinning, digit
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Pinned versions with manual approval (low): All extensions are pinned to specific versions in a central configuration. Automatic updates are disabled — an update requires an explicit approval process that includes reviewing the changelog, diff analysis for security-relevant changes, and testing in staging. This gives full control over versions but delays receiving security fixes.

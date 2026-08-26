@@ -21,7 +21,7 @@ def test_build_schemas_covers_all_entities():
 
 def test_implementation_schema_shape():
     impl = build_schemas()["implementation"]
-    assert set(impl["properties"]) == {"title", "description", "reference", "coverage", "covers"}
+    assert set(impl["properties"]) == {"title", "description", "reference", "coverage", "covers", "owner"}
     assert "title" in impl["required"]
     assert "description" in impl["required"]
 

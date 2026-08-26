@@ -19,7 +19,7 @@ def test_schema_endpoint_returns_implementation_schema():
     client = TestClient(app)
     r = client.get("/schema/implementation")
     assert r.status_code == 200
-    assert set(r.json()["properties"]) == {"title", "description", "reference", "coverage", "covers"}
+    assert set(r.json()["properties"]) == {"title", "description", "reference", "coverage", "covers", "owner"}
 
 
 def test_style_guide_includes_implementation_entity():

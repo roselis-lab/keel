@@ -6,7 +6,6 @@ purpose: Classifies operations by risk level and applies differentiated confirma
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Risk classification matrix (medium): A classification matrix defines the risk level for each combination of action type x resource type x context. For example: reading public data = LOW, writing configuration = MEDIUM, deleting production = HIGH, accessing secrets = CRITICAL. Classification is automated through a policy engine.
