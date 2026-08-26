@@ -16,6 +16,7 @@ from keel.schemas.threat import Threat, ThreatCreate, ThreatUpdate
 from keel.services import (
     health_service,
     mitigation_service,
+    report_service,
     style_guide_service,
     threat_service,
 )
@@ -228,6 +229,31 @@ async def entry_diff(entity: str, id: str, sha: str):
     if result is None:
         raise HTTPException(status_code=404, detail="commit or entry not found")
     return result
+
+
+# --------------------------------------------------------------------------- #
+# Reports (read-only — written to disk by the assessment skill, never through here)
+# --------------------------------------------------------------------------- #
+@router.get("/reports")
+async def list_reports():
+    """One entry per assessed system that has at least one parseable report."""
+    return {"reports": report_service.list_reports()}
+
+
+@router.get("/reports/{system_id}")
+async def report_series(system_id: str):
+    """A system's report dates, newest first. An unknown or empty system returns an
+    empty series rather than 404 — having no reports yet is not an error."""
+    return {"series": report_service.get_report_series(system_id)}
+
+
+@router.get("/reports/{system_id}/{date}")
+async def get_report(system_id: str, date: str):
+    """One report. 404 when it is missing or cannot be parsed."""
+    result = report_service.get_report(system_id, date)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result["report"]
 
 
 # --------------------------------------------------------------------------- #
