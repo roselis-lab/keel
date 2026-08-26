@@ -462,6 +462,8 @@ const state = {
   mitList: [],          // [[id, name, class], ...] — derived from mitRich (threats editor picker)
   mitRich: [],          // rich rail items (status/implementations/purpose) — powers the mitigations facets
   mitFacets: { class: new Set(), status: new Set(), implementations: new Set(), linkage: new Set() },
+  warnings: [],          // GET /health/warnings — structured advisory list for the overview
+  recentActivity: { available: false, commits: [] },   // GET /history/recent
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
   mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
@@ -1891,19 +1893,20 @@ function applyPreviewVisibility() {
 }
 
 // ===================================================================== //
-// Overview screen — a read-only dashboard: counts, style-guide coverage, //
-// and soft "gaps to review" whose ids open the affected threat. Reads    //
-// GET /health/library + GET /style-guide/coverage; nothing here blocks.   //
+// Overview screen — a read-only dashboard: counts, style-guide coverage,     //
+// gaps to review, catalog warnings, and recent git activity. Reads five      //
+// sources via Promise.allSettled, so one failing source (most likely git     //
+// being unavailable) never blanks the rest of the page. Nothing here blocks. //
 // ===================================================================== //
 async function loadOverview() {
-  try {
-    const [h, cov] = await Promise.all([j("/health/library"), j("/style-guide/coverage")]);
-    state.health = h;
-    state.coverage = cov;
-  } catch (e) {
-    toast(e.message, true);
-    state.health = state.health || { stats: {}, issues: {}, issue_count: 0 };
-  }
+  const [h, cov, warn, act] = await Promise.allSettled([
+    j("/health/library"), j("/style-guide/coverage"), j("/health/warnings"), j("/history/recent?limit=15"),
+  ]);
+  state.health = h.status === "fulfilled" ? h.value : (state.health || { stats: {}, issues: {}, issue_count: 0 });
+  state.coverage = cov.status === "fulfilled" ? cov.value : state.coverage;
+  state.warnings = warn.status === "fulfilled" ? warn.value.warnings : [];
+  state.recentActivity = act.status === "fulfilled" ? act.value : { available: false, commits: [] };
+  if (h.status === "rejected") toast((h.reason && h.reason.message) || "Failed to load health", true);
   if (state.screen === "overview") { renderOverviewMain(); renderOverviewRight(); }
 }
 
