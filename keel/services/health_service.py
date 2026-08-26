@@ -32,6 +32,21 @@ async def check_library_health() -> dict[str, Any]:
         if link.get("id") not in mitigation_ids
     )
 
+    mitigations = list(store.mitigations.values())
+    status_counts = {"draft": 0, "verified": 0, "unset": 0}
+    for m in mitigations:
+        status_counts[m.get("status") if m.get("status") in ("draft", "verified") else "unset"] += 1
+
+    impl_counts = {"shared": 0, "local_only": 0, "none": 0}
+    for m in mitigations:
+        impls = m.get("implementations") or []
+        if not impls:
+            impl_counts["none"] += 1
+        elif any(i.get("coverage") == "shared" for i in impls):
+            impl_counts["shared"] += 1
+        else:
+            impl_counts["local_only"] += 1
+
     coverage = await get_coverage()
     issues = {
         "threats_missing_weaknesses": missing_weaknesses,
@@ -45,4 +60,13 @@ async def check_library_health() -> dict[str, Any]:
         "style_guide_coverage": coverage.overall,
         "issues": issues,
         "issue_count": sum(len(v) for v in issues.values()),
+        "mitigation_status_counts": status_counts,
+        "implementation_coverage_counts": impl_counts,
     }
+
+
+async def get_catalog_warnings() -> dict[str, Any]:
+    """Structured advisory warnings for the dashboard (see `keel.catalog.catalog_warnings_structured`)."""
+    from keel.catalog import catalog_warnings_structured
+
+    return {"warnings": catalog_warnings_structured(get_store().dir)}

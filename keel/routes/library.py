@@ -153,6 +153,13 @@ async def health_library():
     return await health_service.check_library_health()
 
 
+@router.get("/health/warnings")
+async def health_warnings():
+    """Structured advisory warnings (over-graded links, missing references, unused
+    vocabulary) — the same checks `keel validate` runs, in dashboard-friendly form."""
+    return await health_service.get_catalog_warnings()
+
+
 # --------------------------------------------------------------------------- #
 # Style guide
 # --------------------------------------------------------------------------- #
