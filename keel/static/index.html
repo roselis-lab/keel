@@ -2071,13 +2071,33 @@ function overviewHtml() {
 }
 
 function wireOverview() {
-  document.querySelectorAll(".ov-chip").forEach(c => c.onclick = () => overviewOpenThreat(c.dataset.threat));
+  document.querySelectorAll(".ov-chip[data-threat]").forEach(c => c.onclick = () => overviewOpenThreat(c.dataset.threat));
+  document.querySelectorAll(".ov-chip[data-warn-entity]").forEach(c => c.onclick = () => overviewOpenEntity(c.dataset.warnEntity, c.dataset.warnId));
+  document.querySelectorAll("[data-ov-filter]").forEach(el => el.onclick = () => overviewOpenMitigationsFiltered(el.dataset.ovFilter, el.dataset.ovValue));
 }
 
 // Open a threat from an overview gap chip: cross to the Threats screen, then select it.
 function overviewOpenThreat(id) {
   switchScreen("threats");
   select(id);
+}
+
+// Open either a threat or a mitigation from a Catalog-warnings/Recent-activity chip.
+function overviewOpenEntity(entityType, id) {
+  if (entityType === "mitigations" || entityType === "mitigation") { switchScreen("mitigations"); selectMit(id); return; }
+  overviewOpenThreat(id);
+}
+
+// Jump to Mitigations with one facet value pre-selected (a Draft/verified or
+// Implementation-coverage legend entry). switchScreen("mitigations") already
+// re-renders the facet panel + rail from current state, so setting the facet first
+// is all this needs.
+function overviewOpenMitigationsFiltered(facetKey, value) {
+  const sel = state.mitFacets[facetKey];
+  if (!sel) return;
+  sel.clear();
+  sel.add(value);
+  switchScreen("mitigations");
 }
 
 // ------------------------------------------------------- style-guide screen -- //
@@ -2354,7 +2374,11 @@ function mitFacetValues(m, key) {
   switch (key) {
     case "class": return m.mitigation_class ? [m.mitigation_class] : [];
     case "status": return m.status ? [m.status] : [];
-    case "implementations": return (m.implementations || []).length ? ["has"] : ["none"];
+    case "implementations": {
+      const impls = m.implementations || [];
+      if (!impls.length) return ["none"];
+      return impls.some(i => i.coverage === "shared") ? ["has", "shared"] : ["has"];
+    }
     case "linkage": return threatsAddressing(m.id).length ? ["linked"] : ["orphan"];
   }
   return [];
@@ -2388,7 +2412,7 @@ function mitFacetDefs() {
   return [
     { key: "class", label: "Class", opts: mitEnum("mitigation_class").map(v => [v, v]) },
     { key: "status", label: "Status", opts: mitEnum("status").map(v => [v, v]) },
-    { key: "implementations", label: "Implementations", opts: [["has", "has"], ["none", "none"]] },
+    { key: "implementations", label: "Implementations", opts: [["has", "has"], ["shared", "shared"], ["none", "none"]] },
     { key: "linkage", label: "Linkage", opts: [["linked", "linked"], ["orphan", "orphan"]] },
   ];
 }
