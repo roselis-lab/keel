@@ -80,6 +80,12 @@ fields:
     - Re-describing operational re-testing of a deployed instance — that's validation's job, not this field's.
   locus:
     purpose: Which layer the mitigation naturally belongs to - the product (application logic) or the infrastructure/platform - with a short rationale, not a bare label (the boundary is often a split). This is the shared-responsibility call.
+    content_requirements:
+    - State which layer this control's mechanism architecturally belongs to — product (application logic) or infrastructure/platform — and why, as a general property of the mechanism itself, not a specific organization's deployment.
+    - If the mechanism genuinely spans both layers for any implementation of it, name the interface/handoff point in general terms (e.g. 'the point where a request crosses from application code into the shared execution runtime').
+    avoid:
+    - A bare label ('infrastructure'/'product') with no rationale.
+    - Describing a specific organization's actual platform, team, or deployment split — that's what `implementation.coverage`/`covers` capture; this field states the mechanism's natural home in the abstract.
   maintainer:
     purpose: Name + contact for operational communication.
     content_requirements:
