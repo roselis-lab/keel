@@ -607,12 +607,69 @@
     line-height: 1.55; max-width: var(--measure); }
   .rep-qa { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--navy-700); max-width: var(--measure); }
   .rep-qa .meta { display: inline-block; min-width: 18px; font-weight: 700; color: var(--navy-500); }
-  /* One action with an option on it, not two near-identical buttons stacked under a
-     heading — the pair read as a choice the reader had to decode before clicking. */
-  .sendbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .sendbar label { display: inline-flex; align-items: center; gap: 7px; font-size: 13px;
-    color: var(--navy-600); cursor: pointer; }
-  .sendbar input { accent-color: var(--crimson-600); }
+  /* Anything that names an entity in the model is a way into it. */
+  .reflink { border: none; background: none; padding: 0; font: inherit; font-weight: inherit;
+    color: var(--text-link); cursor: pointer; text-align: left; }
+  .reflink:hover { color: var(--text-link-hover); text-decoration: underline; }
+
+  /* ------ report: a draft is edited where it is read ------ */
+  /* No Edit button and no mode switch. The read view IS the document being checked, so
+     a separate form would mean checking one thing and correcting another. Controls wear
+     the surrounding type and only show a box on hover or focus; every change saves. */
+  .rep-status { font-size: 11px; padding: 2px 9px; border-radius: var(--r-4); font-weight: 700;
+    text-transform: lowercase; }
+  .rep-status.draft { background: var(--amber-50); color: var(--amber-700); }
+  .rep-status.final { background: var(--navy-200); color: var(--navy-700); }
+  .savestate { font-size: 12px; color: var(--navy-500); white-space: nowrap; align-self: center; }
+  .savestate.ok { color: var(--status-ok-fg); }
+  .savestate.err { color: var(--status-error); }
+  .ie { display: block; width: 100%; max-width: var(--measure); font: inherit; color: inherit;
+    background: transparent; border: 1px solid transparent; border-radius: var(--r-6);
+    padding: 4px 7px; margin: -4px -7px; resize: none; overflow: hidden; outline: none; }
+  .ie:hover { border-color: var(--line-control); background: var(--surface-card); }
+  .ie:focus { border-color: var(--line-focus); background: var(--surface-card); box-shadow: var(--focus-ring); }
+  /* A grade stays a badge and becomes a picker — the thing you disagree with is the
+     thing you click, with no hunt for the field that controls it. */
+  .sev select.ie-grade { appearance: none; -webkit-appearance: none; background: transparent;
+    border: none; color: inherit; font: inherit; font-weight: inherit; padding: 0; margin: 0;
+    cursor: pointer; outline: none; }
+  .sev select.ie-grade:focus { text-decoration: underline; }
+  .fchain select.ie, .badges select.ie { display: inline-block; width: auto; max-width: none; }
+  .finding .fdrop { margin-left: 4px; border: none; background: none; color: var(--navy-500);
+    font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: var(--r-6); }
+  .finding .fdrop:hover { background: var(--crimson-50); color: var(--accent); }
+  .rep-empty { color: var(--navy-500); font-style: italic; }
+
+  /* Ruled out and the assessor dialogue are how WE debug the assessment run, not the
+     specialist's job — a discarded candidate is rare and the Q&A is a trace. They sit
+     at the foot, side by side, folded shut. */
+  .rep-aside { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-top: 16px; }
+  @media (max-width: 1100px) { .rep-aside { grid-template-columns: 1fr; } }
+  .rep-aside > .readsec { margin-top: 0; }
+  .fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; }
+  .fold > summary::-webkit-details-marker { display: none; }
+  .fold > summary::before { content: "\25B8"; color: var(--navy-500); font-size: 10px; width: 9px; flex-shrink: 0; }
+  .fold[open] > summary::before { content: "\25BE"; }
+  .fold > summary:hover h3 { color: var(--accent-hover); }
+  .fold > summary h3 { margin: 0; }
+  .fold-body { margin-top: 12px; }
+
+  /* ------ report export rail ------ */
+  /* Options run most-useful-first for the reader receiving this: the asks, then the
+     evidence for them, then the framing. A sub-option greys out with its parent. */
+  .exp-group { margin-bottom: 16px; }
+  .exp-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--navy-600); margin: 0 0 7px; }
+  .exp-opt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--navy-700);
+    padding: 3px 0; cursor: pointer; }
+  .exp-opt input { accent-color: var(--crimson-600); flex-shrink: 0; }
+  .exp-opt.sub { margin-left: 20px; font-size: 12px; color: var(--navy-600); }
+  .exp-opt.off { opacity: .45; cursor: default; }
+  .exp-actions { display: flex; gap: 8px; margin: 4px 0 12px; }
+  .exp-preview { border: 1px solid var(--line-panel); border-radius: var(--r-8); background: var(--surface-card);
+    font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 11px; line-height: 1.6;
+    color: var(--navy-700); white-space: pre-wrap; padding: 11px 13px; overflow-x: auto; }
+  .exp-note { font-size: 12px; color: var(--navy-500); margin: 0 0 10px; line-height: 1.5; }
   .ov-rail-legend { padding: 16px 15px; color: var(--navy-500); font-size: 13px; line-height: 1.6; }
   .ov-legend .ov-leg-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500); font-weight: 700; margin: 0 0 6px; }
   .ov-legend p { color: var(--navy-600); font-size: 13px; margin: 0 0 6px; line-height: 1.65; }
@@ -669,8 +726,11 @@ const state = {
   reportsList: [],       // GET /reports — [{system_id, system_name, latest_date, report_count, has_delta}]
   reportSeries: {},      // system_id -> GET /reports/{id} series, cached as each system is opened
   reportSelected: null,  // {system_id, date} of the open report
-  currentReport: null,   // GET /reports/{id}/{date}
+  currentReport: null,   // GET /reports/{id}/{date} — edited in place while status is "draft"
   reportMitInfo: {},     // mitigation_id -> { name, owner } for the open report
+  reportSave: "",        // "", "saving", "ok" or "err" — the inline save indicator
+  reportExport: null,    // hand-off options for the open system (see REPORT_EXPORT_DEFAULTS)
+  reportAside: {},       // which folded footer sections ("discarded"/"dialogue") are open
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
   mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
@@ -2097,9 +2157,7 @@ function renderMain() {
 }
 function renderRight() {
   if (state.screen === "overview") return renderOverviewRight();
-  // Reports are read-only, so there is nothing a live preview would add; collapse the
-  // third column the same way the Overview does.
-  if (state.screen === "reports") return renderOverviewRight();
+  if (state.screen === "reports") { applyPreviewVisibility(); return renderReportExport(); }
   if (state.screen === "style") return renderStylePreview();
   if (state.screen === "mitigations") return renderMitPreview();
   return renderPreview();
@@ -2110,11 +2168,11 @@ function renderRight() {
 // Style-guide screen's live author preview. Otherwise collapse its grid column (see
 // body.no-preview). Called from every right-rail render, so it tracks each mode change.
 function previewVisible() {
-  // The right rail exists ONLY for the Style-guide author preview — a genuinely
-  // different artifact (what a threat author sees). Threats and mitigations read
-  // and edit on ONE surface: the read view IS the preview, so there is no rail to
-  // duplicate it and nothing slides in when you click Edit.
-  return state.screen === "style";
+  // The right rail earns its column when it shows a genuinely DIFFERENT artifact from
+  // the main pane: on Style guide, what a threat author sees; on Reports, what the
+  // product team receives. Threats and mitigations read and edit on ONE surface — the
+  // read view IS the preview, so there is nothing for a third pane to duplicate.
+  return state.screen === "style" || state.screen === "reports";
 }
 function applyPreviewVisibility() {
   document.body.classList.toggle("no-preview", !previewVisible());
@@ -2407,10 +2465,12 @@ function renderReportsMain() {
   const m = document.getElementById("main");
   if (!state.currentReport) {
     m.innerHTML = '<div class="empty">Select a system from the list.</div>';
+    renderReportExport();
     return;
   }
   m.innerHTML = reportDetailHtml(state.currentReport);
   wireReportDetail();
+  renderReportExport();
 }
 
 // Open a system's most recent report (or a specific date). The series is fetched once
@@ -2426,7 +2486,11 @@ async function openReportSystem(systemId, date) {
     state.currentReport = await j(
       "/reports/" + encodeURIComponent(systemId) + "/" + encodeURIComponent(pick)
     );
+    if (!state.reportSelected || state.reportSelected.system_id !== systemId) {
+      state.reportExport = null;   // hand-off options are remembered per system
+    }
     state.reportSelected = { system_id: systemId, date: pick };
+    state.reportSave = "";
   } catch (e) {
     toast(e.message, true);
     return;
@@ -2441,51 +2505,151 @@ async function openReportSystem(systemId, date) {
   renderReportsRail(); renderReportsMain();
 }
 
-// One finding card. The inclusion checkbox is copy-time UI only — it is never written
-// back, so a finished report can't be reopened later in a differently-edited state.
-function reportFindingHtml(f) {
+// -------------------------------------------------- report draft editing --- //
+// A draft is edited in place: no Edit button, no mode switch. Every control carries a
+// dot-path into state.currentReport (data-rp) and a change schedules one debounced PUT
+// of the whole report. Going final swaps every control back to plain text.
+const reportEditable = () => (state.currentReport || {}).status === "draft";
+
+// Fixed by keel/schemas/report.py, which is not served through /schema (that endpoint
+// covers catalog entities). Keep these in step with the Literals there.
+const REPORT_LEVELS = ["low", "medium", "high"];
+
+function setByPath(obj, path, value) {
+  const parts = path.split(".");
+  let node = obj;
+  for (const p of parts.slice(0, -1)) node = node[p];
+  node[parts[parts.length - 1]] = value;
+}
+
+// A prose field. Editable draft -> a textarea wearing the surrounding type; final -> text.
+function rProse(path, value, cls) {
+  const v = value == null ? "" : value;
+  if (!reportEditable()) {
+    return v ? `<div class="${cls}">${esc(v)}</div>` : `<div class="${cls} rep-empty">not recorded</div>`;
+  }
+  return `<textarea class="ie ${cls}" rows="1" data-rp="${esc(path)}"
+    placeholder="not recorded">${esc(v)}</textarea>`;
+}
+
+function rSelect(path, value, options, cls) {
+  if (!reportEditable()) return `<span class="${cls}">${esc(value)}</span>`;
+  const opts = options.map(o =>
+    `<option value="${esc(o)}" ${o === value ? "selected" : ""}>${esc(o)}</option>`).join("");
+  return `<select class="${cls}" data-rp="${esc(path)}">${opts}</select>`;
+}
+
+// A textarea that is exactly as tall as its content — an inline editor that scrolls
+// internally would hide the sentence being corrected.
+function autosize(ta) {
+  ta.style.height = "auto";
+  ta.style.height = ta.scrollHeight + "px";
+}
+
+let reportSaveTimer = null;
+function scheduleReportSave() {
+  state.reportSave = "saving";
+  paintSaveState();
+  renderReportExport();          // the hand-off preview tracks every edit
+  clearTimeout(reportSaveTimer);
+  reportSaveTimer = setTimeout(saveReport, 500);
+}
+
+async function saveReport() {
+  const sel = state.reportSelected;
+  if (!sel || !state.currentReport) return;
+  try {
+    // The response is deliberately discarded: replacing state.currentReport mid-typing
+    // would swap the object the focused control is bound to.
+    await api("PUT", `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}`,
+      state.currentReport);
+    state.reportSave = "ok";
+  } catch (e) {
+    state.reportSave = "err";
+    toast(e.message, true);
+  }
+  paintSaveState();
+}
+
+function paintSaveState() {
+  const el = document.getElementById("repSave");
+  if (!el) return;
+  const text = { saving: "saving…", ok: "saved", err: "not saved" };
+  el.textContent = text[state.reportSave] || "";
+  el.className = "savestate " + (state.reportSave === "ok" ? "ok" : state.reportSave === "err" ? "err" : "");
+}
+
+// One finding card. `included` on each requirement is a stored decision, not copy-time
+// UI, so the specialist's judgment about what ships survives a reload.
+function reportFindingHtml(f, fi) {
   // The card id alone ("CTRL-HACT-CRITICAL") is not a requirement anyone outside this
   // repo can read, and it is what the product team is being handed. Name and owner are
   // resolved once when the report opens (state.reportMitInfo) and shown here.
   const reqs = (f.requirements || []).map((r, ri) => {
     const info = r.mitigation_id ? (state.reportMitInfo || {})[r.mitigation_id] : null;
     const label = info ? info.name : (r.description || r.mitigation_id || "(unnamed requirement)");
-    const covered = r.coverage_status === "already_covered";
     const statusBadge = r.coverage_status !== "needs_implementation"
       ? `<span class="badge soft">${esc(r.coverage_status.replace(/_/g, " "))}</span>` : "";
-    const meta = [r.mitigation_id, info && info.owner ? "owner: " + info.owner : ""].filter(Boolean).join(" · ");
-    return `<div class="req-row"><label>
-        <input type="checkbox" class="req-include" data-fid="${esc(f.id)}" data-ri="${ri}" ${covered ? "" : "checked"}>
-        <span>${esc(label)} ${statusBadge}${meta ? `<span class="req-meta">${esc(meta)}</span>` : ""}</span>
-      </label></div>`
+    // The id link sits OUTSIDE the label — inside it, clicking through to the mitigation
+    // would also toggle the checkbox it is nested in.
+    const idLink = r.mitigation_id
+      ? `<button type="button" class="reflink" data-jump-mit="${esc(r.mitigation_id)}">${esc(r.mitigation_id)}</button>`
+      : "";
+    const owner = info && info.owner ? esc(" · owner: " + info.owner) : "";
+    const box = reportEditable()
+      ? `<input type="checkbox" data-rp="findings.${fi}.requirements.${ri}.included" ${r.included ? "checked" : ""}>`
+      : `<input type="checkbox" ${r.included ? "checked" : ""} disabled>`;
+    return `<div class="req-row"><label>${box}<span>${esc(label)} ${statusBadge}</span></label></div>`
+      + ((idLink || owner) ? `<div class="req-meta" style="margin-left:24px">${idLink}${owner}</div>` : "")
       + (r.coverage_note ? `<div class="req-note">${esc(r.coverage_note)}</div>` : "");
   }).join("");
   const ignored = (f.ignored_mitigations || []).map(im =>
-    `<div class="req-ignored">Not applied: ${esc(im.mitigation_id)} — ${esc(im.reason)}</div>`).join("");
+    `<div class="req-ignored">Not applied: <button type="button" class="reflink" data-jump-mit="${esc(im.mitigation_id)}">${esc(im.mitigation_id)}</button> — ${esc(im.reason)}</div>`).join("");
   // Severity and likelihood are grades, so they carry the weight ramp. Harm, surface and
   // exploitation cost are facts ABOUT the finding, not grades of it — neutral badges, so
   // nothing on the card competes with the ranking. They also read without being named,
   // which is why they are badges and the chain rows below are labelled.
-  const facts = [f.harm, f.attack_surface, "exploitation " + f.exploitation_complexity]
-    .map(v => `<span class="badge type">${esc(v)}</span>`).join("");
-  const grade = (kind, level, quiet) =>
-    `<span class="sev ${quiet ? "quiet " : ""}sev-${esc(level)}"><span class="p">${kind}</span>${esc(level)}</span>`;
+  const fact = (path, value, options) => reportEditable()
+    ? `<span class="badge type">${rSelect(path, value, options, "ie")}</span>`
+    : `<span class="badge type">${esc(value)}</span>`;
+  const facts = fact(`findings.${fi}.harm`, f.harm, harmEnum())
+    + fact(`findings.${fi}.attack_surface`, f.attack_surface, surfaceEnum())
+    + `<span class="badge type">exploitation ${rSelect(`findings.${fi}.exploitation_complexity`,
+        f.exploitation_complexity, REPORT_LEVELS, "ie")}</span>`;
+  const grade = (kind, path, level, quiet) => {
+    const inner = reportEditable()
+      ? `<select class="ie-grade" data-rp="${esc(path)}" data-grade="${kind}">${REPORT_LEVELS.map(o =>
+          `<option value="${o}" ${o === level ? "selected" : ""}>${o}</option>`).join("")}</select>`
+      : esc(level);
+    return `<span class="sev ${quiet ? "quiet " : ""}sev-${esc(level)}"><span class="p">${kind}</span>${inner}</span>`;
+  };
   // The chain the grades rest on. asset / vulnerability / delta and the attacker's motive
   // and access are all in the report and none of them used to reach the screen, so a
   // reader had a severity with nothing behind it.
-  const attacker = [f.source.who, f.source.motive].filter(Boolean).join(" — ")
-    + (f.source.access ? `, via ${f.source.access}` : "");
-  const row = (k, v) => (v || "").toString().trim() ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : "";
-  const chain = row("Asset", f.asset) + row("Weakness", f.vulnerability)
-    + row("Attacker", attacker) + row("Since last time", f.delta);
-  return `<div class="card finding sev-${esc(f.risk.severity)}">
+  const row = (k, path, v) => (reportEditable() || (v || "").toString().trim())
+    ? `<dt>${k}</dt><dd>${rProse(path, v, "")}</dd>` : "";
+  const chain = row("Asset", `findings.${fi}.asset`, f.asset)
+    + row("Weakness", `findings.${fi}.vulnerability`, f.vulnerability)
+    + row("Attacker", `findings.${fi}.source.motive`, f.source.motive)
+    + row("Their access", `findings.${fi}.source.access`, f.source.access)
+    + row("Since last time", `findings.${fi}.delta`, f.delta);
+  // A finding names a threat. If it came from the catalog, that name is a way into it.
+  const title = f.from_catalog
+    ? `<button type="button" class="ctitle reflink" data-jump-threat="${esc(f.id)}">${esc(f.id)}</button>`
+    : `<span class="ctitle">${esc(f.id)}</span>`;
+  return `<div class="card finding sev-${esc(f.risk.severity)}" data-fi="${fi}">
     <div class="chead">
-      <span class="ctitle">${esc(f.id)}</span>
+      ${title}
       <span class="badge soft">${f.from_catalog ? "from catalog" : "not in catalog"}</span>
-      <span class="grades">${grade("severity", f.risk.severity)}${grade("likelihood", f.risk.likelihood, true)}</span>
+      ${fact(`findings.${fi}.source.who`, f.source.who, sourceEnum())}
+      <span class="grades">
+        ${grade("severity", `findings.${fi}.risk.severity`, f.risk.severity)}
+        ${grade("likelihood", `findings.${fi}.risk.likelihood`, f.risk.likelihood, true)}
+        ${reportEditable() ? `<button type="button" class="fdrop" data-drop-finding="${fi}" title="Remove this finding">&times;</button>` : ""}
+      </span>
     </div>
-    <p class="fscenario">${esc(f.scenario)}</p>
-    ${f.risk.reasoning ? `<div class="fwhy"><span class="k">Why these grades</span>${esc(f.risk.reasoning)}</div>` : ""}
+    ${rProse(`findings.${fi}.scenario`, f.scenario, "fscenario")}
+    <div class="fwhy"><span class="k">Why these grades</span>${rProse(`findings.${fi}.risk.reasoning`, f.risk.reasoning, "")}</div>
     ${chain ? `<dl class="fchain">${chain}</dl>` : ""}
     <div class="badges">${facts}</div>
     ${(reqs || ignored) ? `<div class="freqs"><span class="freqs-k">Requirements</span>${reqs}${ignored}</div>` : ""}
@@ -2497,20 +2661,24 @@ function reportDetailHtml(rep) {
   const series = state.reportSeries[sel.system_id] || [];
   const dateChips = series.length > 1
     ? readsec("Other assessments", `<div class="ov-chips">${series.map(s =>
-        `<span class="ov-chip ${s.date === sel.date ? "on" : ""}" data-date="${esc(s.date)}" title="Open ${esc(s.date)}">${esc(s.date)}</span>`
+        `<span class="ov-chip ${s.date === sel.date ? "on" : ""}" data-date="${esc(s.date)}" title="Open ${esc(s.date)}">${esc(s.date)}${s.status === "draft" ? " · draft" : ""}</span>`
       ).join("")}</div>`)
     : "";
 
   // One ranked list, high → low. The spine carries the ranking, so grouping the same
   // card under two different headings only added a second way to render one thing.
-  const findings = (rep.findings || []).slice()
-    .sort((a, b) => SEVERITY_RANK.indexOf(a.risk.severity) - SEVERITY_RANK.indexOf(b.risk.severity));
+  // Sorted as (finding, original index) pairs — the index is the write path, and a
+  // sorted copy's index would point every edit at the wrong finding.
+  const findings = (rep.findings || []).map((f, i) => [f, i])
+    .sort((a, b) => SEVERITY_RANK.indexOf(a[0].risk.severity) - SEVERITY_RANK.indexOf(b[0].risk.severity));
   const findingsHtml = findings.length
-    ? findings.map(reportFindingHtml).join("")
+    ? findings.map(([f, i]) => reportFindingHtml(f, i)).join("")
     : '<p class="placeholder">No findings.</p>';
 
+  // A ruled-out candidate names a catalog threat, so it links like anything else does.
   const discarded = (rep.discarded || []).length
-    ? rep.discarded.map(d => `<div class="req-ignored">${esc(d.id)} — ${esc(d.reason)}</div>`).join("")
+    ? rep.discarded.map(d => `<div class="req-ignored">
+        <button type="button" class="reflink" data-jump-threat="${esc(d.id)}">${esc(d.id)}</button> — ${esc(d.reason)}</div>`).join("")
     : '<p class="placeholder">Nothing ruled out.</p>';
 
   const dialogue = (rep.dialogue || []).length
@@ -2521,26 +2689,40 @@ function reportDetailHtml(rep) {
       </div>`).join("")
     : '<p class="placeholder">No recorded exchanges.</p>';
 
-  const send = `<p class="ov-gap-desc">Only the requirements still checked above are copied. Nothing is saved.</p>
-    <div class="sendbar">
-      <button class="btn primary" id="copyRequirements">Copy requirements</button>
-      <label><input type="checkbox" id="copyExplained"> include the scenario behind each</label>
-    </div>`;
+  // Folded and side by side at the foot: both are a trace of how the assessment ran,
+  // useful when debugging the assessor, not part of reviewing the system.
+  const fold = (key, label, count, body) => `<section class="readsec">
+    <details class="fold" data-fold="${key}" ${state.reportAside[key] ? "open" : ""}>
+      <summary><h3 class="slabel">${label} <span class="sub">— ${count}</span></h3></summary>
+      <div class="fold-body">${body}</div>
+    </details></section>`;
+
+  const draft = rep.status === "draft";
+  const actions = draft
+    ? `<span class="savestate" id="repSave"></span>
+       <button class="btn primary" id="repFinalize" title="Freeze this report as a dated record">Finalize</button>`
+    : `<button class="btn ghost" id="repReopen" title="Copy this report into a new draft dated today">Revise as a new draft</button>`;
 
   return `<div class="detail">
     <div class="dhead">
       <div class="dicon">R</div>
       <div class="dtitle">
         <h2>${esc(rep.system_name)}</h2>
-        <div class="dsub">Assessed ${esc(rep.date)} by ${esc(rep.assessor)}</div>
+        <div class="dsub">Assessed ${esc(rep.date)} by ${esc(rep.assessor)}
+          <span class="rep-status ${esc(rep.status)}">${esc(rep.status)}</span></div>
       </div>
+      <div class="hactions">${actions}</div>
     </div>
-    ${readsec("System", `<p class="prose">${esc(rep.system_description)}</p>`)}
-    ${rep.delta_summary ? readsec("What changed since the last assessment", `<p class="prose">${esc(rep.delta_summary)}</p>`) : ""}
+    ${draft ? "" : `<p class="notauthored">This report is final. Revising it opens a new draft dated today, beside this record rather than over it.</p>`}
+    ${readsec("System", rProse("system_description", rep.system_description, "prose"))}
+    ${(draft || rep.delta_summary)
+      ? readsec("What changed since the last assessment", rProse("delta_summary", rep.delta_summary, "prose"))
+      : ""}
     ${readsec("Findings", findingsHtml, `— ${findings.length}, worst first`)}
-    ${readsec("Ruled out", discarded)}
-    ${readsec("Dialogue", dialogue, "— what the specialist changed")}
-    ${readsec("Send to the product team", send)}
+    <div class="rep-aside">
+      ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
+      ${fold("dialogue", "Assessor dialogue", (rep.dialogue || []).length, dialogue)}
+    </div>
     ${dateChips}
   </div>`;
 }
@@ -2565,39 +2747,152 @@ async function resolveMitigationsForReport(rep) {
   return out;
 }
 
-// Requirements the specialist left checked, as markdown. Without explanations it's one
-// flat list — the product team just needs the asks. With explanations the list is
-// grouped under each finding's scenario, so the prose that leads to a set of
-// requirements is stated once rather than repeated under every one of them.
-function buildRequirementsMarkdown(rep, mitInfo, withExplanations) {
-  const included = f => (f.requirements || []).filter((r, ri) => {
-    const cb = document.querySelector(
-      `.req-include[data-fid="${CSS.escape(f.id)}"][data-ri="${ri}"]`
-    );
-    return !cb || cb.checked;
-  });
-  const line = r => {
+// ------------------------------------------------------- report hand-off --- //
+// What goes to the product team, and what it looks like before it goes. The options
+// run most-useful-first for THAT reader: the asks, then the evidence behind them, then
+// the framing. Nothing is mandatory, but turning the asks off leaves an empty document.
+const REPORT_EXPORT_GROUPS = [
+  { key: "requirements", label: "Requirements", opts: [
+    { key: "reqs", label: "The asks themselves" },
+    { key: "owner", label: "Who owns each", sub: "reqs" },
+    { key: "covered", label: "Ones already covered", sub: "reqs" },
+  ] },
+  { key: "evidence", label: "Evidence", opts: [
+    { key: "scenario", label: "The scenario behind each" },
+    { key: "grades", label: "Severity and likelihood" },
+    { key: "reasoning", label: "Why those grades", sub: "grades" },
+    { key: "chain", label: "Asset, weakness, attacker" },
+  ] },
+  { key: "context", label: "Context", opts: [
+    { key: "header", label: "System and date" },
+    { key: "delta", label: "What changed since last time" },
+    { key: "discarded", label: "Ruled out" },
+    { key: "dialogue", label: "Assessor dialogue" },
+  ] },
+];
+const REPORT_EXPORT_DEFAULTS = {
+  reqs: true, owner: true, covered: false,
+  scenario: true, grades: false, reasoning: false, chain: false,
+  header: true, delta: false, discarded: false, dialogue: false,
+};
+const LS_REPORT_EXPORT = "keel.reportExport.";
+
+function reportExportSettings() {
+  if (state.reportExport) return state.reportExport;
+  const sys = (state.reportSelected || {}).system_id || "";
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(LS_REPORT_EXPORT + sys) || "{}"); } catch (e) { saved = {}; }
+  state.reportExport = { ...REPORT_EXPORT_DEFAULTS, ...saved };
+  return state.reportExport;
+}
+
+function saveReportExportSettings() {
+  const sys = (state.reportSelected || {}).system_id || "";
+  try { localStorage.setItem(LS_REPORT_EXPORT + sys, JSON.stringify(state.reportExport)); } catch (e) { /* private mode */ }
+}
+
+// The hand-off as markdown. Requirements are grouped under the finding that produced
+// them, so the prose leading to a set of asks is stated once rather than repeated under
+// every one of them.
+function buildReportMarkdown(rep, mitInfo, s) {
+  if (!rep) return "";
+  const lines = [];
+  if (s.header) {
+    lines.push(`# Security requirements — ${rep.system_name}`, "");
+    lines.push(`Assessed ${rep.date} by ${rep.assessor}.`, "");
+    if (s.delta && rep.delta_summary) lines.push(rep.delta_summary, "");
+  }
+
+  const reqLine = r => {
     const info = r.mitigation_id ? mitInfo[r.mitigation_id] : null;
     const label = info ? info.name : (r.description || r.mitigation_id);
-    return `- ${label}${info && info.owner ? ` (owner: ${info.owner})` : ""}`;
+    const owner = s.owner && info && info.owner ? ` (owner: ${info.owner})` : "";
+    const note = r.coverage_status === "already_covered" ? " — already covered" : "";
+    return `- ${label}${owner}${note}`;
   };
 
-  const lines = [`# Security requirements — ${rep.system_name} (${rep.date})`, ""];
   let any = false;
   for (const f of rep.findings || []) {
-    const reqs = included(f);
-    if (!reqs.length) continue;
+    const reqs = s.reqs
+      ? (f.requirements || []).filter(r => r.included || (s.covered && r.coverage_status === "already_covered"))
+      : [];
+    const wantsBody = s.scenario || s.grades || s.chain;
+    if (!reqs.length && !wantsBody) continue;
     any = true;
-    if (withExplanations) {
-      lines.push(f.scenario, "");
-      lines.push(...reqs.map(line));
+    if (s.grades) lines.push(`**${f.id}** — severity ${f.risk.severity}, likelihood ${f.risk.likelihood}`, "");
+    else if (s.scenario || s.chain) lines.push(`**${f.id}**`, "");
+    if (s.scenario) lines.push(f.scenario, "");
+    if (s.grades && s.reasoning && f.risk.reasoning) lines.push(`Why: ${f.risk.reasoning}`, "");
+    if (s.chain) {
+      lines.push(`- Asset: ${f.asset}`);
+      lines.push(`- Weakness: ${f.vulnerability}`);
+      lines.push(`- Attacker: ${f.source.who} — ${f.source.motive}, via ${f.source.access}`);
       lines.push("");
-    } else {
-      lines.push(...reqs.map(line));
     }
+    if (reqs.length) { lines.push(...reqs.map(reqLine), ""); }
   }
-  if (!any) lines.push("_No requirements selected._");
+  if (!any) lines.push("_Nothing selected._", "");
+
+  if (s.discarded && (rep.discarded || []).length) {
+    lines.push("## Ruled out", "");
+    lines.push(...rep.discarded.map(d => `- ${d.id} — ${d.reason}`), "");
+  }
+  if (s.dialogue && (rep.dialogue || []).length) {
+    lines.push("## Assessor dialogue", "");
+    for (const d of rep.dialogue) lines.push(`- **Q** ${d.question}`, `  **A** ${d.answer}`, `  ${d.impact}`, "");
+  }
   return lines.join("\n").trimEnd();
+}
+
+// The third grid column, which Reports never used. It earns it here: the hand-off is
+// visible the whole time you read the report, not buried in a section at the foot.
+function renderReportExport() {
+  const el = document.getElementById("preview");
+  if (!el || state.screen !== "reports") return;
+  if (!state.currentReport) {
+    el.innerHTML = '<p class="ptitle">Send to the product team</p><div class="empty" style="margin-top:6vh">—</div>';
+    return;
+  }
+  const s = reportExportSettings();
+  const groups = REPORT_EXPORT_GROUPS.map(g => `<div class="exp-group">
+      <p class="exp-k">${esc(g.label)}</p>
+      ${g.opts.map(o => {
+        const off = o.sub && !s[o.sub];
+        return `<label class="exp-opt ${o.sub ? "sub" : ""} ${off ? "off" : ""}">
+          <input type="checkbox" data-exp="${esc(o.key)}" ${s[o.key] ? "checked" : ""} ${off ? "disabled" : ""}>
+          ${esc(o.label)}</label>`;
+      }).join("")}
+    </div>`).join("");
+
+  const md = buildReportMarkdown(state.currentReport, state.reportMitInfo || {}, s);
+  el.innerHTML = `<p class="ptitle">Send to the product team</p>
+    <p class="exp-note">Only what is ticked below leaves this screen. Unticking a requirement here does not change the report — untick it in the finding for that.</p>
+    ${groups}
+    <div class="exp-actions">
+      <button class="btn primary" id="expCopy">Copy</button>
+      <button class="btn ghost" id="expDownload">Download</button>
+    </div>
+    <div class="exp-preview" id="expPreview">${esc(md)}</div>`;
+
+  el.querySelectorAll("[data-exp]").forEach(cb => cb.onchange = () => {
+    state.reportExport[cb.dataset.exp] = cb.checked;
+    saveReportExportSettings();
+    renderReportExport();
+  });
+  const copy = document.getElementById("expCopy");
+  if (copy) copy.onclick = async () => {
+    try { await copyText(md); toast("Copied to clipboard"); }
+    catch (e) { toast(e.message, true); }
+  };
+  const dl = document.getElementById("expDownload");
+  if (dl) dl.onclick = () => {
+    const rep = state.currentReport;
+    const name = `${rep.system_id}-${rep.date}-requirements.md`;
+    const url = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+  };
 }
 
 // navigator.clipboard only exists in a secure context, so it is absent when someone
@@ -2619,19 +2914,92 @@ async function copyText(text) {
 }
 
 function wireReportDetail() {
-  document.querySelectorAll(".ov-chip[data-date]").forEach(chip =>
+  const main = document.getElementById("main");
+  main.querySelectorAll(".ov-chip[data-date]").forEach(chip =>
     chip.onclick = () => openReportSystem(state.reportSelected.system_id, chip.dataset.date));
 
-  const btn = document.getElementById("copyRequirements");
-  if (!btn) return;
-  btn.onclick = async () => {
-    try {
-      const explained = !!(document.getElementById("copyExplained") || {}).checked;
-      const md = buildRequirementsMarkdown(state.currentReport, state.reportMitInfo || {}, explained);
-      await copyText(md);
-      toast("Copied to clipboard");
-    } catch (e) { toast(e.message, true); }
-  };
+  // Every reference into the model is a way into it.
+  main.querySelectorAll("[data-jump-threat]").forEach(b =>
+    b.onclick = () => jumpToThreat(b.dataset.jumpThreat));
+  main.querySelectorAll("[data-jump-mit]").forEach(b =>
+    b.onclick = () => jumpToMit(b.dataset.jumpMit));
+
+  // Remember which folded footer sections the reader opened, across re-renders.
+  main.querySelectorAll("details[data-fold]").forEach(d =>
+    d.ontoggle = () => { state.reportAside[d.dataset.fold] = d.open; });
+
+  main.querySelectorAll("textarea.ie").forEach(ta => autosize(ta));
+
+  // One handler for every editable control: write the value at its dot-path into the
+  // open report, then schedule the save. Nothing re-renders on a keystroke.
+  main.querySelectorAll("[data-rp]").forEach(el => {
+    const commit = () => {
+      setByPath(state.currentReport, el.dataset.rp, el.type === "checkbox" ? el.checked : el.value);
+      scheduleReportSave();
+    };
+    if (el.tagName === "TEXTAREA") {
+      el.oninput = () => { autosize(el); commit(); };
+    } else {
+      el.onchange = () => {
+        commit();
+        // A grade repaints its own badge and spine in place. Re-rendering here would
+        // re-sort the list under the cursor and move the card that was just changed.
+        if (el.dataset.grade) {
+          el.parentElement.className = "sev " + (el.dataset.grade === "likelihood" ? "quiet " : "") + "sev-" + el.value;
+          if (el.dataset.grade === "severity") {
+            const card = el.closest(".finding");
+            if (card) card.className = "card finding sev-" + el.value;
+          }
+        }
+      };
+    }
+  });
+
+  main.querySelectorAll("[data-drop-finding]").forEach(b => b.onclick = () => {
+    const fi = Number(b.dataset.dropFinding);
+    const f = state.currentReport.findings[fi];
+    if (!confirm(`Remove ${f.id} from this report?`)) return;
+    state.currentReport.findings.splice(fi, 1);
+    scheduleReportSave();
+    renderReportsMain();
+  });
+
+  const finalize = document.getElementById("repFinalize");
+  if (finalize) finalize.onclick = () => finalizeReport();
+  const reopen = document.getElementById("repReopen");
+  if (reopen) reopen.onclick = () => reopenReport();
+  paintSaveState();
+}
+
+// Freezing is the one irreversible step on this screen, so it asks first.
+async function finalizeReport() {
+  const sel = state.reportSelected;
+  if (!sel) return;
+  if (!confirm("Finalize this report? It becomes a dated record and stops being editable. "
+    + "Revising it later opens a new draft dated that day.")) return;
+  clearTimeout(reportSaveTimer);
+  await saveReport();
+  try {
+    state.currentReport = await api("POST",
+      `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}/finalize`);
+    state.reportSeries[sel.system_id] = null;   // its status changed
+    toast("Report finalized");
+  } catch (e) { toast(e.message, true); return; }
+  await openReportSystem(sel.system_id, sel.date);
+}
+
+async function reopenReport() {
+  const sel = state.reportSelected;
+  if (!sel) return;
+  let fresh;
+  try {
+    fresh = await api("POST",
+      `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}/reopen`);
+  } catch (e) { toast(e.message, true); return; }
+  state.reportSeries[sel.system_id] = null;     // a new date exists
+  await loadReports();
+  await openReportSystem(sel.system_id, fresh.date);
+  toast("Opened a new draft dated " + fresh.date);
 }
 
 // ------------------------------------------------------- style-guide screen -- //
