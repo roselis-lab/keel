@@ -5,18 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Keel · GenAI threat model</title>
 <style>
+  /* Design tokens — mirrors .claude/skills/keel-design-system/tokens/*.css.
+     Inlined rather than linked: the app is one static file with zero external
+     requests, which the design system states as a non-negotiable. Keep the two
+     in step; author against the semantic aliases at the foot, not the raw ramps. */
   :root {
-    --bg: #f4f6fb; --panel: #ffffff; --tint: #f6f8fc;
-    --border: #dfe3ec; --border2: #eef1f7;
+    /* type */
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", monospace;
+    --fs-10: 10px; --fs-11: 11px; --fs-12: 12px; --fs-13: 13px; --fs-14: 14px;
+    --fs-15: 15px; --fs-19: 19px; --fs-20: 20px; --fs-24: 24px; --fs-28: 28px;
+    --lh-tight: 1.35; --lh-base: 1.55; --lh-prose: 1.6; --lh-legend: 1.7;
+    --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+    --ls-title: -.01em; --ls-number: -.02em; --ls-eyebrow: .08em; --ls-key: .06em; --ls-meta: .05em;
+    --numeric: tabular-nums;
+    /* colour ramps */
     --navy-900: #17203a; --navy-800: #232d4a; --navy-700: #38415f; --navy-600: #4a5570;
     --navy-500: #6b7690; --navy-400: #97a0b5; --navy-200: #d7dce8; --navy-100: #eef1f7;
     --crimson-700: #b81f42; --crimson-600: #d6294e; --crimson-200: #f6c9d3; --crimson-50: #fdeef1;
-    --amber: #e0a021; --green: #1f9d57;
+    --amber: #e0a021; --amber-50: #fdf3e0; --amber-700: #8f6410;
+    --green: #1f9d57; --green-50: #eaf4ee; --green-200: #bfe3cd;
+    --bg: #f4f6fb; --panel: #ffffff; --tint: #f6f8fc; --white: #ffffff;
+    --border: #dfe3ec; --border2: #eef1f7;
+    /* diff palette — deliberately GitHub's, not Keel's, so a reviewer reads it instantly */
+    --diff-add-bg: #e6ffec; --diff-add-gutter: #cdffd8; --diff-add-gutter-fg: #2b7d47; --diff-add-fg: #17683a;
+    --diff-del-bg: #ffeef0; --diff-del-gutter: #ffdce0; --diff-del-gutter-fg: #b0374f; --diff-del-fg: #9e1c3a;
+    --diff-hunk-bg: #eef1f7;
     /* one spacing scale (multiples of 4/8) */
-    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
     --field-gap: 24px; --section-gap: 44px; --input-h: 38px;
+    --pad-rail-row: 10px 15px; --pad-card: 13px 15px; --pad-section: 12px 14px; --pad-main: 30px 40px;
+    /* radii */
+    --r-4: 4px; --r-5: 5px; --r-6: 6px; --r-8: 8px; --r-9: 9px; --r-10: 10px; --r-pill: 20px; --r-round: 50%;
+    /* elevation — only genuinely floating layers cast a shadow */
+    --shadow-toast: 0 8px 24px rgba(20, 30, 60, .2);
+    --shadow-dialog: 0 10px 30px rgba(20, 30, 60, .18);
+    --focus-ring: 0 0 0 3px var(--crimson-50);
+    --selected-rail-accent: inset 3px 0 0 var(--crimson-600);
+    /* motion — browser default easing throughout, no custom curves */
+    --dur-hover: .12s; --dur-layer: .2s; --ease: ease; --toast-rise: 8px;
     /* grid track widths — driven by the rail collapse toggle + the preview resizer */
-    --rail-w: 320px; --preview-w: 360px;
+    --rail-w: 320px; --rail-w-collapsed: 44px; --preview-w: 360px; --resizer-w: 9px; --app-h: 100vh;
+    /* ---- semantic aliases ---- */
+    --text-strong: var(--navy-900); --text-body: var(--navy-700); --text-body-read: var(--navy-800);
+    --text-muted: var(--navy-500); --text-faint: var(--navy-400); --text-inverse: #ffffff;
+    --text-link: var(--crimson-600); --text-link-hover: var(--crimson-700);
+    --surface-app: var(--bg); --surface-panel: var(--panel); --surface-section: var(--tint);
+    --surface-card: var(--white); --surface-inset: var(--tint);
+    --surface-selected: var(--crimson-50); --surface-hover: var(--navy-100);
+    --line-panel: var(--border); --line-inner: var(--border2); --line-control: var(--navy-200);
+    --line-focus: var(--crimson-600); --line-danger: var(--crimson-200);
+    --accent: var(--crimson-600); --accent-hover: var(--crimson-700);
+    --accent-wash: var(--crimson-50); --accent-line: var(--crimson-200);
+    --status-error: var(--crimson-700); --status-error-bg: var(--crimson-50); --status-error-line: var(--crimson-200);
+    --status-advice: var(--amber); --status-advice-bg: var(--amber-50);
+    --status-ok: var(--green); --status-ok-bg: var(--green-50); --status-ok-line: var(--green-200);
+    /* severity escalates by weight, not hue — only critical takes a solid fill.
+       Low is navy, never green: green means covered/closed, a different axis. */
+    --sev-critical-bg: var(--crimson-700); --sev-critical-fg: #ffffff;
+    --sev-critical-line: var(--crimson-700); --sev-critical-spine: var(--crimson-700);
+    --sev-high-bg: var(--crimson-50); --sev-high-fg: var(--crimson-700);
+    --sev-high-line: var(--crimson-200); --sev-high-spine: var(--crimson-600);
+    --sev-medium-bg: var(--amber-50); --sev-medium-fg: var(--amber-700);
+    --sev-medium-line: #f0dcb0; --sev-medium-spine: var(--amber);
+    --sev-low-bg: var(--navy-100); --sev-low-fg: var(--navy-600);
+    --sev-low-line: var(--border); --sev-low-spine: var(--navy-400);
+    --sev-info-bg: var(--navy-100); --sev-info-fg: var(--navy-500); --sev-info-spine: var(--navy-200);
+    /* classification is neutral — harm/surface/source are facts about a finding, not grades of it */
+    --classify-bg: var(--navy-200); --classify-fg: var(--navy-700);
   }
   * { box-sizing: border-box; }
   body {
@@ -52,7 +108,7 @@
     width: 100%; padding: 9px 11px; background: var(--tint); color: var(--navy-900);
     border: 1px solid var(--border); border-radius: 9px; outline: none; font-size: 13px;
   }
-  .search input:focus { border-color: var(--crimson-600); background: #fff; }
+  .search input:focus { border-color: var(--line-focus); background: var(--surface-card); }
   /* ------ faceted filter panel (Threats + Mitigations rails) ------ */
   /* A collapsed "Filters (N)" expander under the search; open it for grouped,
      multi-select chip facets. Fits a ~320px rail — chips wrap, panel scrolls if tall. */
@@ -62,7 +118,7 @@
   .fx-caret { color: var(--navy-400); font-size: 10px; width: 10px; flex-shrink: 0; }
   .fx-label { font-size: 12px; font-weight: 600; color: var(--navy-700); }
   .fx-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
-    background: var(--crimson-600); color: #fff; font-variant-numeric: tabular-nums; }
+    background: var(--accent); color: var(--text-inverse); font-variant-numeric: var(--numeric); }
   .fx-clear { margin-left: auto; border: none; background: none; color: var(--navy-500);
     font-size: 11px; font-weight: 600; padding: 2px 4px; border-radius: 6px; }
   .fx-clear:hover { color: var(--crimson-700); text-decoration: underline; }
@@ -76,13 +132,13 @@
   .fx-chip { font-size: 11px; padding: 2px 9px; border-radius: 20px; background: var(--tint);
     color: var(--navy-600); border: 1px solid var(--border); font-weight: 500; white-space: nowrap; }
   .fx-chip:hover { border-color: var(--crimson-200); color: var(--crimson-700); }
-  .fx-chip.on { background: var(--crimson-600); color: #fff; border-color: var(--crimson-600); }
-  .fx-chip.on:hover { background: var(--crimson-700); color: #fff; }
+  .fx-chip.on { background: var(--accent); color: var(--text-inverse); border-color: var(--accent); }
+  .fx-chip.on:hover { background: var(--accent-hover); color: var(--text-inverse); }
   .list { overflow-y: auto; flex: 1; min-height: 0; }
   /* Scannable rows: title is the primary line, id a readable mono secondary. */
   .row { padding: 10px 15px; border-bottom: 1px solid var(--border2); display: flex; flex-direction: column; gap: 2px; }
   .row:hover { background: var(--navy-100); }
-  .row.active { background: var(--crimson-50); box-shadow: inset 3px 0 0 var(--crimson-600); }
+  .row.active { background: var(--surface-selected); box-shadow: var(--selected-rail-accent); }
   .row.active:hover { background: var(--crimson-50); }
   .row .rid { font-size: 11px; color: var(--navy-500); font-family: ui-monospace, "SFMono-Regular", monospace; letter-spacing: .01em; }
   .row .rtitle { font-size: 14px; color: var(--navy-900); font-weight: 500; line-height: 1.35; }
@@ -92,9 +148,12 @@
   .badge { font-size: 10px; padding: 1px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
   .badge.soft { background: var(--navy-100); color: var(--navy-600); font-weight: 500; border-radius: 10px; }
   .badge.type { background: var(--navy-200); color: var(--navy-700); }
-  .badge.harm { background: var(--crimson-600); color: #fff; }
-  .badge.tag { background: #eaf4ee; color: var(--green); }
-  .badge.shared { background: #eaf4ee; color: var(--green); margin-left: 6px; }
+  /* Classification is neutral. harm/surface/source/mitigation_class are facts ABOUT an
+     entry, not grades OF it — a crimson fill here made every rail row shout and left
+     nothing louder for the accent to mean. */
+  .badge.harm { background: var(--classify-bg); color: var(--classify-fg); }
+  .badge.tag { background: var(--status-ok-bg); color: var(--status-ok); }
+  .badge.shared { background: var(--status-ok-bg); color: var(--status-ok); margin-left: 6px; }
 
   /* ------ center editor ------ */
   main { overflow-y: auto; padding: 30px 40px; min-width: 0; }
@@ -121,7 +180,7 @@
   .ecard .field + .field { margin-top: var(--field-gap); }
   input.f, select.f { min-height: var(--input-h); }
   .dhead { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 20px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
-  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 20px; background: var(--crimson-600); }
+  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-inverse); flex-shrink: 0; font-size: 20px; background: var(--accent); }
   .dhead .dtitle { flex: 1; min-width: 0; }
   .dhead h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
   .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-400); font-size: 12px; margin-top: 4px; }
@@ -133,7 +192,7 @@
   .prose { white-space: pre-wrap; color: var(--navy-700); font-size: 14px; line-height: 1.6; }
   .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
   .placeholder { color: var(--navy-400); font-style: italic; }
-  .card { border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; margin-bottom: 10px; background: #fff; }
+  .card { border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: var(--pad-card); margin-bottom: 10px; background: var(--surface-card); }
   .card .chead { display: flex; align-items: center; gap: 8px; }
   .card .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
   .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
@@ -149,7 +208,7 @@
   .readsec { background: var(--tint); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; margin-top: 14px; }
   .readsec > h3.slabel { margin: 0 0 9px; }
   .readsec .prose { color: var(--navy-800); }
-  .readsec .card { background: #fff; }
+  .readsec .card { background: var(--surface-card); }
   .notauthored { color: var(--navy-400); font-size: 12px; font-style: italic; margin: 16px 0 0; }
   /* ------ gaps bar (read view) — empty fields as clickable, jump-to-edit chips ------ */
   .gaps-bar { margin-top: var(--section-gap); border-top: 1px dashed var(--border); padding-top: 14px; }
@@ -197,7 +256,7 @@
      @@ hunk headers, a content cell that keeps the +/-/space sign and preserves whitespace,
      and a horizontally-scrolling body for long lines. File-header noise is folded into one
      tiny caption; hunk headers render as a muted separator row that resets the counters. */
-  .diffwrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+  .diffwrap { border: 1px solid var(--line-panel); border-radius: var(--r-8); overflow: hidden; background: var(--surface-card); }
   .diff-cap { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 11px; color: var(--navy-500);
     padding: 6px 12px; background: var(--tint); border-bottom: 1px solid var(--border2);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -211,45 +270,45 @@
   .difftbl .dc { padding: 0 10px; white-space: pre; color: var(--navy-800); }
   .dr-ctx .dc { color: var(--navy-700); }
   /* additions — light green row, greener gutter, green left accent */
-  .dr-add { background: #e6ffec; }
-  .dr-add .dg { background: #cdffd8; color: #2b7d47; }
-  .dr-add .dg-o { border-left: 2px solid var(--green); }
-  .dr-add .dc { color: #17683a; }
+  .dr-add { background: var(--diff-add-bg); }
+  .dr-add .dg { background: var(--diff-add-gutter); color: var(--diff-add-gutter-fg); }
+  .dr-add .dg-o { border-left: 2px solid var(--status-ok); }
+  .dr-add .dc { color: var(--diff-add-fg); }
   /* deletions — light red row, redder gutter, crimson left accent */
-  .dr-del { background: #ffeef0; }
-  .dr-del .dg { background: #ffdce0; color: #b0374f; }
-  .dr-del .dg-o { border-left: 2px solid var(--crimson-600); }
-  .dr-del .dc { color: #9e1c3a; }
+  .dr-del { background: var(--diff-del-bg); }
+  .dr-del .dg { background: var(--diff-del-gutter); color: var(--diff-del-gutter-fg); }
+  .dr-del .dg-o { border-left: 2px solid var(--accent); }
+  .dr-del .dc { color: var(--diff-del-fg); }
   /* hunk header — a muted separator row spanning the width, resets the counters */
-  .dr-hunk td { background: #eef1f7; }
+  .dr-hunk td { background: var(--diff-hunk-bg); }
   .dr-hunk .dg { color: var(--navy-400); border-right-color: var(--border); }
   .dr-hunk .dc { color: var(--navy-500); }
   .dr-meta .dc { color: var(--navy-400); }
-  .diff-loading { padding: 10px 12px; background: #fff; border: 1px solid var(--border);
+  .diff-loading { padding: 10px 12px; background: var(--surface-card); border: 1px solid var(--line-panel);
     border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
     color: var(--navy-400); font-style: italic; }
 
   /* ------ buttons ------ */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
-  .btn.primary { background: var(--crimson-600); color: #fff; }
-  .btn.primary:hover { background: var(--crimson-700); }
+  .btn.primary { background: var(--accent); color: var(--text-inverse); }
+  .btn.primary:hover { background: var(--accent-hover); }
   .btn.primary:disabled { opacity: .5; }
-  .btn.ghost { background: var(--navy-100); color: var(--navy-700); }
+  .btn.ghost { background: var(--surface-hover); color: var(--text-body); }
   .btn.ghost:hover { background: var(--navy-200); }
   .btn.sm { padding: 4px 9px; font-size: 12px; }
 
   /* ------ inputs ------ */
   input.f, textarea.f, select.f {
     width: 100%; border: 1px solid var(--navy-200); border-radius: 8px; padding: 8px 10px;
-    font: inherit; font-size: 14px; color: var(--navy-900); background: #fff; outline: none;
+    font: inherit; font-size: var(--fs-14); color: var(--text-strong); background: var(--surface-card); outline: none;
   }
-  input.f:focus, textarea.f:focus, select.f:focus { border-color: var(--crimson-600); box-shadow: 0 0 0 3px var(--crimson-50); }
+  input.f:focus, textarea.f:focus, select.f:focus { border-color: var(--line-focus); box-shadow: var(--focus-ring); }
   textarea.f { resize: vertical; line-height: 1.55; }
   .titlein { font-size: 19px; font-weight: 700; }
   .checkset { display: flex; flex-wrap: wrap; gap: 8px; }
   .checkset label {
     display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px;
-    border: 1px solid var(--navy-200); border-radius: 8px; font-size: 13px; cursor: pointer; background: #fff;
+    border: 1px solid var(--line-control); border-radius: var(--r-8); font-size: var(--fs-13); cursor: pointer; background: var(--surface-card);
   }
   .checkset label:hover { border-color: var(--crimson-200); }
   .checkset input { accent-color: var(--crimson-600); }
@@ -275,7 +334,7 @@
   /* one muted ~12px single-line hint under each label; row height reserved so fields align */
   .sg-hint { color: var(--navy-500); font-size: 12px; line-height: 1.4; margin: 0 0 6px; min-height: 17px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sg-panel { display: none; margin-top: 8px; padding: 10px 12px; background: #fff; border: 1px solid var(--navy-200); border-radius: 8px; font-size: 12px; }
+  .sg-panel { display: none; margin-top: 8px; padding: 10px 12px; background: var(--surface-card); border: 1px solid var(--line-control); border-radius: var(--r-8); font-size: var(--fs-12); }
   .sg-panel.show { display: block; }
   .sg-sec { margin-bottom: 8px; }
   .sg-sec:last-child { margin-bottom: 0; }
@@ -314,7 +373,7 @@
   #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
 
   /* ------ toast ------ */
-  .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(20,30,60,.2); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
+  .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: var(--text-inverse); padding: 10px 16px; border-radius: var(--r-10); font-size: var(--fs-13); box-shadow: var(--shadow-toast); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.err { background: var(--crimson-700); }
 
@@ -325,7 +384,9 @@
   .err-summary code { font-family: ui-monospace, monospace; font-size: 12px; }
   .fld-msg { font-size: 12px; margin-top: 5px; line-height: 1.4; }
   .fld-msg.err { color: var(--crimson-700); }
-  .fld-msg.adv { color: var(--amber); }
+  /* --amber on a light surface fails contrast; --amber-700 is the text-only step.
+     Amber stays a fill only on dots and bar segments, never on type. */
+  .fld-msg.adv { color: var(--amber-700); }
   .field .slabel, .dtitle .did { position: relative; }
   .field.has-err > .slabel::after, .field.has-adv > .slabel::after {
     content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: middle;
@@ -346,7 +407,7 @@
   }
 
   /* ------ saved dialog ------ */
-  .saved-dialog { position: fixed; bottom: 20px; right: 22px; max-width: 340px; background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--green); color: var(--navy-800); padding: 13px 16px; border-radius: 10px; font-size: 13px; box-shadow: 0 10px 30px rgba(20,30,60,.18); z-index: 60; display: none; }
+  .saved-dialog { position: fixed; bottom: 20px; right: 22px; max-width: 340px; background: var(--surface-card); border: 1px solid var(--line-panel); border-left: 4px solid var(--status-ok); color: var(--text-body-read); padding: 13px 16px; border-radius: var(--r-10); font-size: var(--fs-13); box-shadow: var(--shadow-dialog); z-index: 60; display: none; }
   .saved-dialog.show { display: block; }
   .saved-dialog code { font-family: ui-monospace, monospace; font-size: 12px; color: var(--navy-900); }
   .saved-dialog .sd-actions { margin-top: 10px; display: flex; gap: 12px; align-items: center; }
@@ -364,9 +425,9 @@
   .sg-frow { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
   .sg-frow .fname { font-size: 13px; color: var(--navy-800); font-family: ui-monospace, "SFMono-Regular", monospace; }
   .badge.cov { font-variant-numeric: tabular-nums; }
-  .badge.cov.c-hi { background: #eaf4ee; color: var(--green); }
-  .badge.cov.c-mid { background: #fdf3e0; color: var(--amber); }
-  .badge.cov.c-lo { background: var(--crimson-50); color: var(--crimson-700); }
+  .badge.cov.c-hi { background: var(--status-ok-bg); color: var(--status-ok); }
+  .badge.cov.c-mid { background: var(--status-advice-bg); color: var(--amber-700); }
+  .badge.cov.c-lo { background: var(--status-error-bg); color: var(--status-error); }
   .badge.orphan { background: var(--navy-200); color: var(--navy-600); }
 
   /* ------ style-guide bar editor ------ */
@@ -375,11 +436,11 @@
   .slot-list li input { flex: 1; }
   .slotcount { color: var(--navy-400); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
   #preview .sg-fieldwrap { border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; background: var(--tint); }
-  #preview .sg-fieldwrap .f { background: #fff; }
+  #preview .sg-fieldwrap .f { background: var(--surface-card); }
 
   /* ------ overview screen ------ */
   .ov-stats { display: flex; gap: 12px; flex-wrap: wrap; }
-  .ov-stat { flex: 1; min-width: 120px; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: #fff; }
+  .ov-stat { flex: 1; min-width: 120px; border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: 14px 16px; background: var(--surface-card); }
   .ov-stat .num { font-size: 28px; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .ov-stat .lbl { font-size: 12px; color: var(--navy-500); margin-top: 3px; }
   .ov-cov-overall { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
@@ -397,9 +458,11 @@
     padding: 3px 9px; border-radius: 6px; background: var(--navy-100); color: var(--navy-700); border: 1px solid var(--border);
     cursor: pointer; margin: 0 6px 6px 0; }
   .ov-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
-  .ov-clean { display: flex; align-items: flex-start; gap: 10px; background: #eaf4ee; border: 1px solid #bfe3cd;
+  .ov-clean { display: flex; align-items: flex-start; gap: 10px; background: var(--status-ok-bg); border: 1px solid var(--status-ok-line);
     color: var(--green); border-radius: 10px; padding: 14px 16px; }
-  .ov-clean .ok-i { font-size: 18px; line-height: 1.3; }
+  /* Status is a CSS dot, not a glyph — Keel has no icon set and says the word instead. */
+  .ov-clean .ok-i { width: 8px; height: 8px; border-radius: var(--r-round); background: var(--status-ok);
+    flex-shrink: 0; margin-top: 6px; }
   .ov-clean p { margin: 0; color: var(--navy-700); font-size: 13px; line-height: 1.5; }
   .ov-clean p b { color: var(--green); }
   .ov-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
@@ -417,6 +480,27 @@
   .ov-activity-meta { color: var(--navy-500); font-size: 12px; }
 
   /* ------ reports screen ------ */
+  /* Severity escalates by WEIGHT, not hue, and only critical takes a solid fill — if the
+     Edit button is as loud as a critical finding, nothing reads as critical. The 4px spine
+     carries the ranking so the list is legible before a word is read. Low is navy, never
+     green: green means covered/closed, a different axis — a low finding is still open. */
+  .finding { border-left: 4px solid var(--sev-low-spine); }
+  .finding.sev-critical { border-left-color: var(--sev-critical-spine); }
+  .finding.sev-high { border-left-color: var(--sev-high-spine); }
+  .finding.sev-medium { border-left-color: var(--sev-medium-spine); }
+  .finding.sev-low { border-left-color: var(--sev-low-spine); }
+  .sev { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-10);
+    padding: 1px 8px; border-radius: var(--r-4); white-space: nowrap; border: 1px solid transparent; }
+  .sev .p { opacity: .7; font-weight: var(--fw-medium); }
+  .sev.sev-critical { background: var(--sev-critical-bg); color: var(--sev-critical-fg);
+    border-color: var(--sev-critical-line); font-weight: var(--fw-bold); }
+  .sev.sev-high { background: var(--sev-high-bg); color: var(--sev-high-fg);
+    border-color: var(--sev-high-line); font-weight: var(--fw-bold); }
+  .sev.sev-medium { background: var(--sev-medium-bg); color: var(--sev-medium-fg);
+    border-color: var(--sev-medium-line); font-weight: var(--fw-semibold); }
+  .sev.sev-low { background: var(--sev-low-bg); color: var(--sev-low-fg);
+    border-color: var(--sev-low-line); font-weight: var(--fw-medium); }
+  .rep-reasoning { margin-top: 6px; color: var(--text-muted); font-size: var(--fs-12); line-height: 1.5; }
   /* Requirement rows: checkbox and text on one line. A dedicated class, not .cdesc,
      because that carries white-space: pre-wrap and would keep the template's newlines. */
   .req-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 7px; font-size: 13px; color: var(--navy-700); }
@@ -424,7 +508,6 @@
   .req-row label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
   .req-note { margin: 3px 0 0 24px; color: var(--navy-500); font-size: 12px; font-style: italic; }
   .req-ignored { margin-top: 7px; color: var(--navy-500); font-size: 12px; font-style: italic; }
-  .rep-facts { margin-top: 6px; color: var(--navy-500); font-size: 12px; font-family: ui-monospace, "SFMono-Regular", monospace; }
   .rep-qa { margin-top: 5px; font-size: 13px; color: var(--navy-700); }
   .rep-qa .meta { display: inline-block; min-width: 18px; font-weight: 700; color: var(--navy-500); }
   .ov-rail-legend { padding: 16px 15px; color: var(--navy-500); font-size: 13px; line-height: 1.6; }
@@ -732,7 +815,7 @@ function threatFacetDefs() {
     { key: "nature", label: "Nature", opts: natureEnum().map(v => [v, v]) },
     { key: "mitigation", label: "Mitigation", opts: [["gating", "has gating"], ["soft", "all soft"], ["none", "none"]] },
     { key: "references", label: "References", opts: [["has", "has refs"], ["none", "no refs"]] },
-    { key: "attention", label: "Needs attention", opts: [["attn", "⚠ flagged"]] },
+    { key: "attention", label: "Needs attention", opts: [["attn", "flagged"]] },
     { key: "tags", label: "Tags", opts: tags.map(v => [v, v]) },
   ];
 }
@@ -1098,7 +1181,7 @@ function readThreat(t) {
     ${crumb("Threats", t.id)}
     ${lastChangedLine(state.history)}
     <div class="dhead">
-      <div class="dicon">▲</div>
+      <div class="dicon">T</div>
       <div class="dtitle">
         <h2>${esc(t.title)}</h2>
         <div class="did">${esc(t.id)}</div>
@@ -1107,8 +1190,8 @@ function readThreat(t) {
         </div>
       </div>
       <div class="hactions">
-        <button class="btn ghost" id="editBtn">✎ Edit</button>
-        <button class="btn ghost" id="deleteBtn" title="Delete this threat">🗑 Delete</button>
+        <button class="btn ghost" id="editBtn">Edit</button>
+        <button class="btn ghost" id="deleteBtn" title="Delete this threat">Delete</button>
       </div>
     </div>
     ${sections}
@@ -1212,14 +1295,14 @@ function editThreat(t) {
 
   return `<div class="detail">
     <div class="dhead">
-      <div class="dicon">▲</div>
+      <div class="dicon">T</div>
       <div class="dtitle field" data-entity="threat" data-field="title" style="width:100%">
         ${hintRow("threat", "title")}
         <input class="f titlein" id="f_title" value="${esc(d.title)}">
         <div class="did" style="margin-top:6px">${esc(t.id)}</div>
       </div>
       <div class="hactions">
-        <button class="btn primary" id="saveBtn">✔ Save</button>
+        <button class="btn primary" id="saveBtn">Save</button>
         <button class="btn ghost" id="cancelBtn">Cancel</button>
       </div>
     </div>
@@ -1288,7 +1371,7 @@ function weaknessesEditor() {
     const head = `<div class="ecard-head" data-widx="${i}">
         <button type="button" class="card-toggle wk-toggle" data-widx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Weakness " + (i + 1) : summary}</span>
-        <button type="button" class="cardx wk-remove" data-widx="${i}" title="Remove weakness">✕</button>
+        <button type="button" class="cardx wk-remove" data-widx="${i}" title="Remove weakness">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard wk-card collapsed" data-widx="${i}">${head}</div>`;
     const compOpts = comps.map(c => `<option value="${esc(c)}" ${c === w.component ? "selected" : ""}>${esc(c)}</option>`).join("");
@@ -1341,7 +1424,7 @@ function mitigationsEditor() {
         <button type="button" class="card-toggle ml-toggle" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${summary}</span>
         ${isOpen && l.strength ? `<span class="badge soft">${esc(l.strength)}</span>` : ""}
-        <button type="button" class="cardx ml-unlink" title="Unlink mitigation">✕</button>
+        <button type="button" class="cardx ml-unlink" title="Unlink mitigation">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard ml-card collapsed" data-mid="${esc(l.id)}">${head}</div>`;
     const opts = strengths.map(s => `<option value="${esc(s)}" ${s === l.strength ? "selected" : ""}>${esc(s)}</option>`).join("");
@@ -1392,7 +1475,7 @@ function referencesEditor() {
     const head = `<div class="ecard-head" data-ridx="${i}">
         <button type="button" class="card-toggle ref-toggle" data-ridx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Reference " + (i + 1) : summary}</span>
-        <button type="button" class="cardx ref-remove" data-ridx="${i}" title="Remove reference">✕</button>
+        <button type="button" class="cardx ref-remove" data-ridx="${i}" title="Remove reference">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard ref-card collapsed" data-ridx="${i}">${head}</div>`;
     return `<div class="ecard ref-card open" data-ridx="${i}">
@@ -1830,7 +1913,7 @@ function showSavedDialog(path) {
   const repo = (state.config && state.config.repo_url || "").replace(/\/+$/, "");
   const p = esc(path);
   const editLink = repo
-    ? `<a href="${esc(repo)}/edit/main/${p}" target="_blank" rel="noopener">Edit on GitHub ↗</a>`
+    ? `<a href="${esc(repo)}/edit/main/${p}" target="_blank" rel="noopener">Edit on GitHub</a>`
     : "";
   const el = document.getElementById("savedDialog");
   el.innerHTML = `Saved to <code>${p}</code> — commit and open a pull request.
@@ -2017,7 +2100,7 @@ function overviewHtml() {
     </div>`;
   }).join("");
   const gaps = (h.issue_count === 0)
-    ? `<div class="ov-clean"><span class="ok-i">✓</span>
+    ? `<div class="ov-clean"><span class="ok-i"></span>
         <p><b>Nothing flagged.</b> Every threat has weaknesses, a classified harm, and at least one linked mitigation — and no link dangles.</p></div>`
     : gapCards;
 
@@ -2069,7 +2152,7 @@ function overviewHtml() {
   const warningCount = (state.warnings || []).length;
   const warningsSection = warningCount
     ? warningCards
-    : `<div class="ov-clean"><span class="ok-i">✓</span><p><b>Nothing flagged.</b> No advisory warnings across the catalog.</p></div>`;
+    : `<div class="ov-clean"><span class="ok-i"></span><p><b>Nothing flagged.</b> No advisory warnings across the catalog.</p></div>`;
 
   const act = state.recentActivity || { available: false, commits: [] };
   const activityRows = act.available && act.commits.length
@@ -2082,7 +2165,7 @@ function overviewHtml() {
 
   return `<div class="detail">
     <div class="dhead">
-      <div class="dicon" style="background:var(--navy-700)">◈</div>
+      <div class="dicon" style="background:var(--navy-700)">O</div>
       <div class="dtitle">
         <h2>Library overview</h2>
         <div class="did">A snapshot to review — nothing here blocks a save.</div>
@@ -2141,6 +2224,7 @@ function overviewOpenMitigationsFiltered(facetKey, value) {
 // ===================================================================== //
 // critical/high read as "important"; medium/low sit below the fold.
 const REPORT_IMPORTANT = new Set(["critical", "high"]);
+const SEVERITY_RANK = ["critical", "high", "medium", "low"];
 
 async function loadReports() {
   try {
@@ -2160,7 +2244,7 @@ function renderReportsRail() {
     const plural = s.report_count === 1 ? "report" : "reports";
     return `<div class="row ${sel ? "active" : ""}" data-system="${esc(s.system_id)}">
       <span class="rid">${esc(s.system_id)}</span>
-      <span class="rtitle">${esc(s.system_name)} · ${s.report_count} ${plural}${s.has_delta ? " · Δ" : ""}</span>
+      <span class="rtitle">${esc(s.system_name)} · ${s.report_count} ${plural}${s.has_delta ? " · delta" : ""}</span>
     </div>`;
   }).join("") : '<div class="empty" style="margin-top:40px">No reports yet.</div>';
   document.getElementById("count").textContent = items.length ? String(items.length) : "";
@@ -2201,7 +2285,6 @@ async function openReportSystem(systemId, date) {
 // One finding card. The inclusion checkbox is copy-time UI only — it is never written
 // back, so a finished report can't be reopened later in a differently-edited state.
 function reportFindingHtml(f) {
-  const sevClass = REPORT_IMPORTANT.has(f.risk.severity) ? "c-lo" : "c-mid";
   const reqs = (f.requirements || []).map((r, ri) => {
     const label = r.mitigation_id || r.description || "(unnamed requirement)";
     const covered = r.coverage_status === "already_covered";
@@ -2212,13 +2295,23 @@ function reportFindingHtml(f) {
   }).join("");
   const ignored = (f.ignored_mitigations || []).map(im =>
     `<div class="req-ignored">Not applied: ${esc(im.mitigation_id)} — ${esc(im.reason)}</div>`).join("");
-  return `<div class="card">
+  // Severity and likelihood are grades, so they carry the weight ramp. Harm, surface,
+  // source and complexity are facts ABOUT the finding, not grades of it — neutral badges,
+  // so nothing on the card competes with the ranking.
+  const facts = [f.harm, f.attack_surface, f.source.who, "exploitation " + f.exploitation_complexity]
+    .map(v => `<span class="badge type">${esc(v)}</span>`).join("");
+  const grade = (kind, level) =>
+    `<span class="sev sev-${esc(level)}"><span class="p">${kind}</span>${esc(level)}</span>`;
+  return `<div class="card finding sev-${esc(f.risk.severity)}">
     <div class="chead">
       <span class="ctitle">${esc(f.id)}</span>
-      <span class="badge cov ${sevClass}" style="margin-left:auto">${esc(f.risk.severity)}</span>
+      <span style="margin-left:auto; display:flex; gap:6px">
+        ${grade("severity", f.risk.severity)}${grade("likelihood", f.risk.likelihood)}
+      </span>
     </div>
     <div class="cdesc">${esc(f.scenario)}</div>
-    <div class="rep-facts">${esc(f.harm)} · ${esc(f.attack_surface)} · ${esc(f.source.who)} · exploitation ${esc(f.exploitation_complexity)}</div>
+    <div class="badges">${facts}</div>
+    ${f.risk.reasoning ? `<div class="rep-reasoning">${esc(f.risk.reasoning)}</div>` : ""}
     ${reqs}${ignored}
   </div>`;
 }
@@ -2232,7 +2325,9 @@ function reportDetailHtml(rep) {
       ).join("")}</div>`
     : "";
 
-  const findings = rep.findings || [];
+  // Rank critical → high → medium → low inside each group, so the spine reads top-down.
+  const findings = (rep.findings || []).slice()
+    .sort((a, b) => SEVERITY_RANK.indexOf(a.risk.severity) - SEVERITY_RANK.indexOf(b.risk.severity));
   const important = findings.filter(f => REPORT_IMPORTANT.has(f.risk.severity));
   const lesser = findings.filter(f => !REPORT_IMPORTANT.has(f.risk.severity));
   const group = list => list.length ? list.map(reportFindingHtml).join("") : '<p class="placeholder">None.</p>';
@@ -2252,7 +2347,7 @@ function reportDetailHtml(rep) {
 
   return `<div class="detail">
     <div class="dhead">
-      <div class="dicon" style="background:var(--navy-700)">▤</div>
+      <div class="dicon" style="background:var(--navy-700)">R</div>
       <div class="dtitle">
         <h2>${esc(rep.system_name)}</h2>
         <div class="did">${esc(rep.date)} · ${esc(rep.assessor)}</div>
@@ -2509,12 +2604,12 @@ function renderStyleDetail() {
   const d = state.styleDraft;
   m.innerHTML = `<div class="detail">
     <div class="dhead">
-      <div class="dicon">✎</div>
+      <div class="dicon">S</div>
       <div class="dtitle">
         <h2>${esc(field)}</h2>
         <div class="did">${esc(entity)}${orphan ? " · orphan — schema removed this field" : ""}</div>
       </div>
-      <div class="hactions"><button class="btn primary" id="sgSaveBtn">✔ Save</button></div>
+      <div class="hactions"><button class="btn primary" id="sgSaveBtn">Save</button></div>
     </div>
     <section class="field">
       <h3 class="slabel">Purpose <span class="sub">— the one-line hint shown above the input</span></h3>
@@ -2534,7 +2629,7 @@ function slotListSection(slot, label, sub) {
   const items = state.styleDraft[slot] || [];
   const rows = items.map((v, i) => `<li>
     <input class="f sg-item" data-slot="${esc(slot)}" data-i="${i}" value="${esc(v)}">
-    <button class="btn ghost sm sg-item-rm" data-slot="${esc(slot)}" data-i="${i}" title="Remove">✕</button>
+    <button class="btn ghost sm sg-item-rm" data-slot="${esc(slot)}" data-i="${i}" title="Remove">×</button>
   </li>`).join("");
   return `<section class="field">
     <h3 class="slabel">${esc(label)}${sub ? ` <span class="sub">— ${sub}</span>` : ""}</h3>
@@ -2809,7 +2904,7 @@ function readMitigation(mt) {
     ${crumb("Mitigations", mt.id)}
     ${lastChangedLine(state.mitHistory)}
     <div class="dhead">
-      <div class="dicon">⛨</div>
+      <div class="dicon">C</div>
       <div class="dtitle">
         <h2>${esc(mt.name)}</h2>
         <div class="did">${esc(mt.id)}</div>
@@ -2829,8 +2924,8 @@ function readMitigation(mt) {
 // Header actions for a mitigation (Edit / Delete).
 function mitHeadActions() {
   return `<div class="hactions">
-    <button class="btn ghost" id="mitEditBtn">✎ Edit</button>
-    <button class="btn ghost" id="mitDeleteBtn" title="Delete this mitigation">🗑 Delete</button>
+    <button class="btn ghost" id="mitEditBtn">Edit</button>
+    <button class="btn ghost" id="mitDeleteBtn" title="Delete this mitigation">Delete</button>
   </div>`;
 }
 
@@ -2924,7 +3019,7 @@ function antiPatternsEditor() {
     const head = `<div class="ecard-head" data-idx="${i}">
         <button type="button" class="card-toggle ap-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Anti-pattern " + (i + 1) : summary}</span>
-        <button type="button" class="cardx ap-remove" data-idx="${i}" title="Remove anti-pattern">✕</button>
+        <button type="button" class="cardx ap-remove" data-idx="${i}" title="Remove anti-pattern">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard ap-card collapsed" data-idx="${i}">${head}</div>`;
     return `<div class="ecard ap-card open" data-idx="${i}">${head}
@@ -2951,7 +3046,7 @@ function validationEditor() {
     const head = `<div class="ecard-head" data-idx="${i}">
         <button type="button" class="card-toggle val-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Check " + (i + 1) : summary}</span>
-        <button type="button" class="cardx val-remove" data-idx="${i}" title="Remove check">✕</button>
+        <button type="button" class="cardx val-remove" data-idx="${i}" title="Remove check">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard validation-card collapsed" data-idx="${i}">${head}</div>`;
     return `<div class="ecard validation-card open" data-idx="${i}">${head}
@@ -2987,7 +3082,7 @@ function faqEditor() {
     const head = `<div class="ecard-head" data-idx="${i}">
         <button type="button" class="card-toggle faq-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Q " + (i + 1) : summary}</span>
-        <button type="button" class="cardx faq-remove" data-idx="${i}" title="Remove question">✕</button>
+        <button type="button" class="cardx faq-remove" data-idx="${i}" title="Remove question">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard faq-card collapsed" data-idx="${i}">${head}</div>`;
     return `<div class="ecard faq-card open" data-idx="${i}">${head}
@@ -3021,7 +3116,7 @@ function implementationsEditor() {
     const head = `<div class="ecard-head" data-idx="${i}">
         <button type="button" class="card-toggle impl-toggle" data-idx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Implementation " + (i + 1) : summary}</span>
-        <button type="button" class="cardx impl-remove" data-idx="${i}" title="Remove implementation">✕</button>
+        <button type="button" class="cardx impl-remove" data-idx="${i}" title="Remove implementation">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard implementation-card collapsed" data-idx="${i}">${head}</div>`;
     return `<div class="ecard implementation-card open" data-idx="${i}">${head}
@@ -3089,7 +3184,7 @@ function editMitigation(mt) {
 
   return `<div class="detail">
     <div class="dhead">
-      <div class="dicon">⛨</div>
+      <div class="dicon">C</div>
       <div class="dtitle field" data-entity="mitigation" data-field="name" style="width:100%">
         ${hintRow("mitigation", "name")}
         <input class="f titlein" id="mit_name" value="${esc(d.name)}">
@@ -3097,7 +3192,7 @@ function editMitigation(mt) {
       </div>
       <div class="hactions" style="flex-direction:column;align-items:flex-end;gap:8px">
         <div style="display:flex;gap:8px">
-          <button class="btn primary" id="mitSaveBtn">✔ Save</button>
+          <button class="btn primary" id="mitSaveBtn">Save</button>
           <button class="btn ghost" id="mitCancelBtn">Cancel</button>
         </div>
       </div>
