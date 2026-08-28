@@ -1,0 +1,38 @@
+<!-- @dsCard group="Components" viewport="700x330" name="Feedback" subtitle="Two channels, never one: crimson blocks, amber advises" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0}body{background:var(--surface-app);font:var(--fs-14)/var(--lh-base) var(--font-sans);color:var(--text-strong);padding:18px 20px}a{color:var(--text-link)}a:hover{color:var(--text-link-hover)}.k{font-size:var(--fs-10);text-transform:uppercase;letter-spacing:var(--ls-key);color:var(--text-faint);font-weight:var(--fw-bold);margin:0 0 7px}.rowz{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.colz{display:flex;flex-direction:column;gap:14px}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { ErrorSummary, WarnBanner, EmptyState, Toast, SavedDialog } = window.KeelDesignSystem_7d5998;
+function Demo() {
+  return (
+    <div className="colz">
+      <ErrorSummary title="2 problems block this save" style={{margin:0}}
+        items={["harm: 'rce' is outside the fixed vocabulary", "weaknesses: at least one is required"]} />
+      <ErrorSummary tone="advice" title="1 thing worth a look" style={{margin:0}}
+        items={["every mitigation on this threat is soft — nothing gates it"]} />
+      <WarnBanner>CTRL-LEGACY-GUARD is linked here but no longer exists in the catalog.</WarnBanner>
+      <WarnBanner tone="ok">No gaps to review. Every threat carries a weakness, a harm and a mitigation.</WarnBanner>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start"}}>
+        <div style={{position:"relative",height:74,background:"var(--surface-panel)",border:"1px solid var(--line-panel)",borderRadius:"var(--r-10)",overflow:"hidden"}}>
+          <Toast message="Saved." style={{position:"absolute",bottom:12,right:14}} />
+        </div>
+        <SavedDialog file="catalog/threats/T-TOOL-ABUSE.yaml" repoUrl="#"
+          style={{position:"relative",bottom:"auto",right:"auto",maxWidth:"none"}} onClose={()=>{}} />
+      </div>
+      <div style={{background:"var(--surface-panel)",border:"1px solid var(--line-panel)",borderRadius:"var(--r-10)",padding:"6px 0"}}>
+        <EmptyState top="14px" style={{marginBottom:14}}>Select a threat from the list.</EmptyState>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body></html>

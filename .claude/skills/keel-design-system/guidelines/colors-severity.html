@@ -1,0 +1,18 @@
+<!-- @dsCard group="Colors" viewport="700x210" name="Severity ramp" subtitle="Escalates by weight, not hue — only critical is a solid fill" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);font:var(--fs-14)/var(--lh-base) var(--font-sans);color:var(--text-strong);padding:16px 18px}a{color:var(--text-link)}a:hover{color:var(--text-link-hover)}
+.k{font-size:var(--fs-10);text-transform:uppercase;letter-spacing:var(--ls-key);color:var(--text-faint);font-weight:var(--fw-bold);margin:0 0 7px}
+.b{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-10);padding:1px 8px;border-radius:var(--r-4);text-transform:lowercase;white-space:nowrap}
+.b .p{opacity:.7;font-weight:var(--fw-medium)}
+.row{display:flex;align-items:center;gap:10px;background:var(--surface-panel);border:1px solid var(--line-panel);border-radius:var(--r-10);padding:9px 13px;margin-bottom:6px;font-size:var(--fs-13)}
+.row .id{font-family:var(--font-mono);font-size:var(--fs-12);color:var(--text-muted)}
+.cls{font-size:var(--fs-10);padding:1px 8px;border-radius:var(--r-4);font-weight:var(--fw-semibold);background:var(--classify-bg);color:var(--classify-fg);font-family:var(--font-mono)}
+.tok{font-family:var(--font-mono);font-size:var(--fs-11);color:var(--text-muted)}</style></head><body>
+<p class="k">A ranked findings list — the 4px spine carries the ranking, the badge names it</p>
+<div class="row" style="border-left:4px solid var(--sev-critical-spine)"><span class="id">T-TOOL-ABUSE</span><span class="b" style="background:var(--sev-critical-bg);color:var(--sev-critical-fg);border:1px solid var(--sev-critical-line);font-weight:var(--fw-bold)"><span class="p">severity</span>critical</span><span class="cls">code-execution</span></div>
+<div class="row" style="border-left:4px solid var(--sev-high-spine)"><span class="id">T-CMD-INJECT</span><span class="b" style="background:var(--sev-high-bg);color:var(--sev-high-fg);border:1px solid var(--sev-high-line);font-weight:var(--fw-bold)"><span class="p">severity</span>high</span><span class="cls">code-execution</span></div>
+<div class="row" style="border-left:4px solid var(--sev-medium-spine)"><span class="id">T-DATA-LEAK</span><span class="b" style="background:var(--sev-medium-bg);color:var(--sev-medium-fg);border:1px solid var(--sev-medium-line);font-weight:var(--fw-semibold)"><span class="p">severity</span>medium</span><span class="cls">data-exposed</span></div>
+<div class="row" style="border-left:4px solid var(--sev-low-spine);margin-bottom:0"><span class="id">T-METADATA-LEAK</span><span class="b" style="background:var(--sev-low-bg);color:var(--sev-low-fg);border:1px solid var(--sev-low-line);font-weight:var(--fw-medium)"><span class="p">severity</span>low</span><span class="cls">data-exposed</span></div>
+<p class="tok" style="margin:11px 0 0">low is navy, NOT green — green means "covered/closed", a different axis. A low finding is still open.</p>
+</body></html>

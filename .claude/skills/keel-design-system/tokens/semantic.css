@@ -1,0 +1,81 @@
+/* Semantic aliases — always author against these, not the ramps above. */
+:root {
+  /* text */
+  --text-strong: var(--navy-900);   /* headings, row titles, values */
+  --text-body: var(--navy-700);     /* prose, read-view paragraphs */
+  --text-body-read: var(--navy-800);/* prose inside a read section (one step darker) */
+  --text-muted: var(--navy-500);    /* meta, hints, secondary lines */
+  --text-faint: var(--navy-400);    /* placeholders, empty states, ids, carets */
+  --text-inverse: #ffffff;
+  --text-link: var(--crimson-600);
+  --text-link-hover: var(--crimson-700);
+
+  /* surfaces */
+  --surface-app: var(--bg);
+  --surface-panel: var(--panel);
+  --surface-section: var(--tint);   /* .readsec / fieldset band */
+  --surface-card: var(--white);     /* a card sitting on a section band */
+  --surface-inset: var(--tint);     /* search field, diff gutters, tab strip */
+  --surface-selected: var(--crimson-50);
+  --surface-hover: var(--navy-100);
+
+  /* lines */
+  --line-panel: var(--border);      /* pane edges, card borders, control borders */
+  --line-inner: var(--border2);     /* row dividers, section borders inside a pane */
+  --line-control: var(--navy-200);  /* form control resting border */
+  --line-focus: var(--crimson-600);
+  --line-danger: var(--crimson-200);
+
+  /* accent / action */
+  --accent: var(--crimson-600);
+  --accent-hover: var(--crimson-700);
+  --accent-wash: var(--crimson-50);
+  --accent-line: var(--crimson-200);
+
+  /* status — error blocks, advice never blocks, verified passes */
+  --status-error: var(--crimson-700);
+  --status-error-bg: var(--crimson-50);
+  --status-error-line: var(--crimson-200);
+  --status-advice: var(--amber);
+  --status-advice-bg: var(--amber-50);
+  --status-ok: var(--green);
+  --status-ok-bg: var(--green-50);
+  --status-ok-line: var(--green-200);
+
+  /* --- severity: a WEIGHT ramp, not a hue switch ---------------------------
+     The assessor's whole job is ranking, so severity must outrank every other
+     use of crimson on the page. It escalates by weight: only critical is a
+     solid fill, high is a wash, medium moves to amber, low goes neutral.
+     Low is deliberately NOT green — green means "covered/closed", a different
+     axis; a low-severity finding is still an open finding.
+     Consequence: nothing else on a report screen may carry a solid crimson
+     fill. Classification badges (harm, surface, class) are neutral. */
+  --sev-critical-bg: var(--crimson-700);
+  --sev-critical-fg: #ffffff;
+  --sev-critical-line: var(--crimson-700);
+  --sev-critical-spine: var(--crimson-700);
+
+  --sev-high-bg: var(--crimson-50);
+  --sev-high-fg: var(--crimson-700);
+  --sev-high-line: var(--crimson-200);
+  --sev-high-spine: var(--crimson-600);
+
+  --sev-medium-bg: var(--amber-50);
+  --sev-medium-fg: var(--amber-700);
+  --sev-medium-line: #f0dcb0;
+  --sev-medium-spine: var(--amber);
+
+  --sev-low-bg: var(--navy-100);
+  --sev-low-fg: var(--navy-600);
+  --sev-low-line: var(--border);
+  --sev-low-spine: var(--navy-400);
+
+  --sev-info-bg: var(--navy-100);
+  --sev-info-fg: var(--navy-500);
+  --sev-info-spine: var(--navy-200);
+
+  /* a neutral classification badge — for harm, surface, source, class, complexity:
+     facts about a finding, never a grade of it */
+  --classify-bg: var(--navy-200);
+  --classify-fg: var(--navy-700);
+}

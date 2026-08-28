@@ -1,0 +1,17 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="The app grid" subtitle="rail 320 | editor 1fr | preview 360 — both side tracks user-driven" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);font:var(--fs-14)/var(--lh-base) var(--font-sans);color:var(--text-strong);padding:16px 18px}a{color:var(--text-link)}a:hover{color:var(--text-link-hover)}
+.sw{display:flex;gap:0;border-radius:var(--r-8);overflow:hidden;border:1px solid var(--line-panel)}
+.sw>div{flex:1;height:56px;display:flex;align-items:flex-end;padding:6px 8px;font-family:var(--font-mono);font-size:9px;letter-spacing:.02em}
+.grid{display:grid;gap:10px}
+.k{font-size:var(--fs-10);text-transform:uppercase;letter-spacing:var(--ls-key);color:var(--text-faint);font-weight:var(--fw-bold);margin:0 0 6px}
+.mono{font-family:var(--font-mono)}
+.tok{font-family:var(--font-mono);font-size:var(--fs-11);color:var(--text-muted)}
+</style></head><body>
+<div style="display:grid;grid-template-columns:180px 1fr 200px;gap:0;height:104px;border:1px solid var(--line-panel);border-radius:var(--r-8);overflow:hidden">
+<div style="background:var(--panel);border-right:1px solid var(--border);padding:8px 10px"><p class="k" style="margin:0">Rail 320px</p><p class="tok" style="margin:4px 0 0;font-size:10px">collapses to 44px</p></div>
+<div style="background:var(--bg);padding:8px 10px"><p class="k" style="margin:0">Editor 1fr</p><p class="tok" style="margin:4px 0 0;font-size:10px">padding 30px 40px</p></div>
+<div style="background:var(--panel);border-left:2px solid var(--crimson-600);padding:8px 10px"><p class="k" style="margin:0">Preview 360px</p><p class="tok" style="margin:4px 0 0;font-size:10px">drag-resized; 0px on Threats</p></div></div>
+<p class="tok" style="margin:9px 0 0">Full viewport height. Each pane scrolls independently — the page itself never scrolls.</p>
+</body></html>
