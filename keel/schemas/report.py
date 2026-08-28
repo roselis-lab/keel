@@ -12,9 +12,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from keel.schemas.threat import Harm, Source, Surface
 
+# Three levels, and the same three for every graded axis. An organisation's own risk
+# policy is what turns a grade into an action, and policies are written against three
+# bands; a fourth level ("critical") only ever meant "high, but really" and gave the
+# assessor a choice with no consequence attached to it.
 ExploitationComplexity = Literal["low", "medium", "high"]
 Likelihood = Literal["low", "medium", "high"]
-Severity = Literal["low", "medium", "high", "critical"]
+Severity = Literal["low", "medium", "high"]
 CoverageStatus = Literal["already_covered", "needs_implementation", "partial"]
 
 

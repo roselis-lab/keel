@@ -21,10 +21,16 @@
     --numeric: tabular-nums;
     /* colour ramps */
     --navy-900: #17203a; --navy-800: #232d4a; --navy-700: #38415f; --navy-600: #4a5570;
-    --navy-500: #6b7690; --navy-400: #97a0b5; --navy-200: #d7dce8; --navy-100: #eef1f7;
+    /* navy-500 darkened from #6b7690: at the old value the quiet text tier measured
+       4.20:1 on the app background and 4.28:1 on the section tint, so most of the meta,
+       hints and provenance lines in the app failed WCAG AA. #636e88 clears 4.5:1 on all
+       four surfaces (app, tint, panel, navy-100) and is visually the same grey-blue. */
+    --navy-500: #636e88; --navy-400: #97a0b5; --navy-200: #d7dce8; --navy-100: #eef1f7;
     --crimson-700: #b81f42; --crimson-600: #d6294e; --crimson-200: #f6c9d3; --crimson-50: #fdeef1;
     --amber: #e0a021; --amber-50: #fdf3e0; --amber-700: #8f6410;
-    --green: #1f9d57; --green-50: #eaf4ee; --green-200: #bfe3cd;
+    /* --green-700 is the text-only step, the same arrangement --amber-700 already had:
+       --green on green-50 measures 3.10:1. Green stays a fill on dots and bar segments. */
+    --green: #1f9d57; --green-50: #eaf4ee; --green-200: #bfe3cd; --green-700: #136c3a;
     --bg: #f4f6fb; --panel: #ffffff; --tint: #f6f8fc; --white: #ffffff;
     --border: #dfe3ec; --border2: #eef1f7;
     /* diff palette — deliberately GitHub's, not Keel's, so a reviewer reads it instantly */
@@ -46,9 +52,15 @@
     --dur-hover: .12s; --dur-layer: .2s; --ease: ease; --toast-rise: 8px;
     /* grid track widths — driven by the rail collapse toggle + the preview resizer */
     --rail-w: 320px; --rail-w-collapsed: 44px; --preview-w: 360px; --resizer-w: 9px; --app-h: 100vh;
+    --topbar-h: 46px;
+    /* Prose measure. The editor pane is 1fr and goes very wide on a large display;
+       14px running text at 1600px is unreadable. Body copy caps at a normal line. */
+    --measure: 74ch;
     /* ---- semantic aliases ---- */
     --text-strong: var(--navy-900); --text-body: var(--navy-700); --text-body-read: var(--navy-800);
-    --text-muted: var(--navy-500); --text-faint: var(--navy-400); --text-inverse: #ffffff;
+    /* navy-400 is NOT a text step — it measures 2.62:1 on white and cannot carry type
+       on any Keel surface. It stays in the ramp for rules, dots and the low spine. */
+    --text-muted: var(--navy-500); --text-faint: var(--navy-500); --text-inverse: #ffffff;
     --text-link: var(--crimson-600); --text-link-hover: var(--crimson-700);
     --surface-app: var(--bg); --surface-panel: var(--panel); --surface-section: var(--tint);
     --surface-card: var(--white); --surface-inset: var(--tint);
@@ -60,17 +72,18 @@
     --status-error: var(--crimson-700); --status-error-bg: var(--crimson-50); --status-error-line: var(--crimson-200);
     --status-advice: var(--amber); --status-advice-bg: var(--amber-50);
     --status-ok: var(--green); --status-ok-bg: var(--green-50); --status-ok-line: var(--green-200);
-    /* severity escalates by weight, not hue — only critical takes a solid fill.
-       Low is navy, never green: green means covered/closed, a different axis. */
-    --sev-critical-bg: var(--crimson-700); --sev-critical-fg: #ffffff;
-    --sev-critical-line: var(--crimson-700); --sev-critical-spine: var(--crimson-700);
-    --sev-high-bg: var(--crimson-50); --sev-high-fg: var(--crimson-700);
-    --sev-high-line: var(--crimson-200); --sev-high-spine: var(--crimson-600);
+    --status-ok-fg: var(--green-700);
+    /* Severity escalates by weight, not hue — only the top band takes a solid fill.
+       THREE bands, not the design system's four: an organisation's risk policy is
+       written against three, and a fourth level only ever meant "high, but really".
+       See keel/schemas/report.py, which is the scale these mirror. Low is navy, never
+       green: green means covered/closed, a different axis — a low finding is still open. */
+    --sev-high-bg: var(--crimson-700); --sev-high-fg: #ffffff;
+    --sev-high-line: var(--crimson-700); --sev-high-spine: var(--crimson-700);
     --sev-medium-bg: var(--amber-50); --sev-medium-fg: var(--amber-700);
     --sev-medium-line: #f0dcb0; --sev-medium-spine: var(--amber);
     --sev-low-bg: var(--navy-100); --sev-low-fg: var(--navy-600);
     --sev-low-line: var(--border); --sev-low-spine: var(--navy-400);
-    --sev-info-bg: var(--navy-100); --sev-info-fg: var(--navy-500); --sev-info-spine: var(--navy-200);
     /* classification is neutral — harm/surface/source are facts about a finding, not grades of it */
     --classify-bg: var(--navy-200); --classify-fg: var(--navy-700);
   }
@@ -78,24 +91,37 @@
   body {
     margin: 0; background: var(--bg); color: var(--navy-900);
     font: 14px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
-    display: grid; grid-template-columns: var(--rail-w) 1fr var(--preview-w); height: 100vh;
+    display: grid; grid-template-columns: var(--rail-w) 1fr var(--preview-w);
+    grid-template-rows: var(--topbar-h) 1fr; height: 100vh;
   }
   body.resizing { cursor: col-resize; user-select: none; }
   button { font-family: inherit; cursor: pointer; }
 
+  /* ------ top bar ------ */
+  /* Primary navigation belongs to the app, not to the 320px rail. Five text tabs
+     stretched across the rail read as a cramped segmented control, and they pushed the
+     rail's own title, count and ＋New into a second squeezed row directly beneath.
+     Up here the tabs sit at their natural width and the rail serves only its list. */
+  .topbar { grid-column: 1 / -1; display: flex; align-items: stretch;
+    background: var(--panel); border-bottom: 1px solid var(--border); }
+  .topbar .brand { display: flex; align-items: center; padding: 0 20px;
+    font-size: 15px; font-weight: 700; letter-spacing: -.01em; color: var(--navy-900); }
+
   /* ------ left rail ------ */
   aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   header {
-    padding: 15px 18px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 8px;
+    padding: 10px 15px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
   }
-  header h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
-  header .count { color: var(--navy-400); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  /* The tab above already names the screen; this names the LIST — "Systems" under the
+     Reports tab, "Fields" under Style guide — so it is an eyebrow, not a second title. */
+  header h1 { font-size: 10px; margin: 0; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--navy-500); }
+  header .count { color: var(--navy-500); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
   .rail-toggle { border: none; background: none; color: var(--navy-500); font-size: 15px; line-height: 1; padding: 3px 6px; border-radius: 6px; flex-shrink: 0; }
   .rail-toggle:hover { background: var(--navy-100); color: var(--navy-800); }
   /* Collapsed left rail — a thin strip that keeps only the expand affordance. */
   body.rail-collapsed { --rail-w: 44px; }
-  body.rail-collapsed .screens,
   body.rail-collapsed .search,
   body.rail-collapsed .facets,
   body.rail-collapsed .list,
@@ -115,7 +141,7 @@
   .facets { border-bottom: 1px solid var(--border); }
   .facets-bar { display: flex; align-items: center; gap: 7px; padding: 8px 14px; cursor: pointer; user-select: none; }
   .facets-bar:hover { background: var(--navy-100); }
-  .fx-caret { color: var(--navy-400); font-size: 10px; width: 10px; flex-shrink: 0; }
+  .fx-caret { color: var(--navy-500); font-size: 10px; width: 10px; flex-shrink: 0; }
   .fx-label { font-size: 12px; font-weight: 600; color: var(--navy-700); }
   .fx-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
     background: var(--accent); color: var(--text-inverse); font-variant-numeric: var(--numeric); }
@@ -145,19 +171,21 @@
 
   /* ------ badges ------ */
   .badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
-  .badge { font-size: 10px; padding: 1px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  /* 11px, not 10 — a badge carries a real word (a harm class, a link strength) that a
+     reader has to take in, and at 10px those were the smallest type on a laptop screen. */
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
   .badge.soft { background: var(--navy-100); color: var(--navy-600); font-weight: 500; border-radius: 10px; }
   .badge.type { background: var(--navy-200); color: var(--navy-700); }
   /* Classification is neutral. harm/surface/source/mitigation_class are facts ABOUT an
      entry, not grades OF it — a crimson fill here made every rail row shout and left
      nothing louder for the accent to mean. */
   .badge.harm { background: var(--classify-bg); color: var(--classify-fg); }
-  .badge.tag { background: var(--status-ok-bg); color: var(--status-ok); }
-  .badge.shared { background: var(--status-ok-bg); color: var(--status-ok); margin-left: 6px; }
+  .badge.tag { background: var(--status-ok-bg); color: var(--status-ok-fg); }
+  .badge.shared { background: var(--status-ok-bg); color: var(--status-ok-fg); margin-left: 6px; }
 
   /* ------ center editor ------ */
   main { overflow-y: auto; padding: 30px 40px; min-width: 0; }
-  .empty { color: var(--navy-400); margin-top: 22vh; text-align: center; }
+  .empty { color: var(--navy-500); margin-top: 22vh; text-align: center; }
   .detail { max-width: none; }
 
   /* ------ editor section tiers (fieldset/legend) ------ */
@@ -168,48 +196,75 @@
     background: var(--tint); border: 1px solid var(--border2); border-radius: 10px;
     padding: 12px 14px; margin: 14px 0 0; min-width: 0;
   }
-  /* Legend matches the read section header (.readsec > h3.slabel): 11px, navy-700, no rule. */
-  .detail fieldset > legend.slabel {
-    display: block; width: 100%; float: none; padding: 0; margin: 0 0 9px;
-    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--navy-700); font-weight: 700;
-  }
-  .detail fieldset > legend.slabel .sub { font-weight: 400; text-transform: none; color: var(--navy-400); }
-  /* subsection label inside a repeatable card — one type-step down, no border */
-  .ecard .field > .slabel { font-size: 11px; border: 0; padding: 0; margin: 0 0 6px; }
+  /* The legend is the same tier as the read view's section header — see h3.slabel. */
+  .detail fieldset > legend.slabel { display: block; width: 100%; float: none; padding: 0; }
   .ecard .field + .field { margin-top: var(--field-gap); }
   input.f, select.f { min-height: var(--input-h); }
   .dhead { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 20px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
-  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-inverse); flex-shrink: 0; font-size: 20px; background: var(--accent); }
+  /* Navy, not the accent. Every entity header carries one of these; in crimson there was
+     a solid accent block on every single screen, which is the one fill the severity ramp
+     needs to keep for its top band. The Overview already overrode it to navy inline. */
+  .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; color: var(--text-inverse); flex-shrink: 0; font-size: 18px;
+    font-weight: 700; background: var(--navy-700); }
   .dhead .dtitle { flex: 1; min-width: 0; }
   .dhead h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
-  .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-400); font-size: 12px; margin-top: 4px; }
+  .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-500); font-size: 12px; margin-top: 4px; }
+  /* .did is for an identifier. A screen whose subtitle is a sentence uses this instead —
+     a wrapped sentence set in the mono face reads as code the reader has to decode. */
+  .dhead .dsub { color: var(--navy-500); font-size: 13px; margin-top: 5px; line-height: 1.5; max-width: var(--measure); }
   .dhead .hbadges { margin-top: 8px; }
   .hactions { display: flex; gap: 8px; flex-shrink: 0; }
-  section { margin-top: 24px; }
-  h3.slabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-700); margin: 0 0 9px; font-weight: 700; }
-  .slabel .sub { font-weight: 400; text-transform: none; color: var(--navy-400); }
-  .prose { white-space: pre-wrap; color: var(--navy-700); font-size: 14px; line-height: 1.6; }
+  section { margin-top: 28px; }
+
+  /* ------ heading tiers ------
+     20 / 700   entity title (.dhead h2)
+     15 / 600   SECTION heading — h3.slabel and the editor's fieldset legend
+     14 / 500-600  card and row titles
+     14 / 400   body prose
+     12 / 400   meta, hints, counts
+     10 / 700   eyebrow, uppercase
+
+     The section heading used to BE the eyebrow: 11px uppercase under 14px prose, so
+     every heading sat a step below the text it introduced and the page had no
+     hierarchy to read by. The eyebrow is now reserved for labels that name a single
+     field or group — facet keys, sub-labels inside a repeatable card, the rail list. */
+  h3.slabel, .detail fieldset > legend.slabel {
+    font-size: 15px; font-weight: 600; text-transform: none; letter-spacing: -.01em;
+    color: var(--navy-900); margin: 0 0 10px;
+  }
+  .slabel .sub { font-size: 13px; font-weight: 400; text-transform: none;
+    color: var(--navy-500); letter-spacing: 0; }
+  /* Inside a repeatable card a label names one field, not a section — eyebrow tier. */
+  .ecard h3.slabel, .ecard .field > .slabel, .ecard .field > legend.slabel {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--navy-500); margin: 0 0 5px; border: 0; padding: 0;
+  }
+  .prose { white-space: pre-wrap; color: var(--navy-700); font-size: 14px; line-height: 1.65; max-width: var(--measure); }
   .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
-  .placeholder { color: var(--navy-400); font-style: italic; }
+  .placeholder { color: var(--navy-500); font-style: italic; }
   .card { border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: var(--pad-card); margin-bottom: 10px; background: var(--surface-card); }
   .card .chead { display: flex; align-items: center; gap: 8px; }
-  .card .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-400); }
+  .card .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-500); }
   .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
-  .card .rationale { margin-top: 7px; color: var(--navy-500); font-size: 13px; font-style: italic; white-space: pre-wrap; }
-  .card .cdesc { margin-top: 6px; color: var(--navy-600); font-size: 13px; white-space: pre-wrap; }
+  .card .rationale { margin-top: 8px; color: var(--navy-500); font-size: 13px; font-style: italic;
+    white-space: pre-wrap; line-height: 1.6; max-width: var(--measure); }
+  /* A card's body copy is body copy — it was 13px, half a step under the surrounding
+     prose for no reason, which is most of why the screens read as inconsistent. */
+  .card .cdesc { margin-top: 8px; color: var(--navy-700); font-size: 14px; line-height: 1.6;
+    white-space: pre-wrap; max-width: var(--measure); }
   ul.plain { margin: 6px 0 0; padding-left: 0; list-style: none; }
   ul.plain li { border-left: 2px solid var(--navy-200); padding: 3px 0 3px 10px; margin-bottom: 7px; color: var(--navy-700); }
-  ul.plain li .meta { font-size: 11px; color: var(--navy-400); text-transform: uppercase; letter-spacing: .05em; }
+  ul.plain li .meta { font-size: 11px; color: var(--navy-500); text-transform: uppercase; letter-spacing: .05em; }
 
   /* ------ read view (per-section surfaces, breadcrumb, omit-empty) ------ */
   /* A read/document view, so each populated section sits on its own subtle surface,
      unlike the edit form (whose only heavy container is the repeatable-card border). */
-  .readsec { background: var(--tint); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; margin-top: 14px; }
-  .readsec > h3.slabel { margin: 0 0 9px; }
+  .readsec { background: var(--tint); border: 1px solid var(--border2); border-radius: 10px; padding: 16px 18px; margin-top: 16px; }
+  .readsec > h3.slabel { margin: 0 0 10px; }
   .readsec .prose { color: var(--navy-800); }
   .readsec .card { background: var(--surface-card); }
-  .notauthored { color: var(--navy-400); font-size: 12px; font-style: italic; margin: 16px 0 0; }
+  .notauthored { color: var(--navy-500); font-size: 12px; font-style: italic; margin: 16px 0 0; }
   /* ------ gaps bar (read view) — empty fields as clickable, jump-to-edit chips ------ */
   .gaps-bar { margin-top: var(--section-gap); border-top: 1px dashed var(--border); padding-top: 14px; }
   .gaps-k { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
@@ -218,10 +273,10 @@
   .gap-chip { font-size: 12px; padding: 4px 11px; border-radius: 20px; background: var(--navy-100);
     color: var(--navy-600); border: 1px solid var(--border); font-weight: 500; }
   .gap-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
-  .crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--navy-400); margin-bottom: 12px; }
+  .crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--navy-500); margin-bottom: 12px; }
   .crumb-type { border: none; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--navy-500); }
   .crumb-type:hover { color: var(--crimson-600); text-decoration: underline; }
-  .crumb-sep { color: var(--navy-400); }
+  .crumb-sep { color: var(--navy-500); }
   .crumb-id { font-family: ui-monospace, "SFMono-Regular", monospace; color: var(--navy-500); }
   /* A card that jumps to a linked entity on click. */
   .card.jrow { cursor: pointer; transition: background .12s, border-color .12s; }
@@ -230,10 +285,10 @@
   /* ------ read-view Git history (read-only) ------ */
   /* A quiet provenance line under the breadcrumb, plus a collapsed History .readsec
      at the foot of the read view: commit rows that expand an inline diff (accordion). */
-  .last-changed { font-size: 12px; color: var(--navy-400); margin: -4px 0 12px; }
+  .last-changed { font-size: 12px; color: var(--navy-500); margin: -4px 0 12px; }
   .history-sec .history-head { display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; user-select: none; }
   .history-sec .history-head:hover { color: var(--crimson-700); }
-  .history-sec .history-head .fx-caret { color: var(--navy-400); font-size: 10px; width: 10px; flex-shrink: 0; }
+  .history-sec .history-head .fx-caret { color: var(--navy-500); font-size: 10px; width: 10px; flex-shrink: 0; }
   .history-list { margin-top: 2px; }
   /* commit list — GitHub-style: message is the primary line, a muted submeta row below */
   .commit { border-top: 1px solid var(--border2); }
@@ -265,7 +320,7 @@
     font-size: 12px; line-height: 1.5; }
   .difftbl td { padding: 0; vertical-align: top; }
   .difftbl .dg { width: 1%; min-width: 42px; text-align: right; padding: 0 10px;
-    color: var(--navy-400); background: var(--tint); border-right: 1px solid var(--border2);
+    color: var(--navy-500); background: var(--tint); border-right: 1px solid var(--border2);
     user-select: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .difftbl .dc { padding: 0 10px; white-space: pre; color: var(--navy-800); }
   .dr-ctx .dc { color: var(--navy-700); }
@@ -281,12 +336,12 @@
   .dr-del .dc { color: var(--diff-del-fg); }
   /* hunk header — a muted separator row spanning the width, resets the counters */
   .dr-hunk td { background: var(--diff-hunk-bg); }
-  .dr-hunk .dg { color: var(--navy-400); border-right-color: var(--border); }
+  .dr-hunk .dg { color: var(--navy-500); border-right-color: var(--border); }
   .dr-hunk .dc { color: var(--navy-500); }
-  .dr-meta .dc { color: var(--navy-400); }
+  .dr-meta .dc { color: var(--navy-500); }
   .diff-loading { padding: 10px 12px; background: var(--surface-card); border: 1px solid var(--line-panel);
     border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
-    color: var(--navy-400); font-style: italic; }
+    color: var(--navy-500); font-style: italic; }
 
   /* ------ buttons ------ */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
@@ -312,7 +367,7 @@
   }
   .checkset label:hover { border-color: var(--crimson-200); }
   .checkset input { accent-color: var(--crimson-600); }
-  .hint { color: var(--navy-400); font-size: 12px; margin-top: 4px; }
+  .hint { color: var(--navy-500); font-size: 12px; margin-top: 4px; }
 
   /* ------ repeatable editor cards (weaknesses, mitigation links) ------ */
   /* The card border is the ONLY heavy container: surface fill + border + radius + padding. */
@@ -324,7 +379,7 @@
   .card-toggle { border: none; background: none; color: var(--navy-500); font-size: 11px; line-height: 1; padding: 2px 3px; }
   .card-toggle:hover { color: var(--navy-800); }
   .ecard .field + .field { margin-top: var(--field-gap); }
-  .cardx { border: none; background: none; color: var(--navy-400); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .cardx { border: none; background: none; color: var(--navy-500); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
   .cardx:hover { background: var(--crimson-50); color: var(--crimson-600); }
   .link-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
   .link-row select { flex: 1; }
@@ -347,7 +402,7 @@
   .fguide > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
     font-size: 11px; font-weight: 600; color: var(--navy-500); user-select: none; padding: 2px 0; }
   .fguide > summary::-webkit-details-marker { display: none; }
-  .fguide > summary::before { content: "\24D8"; color: var(--navy-400); font-size: 13px; }
+  .fguide > summary::before { content: "\24D8"; color: var(--navy-500); font-size: 13px; }
   .fguide[open] > summary { color: var(--navy-700); }
   .fguide > summary:hover { color: var(--crimson-600); }
   .fguide .sg-panel { display: block; margin-top: 6px; }
@@ -366,11 +421,12 @@
   body.no-preview { --preview-w: 0px; }
   body.no-preview #preview, body.no-preview #preview-resizer { display: none; }
   /* draggable divider on the main|preview border; sits fixed over the seam */
-  #preview-resizer { position: fixed; top: 0; height: 100vh; width: 9px; right: var(--preview-w);
-    margin-right: -4px; cursor: col-resize; z-index: 40; }
+  /* Starts below the top bar so the seam handle never overlays the tabs. */
+  #preview-resizer { position: fixed; top: var(--topbar-h); height: calc(100vh - var(--topbar-h));
+    width: 9px; right: var(--preview-w); margin-right: -4px; cursor: col-resize; z-index: 40; }
   #preview-resizer::after { content: ""; position: absolute; top: 0; left: 4px; width: 1px; height: 100%; background: transparent; transition: background .12s; }
   #preview-resizer:hover::after, body.resizing #preview-resizer::after { background: var(--crimson-600); left: 3px; width: 3px; }
-  #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-400); font-weight: 700; margin: 0 0 12px; }
+  #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-500); font-weight: 700; margin: 0 0 12px; }
 
   /* ------ toast ------ */
   .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: var(--text-inverse); padding: 10px 16px; border-radius: var(--r-10); font-size: var(--fs-13); box-shadow: var(--shadow-toast); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
@@ -413,19 +469,21 @@
   .saved-dialog .sd-actions { margin-top: 10px; display: flex; gap: 12px; align-items: center; }
   .saved-dialog a { color: var(--crimson-600); font-weight: 600; text-decoration: none; }
   .saved-dialog a:hover { text-decoration: underline; }
-  .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-400); font-size: 12px; }
+  .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-500); font-size: 12px; }
 
-  /* ------ screen switcher ------ */
+  /* ------ screen switcher (lives in the top bar) ------ */
   .screens { display: flex; }
-  .screens button { flex: 1; border: none; background: var(--tint); color: var(--navy-500); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--border); }
-  .screens button.on { background: var(--panel); color: var(--navy-900); border-bottom-color: var(--crimson-600); }
+  .screens button { border: none; background: none; color: var(--navy-500); font-size: 13px;
+    font-weight: 600; padding: 0 15px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .screens button:hover { color: var(--navy-800); }
+  .screens button.on { color: var(--navy-900); border-bottom-color: var(--crimson-600); }
 
   /* ------ style-guide field tree ------ */
   .sg-group { padding: 9px 15px 5px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--navy-500); font-weight: 700; background: var(--tint); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
   .sg-frow { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
   .sg-frow .fname { font-size: 13px; color: var(--navy-800); font-family: ui-monospace, "SFMono-Regular", monospace; }
   .badge.cov { font-variant-numeric: tabular-nums; }
-  .badge.cov.c-hi { background: var(--status-ok-bg); color: var(--status-ok); }
+  .badge.cov.c-hi { background: var(--status-ok-bg); color: var(--status-ok-fg); }
   .badge.cov.c-mid { background: var(--status-advice-bg); color: var(--amber-700); }
   .badge.cov.c-lo { background: var(--status-error-bg); color: var(--status-error); }
   .badge.orphan { background: var(--navy-200); color: var(--navy-600); }
@@ -434,7 +492,7 @@
   .slot-list { list-style: none; margin: 6px 0 0; padding: 0; }
   .slot-list li { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
   .slot-list li input { flex: 1; }
-  .slotcount { color: var(--navy-400); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+  .slotcount { color: var(--navy-500); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
   #preview .sg-fieldwrap { border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; background: var(--tint); }
   #preview .sg-fieldwrap .f { background: var(--surface-card); }
 
@@ -442,81 +500,127 @@
   .ov-stats { display: flex; gap: 12px; flex-wrap: wrap; }
   .ov-stat { flex: 1; min-width: 120px; border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: 14px 16px; background: var(--surface-card); }
   .ov-stat .num { font-size: 28px; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .ov-stat .lbl { font-size: 12px; color: var(--navy-500); margin-top: 3px; }
+  .ov-stat .lbl { font-size: 13px; color: var(--navy-500); margin-top: 4px; }
   .ov-cov-overall { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
   .ov-cov-overall .pct { font-size: 24px; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .ov-cov-overall .lbl { font-size: 12px; color: var(--navy-500); }
   .ov-cov-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border2); }
   .ov-cov-row:last-child { border-bottom: none; }
-  .ov-cov-row .ent { font-size: 13px; color: var(--navy-700); font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .ov-cov-row .ent { font-size: 14px; color: var(--navy-700); font-family: ui-monospace, "SFMono-Regular", monospace; }
   .ov-gap-group { margin-bottom: 10px; }
   .ov-gap-head { display: flex; align-items: center; gap: 8px; }
-  .ov-gap-head .gname { font-weight: 600; color: var(--navy-800); font-size: 14px; }
-  .ov-gap-desc { color: var(--navy-500); font-size: 12px; margin: 4px 0 9px; }
-  .ov-chips { display: flex; flex-wrap: wrap; }
+  .ov-gap-head .gname { font-weight: 600; color: var(--navy-900); font-size: 14px; }
+  .ov-gap-desc { color: var(--navy-600); font-size: 13px; line-height: 1.55; margin: 5px 0 10px; max-width: var(--measure); }
+  .ov-chips { display: flex; flex-wrap: wrap; align-items: center; }
+  /* A warning that names no entity (a whole-catalog observation) has nothing to put in
+     a chip. It used to render an empty chip row under a bare label and a count, which
+     is why "Unused vocabulary 1" said nothing at all. Show the message instead. */
+  .ov-warn-msg { color: var(--navy-700); font-size: 14px; line-height: 1.55; margin: 5px 0 0; max-width: var(--measure); }
+  /* Long id lists get cut to a readable run; the rest is one click away. */
+  .ov-more { border: none; background: none; color: var(--crimson-600); font-size: 12px;
+    font-weight: 600; padding: 3px 6px; margin: 0 0 6px; border-radius: 6px; }
+  .ov-more:hover { background: var(--crimson-50); }
+  /* `display: contents` so the parked chips rejoin the same wrapping flex row. */
+  .ov-rest { display: contents; }
+  .ov-rest.hide { display: none; }
   .ov-chip { display: inline-flex; align-items: center; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
     padding: 3px 9px; border-radius: 6px; background: var(--navy-100); color: var(--navy-700); border: 1px solid var(--border);
     cursor: pointer; margin: 0 6px 6px 0; }
   .ov-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
+  .ov-chip.on { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); font-weight: 600; }
   .ov-clean { display: flex; align-items: flex-start; gap: 10px; background: var(--status-ok-bg); border: 1px solid var(--status-ok-line);
-    color: var(--green); border-radius: 10px; padding: 14px 16px; }
+    color: var(--status-ok-fg); border-radius: 10px; padding: 14px 16px; }
   /* Status is a CSS dot, not a glyph — Keel has no icon set and says the word instead. */
   .ov-clean .ok-i { width: 8px; height: 8px; border-radius: var(--r-round); background: var(--status-ok);
     flex-shrink: 0; margin-top: 6px; }
-  .ov-clean p { margin: 0; color: var(--navy-700); font-size: 13px; line-height: 1.5; }
-  .ov-clean p b { color: var(--green); }
+  .ov-clean p { margin: 0; color: var(--navy-700); font-size: 14px; line-height: 1.55; max-width: var(--measure); }
+  .ov-clean p b { color: var(--status-ok-fg); }
   .ov-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .ov-grid2 > div > .readsec:first-child { margin-top: 0; }
   @media (max-width: 900px) { .ov-grid2 { grid-template-columns: 1fr; } }
   .ov-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--navy-100); margin: 8px 0 6px; }
   .ov-bar-seg { height: 100%; }
   .ov-bar-seg.verified, .ov-bar-seg.shared { background: var(--green); }
   .ov-bar-seg.draft, .ov-bar-seg.local { background: var(--amber); }
   .ov-bar-seg.unset, .ov-bar-seg.none { background: var(--navy-200); }
-  .ov-bar-legend { display: flex; gap: 14px; font-size: 12px; color: var(--navy-500); flex-wrap: wrap; }
-  .ov-bar-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-  .ov-activity-row { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border2); font-size: 13px; flex-wrap: wrap; }
+  .ov-bar-legend { display: flex; gap: 16px; font-size: 13px; color: var(--navy-500); flex-wrap: wrap; }
+  .ov-bar-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .ov-activity-row { padding: 11px 0; border-bottom: 1px solid var(--border2); font-size: 14px; }
   .ov-activity-row:last-child { border-bottom: none; }
-  .ov-activity-msg { color: var(--navy-800); }
+  .ov-activity-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .ov-activity-msg { color: var(--navy-900); font-weight: 500; }
   .ov-activity-meta { color: var(--navy-500); font-size: 12px; }
+  .ov-activity-row .ov-chips { margin-top: 7px; }
 
   /* ------ reports screen ------ */
-  /* Severity escalates by WEIGHT, not hue, and only critical takes a solid fill — if the
-     Edit button is as loud as a critical finding, nothing reads as critical. The 4px spine
+  /* Severity escalates by WEIGHT, not hue, and only the top band takes a solid fill — if
+     the Edit button is as loud as the worst finding, nothing reads as worst. The 4px spine
      carries the ranking so the list is legible before a word is read. Low is navy, never
      green: green means covered/closed, a different axis — a low finding is still open. */
-  .finding { border-left: 4px solid var(--sev-low-spine); }
-  .finding.sev-critical { border-left-color: var(--sev-critical-spine); }
+  .finding { border-left: 4px solid var(--sev-low-spine); padding: 15px 17px; }
   .finding.sev-high { border-left-color: var(--sev-high-spine); }
   .finding.sev-medium { border-left-color: var(--sev-medium-spine); }
   .finding.sev-low { border-left-color: var(--sev-low-spine); }
-  .sev { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-10);
-    padding: 1px 8px; border-radius: var(--r-4); white-space: nowrap; border: 1px solid transparent; }
+  .finding .chead { flex-wrap: wrap; }
+  .grades { margin-left: auto; display: flex; gap: 6px; }
+  .sev { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-11);
+    padding: 2px 9px; border-radius: var(--r-4); white-space: nowrap; border: 1px solid transparent; }
   .sev .p { opacity: .7; font-weight: var(--fw-medium); }
-  .sev.sev-critical { background: var(--sev-critical-bg); color: var(--sev-critical-fg);
-    border-color: var(--sev-critical-line); font-weight: var(--fw-bold); }
   .sev.sev-high { background: var(--sev-high-bg); color: var(--sev-high-fg);
     border-color: var(--sev-high-line); font-weight: var(--fw-bold); }
   .sev.sev-medium { background: var(--sev-medium-bg); color: var(--sev-medium-fg);
     border-color: var(--sev-medium-line); font-weight: var(--fw-semibold); }
   .sev.sev-low { background: var(--sev-low-bg); color: var(--sev-low-fg);
     border-color: var(--sev-low-line); font-weight: var(--fw-medium); }
-  .rep-reasoning { margin-top: 6px; color: var(--text-muted); font-size: var(--fs-12); line-height: 1.5; }
+  /* Severity owns the solid fill; likelihood is graded on the same three bands but drawn
+     as an outline. Otherwise a single card shows two solid crimson blocks side by side
+     and neither of them reads as the thing to look at. */
+  .sev.quiet.sev-high { background: var(--crimson-50); color: var(--crimson-700);
+    border-color: var(--crimson-200); font-weight: var(--fw-semibold); }
+  .fscenario { margin: 10px 0 0; font-size: 14px; line-height: 1.65; color: var(--navy-800); max-width: var(--measure); }
+  /* Why the grade is what it is. This is the first question a reader asks of a graded
+     finding, so it sits directly under the scenario on its own surface — it used to be
+     12px muted type at the foot of the card, below the requirements it justifies. */
+  .fwhy { margin-top: 12px; padding: 10px 12px; background: var(--tint); border: 1px solid var(--border2);
+    border-radius: var(--r-8); font-size: 13px; line-height: 1.6; color: var(--navy-700); max-width: var(--measure); }
+  .fwhy .k, .freqs-k { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--navy-600); margin-bottom: 5px; }
+  /* The chain the grade rests on: asset, weakness, attacker, what moved since last time.
+     Facts that need naming to be understood get a label here; the ones that read on their
+     own (harm, surface, exploitation cost) stay unlabelled badges below. */
+  .fchain { display: grid; grid-template-columns: 116px 1fr; gap: 8px 14px; margin: 13px 0 0; }
+  .fchain dt { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--navy-600); padding-top: 3px; }
+  .fchain dd { margin: 0; font-size: 14px; line-height: 1.55; color: var(--navy-700); max-width: var(--measure); }
+  .finding .badges { margin-top: 13px; }
+  .freqs { margin-top: 15px; border-top: 1px solid var(--border2); padding-top: 12px; }
   /* Requirement rows: checkbox and text on one line. A dedicated class, not .cdesc,
      because that carries white-space: pre-wrap and would keep the template's newlines. */
-  .req-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 7px; font-size: 13px; color: var(--navy-700); }
-  .req-row input { margin: 3px 0 0; flex-shrink: 0; }
-  .req-row label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
-  .req-note { margin: 3px 0 0 24px; color: var(--navy-500); font-size: 12px; font-style: italic; }
-  .req-ignored { margin-top: 7px; color: var(--navy-500); font-size: 12px; font-style: italic; }
-  .rep-qa { margin-top: 5px; font-size: 13px; color: var(--navy-700); }
+  .req-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; font-size: 14px; color: var(--navy-700); }
+  .req-row input { margin: 4px 0 0; flex-shrink: 0; accent-color: var(--crimson-600); }
+  .req-row label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; line-height: 1.5; }
+  .req-meta { display: block; font-family: ui-monospace, "SFMono-Regular", monospace;
+    font-size: 11px; color: var(--navy-500); margin-top: 2px; }
+  .req-note { margin: 4px 0 0 24px; color: var(--navy-500); font-size: 13px; font-style: italic;
+    line-height: 1.55; max-width: var(--measure); }
+  .req-ignored { margin-top: 9px; color: var(--navy-500); font-size: 13px; font-style: italic;
+    line-height: 1.55; max-width: var(--measure); }
+  .rep-qa { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--navy-700); max-width: var(--measure); }
   .rep-qa .meta { display: inline-block; min-width: 18px; font-weight: 700; color: var(--navy-500); }
+  /* One action with an option on it, not two near-identical buttons stacked under a
+     heading — the pair read as a choice the reader had to decode before clicking. */
+  .sendbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .sendbar label { display: inline-flex; align-items: center; gap: 7px; font-size: 13px;
+    color: var(--navy-600); cursor: pointer; }
+  .sendbar input { accent-color: var(--crimson-600); }
   .ov-rail-legend { padding: 16px 15px; color: var(--navy-500); font-size: 13px; line-height: 1.6; }
-  .ov-legend .ov-leg-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-400); font-weight: 700; margin: 0 0 6px; }
-  .ov-legend p { color: var(--navy-600); font-size: 12px; margin: 0 0 4px; line-height: 1.7; }
+  .ov-legend .ov-leg-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500); font-weight: 700; margin: 0 0 6px; }
+  .ov-legend p { color: var(--navy-600); font-size: 13px; margin: 0 0 6px; line-height: 1.65; }
 </style>
 </head>
 <body>
-<aside>
+<div class="topbar">
+  <span class="brand">Keel</span>
   <nav class="screens" id="screens">
     <button data-screen="overview" class="on">Overview</button>
     <button data-screen="threats">Threats</button>
@@ -524,11 +628,13 @@
     <button data-screen="style">Style guide</button>
     <button data-screen="reports">Reports</button>
   </nav>
+</div>
+<aside>
   <header>
     <button class="rail-toggle" id="railToggle" title="Collapse">«</button>
-    <h1 id="railTitle">Keel · Threats</h1>
+    <h1 id="railTitle">Threats</h1>
     <span class="count" id="count"></span>
-    <button class="btn sm ghost" id="newThreatBtn" title="Create a new threat" style="margin-left:8px">＋ New</button>
+    <button class="btn sm ghost" id="newThreatBtn" title="Create a new threat">＋ New</button>
   </header>
   <div class="search" id="searchWrap"><input id="search" type="search" placeholder="Filter threats…" autocomplete="off"></div>
   <div class="facets" id="facetPanel" style="display:none"></div>
@@ -564,6 +670,7 @@ const state = {
   reportSeries: {},      // system_id -> GET /reports/{id} series, cached as each system is opened
   reportSelected: null,  // {system_id, date} of the open report
   currentReport: null,   // GET /reports/{id}/{date}
+  reportMitInfo: {},     // mitigation_id -> { name, owner } for the open report
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
   mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
@@ -913,10 +1020,10 @@ function focusDraftField() {
   const input = f.querySelector("input, textarea, select");
   if (input) input.focus();
 }
-// Breadcrumb: "<Type> › <id>"; the type word clears the selection (back to the list).
+// Breadcrumb: "<Type> · <id>"; the type word clears the selection (back to the list).
 function crumb(type, id) {
   return `<div class="crumb"><button type="button" class="crumb-type" data-crumb="${esc(type)}">${esc(type)}</button>
-    <span class="crumb-sep">›</span><span class="crumb-id">${esc(id)}</span></div>`;
+    <span class="crumb-sep">·</span><span class="crumb-id">${esc(id)}</span></div>`;
 }
 // Cross-screen jumps used by the read-view links (mirror overviewOpenThreat).
 function jumpToThreat(id) { switchScreen("threats"); select(id); }
@@ -1330,7 +1437,9 @@ function fieldEditor(name, d) {
     const chosen = new Set(d[name] || []);
     const boxes = vals.map(v => `
       <label><input type="checkbox" data-set="${name}" value="${esc(v)}" ${chosen.has(v) ? "checked" : ""}>${esc(v)}</label>`).join("");
-    return wrap(name, `<div class="checkset">${boxes}</div>`);
+    // Sentence case: the label is a heading now, and a lowercase word under a 15px
+    // heading treatment reads as an unformatted field name rather than a section.
+    return wrap(name === "surface" ? "Surface" : "Source", `<div class="checkset">${boxes}</div>`);
   }
   if (name === "reachability") {
     return wrap("Reachability",
@@ -1938,8 +2047,10 @@ function renderPreview() {
 function switchScreen(name) {
   state.screen = name;
   document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
-  const titles = { overview: "Keel · Overview", threats: "Keel · Threats", mitigations: "Keel · Mitigations", style: "Keel · Style guide", reports: "Keel · Reports" };
-  document.getElementById("railTitle").textContent = titles[name] || "Keel";
+  // The tab in the top bar names the screen; this eyebrow names what the LIST holds,
+  // which is a different noun on Style guide (fields) and Reports (systems).
+  const titles = { overview: "Library", threats: "Threats", mitigations: "Mitigations", style: "Fields", reports: "Systems" };
+  document.getElementById("railTitle").textContent = titles[name] || "";
   // Overview and Reports have no rail search; Threats/Mitigations/Style all filter.
   const noSearch = name === "overview" || name === "reports";
   document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
@@ -2055,12 +2166,30 @@ const OV_GAP_GROUPS = [
   { key: "dangling_mitigation_links", label: "Dangling links", desc: "a link points at a missing mitigation" },
 ];
 
-// Categories `catalog_warnings_structured()` can emit — mirrors keel/catalog.py.
-const OV_WARNING_LABELS = {
-  over_graded_strength: "Over-graded links",
-  missing_references: "Missing references",
-  unused_nature: "Unused vocabulary",
-};
+// Categories `catalog_warnings_structured()` can emit — mirrors keel/catalog.py. Each
+// carries the same one-line explanation the gap groups do: a bare label and a count
+// ("Unused vocabulary 1") says nothing about what was found or why it matters.
+const OV_WARNING_GROUPS = [
+  { key: "over_graded_strength", label: "Over-graded links",
+    desc: "the link is graded gating, but the mitigation it points at is not a gating control" },
+  { key: "missing_references", label: "Missing references",
+    desc: "no source recorded — nothing maps the threat to CWE, CAPEC, OWASP-LLM or ATLAS" },
+  { key: "unused_nature", label: "Unused vocabulary",
+    desc: "a term the vocabulary offers that no entry in the catalog actually uses" },
+];
+
+// Long id lists are unreadable as one wall of chips. Show a run, park the rest behind
+// one click. The cut is announced, never silent.
+const OV_CHIP_LIMIT = 12;
+const OV_ACTIVITY_CHIP_LIMIT = 6;   // a commit list is a timeline, not an index
+function chipRow(chips, limit) {
+  const n = limit || OV_CHIP_LIMIT;
+  if (chips.length <= n) return `<div class="ov-chips">${chips.join("")}</div>`;
+  return `<div class="ov-chips">${chips.slice(0, n).join("")}
+    <span class="ov-rest hide">${chips.slice(n).join("")}</span>
+    <button type="button" class="ov-more" data-ov-more="1">show ${chips.length - n} more</button>
+  </div>`;
+}
 
 function overviewHtml() {
   const h = state.health || {};
@@ -2096,7 +2225,7 @@ function overviewHtml() {
     return `<div class="card ov-gap-group">
       <div class="ov-gap-head"><span class="gname">${esc(g.label)}</span><span class="badge soft">${ids.length}</span></div>
       <div class="ov-gap-desc">${esc(g.desc)}</div>
-      <div class="ov-chips">${ids.map(chip).join("")}</div>
+      ${chipRow(ids.map(chip))}
     </div>`;
   }).join("");
   const gaps = (h.issue_count === 0)
@@ -2115,38 +2244,44 @@ function overviewHtml() {
   };
 
   const sc = h.mitigation_status_counts || { draft: 0, verified: 0, unset: 0 };
-  const draftVerified = `<div class="card">${bar(
+  const draftVerified = `${bar(
     [{ n: sc.verified, cls: "verified" }, { n: sc.draft, cls: "draft" }, { n: sc.unset, cls: "unset" }],
     [
       { label: "verified", n: sc.verified, color: "--green", filterKey: "status", filterValue: "verified" },
       { label: "draft", n: sc.draft, color: "--amber", filterKey: "status", filterValue: "draft" },
       { label: "unset", n: sc.unset, color: "--navy-200" },
     ]
-  )}</div>`;
+  )}`;
 
   const ic = h.implementation_coverage_counts || { shared: 0, local_only: 0, none: 0 };
-  const implCoverage = `<div class="card">${bar(
+  const implCoverage = `${bar(
     [{ n: ic.shared, cls: "shared" }, { n: ic.local_only, cls: "local" }, { n: ic.none, cls: "none" }],
     [
       { label: "shared", n: ic.shared, color: "--green", filterKey: "implementations", filterValue: "shared" },
       { label: "local only", n: ic.local_only, color: "--amber" },
       { label: "none", n: ic.none, color: "--navy-200", filterKey: "implementations", filterValue: "none" },
     ]
-  )}</div>`;
+  )}`;
 
   // Warnings/activity chips reuse .ov-chip but carry data-warn-* (not data-threat), so
   // wireOverview can tell them apart from the Gaps chips above (threats only).
-  const warnChip = w => w.entity_id
-    ? `<span class="ov-chip" data-warn-entity="${esc(w.entity_type)}" data-warn-id="${esc(w.entity_id)}" title="Open ${esc(w.entity_id)}">${esc(w.entity_id)}</span>`
-    : "";
+  const warnChip = w =>
+    `<span class="ov-chip" data-warn-entity="${esc(w.entity_type)}" data-warn-id="${esc(w.entity_id)}" title="Open ${esc(w.entity_id)}">${esc(w.entity_id)}</span>`;
   const warningsByCat = {};
   for (const w of (state.warnings || [])) (warningsByCat[w.category] || (warningsByCat[w.category] = [])).push(w);
-  const warningCards = Object.entries(OV_WARNING_LABELS).map(([cat, label]) => {
-    const items = warningsByCat[cat] || [];
+  const warningCards = OV_WARNING_GROUPS.map(g => {
+    const items = warningsByCat[g.key] || [];
     if (!items.length) return "";
+    // A warning about the catalog as a whole names no entity, so it has no chip to
+    // click — its own message is the only thing that carries the finding.
+    const withId = items.filter(w => w.entity_id);
+    const body = withId.length
+      ? chipRow(withId.map(warnChip))
+      : items.map(w => `<p class="ov-warn-msg">${esc(w.message)}</p>`).join("");
     return `<div class="card ov-gap-group">
-      <div class="ov-gap-head"><span class="gname">${esc(label)}</span><span class="badge soft">${items.length}</span></div>
-      <div class="ov-chips">${items.map(warnChip).join("")}</div>
+      <div class="ov-gap-head"><span class="gname">${esc(g.label)}</span><span class="badge soft">${items.length}</span></div>
+      <div class="ov-gap-desc">${esc(g.desc)}</div>
+      ${body}
     </div>`;
   }).join("");
   const warningCount = (state.warnings || []).length;
@@ -2155,35 +2290,44 @@ function overviewHtml() {
     : `<div class="ov-clean"><span class="ok-i"></span><p><b>Nothing flagged.</b> No advisory warnings across the catalog.</p></div>`;
 
   const act = state.recentActivity || { available: false, commits: [] };
+  // A sweeping commit touches every card in the catalog, and dumping all 71 ids inline
+  // buried the message that says what the commit actually did. The message is the row;
+  // the ids are a short, expandable tail beneath it.
   const activityRows = act.available && act.commits.length
-    ? act.commits.map(c => `<div class="ov-activity-row">
-        <span class="ov-activity-msg">${esc(c.message)}</span>
-        <span class="ov-activity-meta">${esc(c.author)} · ${esc((c.date || "").slice(0, 10))}</span>
-        ${(c.entities || []).map(e => `<span class="ov-chip" data-warn-entity="${esc(e.entity_type)}" data-warn-id="${esc(e.entity_id)}">${esc(e.entity_id)}</span>`).join("")}
-      </div>`).join("")
+    ? act.commits.map(c => {
+        const ents = (c.entities || []).map(e =>
+          `<span class="ov-chip" data-warn-entity="${esc(e.entity_type)}" data-warn-id="${esc(e.entity_id)}">${esc(e.entity_id)}</span>`);
+        return `<div class="ov-activity-row">
+          <div class="ov-activity-line">
+            <span class="ov-activity-msg">${esc(c.message)}</span>
+            <span class="ov-activity-meta">${esc(c.author)} · ${esc((c.date || "").slice(0, 10))} · ${ents.length} ${ents.length === 1 ? "entry" : "entries"}</span>
+          </div>
+          ${ents.length ? chipRow(ents, OV_ACTIVITY_CHIP_LIMIT) : ""}
+        </div>`;
+      }).join("")
     : `<p class="placeholder">${act.available ? "No recent changes." : "Git history unavailable."}</p>`;
 
   return `<div class="detail">
     <div class="dhead">
-      <div class="dicon" style="background:var(--navy-700)">O</div>
+      <div class="dicon">O</div>
       <div class="dtitle">
         <h2>Library overview</h2>
-        <div class="did">A snapshot to review — nothing here blocks a save.</div>
+        <div class="dsub">A snapshot to review — nothing here blocks a save.</div>
       </div>
     </div>
     <div class="ov-grid2">
       <div>
-        <section><h3 class="slabel">Counts</h3>${counts}</section>
-        <section><h3 class="slabel">Draft / verified</h3>${draftVerified}</section>
+        ${readsec("Counts", counts)}
+        ${readsec("Draft / verified", draftVerified)}
       </div>
       <div>
-        <section><h3 class="slabel">Style-guide coverage</h3>${coverage}</section>
-        <section><h3 class="slabel">Implementation coverage</h3>${implCoverage}</section>
+        ${readsec("Style-guide coverage", coverage)}
+        ${readsec("Implementation coverage", implCoverage)}
       </div>
     </div>
-    <section><h3 class="slabel">Gaps to review${h.issue_count ? ` <span class="sub">— ${h.issue_count} across the library</span>` : ""}</h3>${gaps}</section>
-    <section><h3 class="slabel">Catalog warnings${warningCount ? ` <span class="sub">— ${warningCount} across the library</span>` : ""}</h3>${warningsSection}</section>
-    <section><h3 class="slabel">Recent activity</h3>${activityRows}</section>
+    ${readsec("Gaps to review", gaps, h.issue_count ? `— ${h.issue_count} across the library` : "")}
+    ${readsec("Catalog warnings", warningsSection, warningCount ? `— ${warningCount} across the library` : "")}
+    ${readsec("Recent activity", activityRows)}
   </div>`;
 }
 
@@ -2191,6 +2335,12 @@ function wireOverview() {
   document.querySelectorAll(".ov-chip[data-threat]").forEach(c => c.onclick = () => overviewOpenThreat(c.dataset.threat));
   document.querySelectorAll(".ov-chip[data-warn-entity]").forEach(c => c.onclick = () => overviewOpenEntity(c.dataset.warnEntity, c.dataset.warnId));
   document.querySelectorAll("[data-ov-filter]").forEach(el => el.onclick = () => overviewOpenMitigationsFiltered(el.dataset.ovFilter, el.dataset.ovValue));
+  // Reveal a capped chip list in place; the button has done its job and goes away.
+  document.querySelectorAll("[data-ov-more]").forEach(b => b.onclick = () => {
+    const rest = b.parentElement.querySelector(".ov-rest");
+    if (rest) rest.classList.remove("hide");
+    b.remove();
+  });
 }
 
 // Open a threat from an overview gap chip: cross to the Threats screen, then select it.
@@ -2222,9 +2372,11 @@ function overviewOpenMitigationsFiltered(facetKey, value) {
 // written to disk by the assessment skill, never edited here, so this     //
 // screen has no draft/save flow: load, render, copy.                      //
 // ===================================================================== //
-// critical/high read as "important"; medium/low sit below the fold.
-const REPORT_IMPORTANT = new Set(["critical", "high"]);
-const SEVERITY_RANK = ["critical", "high", "medium", "low"];
+// Three bands, matching keel/schemas/report.py. Findings are one ranked list rather
+// than an "important" / "lower severity" split: with three levels the split put a
+// single band on one side of a heading and two on the other, and it made the same card
+// render under two different framings — the spine already carries the ranking.
+const SEVERITY_RANK = ["high", "medium", "low"];
 
 async function loadReports() {
   try {
@@ -2279,40 +2431,64 @@ async function openReportSystem(systemId, date) {
     toast(e.message, true);
     return;
   }
+  // Names and owners for the referenced controls, resolved once per opened report.
+  // Best-effort: if the mitigations call fails the report still renders, just with ids.
+  try {
+    state.reportMitInfo = await resolveMitigationsForReport(state.currentReport);
+  } catch (e) {
+    state.reportMitInfo = {};
+  }
   renderReportsRail(); renderReportsMain();
 }
 
 // One finding card. The inclusion checkbox is copy-time UI only — it is never written
 // back, so a finished report can't be reopened later in a differently-edited state.
 function reportFindingHtml(f) {
+  // The card id alone ("CTRL-HACT-CRITICAL") is not a requirement anyone outside this
+  // repo can read, and it is what the product team is being handed. Name and owner are
+  // resolved once when the report opens (state.reportMitInfo) and shown here.
   const reqs = (f.requirements || []).map((r, ri) => {
-    const label = r.mitigation_id || r.description || "(unnamed requirement)";
+    const info = r.mitigation_id ? (state.reportMitInfo || {})[r.mitigation_id] : null;
+    const label = info ? info.name : (r.description || r.mitigation_id || "(unnamed requirement)");
     const covered = r.coverage_status === "already_covered";
     const statusBadge = r.coverage_status !== "needs_implementation"
-      ? `<span class="badge soft">${esc(r.coverage_status)}</span>` : "";
-    return `<div class="req-row"><label><input type="checkbox" class="req-include" data-fid="${esc(f.id)}" data-ri="${ri}" ${covered ? "" : "checked"}><span>${esc(label)} ${statusBadge}</span></label></div>`
+      ? `<span class="badge soft">${esc(r.coverage_status.replace(/_/g, " "))}</span>` : "";
+    const meta = [r.mitigation_id, info && info.owner ? "owner: " + info.owner : ""].filter(Boolean).join(" · ");
+    return `<div class="req-row"><label>
+        <input type="checkbox" class="req-include" data-fid="${esc(f.id)}" data-ri="${ri}" ${covered ? "" : "checked"}>
+        <span>${esc(label)} ${statusBadge}${meta ? `<span class="req-meta">${esc(meta)}</span>` : ""}</span>
+      </label></div>`
       + (r.coverage_note ? `<div class="req-note">${esc(r.coverage_note)}</div>` : "");
   }).join("");
   const ignored = (f.ignored_mitigations || []).map(im =>
     `<div class="req-ignored">Not applied: ${esc(im.mitigation_id)} — ${esc(im.reason)}</div>`).join("");
-  // Severity and likelihood are grades, so they carry the weight ramp. Harm, surface,
-  // source and complexity are facts ABOUT the finding, not grades of it — neutral badges,
-  // so nothing on the card competes with the ranking.
-  const facts = [f.harm, f.attack_surface, f.source.who, "exploitation " + f.exploitation_complexity]
+  // Severity and likelihood are grades, so they carry the weight ramp. Harm, surface and
+  // exploitation cost are facts ABOUT the finding, not grades of it — neutral badges, so
+  // nothing on the card competes with the ranking. They also read without being named,
+  // which is why they are badges and the chain rows below are labelled.
+  const facts = [f.harm, f.attack_surface, "exploitation " + f.exploitation_complexity]
     .map(v => `<span class="badge type">${esc(v)}</span>`).join("");
-  const grade = (kind, level) =>
-    `<span class="sev sev-${esc(level)}"><span class="p">${kind}</span>${esc(level)}</span>`;
+  const grade = (kind, level, quiet) =>
+    `<span class="sev ${quiet ? "quiet " : ""}sev-${esc(level)}"><span class="p">${kind}</span>${esc(level)}</span>`;
+  // The chain the grades rest on. asset / vulnerability / delta and the attacker's motive
+  // and access are all in the report and none of them used to reach the screen, so a
+  // reader had a severity with nothing behind it.
+  const attacker = [f.source.who, f.source.motive].filter(Boolean).join(" — ")
+    + (f.source.access ? `, via ${f.source.access}` : "");
+  const row = (k, v) => (v || "").toString().trim() ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : "";
+  const chain = row("Asset", f.asset) + row("Weakness", f.vulnerability)
+    + row("Attacker", attacker) + row("Since last time", f.delta);
   return `<div class="card finding sev-${esc(f.risk.severity)}">
     <div class="chead">
       <span class="ctitle">${esc(f.id)}</span>
-      <span style="margin-left:auto; display:flex; gap:6px">
-        ${grade("severity", f.risk.severity)}${grade("likelihood", f.risk.likelihood)}
-      </span>
+      <span class="badge soft">${f.from_catalog ? "from catalog" : "not in catalog"}</span>
+      <span class="grades">${grade("severity", f.risk.severity)}${grade("likelihood", f.risk.likelihood, true)}</span>
     </div>
-    <div class="cdesc">${esc(f.scenario)}</div>
+    <p class="fscenario">${esc(f.scenario)}</p>
+    ${f.risk.reasoning ? `<div class="fwhy"><span class="k">Why these grades</span>${esc(f.risk.reasoning)}</div>` : ""}
+    ${chain ? `<dl class="fchain">${chain}</dl>` : ""}
     <div class="badges">${facts}</div>
-    ${f.risk.reasoning ? `<div class="rep-reasoning">${esc(f.risk.reasoning)}</div>` : ""}
-    ${reqs}${ignored}
+    ${(reqs || ignored) ? `<div class="freqs"><span class="freqs-k">Requirements</span>${reqs}${ignored}</div>` : ""}
   </div>`;
 }
 
@@ -2320,21 +2496,21 @@ function reportDetailHtml(rep) {
   const sel = state.reportSelected || {};
   const series = state.reportSeries[sel.system_id] || [];
   const dateChips = series.length > 1
-    ? `<div class="ov-chips">${series.map(s =>
-        `<span class="ov-chip" data-date="${esc(s.date)}" title="Open ${esc(s.date)}">${esc(s.date)}</span>`
-      ).join("")}</div>`
+    ? readsec("Other assessments", `<div class="ov-chips">${series.map(s =>
+        `<span class="ov-chip ${s.date === sel.date ? "on" : ""}" data-date="${esc(s.date)}" title="Open ${esc(s.date)}">${esc(s.date)}</span>`
+      ).join("")}</div>`)
     : "";
 
-  // Rank critical → high → medium → low inside each group, so the spine reads top-down.
+  // One ranked list, high → low. The spine carries the ranking, so grouping the same
+  // card under two different headings only added a second way to render one thing.
   const findings = (rep.findings || []).slice()
     .sort((a, b) => SEVERITY_RANK.indexOf(a.risk.severity) - SEVERITY_RANK.indexOf(b.risk.severity));
-  const important = findings.filter(f => REPORT_IMPORTANT.has(f.risk.severity));
-  const lesser = findings.filter(f => !REPORT_IMPORTANT.has(f.risk.severity));
-  const group = list => list.length ? list.map(reportFindingHtml).join("") : '<p class="placeholder">None.</p>';
+  const findingsHtml = findings.length
+    ? findings.map(reportFindingHtml).join("")
+    : '<p class="placeholder">No findings.</p>';
 
   const discarded = (rep.discarded || []).length
-    ? `<details><summary class="ov-gap-desc">Ruled out (${rep.discarded.length})</summary>
-        ${rep.discarded.map(d => `<div class="rationale">${esc(d.id)} — ${esc(d.reason)}</div>`).join("")}</details>`
+    ? rep.discarded.map(d => `<div class="req-ignored">${esc(d.id)} — ${esc(d.reason)}</div>`).join("")
     : '<p class="placeholder">Nothing ruled out.</p>';
 
   const dialogue = (rep.dialogue || []).length
@@ -2345,28 +2521,27 @@ function reportDetailHtml(rep) {
       </div>`).join("")
     : '<p class="placeholder">No recorded exchanges.</p>';
 
+  const send = `<p class="ov-gap-desc">Only the requirements still checked above are copied. Nothing is saved.</p>
+    <div class="sendbar">
+      <button class="btn primary" id="copyRequirements">Copy requirements</button>
+      <label><input type="checkbox" id="copyExplained"> include the scenario behind each</label>
+    </div>`;
+
   return `<div class="detail">
     <div class="dhead">
-      <div class="dicon" style="background:var(--navy-700)">R</div>
+      <div class="dicon">R</div>
       <div class="dtitle">
         <h2>${esc(rep.system_name)}</h2>
-        <div class="did">${esc(rep.date)} · ${esc(rep.assessor)}</div>
+        <div class="dsub">Assessed ${esc(rep.date)} by ${esc(rep.assessor)}</div>
       </div>
     </div>
+    ${readsec("System", `<p class="prose">${esc(rep.system_description)}</p>`)}
+    ${rep.delta_summary ? readsec("What changed since the last assessment", `<p class="prose">${esc(rep.delta_summary)}</p>`) : ""}
+    ${readsec("Findings", findingsHtml, `— ${findings.length}, worst first`)}
+    ${readsec("Ruled out", discarded)}
+    ${readsec("Dialogue", dialogue, "— what the specialist changed")}
+    ${readsec("Send to the product team", send)}
     ${dateChips}
-    <section><h3 class="slabel">System</h3><p>${esc(rep.system_description)}</p></section>
-    ${rep.delta_summary ? `<section><h3 class="slabel">What changed</h3><p>${esc(rep.delta_summary)}</p></section>` : ""}
-    <section><h3 class="slabel">Important <span class="sub">— critical / high</span></h3>${group(important)}</section>
-    <section><h3 class="slabel">Lower severity <span class="sub">— medium / low</span></h3>${group(lesser)}</section>
-    <section><h3 class="slabel">Ruled out</h3>${discarded}</section>
-    <section><h3 class="slabel">Dialogue <span class="sub">— what the specialist changed</span></h3>${dialogue}</section>
-    <section><h3 class="slabel">Send to the product team</h3>
-      <div class="link-row">
-        <button class="btn ghost" id="copyRequirements">Copy requirements</button>
-        <button class="btn ghost" id="copyRequirementsExplained">Copy with explanations</button>
-      </div>
-      <p class="ov-gap-desc">Only the checked requirements above are copied. Nothing is saved.</p>
-    </section>
   </div>`;
 }
 
@@ -2447,20 +2622,16 @@ function wireReportDetail() {
   document.querySelectorAll(".ov-chip[data-date]").forEach(chip =>
     chip.onclick = () => openReportSystem(state.reportSelected.system_id, chip.dataset.date));
 
-  const wireCopy = (id, withExplanations) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.onclick = async () => {
-      try {
-        const mitInfo = await resolveMitigationsForReport(state.currentReport);
-        const md = buildRequirementsMarkdown(state.currentReport, mitInfo, withExplanations);
-        await copyText(md);
-        toast("Copied to clipboard");
-      } catch (e) { toast(e.message, true); }
-    };
+  const btn = document.getElementById("copyRequirements");
+  if (!btn) return;
+  btn.onclick = async () => {
+    try {
+      const explained = !!(document.getElementById("copyExplained") || {}).checked;
+      const md = buildRequirementsMarkdown(state.currentReport, state.reportMitInfo || {}, explained);
+      await copyText(md);
+      toast("Copied to clipboard");
+    } catch (e) { toast(e.message, true); }
   };
-  wireCopy("copyRequirements", false);
-  wireCopy("copyRequirementsExplained", true);
 }
 
 // ------------------------------------------------------- style-guide screen -- //

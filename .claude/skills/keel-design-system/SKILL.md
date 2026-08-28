@@ -23,6 +23,16 @@ Non-negotiables, all documented in `readme.md`:
 - **Sentence case everywhere.** Buttons are verbs. Toasts are past tense. Ids and enum values are quoted verbatim and lowercase.
 - **No logo exists.** Render "Keel" as plain type wherever a mark would go. Never draw one.
 
+## Where the product has moved past this system
+
+The kit was extracted from `keel/static/index.html` and describes it as it stood. Five things have since changed in the product; when they disagree, **`index.html` wins** and the note below says why.
+
+- **Section headings are a real tier, not the eyebrow.** `readme.md` says every section wears an 11px uppercase eyebrow. That put section headings a step *below* the 14px prose they introduce, so the screens read as one flat block of text. Section headings (`h3.slabel`, `.detail fieldset > legend.slabel`) are now 15px / 600, sentence case, navy-900. The eyebrow survives only where it labels a single field or group: facet keys, sub-labels inside a repeatable card, the rail list label, the finding chain's `<dt>`.
+- **Severity has three bands, not four.** `critical` is gone from `keel/schemas/report.py` and from the tokens. An organisation's risk policy is written against three bands, and a fourth level only ever meant "high, but really". `high` now takes the solid crimson fill that `critical` had, and it is the only solid fill on a finding — likelihood is graded on the same ramp but drawn as an outline (`.sev.quiet`), so one card never shows two solid crimson blocks.
+- **Primary navigation is a top bar, not a strip in the rail.** Five text tabs stretched across a 320px rail read as a cramped segmented control and pushed the rail's own header into a second squeezed row. The tabs also now survive collapsing the rail.
+- **navy-400 is not a text colour.** It measures 2.62:1 on white. It stays in the ramp for rules, dots and the low severity spine; text that used it moved to navy-500, which was itself darkened to `#636e88` so the quiet tier clears 4.5:1 on all four Keel surfaces. `--green-700` was added as green's text-only step, mirroring `--amber-700`. Badges are 11px, not 10.
+- **Prose has a measure.** Body copy caps at `var(--measure)` (74ch). The editor pane is `1fr` and runs to the full width of a large display.
+
 ## Where things are
 
 - `styles.css` — link this one file; it imports every token file.
