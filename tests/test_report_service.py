@@ -258,6 +258,151 @@ def test_reopen_defaults_to_today(tmp_path, monkeypatch):
     assert result["report"]["date"] == datetime.date.today().isoformat()
 
 
+# --------------------------------------------------------------------------- #
+# Cross-system insights
+# --------------------------------------------------------------------------- #
+def _finding(**over):
+    base = dict(
+        id="T-TOOL-ABUSE", from_catalog=True, scenario="s",
+        source={"who": "external-attacker", "motive": "m", "access": "a"},
+        asset="a", attack_surface="user-agent", vulnerability="v",
+        exploitation_complexity="low", harm="wrong-decision",
+        risk={"likelihood": "high", "severity": "high", "reasoning": "r"},
+        delta="new", requirements=[], ignored_mitigations=[],
+    )
+    base.update(over)
+    return base
+
+
+def _req(mitigation_id="CTRL-HACT-CRITICAL", **over):
+    base = dict(mitigation_id=mitigation_id, coverage_status="needs_implementation")
+    base.update(over)
+    return base
+
+
+def test_insights_on_an_empty_archive(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    out = report_service.insights()
+    assert out["systems"] == 0 and out["assessments"] == 0
+    assert out["most_requested"] == [] and out["latest_date"] is None
+
+
+def test_insights_counts_a_control_once_per_system(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    reqs = [_req(), _req()]                      # asked twice within ONE report
+    _write_report(tmp_path, "checkout-agent", "2026-08-26",
+                  {"findings": [_finding(requirements=reqs)]})
+    _write_report(tmp_path, "support-bot", "2026-08-26",
+                  {"findings": [_finding(requirements=[_req()])]})
+
+    top = report_service.insights()["most_requested"][0]
+
+    assert top["mitigation_id"] == "CTRL-HACT-CRITICAL"
+    assert top["systems"] == ["checkout-agent", "support-bot"]
+
+
+def test_insights_reads_only_each_systems_latest_report(tmp_path, monkeypatch):
+    """An older assessment's asks may already be done; counting them keeps reporting
+    work that is finished."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-05-10",
+                  {"findings": [_finding(requirements=[_req("CTRL-OLD-ASK")])]})
+    _write_report(tmp_path, "checkout-agent", "2026-08-26",
+                  {"findings": [_finding(requirements=[_req("CTRL-NEW-ASK")])]})
+
+    out = report_service.insights()
+
+    assert [m["mitigation_id"] for m in out["most_requested"]] == ["CTRL-NEW-ASK"]
+    assert out["systems"] == 1
+    assert out["assessments"] == 2      # the archive is still counted in full
+
+
+def test_insights_skips_requirements_that_do_not_ship(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"findings": [_finding(requirements=[
+        _req("CTRL-COVERED", coverage_status="already_covered", coverage_note="the gateway does it"),
+        _req("CTRL-DROPPED", included=False),
+        _req("CTRL-WANTED"),
+    ])]})
+
+    assert [m["mitigation_id"] for m in report_service.insights()["most_requested"]] == ["CTRL-WANTED"]
+
+
+def test_insights_collects_what_the_catalog_does_not_carry(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"findings": [
+        _finding(id="T-NOVEL", from_catalog=False, requirements=[
+            _req(mitigation_id=None, description="Check the warehouse return record."),
+        ]),
+    ]})
+
+    kinds = {o["kind"]: o for o in report_service.insights()["off_catalog"]}
+
+    assert kinds["threat"]["label"] == "T-NOVEL"
+    assert kinds["control"]["label"] == "Check the warehouse return record."
+
+
+def test_insights_separates_confirmed_from_ruled_out(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"findings": [_finding()]})
+    _write_report(tmp_path, "support-bot", "2026-08-26", {
+        "findings": [],
+        "discarded": [{"id": "T-TOOL-ABUSE", "reason": "no tool moves money here"}],
+    })
+
+    row = {a["id"]: a for a in report_service.insights()["threat_activity"]}["T-TOOL-ABUSE"]
+
+    assert row["confirmed"] == ["checkout-agent"]
+    assert row["ruled_out"] == ["support-bot"]
+
+
+def test_insights_severity_mix_and_per_system_load(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"findings": [
+        _finding(requirements=[_req("CTRL-A"), _req("CTRL-B")]),
+        _finding(id="T-DATA-LEAK", risk={"likelihood": "low", "severity": "medium", "reasoning": "r"}),
+    ]})
+    _write_report(tmp_path, "support-bot", "2026-08-26", {"findings": [
+        _finding(id="T-DOS", risk={"likelihood": "low", "severity": "low", "reasoning": "r"}),
+    ]})
+
+    out = report_service.insights()
+
+    assert out["severity_mix"] == {"high": 1, "medium": 1, "low": 1}
+    # worst first, so the chart is already sorted for a top-down read
+    assert [s["system_id"] for s in out["per_system"]] == ["checkout-agent", "support-bot"]
+    assert out["per_system"][0]["severity"] == {"high": 1, "medium": 1, "low": 0}
+    assert out["per_system"][0]["open_requirements"] == 2
+    assert out["per_system"][0]["findings"] == 2
+    assert out["per_system"][1]["severity"] == {"high": 0, "medium": 0, "low": 1}
+    assert out["per_system"][1]["open_requirements"] == 0
+
+
+def test_insights_ranks_the_system_with_the_most_high_findings_first(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    low = {"likelihood": "low", "severity": "low", "reasoning": "r"}
+    # more findings overall, but none of them high
+    _write_report(tmp_path, "aaa-noisy", "2026-08-26", {"findings": [
+        _finding(risk=low), _finding(id="T-DOS", risk=low), _finding(id="T-SSRF", risk=low),
+    ]})
+    _write_report(tmp_path, "zzz-serious", "2026-08-26", {"findings": [_finding()]})
+
+    assert [s["system_id"] for s in report_service.insights()["per_system"]] == [
+        "zzz-serious", "aaa-noisy",
+    ]
+
+
+def test_insights_lists_unfinalized_drafts(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+    _write_report(tmp_path, "support-bot", "2026-08-26")
+
+    out = report_service.insights()
+
+    assert [d["system_id"] for d in out["drafts"]] == ["support-bot"]
+    assert out["latest_date"] == "2026-08-26"
+
+
 def test_ids_that_would_escape_the_archive_are_refused(tmp_path, monkeypatch):
     """system_id is a folder name and date is a file name, both straight off the URL."""
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))

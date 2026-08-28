@@ -140,6 +140,17 @@ def test_route_reopen_creates_a_new_draft(tmp_path, monkeypatch):
     assert len(client.get("/reports/checkout-agent").json()["series"]) == 2
 
 
+def test_route_insights_is_not_swallowed_by_the_system_id_route(tmp_path, monkeypatch):
+    """"insights" is a legal system id, so route declaration order is load-bearing."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    body = TestClient(app).get("/reports/insights").json()
+
+    assert "series" not in body
+    assert body["systems"] == 1 and body["assessments"] == 1
+
+
 def test_route_reopen_twice_in_a_day_is_409(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})

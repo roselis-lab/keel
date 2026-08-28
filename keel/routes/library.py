@@ -242,6 +242,18 @@ async def list_reports():
     return {"reports": report_service.list_reports()}
 
 
+@router.get("/reports/insights")
+async def report_insights():
+    """The archive read across systems: what several systems ask for and nobody has
+    built, what the assessments found that the catalog does not carry, which cards keep
+    getting ruled out, and which assessments were never finalized.
+
+    Declared BEFORE /reports/{system_id} — routes match in declaration order, and
+    "insights" is a legal system id, so the parameterised route would swallow it.
+    """
+    return report_service.insights()
+
+
 @router.get("/reports/{system_id}")
 async def report_series(system_id: str):
     """A system's report dates, newest first. An unknown or empty system returns an

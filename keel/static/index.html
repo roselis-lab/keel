@@ -497,6 +497,46 @@
   #preview .sg-fieldwrap .f { background: var(--surface-card); }
 
   /* ------ overview screen ------ */
+  /* A dashboard of signals, not a page of documents. The entity header, three big
+     counter cards and two legended bars used to fill the first screen with figures that
+     answer "is the catalog tidy" — which is not why anyone opens Keel. They are one
+     line of facts and three clickable lines now, and the detail lives on the screen
+     that owns it. Assessed systems sit LEFT: assessment is the frequent act, authoring
+     the model the occasional one, and the left column is read first. */
+  .ov-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding-bottom: 14px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .ov-head h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  .ov-facts { margin: 0; font-size: 13px; color: var(--navy-500); }
+  .ov-col { background: var(--tint); border: 1px solid var(--border2); border-radius: var(--r-10);
+    padding: 2px 16px 12px; }
+  .ov-block { padding: 13px 0; border-top: 1px solid var(--border); }
+  .ov-block:first-child { border-top: none; }
+  .ov-block > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 9px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--navy-600); }
+  .ov-block > .k .n { margin-left: auto; font-size: 12px; font-weight: 500; letter-spacing: 0;
+    text-transform: none; color: var(--navy-500); }
+  .ov-block .card { margin-bottom: 8px; padding: 11px 13px; }
+  .ov-block .card:last-child { margin-bottom: 0; }
+  /* An all-clear is the least valuable thing on a dashboard — it earns one line. */
+  .ov-block .ov-clean { padding: 9px 12px; gap: 9px; }
+  .ov-block .ov-clean p { font-size: 13px; }
+  .ov-block .ov-clean .ok-i { margin-top: 5px; }
+  /* One figure, one sentence, one click through to the screen that can act on it. */
+  .ov-line { display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left;
+    border: none; background: none; padding: 5px 7px; margin: 0 -7px; border-radius: var(--r-6);
+    font: inherit; font-size: 13px; color: var(--navy-700); }
+  .ov-line:hover { background: var(--surface-hover); color: var(--navy-900); }
+  .ov-line-n { font-size: 15px; font-weight: 700; color: var(--navy-900);
+    font-variant-numeric: tabular-nums; min-width: 38px; }
+  .ov-fold > summary { list-style: none; display: flex; align-items: baseline; gap: 10px;
+    cursor: pointer; padding: 5px 7px; margin: 0 -7px; border-radius: var(--r-6);
+    font-size: 13px; color: var(--navy-700); user-select: none; }
+  .ov-fold > summary::-webkit-details-marker { display: none; }
+  .ov-fold > summary:hover { background: var(--surface-hover); color: var(--navy-900); }
+  .ov-fold[open] > summary { color: var(--navy-900); font-weight: 600; }
+  .ov-fold-b { padding: 2px 0 10px 48px; }
+  .ov-fold-b .ov-gap-desc { margin: 0 0 8px; }
   .ov-stats { display: flex; gap: 12px; flex-wrap: wrap; }
   .ov-stat { flex: 1; min-width: 120px; border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: 14px 16px; background: var(--surface-card); }
   .ov-stat .num { font-size: 28px; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -520,6 +560,40 @@
   .ov-more { border: none; background: none; color: var(--crimson-600); font-size: 12px;
     font-weight: 600; padding: 3px 6px; margin: 0 0 6px; border-radius: 6px; }
   .ov-more:hover { background: var(--crimson-50); }
+  /* Cross-system rows: what it is, what state it is in, who is asking. */
+  .ins-row { display: flex; align-items: baseline; gap: 9px; padding: 8px 0;
+    border-bottom: 1px solid var(--border2); flex-wrap: wrap; }
+  .ins-row:last-child { border-bottom: none; }
+  .ins-name { font-size: 14px; color: var(--navy-900); font-weight: 500; }
+  .ins-meta { font-size: 12px; color: var(--navy-500); margin-left: auto; }
+  /* Charts are CSS bars, not a library: the app is one static file with no build step,
+     and a ranked horizontal bar answers "which is worst" better than a pie ever does. */
+  .hbars { display: grid; grid-template-columns: minmax(90px, auto) 1fr auto; gap: 7px 12px; align-items: center; }
+  .hbar-k { font-size: 13px; color: var(--navy-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar-k .reflink { font: inherit; }
+  .hbar-t { height: 12px; border-radius: var(--r-4); background: var(--navy-100); overflow: hidden; }
+  .hbar-f { height: 100%; border-radius: var(--r-4); background: var(--navy-500); }
+  .hbar-f.sev-high { background: var(--sev-high-spine); }
+  .hbar-f.sev-medium { background: var(--sev-medium-spine); }
+  .hbar-f.sev-low { background: var(--sev-low-spine); }
+  /* Coverage bars reuse the badge's own thresholds, so a bar and its badge never
+     disagree about whether a field group is in good shape. */
+  .hbar-f.c-hi { background: var(--status-ok); }
+  .hbar-f.c-mid { background: var(--amber); }
+  .hbar-f.c-lo { background: var(--accent); }
+  .hbar-k.ent { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 13px; }
+  /* Stacked: the segments of one row are parts of that row's total, so they butt up
+     against each other and only the ends of the run are rounded. */
+  .hbar-t.stack { display: flex; }
+  .hbar-t.stack .hbar-f { border-radius: 0; }
+  .hbar-t.stack .hbar-f:first-child { border-radius: var(--r-4) 0 0 var(--r-4); }
+  .hbar-t.stack .hbar-f:last-child { border-radius: 0 var(--r-4) var(--r-4) 0; }
+  .ov-bar-legend .dot.sev-high { background: var(--sev-high-spine); }
+  .ov-bar-legend .dot.sev-medium { background: var(--sev-medium-spine); }
+  .ov-bar-legend .dot.sev-low { background: var(--sev-low-spine); }
+  .ov-block .ov-bar-legend { margin-top: 9px; font-size: 12px; }
+  .hbar-v { font-size: 13px; color: var(--navy-700); font-variant-numeric: tabular-nums; }
+  .hbar-v .u { color: var(--navy-500); font-size: 12px; }
   /* `display: contents` so the parked chips rejoin the same wrapping flex row. */
   .ov-rest { display: contents; }
   .ov-rest.hide { display: none; }
@@ -535,7 +609,8 @@
     flex-shrink: 0; margin-top: 6px; }
   .ov-clean p { margin: 0; color: var(--navy-700); font-size: 14px; line-height: 1.55; max-width: var(--measure); }
   .ov-clean p b { color: var(--status-ok-fg); }
-  .ov-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .ov-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .ov-grid2 > section { margin-top: 18px; }
   .ov-grid2 > div > .readsec:first-child { margin-top: 0; }
   @media (max-width: 900px) { .ov-grid2 { grid-template-columns: 1fr; } }
   .ov-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--navy-100); margin: 8px 0 6px; }
@@ -722,6 +797,7 @@ const state = {
   mitRich: [],          // rich rail items (status/implementations/purpose) — powers the mitigations facets
   mitFacets: { class: new Set(), status: new Set(), implementations: new Set(), linkage: new Set() },
   warnings: [],          // GET /health/warnings — structured advisory list for the overview
+  insights: null,        // GET /reports/insights — the archive read across systems
   recentActivity: { available: false, commits: [] },   // GET /history/recent
   reportsList: [],       // GET /reports — [{system_id, system_name, latest_date, report_count, has_delta}]
   reportSeries: {},      // system_id -> GET /reports/{id} series, cached as each system is opened
@@ -1027,6 +1103,7 @@ async function select(id) {
   }
   renderDetail();
   renderPreview();
+  writeRoute();
   document.getElementById("main").scrollTop = 0;
   validateDraft();          // populate advice for the Insights strip (non-blocking)
   loadHistory(threatHistoryCfg());   // fetch the commit list, then re-render (non-blocking)
@@ -1091,12 +1168,12 @@ function jumpToMit(id) { switchScreen("mitigations"); selectMit(id); }
 function clearThreatSelection() {
   state.selected = null; state.current = null;
   state.editing = false; state.draft = null;
-  renderList(); renderDetail(); renderPreview();
+  renderList(); renderDetail(); renderPreview(); writeRoute();
 }
 function clearMitSelection() {
   state.mitSelected = null; state.currentMit = null;
   state.mitEditing = false; state.mitDraft = null;
-  renderMitRail(); renderMitDetail(); renderMitPreview();
+  renderMitRail(); renderMitDetail(); renderMitPreview(); writeRoute();
 }
 
 // ---- read-only Git history (both read views) ------------------------------ //
@@ -2138,8 +2215,56 @@ function switchScreen(name) {
     newBtn.title = name === "mitigations" ? "Create a new mitigation" : "Create a new threat";
   }
   renderRail(); renderMain(); renderRight();
+  writeRoute();
   if (name === "overview") loadOverview();   // refresh the dashboard on each entry
   if (name === "reports") loadReports();
+}
+
+// ===================================================================== //
+// Routing. The location hash IS the app's state, so a reload lands where //
+// you were rather than back on the Overview, and any view can be linked. //
+// ===================================================================== //
+const ROUTE_SCREENS = ["overview", "threats", "mitigations", "style", "reports"];
+let applyingRoute = false;   // suppresses writeRoute while a route is being restored
+
+function writeRoute() {
+  if (applyingRoute) return;
+  const s = state.screen;
+  const parts = [s];
+  if (s === "threats" && state.selected) parts.push(state.selected);
+  else if (s === "mitigations" && state.mitSelected) parts.push(state.mitSelected);
+  else if (s === "style" && state.styleSel) parts.push(state.styleSel.entity, state.styleSel.field);
+  else if (s === "reports" && state.reportSelected) {
+    parts.push(state.reportSelected.system_id, state.reportSelected.date);
+  }
+  const hash = "#/" + parts.map(encodeURIComponent).join("/");
+  // replaceState, not a hash assignment: walking the Back button through every row you
+  // clicked in a rail is not what anyone means by "back".
+  if (location.hash !== hash) history.replaceState(null, "", hash);
+}
+
+// Restore whatever the hash names. A stale link (an entry since renamed or deleted)
+// falls back to the bare screen rather than erroring — the URL outlives the data.
+async function applyRoute() {
+  const [screen, a, b] = (location.hash || "").replace(/^#\/?/, "")
+    .split("/").filter(Boolean).map(decodeURIComponent);
+  applyingRoute = true;
+  try {
+    switchScreen(ROUTE_SCREENS.includes(screen) ? screen : "overview");
+    if (screen === "threats" && a) {
+      await select(a);
+      if (!state.current) clearThreatSelection();   // the entry is gone; don't hold a dead id
+    } else if (screen === "mitigations" && a) {
+      await selectMit(a);
+      if (!state.currentMit) clearMitSelection();
+    } else if (screen === "style" && a && b) selectStyleField(a, b);
+    else if (screen === "reports" && a) await openReportSystem(a, b);
+  } catch (e) {
+    toast("That link no longer resolves — showing the list instead", true);
+  } finally {
+    applyingRoute = false;
+  }
+  writeRoute();
 }
 function renderRail() {
   if (state.screen === "overview") return renderOverviewRail();
@@ -2185,13 +2310,15 @@ function applyPreviewVisibility() {
 // being unavailable) never blanks the rest of the page. Nothing here blocks. //
 // ===================================================================== //
 async function loadOverview() {
-  const [h, cov, warn, act] = await Promise.allSettled([
+  const [h, cov, warn, act, ins] = await Promise.allSettled([
     j("/health/library"), j("/style-guide/coverage"), j("/health/warnings"), j("/history/recent?limit=15"),
+    j("/reports/insights"),
   ]);
   state.health = h.status === "fulfilled" ? h.value : (state.health || { stats: {}, issues: {}, issue_count: 0 });
   state.coverage = cov.status === "fulfilled" ? cov.value : state.coverage;
   state.warnings = warn.status === "fulfilled" ? warn.value.warnings : [];
   state.recentActivity = act.status === "fulfilled" ? act.value : { available: false, commits: [] };
+  state.insights = ins.status === "fulfilled" ? ins.value : null;
   if (h.status === "rejected") toast((h.reason && h.reason.message) || "Failed to load health", true);
   if (state.screen === "overview") { renderOverviewMain(); renderOverviewRight(); }
 }
@@ -2249,77 +2376,159 @@ function chipRow(chips, limit) {
   </div>`;
 }
 
+// A ranked horizontal bar chart, in CSS. Scaled to the largest bar, not to a total:
+// these answer "which of these is worst", where a share-of-the-whole reading would be
+// meaningless (three severity bands are not parts of one quantity anyone acts on).
+// `unit` names what a bar counts, so a lone "3" is never left to be guessed at.
+function hbars(rows, unit) {
+  const max = Math.max(1, ...rows.map(r => r.value));
+  return `<div class="hbars">${rows.map(r => {
+    const key = r.link
+      ? `<button type="button" class="reflink" ${r.link}>${esc(r.label)}</button>`
+      : esc(r.label);
+    return `<div class="hbar-k" title="${esc(r.label)}">${key}</div>
+      <div class="hbar-t"><div class="hbar-f ${r.cls || ""}" style="width:${(100 * r.value / max).toFixed(1)}%"></div></div>
+      <div class="hbar-v">${r.value} <span class="u">${esc(r.value === 1 ? unit : unit + "s")}</span></div>`;
+  }).join("")}</div>`;
+}
+
+// One row per system, segmented by severity and sharing one scale across rows, so bar
+// lengths compare directly instead of each row filling its own track. This answers three
+// questions at once — how many findings per system, at what severity, and which system
+// is worst — which is why there is no separate chart for any of them.
+function severityBars(rows) {
+  const max = Math.max(1, ...rows.map(r => r.findings));
+  return `<div class="hbars">${rows.map(r => {
+    const segs = SEVERITY_RANK
+      .filter(l => r.severity[l])
+      .map(l => `<div class="hbar-f sev-${l}" style="width:${(100 * r.severity[l] / max).toFixed(1)}%"
+        title="${r.severity[l]} ${l}"></div>`).join("");
+    return `<div class="hbar-k"><button type="button" class="reflink"
+        data-report-sys="${esc(r.system_id)}" data-report-date="${esc(r.date)}">${esc(r.system_name)}</button></div>
+      <div class="hbar-t stack">${segs || ""}</div>
+      <div class="hbar-v">${r.findings}</div>`;
+  }).join("")}</div>
+  <div class="ov-bar-legend">${SEVERITY_RANK.map(l =>
+    `<span><span class="dot sev-${l}"></span>${l}</span>`).join("")}</div>`;
+}
+
+// Reports read across systems rather than one at a time. Reads each system's LATEST
+// report only: an older assessment's findings may already be closed, and counting them
+// would keep reporting work that is done.
+function estateBlocks(blk) {
+  const ins = state.insights;
+  if (!ins) return '<div class="ov-block"><p class="placeholder">Loading…</p></div>';
+  if (!ins.assessments) {
+    return `<div class="ov-block"><p class="placeholder">Nothing assessed yet. Runs of the assessment skill land in <code>reports/</code> and are summed up here.</p></div>`;
+  }
+  const parts = [];
+
+  if ((ins.per_system || []).length) {
+    parts.push(blk("Findings by system", "worst first", severityBars(ins.per_system)));
+  }
+
+  // Which cards keep proving true. This is the catalog validating itself against reality:
+  // a threat confirmed everywhere deserves a stronger card than one nobody ever meets.
+  const recurring = (ins.threat_activity || [])
+    .filter(a => a.confirmed.length)
+    .sort((a, b) => b.confirmed.length - a.confirmed.length || a.id.localeCompare(b.id))
+    .slice(0, 6);
+  if (recurring.length) {
+    parts.push(blk("Threats that recur", `top ${recurring.length}`,
+      hbars(recurring.map(a => ({
+        label: a.title, value: a.confirmed.length,
+        link: `data-jump-threat="${esc(a.id)}"`,
+      })), "system")));
+  }
+
+  // The roadmap: a control several systems want and nothing implements is worth building
+  // once, centrally, rather than once per team.
+  if (ins.most_requested.length) {
+    const rows = ins.most_requested.slice(0, 5).map(m => `<div class="ins-row">
+      <button type="button" class="ins-name reflink" data-jump-mit="${esc(m.mitigation_id)}">${esc(m.name)}</button>
+      ${m.implemented ? "" : '<span class="badge cov c-lo">not implemented</span>'}
+      ${m.in_catalog ? "" : '<span class="badge soft">not in the catalog</span>'}
+      <span class="ins-meta">${m.systems.length}&times;</span>
+    </div>`).join("");
+    parts.push(blk("Controls the assessments ask for",
+      ins.most_requested.length > 5 ? `top 5 of ${ins.most_requested.length}` : `${ins.most_requested.length}`,
+      rows));
+  }
+
+  // The library's own to-do, written by real assessments rather than guessed at.
+  if (ins.off_catalog.length) {
+    const rows = ins.off_catalog.slice(0, 4).map(o => `<div class="ins-row">
+      <span class="badge type">${esc(o.kind)}</span>
+      <span class="ins-name">${esc(o.label)}</span>
+      <span class="ins-meta">${esc(o.system_id)}</span>
+    </div>`).join("");
+    parts.push(blk("Missing from the library", `${ins.off_catalog.length}`, rows));
+  }
+
+  // Dead weight: a card ruled out as often as it is confirmed is scoped wrong.
+  const misfits = (ins.threat_activity || [])
+    .filter(a => a.ruled_out.length && a.ruled_out.length >= a.confirmed.length);
+  if (misfits.length) {
+    const rows = misfits.slice(0, 3).map(a => `<div class="ins-row">
+      <button type="button" class="ins-name reflink" data-jump-threat="${esc(a.id)}">${esc(a.title)}</button>
+      <span class="ins-meta">ruled out ${a.ruled_out.length}&times;, confirmed ${a.confirmed.length}&times;</span>
+    </div>`).join("");
+    parts.push(blk("Cards that keep not applying", `${misfits.length}`, rows));
+  }
+
+  if (ins.drafts.length) {
+    parts.push(blk("Never finalized", `${ins.drafts.length}`,
+      chipRow(ins.drafts.map(d =>
+        `<span class="ov-chip" data-report-sys="${esc(d.system_id)}" data-report-date="${esc(d.date)}">${esc(d.system_id)} · ${esc(d.date)}</span>`), 6)));
+  }
+  return parts.join("");
+}
+
 function overviewHtml() {
   const h = state.health || {};
   const stats = h.stats || {};
   const issues = h.issues || {};
   const cov = state.coverage || {};
 
-  const stat = (num, lbl) => `<div class="ov-stat"><div class="num">${num == null ? "—" : num}</div><div class="lbl">${esc(lbl)}</div></div>`;
-  const counts = `<div class="ov-stats">
-    ${stat(stats.threats, "Threats")}
-    ${stat(stats.mitigations, "Mitigations")}
-    ${stat(stats.threat_mitigation_links, "Links")}
-  </div>`;
-
+  const ins = state.insights || {};
   const overall = (cov.overall != null) ? cov.overall : h.style_guide_coverage;
-  const covRows = (cov.entities || []).map(e => {
-    const pct = e.overall == null ? 0 : e.overall;
-    return `<div class="ov-cov-row"><span class="ent">${esc(e.entity_type)}</span>
-      <span class="badge cov ${covClass(pct)}">${pct}%</span></div>`;
-  }).join("");
-  const coverage = `<div class="ov-cov-overall">
-      <span class="pct">${overall == null ? "—" : overall + "%"}</span>
-      <span class="lbl">overall style-guide coverage</span>
-    </div>${covRows}`;
 
   const chip = fullId => {
     const tid = fullId.split("::")[0];
     return `<span class="ov-chip" data-threat="${esc(tid)}" title="Open ${esc(tid)}">${esc(fullId)}</span>`;
   };
+  // One line per category, opening to the ids. Three cards of wrapped chips took a
+  // third of the dashboard to say "there are 39 of these" — a number and a disclosure
+  // says the same thing and keeps the detail one click away.
+  const foldRow = (n, label, desc, body) => `<details class="ov-fold">
+    <summary><span class="ov-line-n">${n}</span><span>${esc(label)}</span></summary>
+    <div class="ov-fold-b"><p class="ov-gap-desc">${esc(desc)}</p>${body}</div>
+  </details>`;
+
   const gapCards = OV_GAP_GROUPS.map(g => {
     const ids = issues[g.key] || [];
-    if (!ids.length) return "";
-    return `<div class="card ov-gap-group">
-      <div class="ov-gap-head"><span class="gname">${esc(g.label)}</span><span class="badge soft">${ids.length}</span></div>
-      <div class="ov-gap-desc">${esc(g.desc)}</div>
-      ${chipRow(ids.map(chip))}
-    </div>`;
+    return ids.length ? foldRow(ids.length, g.label, g.desc, chipRow(ids.map(chip))) : "";
   }).join("");
   const gaps = (h.issue_count === 0)
     ? `<div class="ov-clean"><span class="ok-i"></span>
         <p><b>Nothing flagged.</b> Every threat has weaknesses, a classified harm, and at least one linked mitigation — and no link dangles.</p></div>`
     : gapCards;
 
-  // A compact multi-segment bar (verified/draft/unset or shared/local/none) with a
-  // legend below it; legend entries that carry filterKey/filterValue are clickable —
-  // they jump to Mitigations with that facet value pre-selected (see wireOverview).
-  const bar = (segments, legendItems) => {
-    const total = segments.reduce((s, x) => s + x.n, 0) || 1;
-    const segHtml = segments.map(s => `<div class="ov-bar-seg ${s.cls}" style="width:${(100 * s.n / total).toFixed(1)}%"></div>`).join("");
-    const legend = legendItems.map(l => `<span ${l.filterKey ? `data-ov-filter="${esc(l.filterKey)}" data-ov-value="${esc(l.filterValue)}" style="cursor:pointer"` : ""}><span class="dot" style="background:var(${l.color})"></span>${esc(l.label)}: ${l.n}</span>`).join("");
-    return `<div class="ov-bar">${segHtml}</div><div class="ov-bar-legend">${legend}</div>`;
-  };
-
+  // Authoring hygiene compressed to three clickable lines. It used to be two segmented
+  // bars with legends and a five-row coverage chart — a quarter of the screen spent on
+  // numbers that answer "is the catalog tidy", which is not why anyone opens Keel. The
+  // breakdown still exists, on the screen that owns it.
   const sc = h.mitigation_status_counts || { draft: 0, verified: 0, unset: 0 };
-  const draftVerified = `${bar(
-    [{ n: sc.verified, cls: "verified" }, { n: sc.draft, cls: "draft" }, { n: sc.unset, cls: "unset" }],
-    [
-      { label: "verified", n: sc.verified, color: "--green", filterKey: "status", filterValue: "verified" },
-      { label: "draft", n: sc.draft, color: "--amber", filterKey: "status", filterValue: "draft" },
-      { label: "unset", n: sc.unset, color: "--navy-200" },
-    ]
-  )}`;
-
   const ic = h.implementation_coverage_counts || { shared: 0, local_only: 0, none: 0 };
-  const implCoverage = `${bar(
-    [{ n: ic.shared, cls: "shared" }, { n: ic.local_only, cls: "local" }, { n: ic.none, cls: "none" }],
-    [
-      { label: "shared", n: ic.shared, color: "--green", filterKey: "implementations", filterValue: "shared" },
-      { label: "local only", n: ic.local_only, color: "--amber" },
-      { label: "none", n: ic.none, color: "--navy-200", filterKey: "implementations", filterValue: "none" },
-    ]
-  )}`;
+  const line = (n, text, attrs) =>
+    `<button type="button" class="ov-line" ${attrs}><span class="ov-line-n">${n}</span><span>${esc(text)}</span></button>`;
+  const libraryLines = [
+    line(overall == null ? "—" : overall + "%", "of the style guide is authored", 'data-goto="style"'),
+    line(sc.draft, `of ${stats.mitigations || 0} mitigations still draft`,
+      'data-ov-filter="status" data-ov-value="draft"'),
+    line(ic.none, "carry no recorded implementation",
+      'data-ov-filter="implementations" data-ov-value="none"'),
+  ].join("");
 
   // Warnings/activity chips reuse .ov-chip but carry data-warn-* (not data-threat), so
   // wireOverview can tell them apart from the Gaps chips above (threats only).
@@ -2336,11 +2545,7 @@ function overviewHtml() {
     const body = withId.length
       ? chipRow(withId.map(warnChip))
       : items.map(w => `<p class="ov-warn-msg">${esc(w.message)}</p>`).join("");
-    return `<div class="card ov-gap-group">
-      <div class="ov-gap-head"><span class="gname">${esc(g.label)}</span><span class="badge soft">${items.length}</span></div>
-      <div class="ov-gap-desc">${esc(g.desc)}</div>
-      ${body}
-    </div>`;
+    return foldRow(items.length, g.label, g.desc, body);
   }).join("");
   const warningCount = (state.warnings || []).length;
   const warningsSection = warningCount
@@ -2351,41 +2556,53 @@ function overviewHtml() {
   // A sweeping commit touches every card in the catalog, and dumping all 71 ids inline
   // buried the message that says what the commit actually did. The message is the row;
   // the ids are a short, expandable tail beneath it.
+  // Five commits, message only. The per-commit id chips are gone from the dashboard: a
+  // sweeping commit lists every card in the catalog, and the id you want is reachable
+  // from the entry's own History section anyway.
   const activityRows = act.available && act.commits.length
-    ? act.commits.map(c => {
-        const ents = (c.entities || []).map(e =>
-          `<span class="ov-chip" data-warn-entity="${esc(e.entity_type)}" data-warn-id="${esc(e.entity_id)}">${esc(e.entity_id)}</span>`);
-        return `<div class="ov-activity-row">
-          <div class="ov-activity-line">
-            <span class="ov-activity-msg">${esc(c.message)}</span>
-            <span class="ov-activity-meta">${esc(c.author)} · ${esc((c.date || "").slice(0, 10))} · ${ents.length} ${ents.length === 1 ? "entry" : "entries"}</span>
-          </div>
-          ${ents.length ? chipRow(ents, OV_ACTIVITY_CHIP_LIMIT) : ""}
-        </div>`;
-      }).join("")
+    ? act.commits.slice(0, 5).map(c => `<div class="ov-activity-row">
+        <div class="ov-activity-line">
+          <span class="ov-activity-msg">${esc(c.message)}</span>
+          <span class="ov-activity-meta">${esc(c.author)} · ${esc((c.date || "").slice(0, 10))} · ${(c.entities || []).length} ${(c.entities || []).length === 1 ? "entry" : "entries"}</span>
+        </div>
+      </div>`).join("")
     : `<p class="placeholder">${act.available ? "No recent changes." : "Git history unavailable."}</p>`;
 
+  // Two columns of equal weight. Assessed systems sit on the left because assessment is
+  // the frequent act and authoring the model is the occasional one — the left column is
+  // what the eye reads first. Nothing here is a document; each block is a signal, and
+  // the detail behind it lives on the screen that owns it.
+  const facts = [
+    `${stats.threats ?? "—"} threats`,
+    `${stats.mitigations ?? "—"} mitigations`,
+    `${stats.threat_mitigation_links ?? "—"} links`,
+    `${ins.systems || 0} ${ins.systems === 1 ? "system" : "systems"} assessed`,
+    ins.latest_date ? `latest ${ins.latest_date}` : null,
+  ].filter(Boolean).join(" · ");
+
+  const blk = (label, meta, body) => `<div class="ov-block">
+    <p class="k">${esc(label)}${meta ? `<span class="n">${esc(meta)}</span>` : ""}</p>${body}</div>`;
+
   return `<div class="detail">
-    <div class="dhead">
-      <div class="dicon">O</div>
-      <div class="dtitle">
-        <h2>Library overview</h2>
-        <div class="dsub">A snapshot to review — nothing here blocks a save.</div>
-      </div>
+    <div class="ov-head">
+      <h2>Library overview</h2>
+      <p class="ov-facts">${esc(facts)}</p>
     </div>
     <div class="ov-grid2">
-      <div>
-        ${readsec("Counts", counts)}
-        ${readsec("Draft / verified", draftVerified)}
-      </div>
-      <div>
-        ${readsec("Style-guide coverage", coverage)}
-        ${readsec("Implementation coverage", implCoverage)}
-      </div>
+      <section>
+        <h3 class="slabel">Assessed systems</h3>
+        <div class="ov-col">${estateBlocks(blk)}</div>
+      </section>
+      <section>
+        <h3 class="slabel">The library</h3>
+        <div class="ov-col">
+          ${blk("Authoring", null, libraryLines)}
+          ${blk("Gaps to review", h.issue_count ? `${h.issue_count} across the library` : null, gaps)}
+          ${blk("Catalog warnings", warningCount ? `${warningCount} across the library` : null, warningsSection)}
+          ${blk("Recent activity", null, activityRows)}
+        </div>
+      </section>
     </div>
-    ${readsec("Gaps to review", gaps, h.issue_count ? `— ${h.issue_count} across the library` : "")}
-    ${readsec("Catalog warnings", warningsSection, warningCount ? `— ${warningCount} across the library` : "")}
-    ${readsec("Recent activity", activityRows)}
   </div>`;
 }
 
@@ -2393,12 +2610,28 @@ function wireOverview() {
   document.querySelectorAll(".ov-chip[data-threat]").forEach(c => c.onclick = () => overviewOpenThreat(c.dataset.threat));
   document.querySelectorAll(".ov-chip[data-warn-entity]").forEach(c => c.onclick = () => overviewOpenEntity(c.dataset.warnEntity, c.dataset.warnId));
   document.querySelectorAll("[data-ov-filter]").forEach(el => el.onclick = () => overviewOpenMitigationsFiltered(el.dataset.ovFilter, el.dataset.ovValue));
+  document.querySelectorAll("[data-goto]").forEach(el => el.onclick = () => switchScreen(el.dataset.goto));
   // Reveal a capped chip list in place; the button has done its job and goes away.
   document.querySelectorAll("[data-ov-more]").forEach(b => b.onclick = () => {
     const rest = b.parentElement.querySelector(".ov-rest");
     if (rest) rest.classList.remove("hide");
     b.remove();
   });
+  wireJumpLinks(document.getElementById("main"));
+  document.querySelectorAll("[data-report-sys]").forEach(c => c.onclick = () => {
+    switchScreen("reports");
+    openReportSystem(c.dataset.reportSys, c.dataset.reportDate);
+  });
+}
+
+// Anything that names an entity in the model is a way into it — shared by every screen
+// that renders such a name.
+function wireJumpLinks(root) {
+  if (!root) return;
+  root.querySelectorAll("[data-jump-threat]").forEach(b =>
+    b.onclick = () => jumpToThreat(b.dataset.jumpThreat));
+  root.querySelectorAll("[data-jump-mit]").forEach(b =>
+    b.onclick = () => jumpToMit(b.dataset.jumpMit));
 }
 
 // Open a threat from an overview gap chip: cross to the Threats screen, then select it.
@@ -2502,7 +2735,7 @@ async function openReportSystem(systemId, date) {
   } catch (e) {
     state.reportMitInfo = {};
   }
-  renderReportsRail(); renderReportsMain();
+  renderReportsRail(); renderReportsMain(); writeRoute();
 }
 
 // -------------------------------------------------- report draft editing --- //
@@ -2523,13 +2756,13 @@ function setByPath(obj, path, value) {
 }
 
 // A prose field. Editable draft -> a textarea wearing the surrounding type; final -> text.
-function rProse(path, value, cls) {
+function rProse(path, value, cls, hint) {
   const v = value == null ? "" : value;
   if (!reportEditable()) {
     return v ? `<div class="${cls}">${esc(v)}</div>` : `<div class="${cls} rep-empty">not recorded</div>`;
   }
   return `<textarea class="ie ${cls}" rows="1" data-rp="${esc(path)}"
-    placeholder="not recorded">${esc(v)}</textarea>`;
+    placeholder="${esc(hint || "not recorded")}">${esc(v)}</textarea>`;
 }
 
 function rSelect(path, value, options, cls) {
@@ -2649,7 +2882,8 @@ function reportFindingHtml(f, fi) {
       </span>
     </div>
     ${rProse(`findings.${fi}.scenario`, f.scenario, "fscenario")}
-    <div class="fwhy"><span class="k">Why these grades</span>${rProse(`findings.${fi}.risk.reasoning`, f.risk.reasoning, "")}</div>
+    <div class="fwhy"><span class="k">Why these grades</span>${rProse(`findings.${fi}.risk.reasoning`,
+      f.risk.reasoning, "", "A full sentence — this label is not carried into the hand-off")}</div>
     ${chain ? `<dl class="fchain">${chain}</dl>` : ""}
     <div class="badges">${facts}</div>
     ${(reqs || ignored) ? `<div class="freqs"><span class="freqs-k">Requirements</span>${reqs}${ignored}</div>` : ""}
@@ -2751,31 +2985,35 @@ async function resolveMitigationsForReport(rep) {
 // What goes to the product team, and what it looks like before it goes. The options
 // run most-useful-first for THAT reader: the asks, then the evidence behind them, then
 // the framing. Nothing is mandatory, but turning the asks off leaves an empty document.
+// The assessor dialogue is deliberately absent: it is meta ABOUT this report — how the
+// analysis moved during the run — and there is nowhere in a product team's backlog to
+// put it. It stays on screen, folded, for debugging the assessor.
 const REPORT_EXPORT_GROUPS = [
   { key: "requirements", label: "Requirements", opts: [
-    { key: "reqs", label: "The asks themselves" },
+    { key: "reqs", label: "Include them" },
     { key: "owner", label: "Who owns each", sub: "reqs" },
     { key: "covered", label: "Ones already covered", sub: "reqs" },
   ] },
   { key: "evidence", label: "Evidence", opts: [
     { key: "scenario", label: "The scenario behind each" },
+    { key: "reasoning", label: "Why the risk is what it is" },
     { key: "grades", label: "Severity and likelihood" },
-    { key: "reasoning", label: "Why those grades", sub: "grades" },
     { key: "chain", label: "Asset, weakness, attacker" },
   ] },
   { key: "context", label: "Context", opts: [
     { key: "header", label: "System and date" },
     { key: "delta", label: "What changed since last time" },
     { key: "discarded", label: "Ruled out" },
-    { key: "dialogue", label: "Assessor dialogue" },
   ] },
 ];
 const REPORT_EXPORT_DEFAULTS = {
   reqs: true, owner: true, covered: false,
-  scenario: true, grades: false, reasoning: false, chain: false,
-  header: true, delta: false, discarded: false, dialogue: false,
+  scenario: true, reasoning: true, grades: false, chain: false,
+  header: false, delta: false, discarded: false,
 };
-const LS_REPORT_EXPORT = "keel.reportExport.";
+// Versioned: bumping the prefix retires anyone's saved set when the defaults change,
+// which is the only way a changed default reaches someone who already used the panel.
+const LS_REPORT_EXPORT = "keel.reportExport.v2.";
 
 function reportExportSettings() {
   if (state.reportExport) return state.reportExport;
@@ -2816,13 +3054,15 @@ function buildReportMarkdown(rep, mitInfo, s) {
     const reqs = s.reqs
       ? (f.requirements || []).filter(r => r.included || (s.covered && r.coverage_status === "already_covered"))
       : [];
-    const wantsBody = s.scenario || s.grades || s.chain;
+    const wantsBody = s.scenario || s.reasoning || s.grades || s.chain;
     if (!reqs.length && !wantsBody) continue;
     any = true;
     if (s.grades) lines.push(`**${f.id}** — severity ${f.risk.severity}, likelihood ${f.risk.likelihood}`, "");
-    else if (s.scenario || s.chain) lines.push(`**${f.id}**`, "");
+    else if (wantsBody) lines.push(`**${f.id}**`, "");
     if (s.scenario) lines.push(f.scenario, "");
-    if (s.grades && s.reasoning && f.risk.reasoning) lines.push(`Why: ${f.risk.reasoning}`, "");
+    // No "Why:" lead-in. `risk.reasoning` is authored as a sentence that stands on its
+    // own, so it drops into a ticket as prose rather than as a labelled fragment.
+    if (s.reasoning && f.risk.reasoning) lines.push(f.risk.reasoning, "");
     if (s.chain) {
       lines.push(`- Asset: ${f.asset}`);
       lines.push(`- Weakness: ${f.vulnerability}`);
@@ -2918,11 +3158,7 @@ function wireReportDetail() {
   main.querySelectorAll(".ov-chip[data-date]").forEach(chip =>
     chip.onclick = () => openReportSystem(state.reportSelected.system_id, chip.dataset.date));
 
-  // Every reference into the model is a way into it.
-  main.querySelectorAll("[data-jump-threat]").forEach(b =>
-    b.onclick = () => jumpToThreat(b.dataset.jumpThreat));
-  main.querySelectorAll("[data-jump-mit]").forEach(b =>
-    b.onclick = () => jumpToMit(b.dataset.jumpMit));
+  wireJumpLinks(main);
 
   // Remember which folded footer sections the reader opened, across re-renders.
   main.querySelectorAll("details[data-fold]").forEach(d =>
@@ -3109,7 +3345,7 @@ function selectStyleField(entity, field) {
     examples: [...(sf.examples || [])],
     instructions: [...(sf.instructions || [])],
   };
-  renderStyleRail(); renderStyleDetail(); renderStylePreview();
+  renderStyleRail(); renderStyleDetail(); renderStylePreview(); writeRoute();
 }
 
 // The live draft as a style-field-like object (what sgHint/sgPanel consume).
@@ -3348,6 +3584,7 @@ async function selectMit(id) {
   try { const d = await j("/threats?brief=false&include=mitigations"); state.threatMits = d.threats || []; }
   catch (e) { /* leave whatever we had */ }
   renderMitDetail(); renderMitPreview();
+  writeRoute();
   document.getElementById("main").scrollTop = 0;
   loadHistory(mitHistoryCfg());   // fetch the commit list, then re-render (non-blocking)
 }
@@ -4061,8 +4298,11 @@ function initPreviewResizer() {
 initRailToggle();
 initPreviewResizer();
 
-// Land on the Overview dashboard; switchScreen wires the rail/main/right and loads it.
-boot().then(() => switchScreen("overview")).catch(e =>
+// Land wherever the hash points — the Overview when there is no hash. A pasted or
+// edited URL re-routes in place; the app's own navigation uses replaceState, so this
+// only fires for navigation that came from outside it.
+window.addEventListener("hashchange", applyRoute);
+boot().then(applyRoute).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
 </script>
 </body>

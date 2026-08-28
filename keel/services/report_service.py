@@ -99,6 +99,139 @@ def get_report_series(system_id: str) -> list[dict[str, Any]]:
     ]
 
 
+def _latest_per_system() -> list[Report]:
+    """Each system's most recent report. Cross-system figures are taken from these and
+    not from the whole archive: an older assessment's findings may already be closed,
+    and counting them would keep reporting work that is done."""
+    root = _reports_dir()
+    if not root.is_dir():
+        return []
+    out = []
+    for system_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        reports = _load_system_reports(system_dir)
+        if reports:
+            out.append(reports[0])
+    return out
+
+
+def _all_reports() -> list[Report]:
+    root = _reports_dir()
+    if not root.is_dir():
+        return []
+    out: list[Report] = []
+    for system_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        out.extend(_load_system_reports(system_dir))
+    return out
+
+
+def insights() -> dict[str, Any]:
+    """What the archive says read ACROSS systems rather than one at a time.
+
+    Reports are the only evidence Keel has about whether its model matches reality, so
+    every figure here points back at something to do:
+
+    * `most_requested` — one control asked for by several systems, implemented by none,
+      is a thing to build once centrally instead of N times.
+    * `off_catalog` — a finding with no catalog threat, or an ask with no catalog card,
+      is the library's own to-do list, written by real assessments.
+    * `threat_activity` — a card ruled out more often than it is confirmed describes
+      something that keeps turning out not to apply, and is a candidate for rewording.
+    * `drafts` — an assessment nobody finalized is unfinished work.
+    """
+    from keel.store import get_store
+
+    store = get_store()
+    latest, every = _latest_per_system(), _all_reports()
+
+    requested: dict[str, list[str]] = {}
+    off_catalog: list[dict[str, Any]] = []
+    confirmed: dict[str, set[str]] = {}
+    ruled_out: dict[str, set[str]] = {}
+    severity_mix = {"high": 0, "medium": 0, "low": 0}
+    per_system: list[dict[str, Any]] = []
+
+    for rep in latest:
+        open_asks = 0
+        own_mix = {"high": 0, "medium": 0, "low": 0}
+        for f in rep.findings:
+            severity_mix[f.risk.severity] += 1
+            own_mix[f.risk.severity] += 1
+            open_asks += sum(
+                1 for r in f.requirements
+                if r.included and r.coverage_status != "already_covered"
+            )
+            confirmed.setdefault(f.id, set()).add(rep.system_id)
+            if not f.from_catalog:
+                off_catalog.append({
+                    "kind": "threat", "label": f.id, "detail": f.scenario,
+                    "system_id": rep.system_id, "date": rep.date,
+                })
+            for r in f.requirements:
+                if not r.included or r.coverage_status == "already_covered":
+                    continue
+                if r.mitigation_id:
+                    requested.setdefault(r.mitigation_id, []).append(rep.system_id)
+                else:
+                    off_catalog.append({
+                        "kind": "control", "label": r.description or "", "detail": f.id,
+                        "system_id": rep.system_id, "date": rep.date,
+                    })
+        for d in rep.discarded:
+            ruled_out.setdefault(d.id, set()).add(rep.system_id)
+        per_system.append({
+            "system_id": rep.system_id,
+            "system_name": rep.system_name,
+            "date": rep.date,
+            "status": rep.status,
+            "findings": len(rep.findings),
+            "open_requirements": open_asks,
+            "severity": own_mix,
+        })
+    # Worst first: most high findings, then most findings. A dashboard chart is read
+    # top-down, so the row that needs attention has to be the one the eye lands on.
+    per_system.sort(key=lambda s: (-s["severity"]["high"], -s["findings"], s["system_id"]))
+
+    most_requested = [
+        {
+            "mitigation_id": mid,
+            "name": (store.mitigations.get(mid) or {}).get("name") or mid,
+            "in_catalog": mid in store.mitigations,
+            # An empty `implementations` list means the control is a recommendation, not
+            # something present anywhere — see the assessment skill's reading of it.
+            "implemented": bool((store.mitigations.get(mid) or {}).get("implementations")),
+            "systems": sorted(set(systems)),
+        }
+        for mid, systems in requested.items()
+    ]
+    most_requested.sort(key=lambda x: (-len(x["systems"]), x["mitigation_id"]))
+
+    activity = [
+        {
+            "id": tid,
+            "title": (store.threats.get(tid) or {}).get("title") or tid,
+            "in_catalog": tid in store.threats,
+            "confirmed": sorted(confirmed.get(tid, set())),
+            "ruled_out": sorted(ruled_out.get(tid, set())),
+        }
+        for tid in sorted(set(confirmed) | set(ruled_out))
+    ]
+
+    return {
+        "systems": len(latest),
+        "assessments": len(every),
+        "latest_date": max((r.date for r in every), default=None),
+        "drafts": [
+            {"system_id": r.system_id, "date": r.date} for r in every if r.status == "draft"
+        ],
+        "severity_mix": severity_mix,
+        "per_system": per_system,
+        "most_requested": most_requested,
+        "off_catalog": off_catalog,
+        "threat_activity": activity,
+        "never_assessed": sorted(set(store.threats) - set(confirmed) - set(ruled_out)),
+    }
+
+
 def _report_path(system_id: str, date: str) -> Path | None:
     """The file for one report, or None when either id would escape the archive."""
     if not SYSTEM_ID_RE.match(system_id) or not DATE_RE.match(date):
