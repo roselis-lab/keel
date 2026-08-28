@@ -232,7 +232,9 @@ async def entry_diff(entity: str, id: str, sha: str):
 
 
 # --------------------------------------------------------------------------- #
-# Reports (read-only — written to disk by the assessment skill, never through here)
+# Reports. The skill writes the first pass to disk; the specialist corrects it here
+# while it is a draft. A final report is frozen — revising it means reopening it as a
+# new dated draft, so a correction lands beside the record instead of erasing it.
 # --------------------------------------------------------------------------- #
 @router.get("/reports")
 async def list_reports():
@@ -254,6 +256,40 @@ async def get_report(system_id: str, date: str):
     if not result["success"]:
         raise HTTPException(status_code=404, detail=result["error"])
     return result["report"]
+
+
+@router.put("/reports/{system_id}/{date}")
+async def save_report(system_id: str, date: str, body: dict):
+    """Replace a draft with its corrected version. 409 when the report is already final,
+    422 when the body does not validate."""
+    result = report_service.save_report(system_id, date, body)
+    if result["success"]:
+        return result["report"]
+    if "errors" in result:
+        raise HTTPException(status_code=422, detail=result)
+    if "final" in result["error"]:
+        raise HTTPException(status_code=409, detail=result["error"])
+    raise HTTPException(status_code=404, detail=result["error"])
+
+
+@router.post("/reports/{system_id}/{date}/finalize")
+async def finalize_report(system_id: str, date: str):
+    """Freeze a draft into a dated record. Finalizing twice is a no-op, not an error."""
+    result = report_service.finalize_report(system_id, date)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result["report"]
+
+
+@router.post("/reports/{system_id}/{date}/reopen")
+async def reopen_report(system_id: str, date: str):
+    """Copy a report into a fresh draft dated today. 409 when today already has one."""
+    result = report_service.reopen_report(system_id, date)
+    if result["success"]:
+        return result["report"]
+    if "already exists" in result["error"]:
+        raise HTTPException(status_code=409, detail=result["error"])
+    raise HTTPException(status_code=404, detail=result["error"])
 
 
 # --------------------------------------------------------------------------- #

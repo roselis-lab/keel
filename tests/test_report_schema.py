@@ -1,8 +1,8 @@
 """Report schema — a persisted assess-genai-with-library run.
 
-Read-only from the app's side: a report is written once by the skill and never
-edited through this schema. The conditional validators on `Requirement` follow the
-same `model_validator(mode="after")` pattern as `Implementation.coverage`/`covers`.
+The skill writes the first pass; the specialist corrects it while it is a draft, and
+finalizing freezes it. The conditional validators on `Requirement` follow the same
+`model_validator(mode="after")` pattern as `Implementation.coverage`/`covers`.
 """
 import pytest
 from pydantic import ValidationError
@@ -141,3 +141,40 @@ def test_report_rejects_unknown_top_level_field():
             system_id="x", system_name="X", system_description="d", date="2026-08-26",
             assessor="a", not_a_real_field="oops",
         )
+
+
+def test_report_starts_as_a_draft():
+    """Reports written before the field existed must not read as frozen records."""
+    r = Report(
+        system_id="x", system_name="X", system_description="d",
+        date="2026-08-26", assessor="a",
+    )
+    assert r.status == "draft"
+
+
+def test_report_rejects_an_unknown_status():
+    with pytest.raises(ValidationError):
+        Report(
+            system_id="x", system_name="X", system_description="d",
+            date="2026-08-26", assessor="a", status="archived",
+        )
+
+
+def test_requirement_included_defaults_to_shipping_it():
+    assert _requirement().included is True
+
+
+def test_requirement_already_covered_defaults_to_not_shipping_it():
+    """Nothing to ask the product team for — the control is already in this deployment."""
+    r = _requirement(coverage_status="already_covered", coverage_note="the gateway does it")
+    assert r.included is False
+
+
+def test_requirement_included_survives_an_explicit_choice():
+    """The specialist can decide either way; the decision is recorded, not re-derived."""
+    covered = _requirement(
+        coverage_status="already_covered", coverage_note="the gateway does it", included=True
+    )
+    open_one = _requirement(included=False)
+    assert covered.included is True
+    assert open_one.included is False

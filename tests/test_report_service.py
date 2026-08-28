@@ -1,9 +1,13 @@
-"""Read-only access to reports/.
+"""Access to reports/.
 
 Unlike the catalog, reports are NOT loaded into the in-memory Store — they're an
 archive, read fresh off disk per call. So these tests point `settings.reports_dir` at
 a temp directory (the same seam `test_catalog_dir_override.py` uses for the catalog)
 rather than installing a store.
+
+The write path guards one rule above all: a final report is a dated record and is
+never rewritten. Everything about `save_report` / `finalize_report` / `reopen_report`
+below is there to keep that true.
 """
 import yaml
 
@@ -122,3 +126,144 @@ def test_get_report_malformed_file_returns_error_not_exception(tmp_path, monkeyp
     result = report_service.get_report("broken-system", "2026-08-01")
     assert result["success"] is False
     assert "error" in result
+
+
+# --------------------------------------------------------------------------- #
+# Write path: draft -> final
+# --------------------------------------------------------------------------- #
+def test_a_report_without_a_status_reads_as_a_draft(tmp_path, monkeypatch):
+    """Every report already on disk predates the status field; none of them is frozen."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+    assert report_service.get_report("checkout-agent", "2026-08-26")["report"]["status"] == "draft"
+
+
+def test_save_report_replaces_a_draft(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+    body = dict(VALID_REPORT, system_description="Now also issues refunds.")
+
+    result = report_service.save_report("checkout-agent", "2026-08-26", body)
+
+    assert result["success"] is True
+    reread = report_service.get_report("checkout-agent", "2026-08-26")["report"]
+    assert reread["system_description"] == "Now also issues refunds."
+
+
+def test_save_report_refuses_a_final_report(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+
+    result = report_service.save_report(
+        "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_name="Rewritten")
+    )
+
+    assert result["success"] is False
+    assert "final" in result["error"]
+    assert report_service.get_report("checkout-agent", "2026-08-26")["report"][
+        "system_name"
+    ] == "Checkout Agent"
+
+
+def test_save_report_refuses_a_body_that_moves_the_report(tmp_path, monkeypatch):
+    """The path is the identity — a save of one report must not land on another."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    moved = report_service.save_report(
+        "checkout-agent", "2026-08-26", dict(VALID_REPORT, date="2026-01-01")
+    )
+    renamed = report_service.save_report(
+        "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_id="other-system")
+    )
+
+    assert moved["success"] is False
+    assert renamed["success"] is False
+
+
+def test_save_report_cannot_finalize_through_the_body(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    result = report_service.save_report(
+        "checkout-agent", "2026-08-26", dict(VALID_REPORT, status="final")
+    )
+
+    assert result["success"] is False
+    assert "finalize" in result["error"]
+
+
+def test_save_report_rejects_an_invalid_body(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    result = report_service.save_report("checkout-agent", "2026-08-26", {"system_id": "x"})
+
+    assert result["success"] is False
+    assert result["errors"]
+
+
+def test_save_report_will_not_create_a_missing_report(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    assert report_service.save_report("ghost", "2026-08-26", VALID_REPORT)["success"] is False
+
+
+def test_finalize_freezes_and_is_idempotent(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    assert report_service.finalize_report("checkout-agent", "2026-08-26")["report"]["status"] == "final"
+    again = report_service.finalize_report("checkout-agent", "2026-08-26")
+    assert again["success"] is True
+    assert again["report"]["status"] == "final"
+
+
+def test_reopen_copies_a_final_report_into_a_new_draft(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+
+    result = report_service.reopen_report("checkout-agent", "2026-08-26", today="2026-09-01")
+
+    assert result["report"]["date"] == "2026-09-01"
+    assert result["report"]["status"] == "draft"
+    # the record it revises is untouched
+    original = report_service.get_report("checkout-agent", "2026-08-26")["report"]
+    assert original["status"] == "final"
+    assert [r["date"] for r in report_service.get_report_series("checkout-agent")] == [
+        "2026-09-01", "2026-08-26",
+    ]
+
+
+def test_reopen_refuses_to_clobber_todays_draft(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+    _write_report(tmp_path, "checkout-agent", "2026-09-01", {"system_name": "Work in progress"})
+
+    result = report_service.reopen_report("checkout-agent", "2026-08-26", today="2026-09-01")
+
+    assert result["success"] is False
+    assert report_service.get_report("checkout-agent", "2026-09-01")["report"][
+        "system_name"
+    ] == "Work in progress"
+
+
+def test_reopen_defaults_to_today(tmp_path, monkeypatch):
+    import datetime
+
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+
+    result = report_service.reopen_report("checkout-agent", "2026-08-26")
+
+    assert result["report"]["date"] == datetime.date.today().isoformat()
+
+
+def test_ids_that_would_escape_the_archive_are_refused(tmp_path, monkeypatch):
+    """system_id is a folder name and date is a file name, both straight off the URL."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    assert report_service.get_report("../../etc", "passwd")["success"] is False
+    assert report_service.get_report("checkout-agent", "../../../secrets")["success"] is False
+    assert report_service.get_report_series("../..") == []
+    assert report_service.save_report("../evil", "2026-08-26", VALID_REPORT)["success"] is False
