@@ -10,6 +10,12 @@ The library is the methodology **crystallized** into a catalog of threats — ea
 
 **REQUIRED — source of truth:** run the assessment strictly by the `assessing-genai-security` methodology and follow it verbatim — all its steps, the data-sufficiency gate, the output format. Nothing here overrides or paraphrases it: it is calibrated. This skill only points to where the library plugs into its steps.
 
+## Identify the system first (before the methodology's step 1)
+
+Assessments are archived per system under `reports/<system-id>/<YYYY-MM-DD>.yaml`. Before analysing anything, list those folders and read the `system_description` at the top of each system's most recent file. If one plausibly describes the system in front of you, **propose the match and wait** — do not assume it. A specialist with fifty systems will not remember the slug, and two similar agents are easy to confuse.
+
+On a confirmed match, read that report in full and assess **by delta**: what changed in the architecture since that date, which findings are affected, which are untouched. Re-derive nothing that has not moved — but do re-check each carried-forward finding rather than copying it, because a control that closed a gap can also have been removed. On no match, this is a first assessment: pick a new `system-id` (lowercase, hyphenated, stable — it is a folder name forever) and leave `delta_summary` null.
+
 ## Where the library plugs in (overlay, not a replacement)
 
 - **Threat search (in that methodology step).** Don't pull the whole catalog with all fields in one call — a full `list_threats(brief=false, include=[all])` doesn't fit in one tool response. Query pattern: **(1)** a light index `mcp__keel__list_threats(brief=false, include=["harm","weaknesses"])` for a first-pass pattern match (the `weaknesses` — cause + where + defect — are the recognition anchor); **(2)** `mcp__keel__get_threat(id)` per relevant candidate — for `surface`/`source`, `reachability`, and linked mitigations. This does NOT override the methodology's rule "search from the system, not from a catalog": the catalog is a floor. After matching, walk the 5 `harm` classes (wrong-decision, data-exposed, code-execution, downtime, reputation-legal) and check whether an asset is under threat that the catalog misses — analyze such a threat from scratch by the methodology.
@@ -26,5 +32,29 @@ The library is the methodology **crystallized** into a catalog of threats — ea
 - **Crediting an unimplemented control** — a mitigation with no `implementations` recorded here is a recommendation, not evidence the threat is already covered in this deployment; confirm the control's presence from the architecture.
 - **Per-item grading of a set on intuition (flip-flop)** — when the recommendation grades a SET of homogeneous items (tools, endpoints, actions), don't judge each by gut. First state one **risk frame** (impact if abused → reachability IN THIS system → residual risk after controls → gate/allow) and run every item through it in context, showing the reasoning per item. This is NOT a static matrix: verdicts legitimately differ across systems — context decides (e.g. an irreversible action with an unreachable surface or strong controls may be allowed), not the action class by itself. On a challenge to one item, test whether the FRAME holds (and re-derive it as a whole) — don't flip a single verdict; a point flip IS the flip-flop. Flag genuinely borderline ones; the output is a **justified recommendation**, and the final decision is the owner's.
 
-## Final polish (last step)
+## Final polish (second to last step)
 Once the assessment is complete, polish the **final assessment** (part 2 of the output) through two skills via the Skill tool, in order: **`tighten-text`** (concision + de-bullet, tuned for security prose), then **`humanizer`** (remove AI-tells, natural expert voice). Both are substance-preserving and MUST NOT drop or alter risk levels, HARD/SOFT tags, GATE ITEMS / stated uncertainty, the delta, mitigations, or any domain specifics — they tighten wording and voice only. Keep the two-part structure and the analysis trail intact; don't polish the audit trail's reasoning away. If a gate paused the run (missing facts), finish the assessment first, then polish.
+
+## Write the report and hand back a link (last step)
+
+An assessment that lives only in this conversation is lost. Write it to `reports/<system-id>/<YYYY-MM-DD>.yaml` with the Write tool, then give the user a link to it — **the link is the deliverable**, not a wall of YAML pasted back into chat.
+
+**The record is a draft.** Set `status: draft` and stop there. You produced the first pass; the specialist corrects grades and wording in the UI and finalizes it themselves. Never write `status: final` — freezing someone else's judgment is not yours to do.
+
+`assessor` comes from `git config user.name` and `user.email`, written as `Name <email>`. `date` is today. `system_id` and `system_description` come from the identification step above.
+
+Per finding: `id` (the catalog threat id, or a new `T-*` id you coin for something the catalog lacks), `from_catalog`, `scenario`, `source` (`who` / `motive` / `access`), `asset`, `attack_surface`, `vulnerability`, `exploitation_complexity`, `harm`, `risk` (`likelihood` / `severity` / `reasoning`), `delta`, `requirements`, `ignored_mitigations`. `harm`, `attack_surface` and `source.who` are the catalog's own vocabularies — quote them verbatim. `likelihood`, `severity` and `exploitation_complexity` are each **low | medium | high**; there is no fourth level.
+
+**`risk.reasoning` must be a sentence that stands on its own.** It is pasted straight into a ticket with no label in front of it, so "irreversible money movement, reachable anonymously" fails and "The money movement is irreversible and the path is reachable anonymously" works.
+
+Each requirement is either a catalog control (`mitigation_id` set, `description` omitted) or an ad hoc ask (`mitigation_id: null`, `description` required). `coverage_status` is `needs_implementation`, `already_covered` or `partial`; the last two **require** a `coverage_note` saying what covers it here, and `needs_implementation` must not carry one. Leave `included` out — it defaults to shipping everything except what is already covered, and the specialist decides the rest. A control linked in the catalog but wrong for this system goes in `ignored_mitigations` with the reason, not into `requirements`.
+
+`discarded` is id + reason only, never the full chain. `dialogue` is the exchanges that actually moved the analysis — question, answer, and what it changed — not a transcript.
+
+Then hand back the link, using the host and port Keel is served on (`127.0.0.1:8000` unless configured otherwise):
+
+```
+http://127.0.0.1:8000/#/reports/<system-id>/<YYYY-MM-DD>
+```
+
+Say in one line what the reader will find there and what is left to do, e.g. "3 findings, 5 requirements — review the grades and finalize." Do not print the YAML.

@@ -108,7 +108,12 @@
     font-size: 15px; font-weight: 700; letter-spacing: -.01em; color: var(--navy-900); }
 
   /* ------ left rail ------ */
-  aside { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* Columns are pinned rather than auto-placed: a pane that hides itself (the rail on
+     the Overview, the preview everywhere but Style guide and Reports) would otherwise
+     pull every pane after it one column to the left. */
+  aside { grid-column: 1; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  main { grid-column: 2; }
+  #preview { grid-column: 3; }
   header {
     padding: 10px 15px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; gap: 10px;
@@ -129,6 +134,12 @@
   body.rail-collapsed header .count,
   body.rail-collapsed #newThreatBtn { display: none; }
   body.rail-collapsed header { padding: 12px 0; justify-content: center; }
+  /* The Overview has no list to rail. It used to hold one static paragraph explaining
+     the screen you were already looking at, so the dashboard now takes the full width —
+     which is also what lets its two columns stay short enough to read without scrolling.
+     Declared AFTER .rail-collapsed: both set --rail-w, and this one must win. */
+  body.no-rail { --rail-w: 0px; }
+  body.no-rail aside { display: none; }
   .search { padding: 10px 14px; border-bottom: 1px solid var(--border); }
   .search input {
     width: 100%; padding: 9px 11px; background: var(--tint); color: var(--navy-900);
@@ -504,12 +515,12 @@
      that owns it. Assessed systems sit LEFT: assessment is the frequent act, authoring
      the model the occasional one, and the left column is read first. */
   .ov-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
-    padding-bottom: 14px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+    padding-bottom: 12px; margin-bottom: 2px; border-bottom: 1px solid var(--border); }
   .ov-head h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
   .ov-facts { margin: 0; font-size: 13px; color: var(--navy-500); }
   .ov-col { background: var(--tint); border: 1px solid var(--border2); border-radius: var(--r-10);
     padding: 2px 16px 12px; }
-  .ov-block { padding: 13px 0; border-top: 1px solid var(--border); }
+  .ov-block { padding: 11px 0; border-top: 1px solid var(--border); }
   .ov-block:first-child { border-top: none; }
   .ov-block > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 9px;
     font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
@@ -610,7 +621,7 @@
   .ov-clean p { margin: 0; color: var(--navy-700); font-size: 14px; line-height: 1.55; max-width: var(--measure); }
   .ov-clean p b { color: var(--status-ok-fg); }
   .ov-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-  .ov-grid2 > section { margin-top: 18px; }
+  .ov-grid2 > section { margin-top: 14px; }
   .ov-grid2 > div > .readsec:first-child { margin-top: 0; }
   @media (max-width: 900px) { .ov-grid2 { grid-template-columns: 1fr; } }
   .ov-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--navy-100); margin: 8px 0 6px; }
@@ -714,6 +725,10 @@
     font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: var(--r-6); }
   .finding .fdrop:hover { background: var(--crimson-50); color: var(--accent); }
   .rep-empty { color: var(--navy-500); font-style: italic; }
+  .rep-dates { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 14px 0 0; }
+  .rep-dates .k { font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--navy-600); }
+  .rep-dates .ov-chip { margin: 0; }
 
   /* Ruled out and the assessor dialogue are how WE debug the assessment run, not the
      specialist's job — a discarded candidate is rare and the Q&A is a trace. They sit
@@ -2191,6 +2206,8 @@ function switchScreen(name) {
   // Overview and Reports have no rail search; Threats/Mitigations/Style all filter.
   const noSearch = name === "overview" || name === "reports";
   document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
+  // The Overview's rail has no list to show, so it gives its column back to the page.
+  document.body.classList.toggle("no-rail", name === "overview");
   // The faceted filter panel serves Threats + Mitigations + Style; (re)build it per
   // screen so its options stay fresh (schema enums + tags/values present in the data).
   const facets = document.getElementById("facetPanel");
@@ -2323,9 +2340,10 @@ async function loadOverview() {
   if (state.screen === "overview") { renderOverviewMain(); renderOverviewRight(); }
 }
 
+// Nothing to rail — the aside is hidden on this screen (see body.no-rail). Clearing it
+// still matters: it would otherwise keep the previous screen's list alive in the DOM.
 function renderOverviewRail() {
-  const el = document.getElementById("list");
-  el.innerHTML = '<div class="ov-rail-legend">A snapshot of the library — counts, style-guide coverage, and soft gaps worth a look. Nothing here blocks a save.</div>';
+  document.getElementById("list").innerHTML = "";
   document.getElementById("count").textContent = "";
 }
 
@@ -2556,11 +2574,12 @@ function overviewHtml() {
   // A sweeping commit touches every card in the catalog, and dumping all 71 ids inline
   // buried the message that says what the commit actually did. The message is the row;
   // the ids are a short, expandable tail beneath it.
-  // Five commits, message only. The per-commit id chips are gone from the dashboard: a
+  // Four commits, message only. The per-commit id chips are gone from the dashboard: a
   // sweeping commit lists every card in the catalog, and the id you want is reachable
-  // from the entry's own History section anyway.
+  // from the entry's own History section anyway. Four is what fits a 1440x900 laptop
+  // without scrolling, which is the point of the whole screen.
   const activityRows = act.available && act.commits.length
-    ? act.commits.slice(0, 5).map(c => `<div class="ov-activity-row">
+    ? act.commits.slice(0, 4).map(c => `<div class="ov-activity-row">
         <div class="ov-activity-line">
           <span class="ov-activity-msg">${esc(c.message)}</span>
           <span class="ov-activity-meta">${esc(c.author)} · ${esc((c.date || "").slice(0, 10))} · ${(c.entities || []).length} ${(c.entities || []).length === 1 ? "entry" : "entries"}</span>
@@ -2893,10 +2912,12 @@ function reportFindingHtml(f, fi) {
 function reportDetailHtml(rep) {
   const sel = state.reportSelected || {};
   const series = state.reportSeries[sel.system_id] || [];
+  // Switching between dates is navigation, not content, so it sits under the header
+  // where you look for it — as a strip, not a section band at the foot of the page.
   const dateChips = series.length > 1
-    ? readsec("Other assessments", `<div class="ov-chips">${series.map(s =>
+    ? `<div class="rep-dates"><span class="k">Other assessments</span>${series.map(s =>
         `<span class="ov-chip ${s.date === sel.date ? "on" : ""}" data-date="${esc(s.date)}" title="Open ${esc(s.date)}">${esc(s.date)}${s.status === "draft" ? " · draft" : ""}</span>`
-      ).join("")}</div>`)
+      ).join("")}</div>`
     : "";
 
   // One ranked list, high → low. The spine carries the ranking, so grouping the same
@@ -2947,6 +2968,7 @@ function reportDetailHtml(rep) {
       </div>
       <div class="hactions">${actions}</div>
     </div>
+    ${dateChips}
     ${draft ? "" : `<p class="notauthored">This report is final. Revising it opens a new draft dated today, beside this record rather than over it.</p>`}
     ${readsec("System", rProse("system_description", rep.system_description, "prose"))}
     ${(draft || rep.delta_summary)
@@ -2957,7 +2979,6 @@ function reportDetailHtml(rep) {
       ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
       ${fold("dialogue", "Assessor dialogue", (rep.dialogue || []).length, dialogue)}
     </div>
-    ${dateChips}
   </div>`;
 }
 
