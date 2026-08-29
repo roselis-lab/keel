@@ -38,7 +38,13 @@
     /* --green-700 is the text-only step, the same arrangement --amber-700 already had:
        --green on green-50 measures 3.10:1. Green stays a fill on dots and bar segments. */
     --green: #1f9d57; --green-50: #eaf4ee; --green-200: #bfe3cd; --green-700: #136c3a;
-    --bg: #f4f6fb; --panel: #ffffff; --tint: #f6f8fc; --white: #ffffff;
+    /* Three surfaces, and they have to be TELLABLE APART. The page used to be #f4f6fb
+       against a #f6f8fc band: a luminance ratio of 1.017, which is no difference at all
+       — every band read as text floating on the page with a hairline somewhere near it.
+       Dropping the page to navy-100 makes the two steps even (1.064 page→band, 1.063
+       band→card) and ascending, so lighter reads as nearer, the way it should. This
+       diverges from the design kit's --surface-app; the kit's own value is the bug. */
+    --bg: var(--navy-100); --panel: #ffffff; --tint: #f6f8fc; --white: #ffffff;
     --border: #dfe3ec; --border2: #eef1f7;
     /* diff palette — deliberately GitHub's, not Keel's, so a reviewer reads it instantly */
     --diff-add-bg: #e6ffec; --diff-add-gutter: #cdffd8; --diff-add-gutter-fg: #2b7d47; --diff-add-fg: #17683a;
@@ -47,7 +53,17 @@
     /* one spacing scale (multiples of 4/8) */
     --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
     --field-gap: 24px; --section-gap: 44px; --input-h: 38px;
-    --pad-rail-row: 10px 15px; --pad-card: 13px 15px; --pad-section: 12px 14px; --pad-main: 30px 40px;
+    --pad-rail-row: 10px 15px; --pad-main: 30px 40px;
+    /* ---- block rhythm — change how the app breathes HERE, not in 40 rules ----
+       These encode one rule: the space ABOVE a heading is larger than the space below
+       it, so a heading binds to its own content instead of floating between two things.
+       Keep --gap-label smaller than the top of --pad-section, or that inverts. */
+    --pad-section: 16px 18px;   /* inside a band: .readsec, an editor fieldset, .ov-col */
+    --pad-card: 15px 17px;      /* inside a card sitting on a band */
+    --gap-band: 16px;           /* between bands */
+    --gap-card: 10px;           /* between cards inside a band */
+    --gap-label: 9px;           /* a heading -> its own content */
+    --gap-hint: 9px;            /* a one-line hint -> the control it describes */
     /* radii */
     --r-4: 4px; --r-5: 5px; --r-6: 6px; --r-8: 8px; --r-9: 9px; --r-10: 10px; --r-pill: 20px; --r-round: 50%;
     /* elevation — only genuinely floating layers cast a shadow */
@@ -234,10 +250,15 @@
   /* SECTION = fieldset + legend. The top-level edit sections wear the SAME surface as
      the read view's .readsec (tint fill, hairline border, radius, padding, spacing) so
      toggling Edit ↔ read keeps the block framing and the eye doesn't lose its place. */
+  /* Identical to .readsec, so toggling Edit ↔ read keeps the block framing. */
   .detail fieldset {
-    background: var(--tint); border: 1px solid var(--border2); border-radius: 10px;
-    padding: 12px 14px; margin: 14px 0 0; min-width: 0;
+    background: var(--tint); border: 1px solid var(--line-inner); border-radius: var(--r-10);
+    padding: var(--pad-section); margin: var(--gap-band) 0 0; min-width: 0;
   }
+  /* A <legend> is laid out on the fieldset's border and ignores its padding-top, so the
+     heading sat flush against the top edge with 22px of air under it — attached to
+     nothing above and adrift from its own content. It carries the inset itself. */
+  .detail fieldset > legend.slabel { padding-top: 16px; margin-bottom: 4px; }
   /* The legend is the same tier as the read view's section header — see h3.slabel. */
   .detail fieldset > legend.slabel { display: block; width: 100%; float: none; padding: 0; }
   .ecard .field + .field { margin-top: var(--field-gap); }
@@ -273,7 +294,7 @@
      field or group — facet keys, sub-labels inside a repeatable card, the rail list. */
   h3.slabel, .detail fieldset > legend.slabel {
     font-size: var(--fs-15); font-weight: 600; text-transform: none; letter-spacing: -.01em;
-    color: var(--navy-900); margin: 0 0 10px;
+    color: var(--navy-900); margin: 0 0 var(--gap-label);
   }
   .slabel .sub { font-size: var(--fs-13); font-weight: 400; text-transform: none;
     color: var(--navy-500); letter-spacing: 0; }
@@ -285,7 +306,8 @@
   .prose { white-space: pre-wrap; color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-prose); max-width: var(--measure); }
   .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: var(--fs-13); }
   .placeholder { color: var(--navy-500); font-style: italic; }
-  .card { border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: var(--pad-card); margin-bottom: 10px; background: var(--surface-card); }
+  .card { border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: var(--pad-card);
+    margin-bottom: var(--gap-card); background: var(--surface-card); }
   .card .chead { display: flex; align-items: center; gap: 8px; }
   .card .cid { font-family: ui-monospace, monospace; font-size: var(--fs-11); color: var(--navy-500); }
   .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: var(--fs-14); }
@@ -302,8 +324,8 @@
   /* ------ read view (per-section surfaces, breadcrumb, omit-empty) ------ */
   /* A read/document view, so each populated section sits on its own subtle surface,
      unlike the edit form (whose only heavy container is the repeatable-card border). */
-  .readsec { background: var(--tint); border: 1px solid var(--border2); border-radius: 10px; padding: 16px 18px; margin-top: 16px; }
-  .readsec > h3.slabel { margin: 0 0 10px; }
+  .readsec { background: var(--tint); border: 1px solid var(--line-inner); border-radius: var(--r-10);
+    padding: var(--pad-section); margin-top: var(--gap-band); }
   .readsec .prose { color: var(--navy-800); }
   .readsec .card { background: var(--surface-card); }
   .notauthored { color: var(--navy-500); font-size: var(--fs-12); font-style: italic; margin: 16px 0 0; }
@@ -416,7 +438,7 @@
   .ecard { position: relative; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: var(--tint); }
   .ecard-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; user-select: none; }
   .ecard.collapsed .ecard-head { padding: 9px 12px; }
-  .ecard-body { padding: 2px 14px 14px; }
+  .ecard-body { padding: 14px 14px 16px; }
   .ecard-sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--navy-700); font-weight: 600; font-family: ui-monospace, "SFMono-Regular", monospace; }
   .card-toggle { border: none; background: none; color: var(--navy-500); font-size: var(--fs-11); line-height: var(--lh-1); padding: 2px 3px; }
   .card-toggle:hover { color: var(--navy-800); }
@@ -429,7 +451,9 @@
   /* ------ inline style-guide bar ------ */
   .field { position: relative; }
   /* one muted ~12px single-line hint under each label; row height reserved so fields align */
-  .sg-hint { color: var(--navy-500); font-size: var(--fs-12); line-height: var(--lh-tight); margin: 0 0 6px; min-height: 17px;
+  /* The hint belongs to the label, not to the input: tight above, roomy below, so the
+     two read as one unit and the control below is clearly the thing they describe. */
+  .sg-hint { color: var(--navy-500); font-size: var(--fs-12); line-height: var(--lh-tight); margin: 0 0 var(--gap-hint); min-height: 17px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sg-panel { display: none; margin-top: 8px; padding: 10px 12px; background: var(--surface-card); border: 1px solid var(--line-control); border-radius: var(--r-8); font-size: var(--fs-12); }
   .sg-panel.show { display: block; }
@@ -440,16 +464,24 @@
   .sg-panel ul li { margin-bottom: 2px; }
   .sg-ex { color: var(--navy-700); font-style: italic; margin: 0 0 5px; }
   /* inline per-field guidance — a compact <details> that replaces the old rail mode */
+  /* Guidance opens on hover, with no click and no jump. It PUSHES rather than covers:
+     a popover floating over a form field hides the very thing the guidance is about.
+     The height animates (grid 0fr → 1fr, which needs no known height), so the page
+     settles instead of snapping. :focus-within keeps it reachable from the keyboard. */
   .fguide { margin-top: 8px; }
-  .fguide > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-    font-size: var(--fs-11); font-weight: 600; color: var(--navy-500); user-select: none; padding: 2px 0; }
-  .fguide > summary::-webkit-details-marker { display: none; }
-  .fguide > summary::before { content: "\24D8"; color: var(--navy-500); font-size: var(--fs-13); }
-  .fguide[open] > summary { color: var(--navy-700); }
-  .fguide > summary:hover { color: var(--crimson-600); }
+  .fguide-k { display: inline-flex; align-items: center; gap: 5px; padding: 2px 0;
+    font-size: var(--fs-11); font-weight: 600; color: var(--navy-500); user-select: none; }
+  .fguide-k::before { content: "\24D8"; color: var(--navy-500); font-size: var(--fs-13); }
+  .fguide:hover .fguide-k, .fguide:focus-within .fguide-k { color: var(--navy-700); }
+  .fguide-wrap { display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows var(--dur-layer) var(--ease); }
+  .fguide-inner { overflow: hidden; min-height: 0; }
+  .fguide:hover .fguide-wrap, .fguide:focus-within .fguide-wrap { grid-template-rows: 1fr; }
   .fguide .sg-panel { display: block; margin-top: 6px; }
   /* "view change" affordance on the read-view provenance line — reveals the latest diff inline */
-  .lc-diff { border: none; background: none; color: var(--crimson-600); font-weight: 600; font-size: var(--fs-12);
+  /* The one link that sits on the bare page rather than inside a band. Since the page
+     dropped a step, crimson-600 measures 4.33 there — links off-surface take the 700. */
+  .lc-diff { border: none; background: none; color: var(--accent-hover); font-weight: 600; font-size: var(--fs-12);
     padding: 0 0 0 4px; cursor: pointer; }
   .lc-diff:hover { text-decoration: underline; }
 
@@ -554,11 +586,11 @@
   /* A labelled block inside a band — the shared primitive for "several short things
      that belong together": the dashboard's columns, and a report's system + delta,
      which were two full bands and two 15px headings for two sentences. */
-  .ov-block { padding: 11px 0; border-top: 1px solid var(--border); }
+  .ov-block { padding: 14px 0; border-top: 1px solid var(--border); }
   .ov-block:first-child { border-top: none; }
   .readsec > .ov-block:first-child { padding-top: 0; }
   .readsec > .ov-block:last-child { padding-bottom: 0; }
-  .ov-block > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 9px;
+  .ov-block > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 var(--gap-label);
     font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-600); }
   .ov-block > .k .n { margin-left: auto; font-size: var(--fs-12); font-weight: 500; letter-spacing: 0;
@@ -664,7 +696,7 @@
      the Edit button is as loud as the worst finding, nothing reads as worst. The 4px spine
      carries the ranking so the list is legible before a word is read. Low is navy, never
      green: green means covered/closed, a different axis — a low finding is still open. */
-  .finding { border-left: 4px solid var(--sev-low-spine); padding: 15px 17px; }
+  .finding { border-left: 4px solid var(--sev-low-spine); padding: var(--pad-card); }
   .finding.sev-high { border-left-color: var(--sev-high-spine); }
   .finding.sev-medium { border-left-color: var(--sev-medium-spine); }
   .finding.sev-low { border-left-color: var(--sev-low-spine); }
@@ -1560,7 +1592,8 @@ function sgPanel(entity, field, targetId) {
 function inlineGuidance(entity, field, targetId) {
   const panel = sgPanelFrom(styleField(entity, field), targetId, { show: true });
   if (!panel) return "";
-  return `<details class="fguide"><summary>Guidance</summary>${panel}</details>`;
+  return `<div class="fguide" tabindex="0"><span class="fguide-k">Guidance</span>
+    <div class="fguide-wrap"><div class="fguide-inner">${panel}</div></div></div>`;
 }
 // Wire the "use example" buttons inside any inline guidance panels: write the example
 // into the target input without stealing/dropping focus (mousedown guard). Safe to
