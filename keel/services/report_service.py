@@ -5,9 +5,20 @@ Unlike `keel/store.py`'s `Store`, nothing here is cached in memory: reports are 
 fresh off disk on every call. The skill writes the first pass straight to disk; the
 specialist then corrects it through `save_report` until `finalize_report` freezes it.
 
-**A final report is never overwritten.** `save_report` refuses one, and `reopen_report`
-is the way forward: it copies a final report into a new draft under today's date, so a
-correction lands beside the record it revises instead of erasing it.
+Two different things can happen to a finished report, and they are separate calls
+because they mean separate things:
+
+* `correct_report` — the assessment was right, the record was wrong. A typo, a
+  mis-stated owner, a grade that came out of the conversation differently from how it
+  was written down. It unlocks the SAME dated report for editing. The date does not
+  move, because nothing was re-assessed.
+* `reopen_report` — the system changed. New tools, new surface, new answers. This is a
+  new assessment, so it gets a new date, carrying the previous findings forward as a
+  starting point rather than making anyone retype them.
+
+`save_report` still refuses a final report outright: unlocking is a deliberate act, not
+something a stray keystroke does. Git is the audit trail — every one of these files is
+versioned — so `status` records the state of the WORK, not a lock on the file.
 
 Defensive by design: the archive holds many independent files, so one malformed or
 schema-violating report is skipped in list views rather than failing the whole
@@ -303,11 +314,56 @@ def finalize_report(system_id: str, date: str) -> dict[str, Any]:
     return {"success": True, "report": report.model_dump()}
 
 
+def correct_report(system_id: str, date: str) -> dict[str, Any]:
+    """Unlock a final report for correction, keeping its date.
+
+    Fixing a mistake in the record is not a re-assessment: nothing about the system was
+    looked at again, so moving the date would be a lie about when the work was done.
+    Already-draft is not an error — the caller wanted it editable and it is.
+    """
+    path = _report_path(system_id, date)
+    if path is None or not path.is_file():
+        return {"success": False, "error": f"No report for {system_id!r} on {date!r}"}
+    report = _load_report_file(path)
+    if report is None:
+        return {"success": False, "error": "the report on disk could not be parsed"}
+    if report.status != "draft":
+        report.status = "draft"
+        _write(path, report)
+    return {"success": True, "report": report.model_dump()}
+
+
+def create_report(
+    system_id: str, system_name: str, system_description: str, assessor: str,
+    date: str | None = None,
+) -> dict[str, Any]:
+    """An empty draft for a system that has never been assessed, or a fresh start.
+
+    Refuses to land on an existing file: creating is never a way to lose a report.
+    """
+    date = date or datetime.date.today().isoformat()
+    path = _report_path(system_id, date)
+    if path is None:
+        return {"success": False, "error": "system id must be lowercase letters, digits and hyphens"}
+    if path.exists():
+        return {"success": False, "error": f"{system_id} already has a report for {date}"}
+    try:
+        report = Report(
+            system_id=system_id, system_name=system_name,
+            system_description=system_description, date=date, assessor=assessor,
+        )
+    except ValidationError as exc:
+        return {"success": False, "error": "invalid report", "errors": exc.errors()}
+    _write(path, report)
+    return {"success": True, "report": report.model_dump()}
+
+
 def reopen_report(system_id: str, date: str, today: str | None = None) -> dict[str, Any]:
     """Copy a report into a new draft dated today, leaving the original untouched.
 
-    This is how a final report gets corrected. Refuses to overwrite an existing file, so
-    reopening twice in one day cannot discard the draft already in progress.
+    This is a NEW assessment of a changed system, not a correction — see
+    `correct_report` for that. Refuses to overwrite an existing file, so starting one
+    twice in a day cannot discard the draft already in progress.
     """
     source_path = _report_path(system_id, date)
     if source_path is None or not source_path.is_file():

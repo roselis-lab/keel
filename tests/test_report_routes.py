@@ -151,6 +151,38 @@ def test_route_insights_is_not_swallowed_by_the_system_id_route(tmp_path, monkey
     assert body["systems"] == 1 and body["assessments"] == 1
 
 
+def test_route_correct_then_put_succeeds(tmp_path, monkeypatch):
+    """The two revision paths differ: correct keeps the date, reopen makes a new one."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+    client = TestClient(app)
+
+    assert client.post("/reports/checkout-agent/2026-08-26/correct").json()["status"] == "draft"
+    assert client.put("/reports/checkout-agent/2026-08-26", json=VALID_REPORT).status_code == 200
+    assert len(client.get("/reports/checkout-agent").json()["series"]) == 1
+
+
+def test_route_create_report(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    client = TestClient(app)
+    body = {"system_id": "support-bot", "system_name": "Support Bot",
+            "system_description": "Answers help-centre questions.", "date": "2026-09-01"}
+
+    r = client.post("/reports", json=body)
+
+    assert r.status_code == 200
+    assert r.json()["status"] == "draft"
+    assert client.post("/reports", json=body).status_code == 409
+
+
+def test_route_create_report_bad_id_is_400(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    r = TestClient(app).post("/reports", json={
+        "system_id": "Not A Slug", "system_name": "n", "system_description": "d", "date": "2026-09-01",
+    })
+    assert r.status_code == 400
+
+
 def test_route_reopen_twice_in_a_day_is_409(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})

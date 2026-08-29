@@ -725,6 +725,13 @@
     font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: var(--r-6); }
   .finding .fdrop:hover { background: var(--crimson-50); color: var(--accent); }
   .rep-empty { color: var(--navy-500); font-style: italic; }
+  .rep-final { margin: 14px 0 0; font-size: 13px; line-height: 1.6; color: var(--navy-600);
+    max-width: var(--measure); }
+  .rep-final b { color: var(--navy-900); font-weight: 600; }
+  .nr-field { margin-bottom: 16px; max-width: 520px; }
+  .nr-field > label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--navy-600); margin-bottom: 5px; }
+  .nr-field .hint { margin-top: 5px; }
   .rep-dates { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 14px 0 0; }
   .rep-dates .k { font-size: 10px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--navy-600); }
@@ -821,6 +828,8 @@ const state = {
   reportMitInfo: {},     // mitigation_id -> { name, owner } for the open report
   reportSave: "",        // "", "saving", "ok" or "err" — the inline save indicator
   reportExport: null,    // hand-off options for the open system (see REPORT_EXPORT_DEFAULTS)
+  reportExportOpen: false, // is the hand-off rail showing — off by default, you read first
+  reportNew: null,       // in-progress "assess a new system" form, or null
   reportAside: {},       // which folded footer sections ("discarded"/"dialogue") are open
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
   mitFilter: "",        // mitigations rail text filter
@@ -2227,9 +2236,11 @@ function switchScreen(name) {
   }
   const newBtn = document.getElementById("newThreatBtn");
   if (newBtn) {
-    // ＋ New only makes sense on the two entity screens.
-    newBtn.style.display = (name === "style" || name === "overview" || name === "reports") ? "none" : "";
-    newBtn.title = name === "mitigations" ? "Create a new mitigation" : "Create a new threat";
+    // ＋ New has no meaning on the Overview (nothing to author) or Style guide (the
+    // fields come from the schema). Everywhere else it starts the screen's own entity.
+    newBtn.style.display = (name === "style" || name === "overview") ? "none" : "";
+    newBtn.title = name === "mitigations" ? "Create a new mitigation"
+      : name === "reports" ? "Assess a system by hand" : "Create a new threat";
   }
   renderRail(); renderMain(); renderRight();
   writeRoute();
@@ -2314,7 +2325,12 @@ function previewVisible() {
   // the main pane: on Style guide, what a threat author sees; on Reports, what the
   // product team receives. Threats and mitigations read and edit on ONE surface — the
   // read view IS the preview, so there is nothing for a third pane to duplicate.
-  return state.screen === "style" || state.screen === "reports";
+  //
+  // On Reports it is off until asked for. Deciding what to hand over is the LAST thing
+  // you do with an assessment, and a panel open from the start both narrows the report
+  // you came to read and invites acting before reading.
+  if (state.screen === "reports") return state.reportExportOpen && !!state.currentReport;
+  return state.screen === "style";
 }
 function applyPreviewVisibility() {
   document.body.classList.toggle("no-preview", !previewVisible());
@@ -2715,14 +2731,102 @@ function renderReportsRail() {
 
 function renderReportsMain() {
   const m = document.getElementById("main");
+  if (state.reportNew) {
+    m.innerHTML = newReportHtml();
+    wireNewReport();
+    renderReportExport();
+    return;
+  }
   if (!state.currentReport) {
-    m.innerHTML = '<div class="empty">Select a system from the list.</div>';
+    m.innerHTML = `<div class="empty">Select a system from the list, or
+      <button type="button" class="reflink" id="emptyNewReport">assess a new one</button>.</div>`;
+    const b = document.getElementById("emptyNewReport");
+    if (b) b.onclick = () => newReport();
     renderReportExport();
     return;
   }
   m.innerHTML = reportDetailHtml(state.currentReport);
   wireReportDetail();
   renderReportExport();
+}
+
+// Assessments normally arrive from the assessment skill, which writes the file. This is
+// the by-hand path: the empty draft you fill in yourself. It exists because "how do I
+// even start one" had no answer in the UI at all.
+function newReport() {
+  state.reportNew = { system_id: "", system_name: "", touchedId: false };
+  state.currentReport = null;
+  state.reportSelected = null;
+  renderReportsRail(); renderReportsMain(); renderRight();
+}
+
+function newReportHtml() {
+  const n = state.reportNew;
+  return `<div class="detail">
+    <div class="dhead">
+      <div class="dicon">R</div>
+      <div class="dtitle">
+        <h2>Assess a system</h2>
+        <div class="dsub">Creates an empty draft dated today, which you then fill in. Most
+          assessments come from the assessment skill instead — it writes this file for you.</div>
+      </div>
+    </div>
+    ${readsec("The system", `
+      <div class="nr-field">
+        <label for="nrName">Name</label>
+        <input class="f" id="nrName" value="${esc(n.system_name)}" placeholder="Checkout Agent">
+      </div>
+      <div class="nr-field">
+        <label for="nrId">Id</label>
+        <input class="f" id="nrId" value="${esc(n.system_id)}" placeholder="checkout-agent">
+        <p class="hint">Lowercase, hyphenated. It becomes the folder under <code>reports/</code>, so it stays with the system for good.</p>
+      </div>
+      <div class="nr-field">
+        <label for="nrDesc">What it does</label>
+        <textarea class="f" id="nrDesc" rows="3" placeholder="Answers storefront checkout questions and issues refunds under a value cap.">${esc(n.system_description || "")}</textarea>
+        <p class="hint">This is what a later assessment matches against to recognise the same system.</p>
+      </div>
+      <div class="link-row">
+        <button class="btn primary" id="nrCreate">Create draft</button>
+        <button class="btn ghost" id="nrCancel">Cancel</button>
+      </div>`)}
+  </div>`;
+}
+
+function wireNewReport() {
+  const n = state.reportNew;
+  const id = document.getElementById("nrId");
+  const name = document.getElementById("nrName");
+  const desc = document.getElementById("nrDesc");
+  // The id is derived from the name until you touch it yourself — nobody wants to type
+  // the same words twice in two shapes.
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  name.oninput = () => {
+    n.system_name = name.value;
+    if (!n.touchedId) { n.system_id = slug(name.value); id.value = n.system_id; }
+  };
+  id.oninput = () => { n.touchedId = true; n.system_id = id.value; };
+  desc.oninput = () => { n.system_description = desc.value; };
+  document.getElementById("nrCancel").onclick = () => {
+    state.reportNew = null;
+    renderReportsRail(); renderReportsMain(); renderRight();
+  };
+  document.getElementById("nrCreate").onclick = async () => {
+    if (!n.system_id || !n.system_name) { toast("A name and an id are needed", true); return; }
+    let created;
+    try {
+      created = await api("POST", "/reports", {
+        system_id: n.system_id, system_name: n.system_name,
+        system_description: n.system_description || "",
+      });
+    } catch (e) { toast(e.message, true); return; }
+    state.reportNew = null;
+    state.reportSeries[created.system_id] = null;
+    await loadReports();
+    await openReportSystem(created.system_id, created.date);
+    toast("Draft created — add findings as you go");
+  };
+  name.focus();
 }
 
 // Open a system's most recent report (or a specific date). The series is fetched once
@@ -2743,6 +2847,7 @@ async function openReportSystem(systemId, date) {
     }
     state.reportSelected = { system_id: systemId, date: pick };
     state.reportSave = "";
+    state.reportNew = null;   // opening a report leaves the "assess a system" form
   } catch (e) {
     toast(e.message, true);
     return;
@@ -2953,10 +3058,18 @@ function reportDetailHtml(rep) {
     </details></section>`;
 
   const draft = rep.status === "draft";
+  // Two revision paths, deliberately separate, because they mean different things: a
+  // record can be WRONG (a typo, a grade written down differently from how it was
+  // decided) without the system having changed, and the system can change without the
+  // old record being wrong. Correcting keeps the date — nothing was re-assessed.
+  const handoff = `<button class="btn ghost" id="repHandoff"
+    title="Choose what goes to the product team">Hand-off${state.reportExportOpen ? " ×" : ""}</button>`;
   const actions = draft
-    ? `<span class="savestate" id="repSave"></span>
+    ? `<span class="savestate" id="repSave"></span>${handoff}
        <button class="btn primary" id="repFinalize" title="Freeze this report as a dated record">Finalize</button>`
-    : `<button class="btn ghost" id="repReopen" title="Copy this report into a new draft dated today">Revise as a new draft</button>`;
+    : `${handoff}
+       <button class="btn ghost" id="repCorrect" title="Fix a mistake in this record, keeping its date">Correct</button>
+       <button class="btn ghost" id="repReopen" title="Assess this system again — a new draft dated today, findings carried forward">New assessment</button>`;
 
   return `<div class="detail">
     <div class="dhead">
@@ -2969,12 +3082,14 @@ function reportDetailHtml(rep) {
       <div class="hactions">${actions}</div>
     </div>
     ${dateChips}
-    ${draft ? "" : `<p class="notauthored">This report is final. Revising it opens a new draft dated today, beside this record rather than over it.</p>`}
+    ${draft ? "" : `<p class="rep-final">This report is final. <b>Correct</b> it if the record itself is wrong — the date stays, because nothing was re-assessed. Start a <b>new assessment</b> if the system has changed since; that opens a fresh draft dated today with these findings carried forward.</p>`}
     ${readsec("System", rProse("system_description", rep.system_description, "prose"))}
     ${(draft || rep.delta_summary)
       ? readsec("What changed since the last assessment", rProse("delta_summary", rep.delta_summary, "prose"))
       : ""}
-    ${readsec("Findings", findingsHtml, `— ${findings.length}, worst first`)}
+    ${readsec("Findings", findingsHtml
+      + (draft ? '<button class="btn ghost" id="addFinding" style="margin-top:10px">Add a finding</button>' : ""),
+      `— ${findings.length}, worst first`)}
     <div class="rep-aside">
       ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
       ${fold("dialogue", "Assessor dialogue", (rep.dialogue || []).length, dialogue)}
@@ -3035,6 +3150,7 @@ const REPORT_EXPORT_DEFAULTS = {
 // Versioned: bumping the prefix retires anyone's saved set when the defaults change,
 // which is the only way a changed default reaches someone who already used the panel.
 const LS_REPORT_EXPORT = "keel.reportExport.v2.";
+const LS_HANDOFF = "keel.handoffOpen";
 
 function reportExportSettings() {
   if (state.reportExport) return state.reportExport;
@@ -3221,11 +3337,50 @@ function wireReportDetail() {
     renderReportsMain();
   });
 
-  const finalize = document.getElementById("repFinalize");
-  if (finalize) finalize.onclick = () => finalizeReport();
-  const reopen = document.getElementById("repReopen");
-  if (reopen) reopen.onclick = () => reopenReport();
+  const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
+  on("repFinalize", () => finalizeReport());
+  on("repReopen", () => reopenReport());
+  on("repCorrect", () => correctReport());
+  on("repHandoff", () => {
+    state.reportExportOpen = !state.reportExportOpen;
+    try { localStorage.setItem(LS_HANDOFF, state.reportExportOpen ? "1" : "0"); } catch (e) { /* private mode */ }
+    renderReportsMain(); renderRight();
+  });
+  on("addFinding", () => addFinding());
   paintSaveState();
+}
+
+// Unlock a final record for correction. No confirmation: it is reversible in one click
+// (Finalize again) and the file is in git either way.
+async function correctReport() {
+  const sel = state.reportSelected;
+  if (!sel) return;
+  try {
+    await api("POST",
+      `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}/correct`);
+  } catch (e) { toast(e.message, true); return; }
+  state.reportSeries[sel.system_id] = null;   // its status changed
+  await openReportSystem(sel.system_id, sel.date);
+  toast("Open for correction — finalize again when you are done");
+}
+
+// A finding skeleton. Every required field gets a value the schema accepts, so the
+// report still validates the instant it is added and the save that follows succeeds.
+function addFinding() {
+  const rep = state.currentReport;
+  if (!rep) return;
+  rep.findings.push({
+    id: "T-NEW", from_catalog: false, scenario: "",
+    source: { who: sourceEnum()[0] || "external-attacker", motive: "", access: "" },
+    asset: "", attack_surface: surfaceEnum()[0] || "user-agent", vulnerability: "",
+    exploitation_complexity: "medium", harm: harmEnum()[0] || "data-exposed",
+    risk: { likelihood: "medium", severity: "medium", reasoning: "" },
+    delta: "", requirements: [], ignored_mitigations: [],
+  });
+  scheduleReportSave();
+  renderReportsMain();
+  const cards = document.querySelectorAll(".finding");
+  if (cards.length) cards[cards.length - 1].scrollIntoView({ block: "center" });
 }
 
 // Freezing is the one irreversible step on this screen, so it asks first.
@@ -4263,7 +4418,9 @@ document.getElementById("search").oninput = e => {
   else { state.filter = e.target.value; renderList(); }
 };
 document.getElementById("newThreatBtn").onclick = () =>
-  state.screen === "mitigations" ? newMitigation() : newThreat();
+  state.screen === "mitigations" ? newMitigation()
+    : state.screen === "reports" ? newReport()
+    : newThreat();
 document.querySelectorAll("#screens button").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
 // Validate the threat draft on BLUR of any edit field (debounced, never per keystroke).
 // Authoring guidance is now inline under each field (see inlineGuidance), so focus no
@@ -4318,6 +4475,7 @@ function initPreviewResizer() {
 
 initRailToggle();
 initPreviewResizer();
+state.reportExportOpen = localStorage.getItem(LS_HANDOFF) === "1";
 
 // Land wherever the hash points — the Overview when there is no hash. A pasted or
 // edited URL re-routes in place; the app's own navigation uses replaceState, so this

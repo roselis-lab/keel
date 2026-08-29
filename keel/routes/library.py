@@ -293,15 +293,46 @@ async def finalize_report(system_id: str, date: str):
     return result["report"]
 
 
+@router.post("/reports/{system_id}/{date}/correct")
+async def correct_report(system_id: str, date: str):
+    """Unlock a final report for correction, keeping its date. Correcting the record is
+    not re-assessing the system, so nothing moves."""
+    result = report_service.correct_report(system_id, date)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result["report"]
+
+
 @router.post("/reports/{system_id}/{date}/reopen")
 async def reopen_report(system_id: str, date: str):
-    """Copy a report into a fresh draft dated today. 409 when today already has one."""
+    """Start a NEW assessment from this one: a fresh draft dated today, findings carried
+    forward. 409 when today already has one."""
     result = report_service.reopen_report(system_id, date)
     if result["success"]:
         return result["report"]
     if "already exists" in result["error"]:
         raise HTTPException(status_code=409, detail=result["error"])
     raise HTTPException(status_code=404, detail=result["error"])
+
+
+@router.post("/reports")
+async def create_report(body: dict):
+    """An empty draft for a system with no prior assessment. 409 if that file exists."""
+    result = report_service.create_report(
+        system_id=(body.get("system_id") or "").strip(),
+        system_name=(body.get("system_name") or "").strip(),
+        system_description=(body.get("system_description") or "").strip(),
+        # The assessor is whoever this checkout belongs to; the UI does not ask.
+        assessor=(body.get("assessor") or "").strip() or githistory.identity(),
+        date=(body.get("date") or "").strip() or None,
+    )
+    if result["success"]:
+        return result["report"]
+    if "errors" in result:
+        raise HTTPException(status_code=422, detail=result)
+    if "already has" in result["error"]:
+        raise HTTPException(status_code=409, detail=result["error"])
+    raise HTTPException(status_code=400, detail=result["error"])
 
 
 # --------------------------------------------------------------------------- #

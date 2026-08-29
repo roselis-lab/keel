@@ -43,6 +43,21 @@ def _run(args: list[str]) -> subprocess.CompletedProcess | None:
     return proc
 
 
+def identity() -> str:
+    """`Name <email>` from git config, or "unknown" when git cannot say.
+
+    A report records who assessed the system. Asking the person to retype a name their
+    machine already knows is the kind of form field nobody fills in honestly.
+    """
+    name = _run(["git", "config", "user.name"])
+    email = _run(["git", "config", "user.email"])
+    n = (name.stdout.strip() if name else "") or ""
+    e = (email.stdout.strip() if email else "") or ""
+    if n and e:
+        return f"{n} <{e}>"
+    return n or e or "unknown"
+
+
 def is_valid_ref(entity: str, id: str) -> bool:
     """True if `entity` is on the allowlist and `id` matches the safe pattern.
 

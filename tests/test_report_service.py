@@ -218,6 +218,62 @@ def test_finalize_freezes_and_is_idempotent(tmp_path, monkeypatch):
     assert again["report"]["status"] == "final"
 
 
+def test_correct_unlocks_a_final_report_without_moving_its_date(tmp_path, monkeypatch):
+    """Fixing a mistake in the record is not a re-assessment — nothing was looked at
+    again, so moving the date would misstate when the work was done."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
+
+    result = report_service.correct_report("checkout-agent", "2026-08-26")
+
+    assert result["report"]["status"] == "draft"
+    assert result["report"]["date"] == "2026-08-26"
+    assert [r["date"] for r in report_service.get_report_series("checkout-agent")] == ["2026-08-26"]
+    # and now it saves
+    assert report_service.save_report(
+        "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_name="Fixed")
+    )["success"] is True
+
+
+def test_correct_on_an_already_editable_draft_is_a_no_op(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+    assert report_service.correct_report("checkout-agent", "2026-08-26")["report"]["status"] == "draft"
+
+
+def test_create_report_makes_an_empty_draft(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+
+    result = report_service.create_report(
+        "support-bot", "Support Bot", "Answers help-centre questions.",
+        "Jane Doe <jane@example.com>", "2026-09-01",
+    )
+
+    assert result["report"]["status"] == "draft"
+    assert result["report"]["findings"] == []
+    assert report_service.get_report("support-bot", "2026-09-01")["success"] is True
+
+
+def test_create_report_never_lands_on_an_existing_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    result = report_service.create_report(
+        "checkout-agent", "Something Else", "d", "a", "2026-08-26",
+    )
+
+    assert result["success"] is False
+    assert report_service.get_report("checkout-agent", "2026-08-26")["report"][
+        "system_name"
+    ] == "Checkout Agent"
+
+
+def test_create_report_rejects_an_unusable_system_id(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    assert report_service.create_report("Not A Slug", "n", "d", "a", "2026-09-01")["success"] is False
+    assert report_service.create_report("ok-slug", "n", "d", "a", "01-09-2026")["success"] is False
+
+
 def test_reopen_copies_a_final_report_into_a_new_draft(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
