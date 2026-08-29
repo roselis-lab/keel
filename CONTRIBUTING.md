@@ -10,7 +10,7 @@ Keel's catalog is a **floor**: a small set of GenAI/LLM threat patterns that app
 - **Out of scope (keep in your fork):** threats specific to your stack, and per-organization state such as "not applicable here" or "already mitigated." Those are how *you* tailor a fork; they would only add noise to the shared floor.
 - **Prefer extending** an existing threat or mitigation over adding a near-duplicate.
 
-A threat must be **impact-centric**: it anchors to one `impact_class`, describes *how* it is exploitable as one or more `vulnerability` patterns, and states `reachability` carve-outs (when it is *not* a live path, judged on the un-mitigated system). A mitigation must be an architectural control authored as a **mitigation card** whose `mitigation_class` (`gating_control`, `detector`, `process`, `evidential_mitigation`, `corrective`) is a switch for how its control mechanism and failure behavior are read.
+A threat must be **harm-centric**: it anchors to one `harm` (the consequence class), names the `surface` the untrusted influence crosses and the `source` that drives it, describes *how* the system is exploitable as one or more `weaknesses` — each an architectural condition sitting on a named `component`, marked `targeted` (remove it and the attack fails) or `secondary` (it only amplifies) — and states `reachability` carve-outs, written as "not applicable if ...", judged on the **un-mitigated** system. A mitigation must be an architectural control authored as a **mitigation card** whose `mitigation_class` (`gating_control`, `detector`, `process`, `evidential_mitigation`, `corrective`) is a switch for how its control mechanism and failure behavior are read.
 
 ## Dev setup
 
@@ -37,7 +37,7 @@ Either way, commit the YAML diff.
 
 ## Quality bar
 
-Every content field has an authoring bar in the **style guide** (the `get_style_guide` MCP tool, or the Style Guide tab in the UI). Match it: `vulnerability` items should read as patterns an assessor can recognize on an unseen architecture, and `reachability` should be written as "not applicable if ...". Do not paste marketing or vague prose.
+Every content field has an authoring bar in the **style guide** (the `get_style_guide` MCP tool, or the Style Guide tab in the UI). Match it: `weaknesses` should read as conditions an assessor can recognize on an unseen architecture, and `reachability` should be written as "not applicable if ...". Do not paste marketing or vague prose.
 
 ## Before you open a PR
 
