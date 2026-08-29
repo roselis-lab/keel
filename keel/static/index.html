@@ -15,7 +15,14 @@
     --font-mono: ui-monospace, "SFMono-Regular", monospace;
     --fs-10: 10px; --fs-11: 11px; --fs-12: 12px; --fs-13: 13px; --fs-14: 14px;
     --fs-15: 15px; --fs-19: 19px; --fs-20: 20px; --fs-24: 24px; --fs-28: 28px;
-    --lh-tight: 1.35; --lh-base: 1.55; --lh-prose: 1.6; --lh-legend: 1.7;
+    /* Five line heights, and the stylesheet references these rather than numbers, the
+       same way it references --fs-*. Before this the app used eight values (1, 1.1,
+       1.35, 1.4, 1.5, 1.55, 1.6, 1.65) and declared a ninth nobody used: a ramp that
+       exists only in :root is not a ramp, it is a suggestion. */
+    --lh-1: 1;              /* a control whose box sets its own height */
+    --lh-tight: 1.35;       /* headings, row titles, one-line labels */
+    --lh-base: 1.55;        /* UI text */
+    --lh-prose: 1.65;       /* running text meant to be read */
     --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
     --ls-title: -.01em; --ls-number: -.02em; --ls-eyebrow: .08em; --ls-key: .06em; --ls-meta: .05em;
     --numeric: tabular-nums;
@@ -90,12 +97,16 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--navy-900);
-    font: 14px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: var(--fs-14)/var(--lh-base) var(--font-sans);
     display: grid; grid-template-columns: var(--rail-w) 1fr var(--preview-w);
     grid-template-rows: var(--topbar-h) 1fr; height: 100vh;
   }
   body.resizing { cursor: col-resize; user-select: none; }
-  button { font-family: inherit; cursor: pointer; }
+  /* Form controls do not inherit type from the page by default, so any control without
+     an explicit size fell through to the browser's 13.333px — a value not on the ramp
+     and not reachable from it. Inherit, and let the component rules override. */
+  button, input, select, textarea { font-family: inherit; font-size: inherit; }
+  button { cursor: pointer; }
 
   /* ------ top bar ------ */
   /* Primary navigation belongs to the app, not to the 320px rail. Five text tabs
@@ -105,7 +116,7 @@
   .topbar { grid-column: 1 / -1; display: flex; align-items: stretch;
     background: var(--panel); border-bottom: 1px solid var(--border); }
   .topbar .brand { display: flex; align-items: center; padding: 0 20px;
-    font-size: 15px; font-weight: 700; letter-spacing: -.01em; color: var(--navy-900); }
+    font-size: var(--fs-15); font-weight: 700; letter-spacing: -.01em; color: var(--navy-900); }
 
   /* ------ left rail ------ */
   /* Columns are pinned rather than auto-placed: a pane that hides itself (the rail on
@@ -120,20 +131,40 @@
   }
   /* The tab above already names the screen; this names the LIST — "Systems" under the
      Reports tab, "Fields" under Style guide — so it is an eyebrow, not a second title. */
-  header h1 { font-size: 10px; margin: 0; font-weight: 700; text-transform: uppercase;
+  header h1 { font-size: var(--fs-10); margin: 0; font-weight: 700; text-transform: uppercase;
     letter-spacing: .07em; color: var(--navy-500); }
-  header .count { color: var(--navy-500); font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
-  .rail-toggle { border: none; background: none; color: var(--navy-500); font-size: 15px; line-height: 1; padding: 3px 6px; border-radius: 6px; flex-shrink: 0; }
+  header .count { color: var(--navy-500); font-size: var(--fs-12); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .rail-toggle { border: none; background: none; color: var(--navy-500); font-size: var(--fs-15); line-height: var(--lh-1); padding: 3px 6px; border-radius: 6px; flex-shrink: 0; }
   .rail-toggle:hover { background: var(--navy-100); color: var(--navy-800); }
-  /* Collapsed left rail — a thin strip that keeps only the expand affordance. */
+  /* Collapsed left rail — a 44px strip that opens on hover and slides back when the
+     pointer leaves. Clicking to peek at a list you are about to click again is two
+     actions for one intent, so hover does it; the toggle now means "keep it open".
+     The rail leaves the flow (position: fixed) while collapsed, so opening it floats
+     OVER the content instead of shoving the whole page sideways under the cursor. */
   body.rail-collapsed { --rail-w: 44px; }
+  body.rail-collapsed aside {
+    position: fixed; top: var(--topbar-h); bottom: 0; left: 0; z-index: 30;
+    width: var(--rail-w-collapsed); overflow: hidden;
+    transition: width var(--dur-layer) var(--ease), box-shadow var(--dur-layer) var(--ease);
+  }
+  body.rail-collapsed aside:hover { width: 320px; box-shadow: var(--shadow-dialog); }
+  /* Faded rather than display:none — a hidden child cannot animate back into view, and
+     at 44px the aside clips them anyway. */
   body.rail-collapsed .search,
   body.rail-collapsed .facets,
   body.rail-collapsed .list,
   body.rail-collapsed header h1,
   body.rail-collapsed header .count,
-  body.rail-collapsed #newThreatBtn { display: none; }
-  body.rail-collapsed header { padding: 12px 0; justify-content: center; }
+  body.rail-collapsed #newThreatBtn {
+    opacity: 0; pointer-events: none; transition: opacity var(--dur-hover) var(--ease);
+  }
+  body.rail-collapsed aside:hover .search,
+  body.rail-collapsed aside:hover .facets,
+  body.rail-collapsed aside:hover .list,
+  body.rail-collapsed aside:hover header h1,
+  body.rail-collapsed aside:hover header .count,
+  body.rail-collapsed aside:hover #newThreatBtn { opacity: 1; pointer-events: auto; }
+  body.rail-collapsed header { padding: 10px 12px; }
   /* The Overview has no list to rail. It used to hold one static paragraph explaining
      the screen you were already looking at, so the dashboard now takes the full width —
      which is also what lets its two columns stay short enough to read without scrolling.
@@ -143,7 +174,7 @@
   .search { padding: 10px 14px; border-bottom: 1px solid var(--border); }
   .search input {
     width: 100%; padding: 9px 11px; background: var(--tint); color: var(--navy-900);
-    border: 1px solid var(--border); border-radius: 9px; outline: none; font-size: 13px;
+    border: 1px solid var(--border); border-radius: 9px; outline: none; font-size: var(--fs-13);
   }
   .search input:focus { border-color: var(--line-focus); background: var(--surface-card); }
   /* ------ faceted filter panel (Threats + Mitigations rails) ------ */
@@ -152,21 +183,21 @@
   .facets { border-bottom: 1px solid var(--border); }
   .facets-bar { display: flex; align-items: center; gap: 7px; padding: 8px 14px; cursor: pointer; user-select: none; }
   .facets-bar:hover { background: var(--navy-100); }
-  .fx-caret { color: var(--navy-500); font-size: 10px; width: 10px; flex-shrink: 0; }
-  .fx-label { font-size: 12px; font-weight: 600; color: var(--navy-700); }
-  .fx-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+  .fx-caret { color: var(--navy-500); font-size: var(--fs-10); width: 10px; flex-shrink: 0; }
+  .fx-label { font-size: var(--fs-12); font-weight: 600; color: var(--navy-700); }
+  .fx-badge { font-size: var(--fs-10); font-weight: 700; padding: 1px 7px; border-radius: 10px;
     background: var(--accent); color: var(--text-inverse); font-variant-numeric: var(--numeric); }
   .fx-clear { margin-left: auto; border: none; background: none; color: var(--navy-500);
-    font-size: 11px; font-weight: 600; padding: 2px 4px; border-radius: 6px; }
+    font-size: var(--fs-11); font-weight: 600; padding: 2px 4px; border-radius: 6px; }
   .fx-clear:hover { color: var(--crimson-700); text-decoration: underline; }
   .facets-body { display: none; padding: 2px 14px 10px; max-height: 46vh; overflow-y: auto; }
   .facets.open .facets-body { display: block; }
   .fx-group { margin-top: 9px; }
   .fx-group:first-child { margin-top: 4px; }
-  .fx-gk { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500);
+  .fx-gk { font-size: var(--fs-10); text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500);
     font-weight: 700; margin: 0 0 5px; }
   .fx-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-  .fx-chip { font-size: 11px; padding: 2px 9px; border-radius: 20px; background: var(--tint);
+  .fx-chip { font-size: var(--fs-11); padding: 2px 9px; border-radius: 20px; background: var(--tint);
     color: var(--navy-600); border: 1px solid var(--border); font-weight: 500; white-space: nowrap; }
   .fx-chip:hover { border-color: var(--crimson-200); color: var(--crimson-700); }
   .fx-chip.on { background: var(--accent); color: var(--text-inverse); border-color: var(--accent); }
@@ -177,14 +208,14 @@
   .row:hover { background: var(--navy-100); }
   .row.active { background: var(--surface-selected); box-shadow: var(--selected-rail-accent); }
   .row.active:hover { background: var(--crimson-50); }
-  .row .rid { font-size: 11px; color: var(--navy-500); font-family: ui-monospace, "SFMono-Regular", monospace; letter-spacing: .01em; }
-  .row .rtitle { font-size: 14px; color: var(--navy-900); font-weight: 500; line-height: 1.35; }
+  .row .rid { font-size: var(--fs-11); color: var(--navy-500); font-family: ui-monospace, "SFMono-Regular", monospace; letter-spacing: .01em; }
+  .row .rtitle { font-size: var(--fs-14); color: var(--navy-900); font-weight: 500; line-height: var(--lh-tight); }
 
   /* ------ badges ------ */
   .badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
   /* 11px, not 10 — a badge carries a real word (a harm class, a link strength) that a
      reader has to take in, and at 10px those were the smallest type on a laptop screen. */
-  .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .badge { font-size: var(--fs-11); padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
   .badge.soft { background: var(--navy-100); color: var(--navy-600); font-weight: 500; border-radius: 10px; }
   .badge.type { background: var(--navy-200); color: var(--navy-700); }
   /* Classification is neutral. harm/surface/source/mitigation_class are facts ABOUT an
@@ -216,14 +247,14 @@
      a solid accent block on every single screen, which is the one fill the severity ramp
      needs to keep for its top band. The Overview already overrode it to navy inline. */
   .dicon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center;
-    justify-content: center; color: var(--text-inverse); flex-shrink: 0; font-size: 18px;
+    justify-content: center; color: var(--text-inverse); flex-shrink: 0; font-size: var(--fs-19);
     font-weight: 700; background: var(--navy-700); }
   .dhead .dtitle { flex: 1; min-width: 0; }
-  .dhead h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
-  .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-500); font-size: 12px; margin-top: 4px; }
+  .dhead h2 { margin: 0; font-size: var(--fs-20); font-weight: 700; letter-spacing: -.01em; }
+  .dhead .did { font-family: ui-monospace, monospace; color: var(--navy-500); font-size: var(--fs-12); margin-top: 4px; }
   /* .did is for an identifier. A screen whose subtitle is a sentence uses this instead —
      a wrapped sentence set in the mono face reads as code the reader has to decode. */
-  .dhead .dsub { color: var(--navy-500); font-size: 13px; margin-top: 5px; line-height: 1.5; max-width: var(--measure); }
+  .dhead .dsub { color: var(--navy-500); font-size: var(--fs-13); margin-top: 5px; line-height: var(--lh-base); max-width: var(--measure); }
   .dhead .hbadges { margin-top: 8px; }
   .hactions { display: flex; gap: 8px; flex-shrink: 0; }
   section { margin-top: 28px; }
@@ -241,32 +272,32 @@
      hierarchy to read by. The eyebrow is now reserved for labels that name a single
      field or group — facet keys, sub-labels inside a repeatable card, the rail list. */
   h3.slabel, .detail fieldset > legend.slabel {
-    font-size: 15px; font-weight: 600; text-transform: none; letter-spacing: -.01em;
+    font-size: var(--fs-15); font-weight: 600; text-transform: none; letter-spacing: -.01em;
     color: var(--navy-900); margin: 0 0 10px;
   }
-  .slabel .sub { font-size: 13px; font-weight: 400; text-transform: none;
+  .slabel .sub { font-size: var(--fs-13); font-weight: 400; text-transform: none;
     color: var(--navy-500); letter-spacing: 0; }
   /* Inside a repeatable card a label names one field, not a section — eyebrow tier. */
   .ecard h3.slabel, .ecard .field > .slabel, .ecard .field > legend.slabel {
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-500); margin: 0 0 5px; border: 0; padding: 0;
   }
-  .prose { white-space: pre-wrap; color: var(--navy-700); font-size: 14px; line-height: 1.65; max-width: var(--measure); }
-  .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+  .prose { white-space: pre-wrap; color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-prose); max-width: var(--measure); }
+  .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: var(--fs-13); }
   .placeholder { color: var(--navy-500); font-style: italic; }
   .card { border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: var(--pad-card); margin-bottom: 10px; background: var(--surface-card); }
   .card .chead { display: flex; align-items: center; gap: 8px; }
-  .card .cid { font-family: ui-monospace, monospace; font-size: 11px; color: var(--navy-500); }
-  .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: 14px; }
-  .card .rationale { margin-top: 8px; color: var(--navy-500); font-size: 13px; font-style: italic;
-    white-space: pre-wrap; line-height: 1.6; max-width: var(--measure); }
+  .card .cid { font-family: ui-monospace, monospace; font-size: var(--fs-11); color: var(--navy-500); }
+  .card .ctitle { font-weight: 600; color: var(--navy-900); font-size: var(--fs-14); }
+  .card .rationale { margin-top: 8px; color: var(--navy-500); font-size: var(--fs-13); font-style: italic;
+    white-space: pre-wrap; line-height: var(--lh-prose); max-width: var(--measure); }
   /* A card's body copy is body copy — it was 13px, half a step under the surrounding
      prose for no reason, which is most of why the screens read as inconsistent. */
-  .card .cdesc { margin-top: 8px; color: var(--navy-700); font-size: 14px; line-height: 1.6;
+  .card .cdesc { margin-top: 8px; color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-prose);
     white-space: pre-wrap; max-width: var(--measure); }
   ul.plain { margin: 6px 0 0; padding-left: 0; list-style: none; }
   ul.plain li { border-left: 2px solid var(--navy-200); padding: 3px 0 3px 10px; margin-bottom: 7px; color: var(--navy-700); }
-  ul.plain li .meta { font-size: 11px; color: var(--navy-500); text-transform: uppercase; letter-spacing: .05em; }
+  ul.plain li .meta { font-size: var(--fs-11); color: var(--navy-500); text-transform: uppercase; letter-spacing: .05em; }
 
   /* ------ read view (per-section surfaces, breadcrumb, omit-empty) ------ */
   /* A read/document view, so each populated section sits on its own subtle surface,
@@ -275,16 +306,16 @@
   .readsec > h3.slabel { margin: 0 0 10px; }
   .readsec .prose { color: var(--navy-800); }
   .readsec .card { background: var(--surface-card); }
-  .notauthored { color: var(--navy-500); font-size: 12px; font-style: italic; margin: 16px 0 0; }
+  .notauthored { color: var(--navy-500); font-size: var(--fs-12); font-style: italic; margin: 16px 0 0; }
   /* ------ gaps bar (read view) — empty fields as clickable, jump-to-edit chips ------ */
   .gaps-bar { margin-top: var(--section-gap); border-top: 1px dashed var(--border); padding-top: 14px; }
-  .gaps-k { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+  .gaps-k { display: block; font-size: var(--fs-11); text-transform: uppercase; letter-spacing: .07em;
     color: var(--navy-500); font-weight: 700; margin: 0 0 9px; }
   .gaps-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-  .gap-chip { font-size: 12px; padding: 4px 11px; border-radius: 20px; background: var(--navy-100);
+  .gap-chip { font-size: var(--fs-12); padding: 4px 11px; border-radius: 20px; background: var(--navy-100);
     color: var(--navy-600); border: 1px solid var(--border); font-weight: 500; }
   .gap-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
-  .crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--navy-500); margin-bottom: 12px; }
+  .crumb { display: flex; align-items: center; gap: 6px; font-size: var(--fs-12); color: var(--navy-500); margin-bottom: 12px; }
   .crumb-type { border: none; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--navy-500); }
   .crumb-type:hover { color: var(--crimson-600); text-decoration: underline; }
   .crumb-sep { color: var(--navy-500); }
@@ -296,10 +327,10 @@
   /* ------ read-view Git history (read-only) ------ */
   /* A quiet provenance line under the breadcrumb, plus a collapsed History .readsec
      at the foot of the read view: commit rows that expand an inline diff (accordion). */
-  .last-changed { font-size: 12px; color: var(--navy-500); margin: -4px 0 12px; }
+  .last-changed { font-size: var(--fs-12); color: var(--navy-500); margin: -4px 0 12px; }
   .history-sec .history-head { display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; user-select: none; }
   .history-sec .history-head:hover { color: var(--crimson-700); }
-  .history-sec .history-head .fx-caret { color: var(--navy-500); font-size: 10px; width: 10px; flex-shrink: 0; }
+  .history-sec .history-head .fx-caret { color: var(--navy-500); font-size: var(--fs-10); width: 10px; flex-shrink: 0; }
   .history-list { margin-top: 2px; }
   /* commit list — GitHub-style: message is the primary line, a muted submeta row below */
   .commit { border-top: 1px solid var(--border2); }
@@ -307,12 +338,12 @@
   .commit-row { padding: 9px 8px; border-radius: 6px; cursor: pointer; }
   .commit-row:hover { background: var(--navy-100); }
   .commit.open > .commit-row { background: var(--navy-100); }
-  .commit-msg { font-size: 13px; color: var(--navy-900); font-weight: 500; line-height: 1.4;
+  .commit-msg { font-size: var(--fs-13); color: var(--navy-900); font-weight: 500; line-height: var(--lh-tight);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .commit-meta { font-size: 11px; color: var(--navy-500); margin-top: 3px;
+  .commit-meta { font-size: var(--fs-11); color: var(--navy-500); margin-top: 3px;
     display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
   .commit-meta .sep { color: var(--navy-200); }
-  .commit-sha { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 10px;
+  .commit-sha { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: var(--fs-10);
     background: var(--navy-100); color: var(--navy-600); border: 1px solid var(--border);
     padding: 1px 6px; border-radius: 5px; letter-spacing: .01em; }
   .commit-diff { margin: 4px 2px 10px; }
@@ -323,12 +354,12 @@
      and a horizontally-scrolling body for long lines. File-header noise is folded into one
      tiny caption; hunk headers render as a muted separator row that resets the counters. */
   .diffwrap { border: 1px solid var(--line-panel); border-radius: var(--r-8); overflow: hidden; background: var(--surface-card); }
-  .diff-cap { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 11px; color: var(--navy-500);
+  .diff-cap { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: var(--fs-11); color: var(--navy-500);
     padding: 6px 12px; background: var(--tint); border-bottom: 1px solid var(--border2);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .diff-scroll { overflow-x: auto; }
   .difftbl { border-collapse: collapse; width: 100%; font-family: ui-monospace, "SFMono-Regular", monospace;
-    font-size: 12px; line-height: 1.5; }
+    font-size: var(--fs-12); line-height: var(--lh-base); }
   .difftbl td { padding: 0; vertical-align: top; }
   .difftbl .dg { width: 1%; min-width: 42px; text-align: right; padding: 0 10px;
     color: var(--navy-500); background: var(--tint); border-right: 1px solid var(--border2);
@@ -351,17 +382,17 @@
   .dr-hunk .dc { color: var(--navy-500); }
   .dr-meta .dc { color: var(--navy-500); }
   .diff-loading { padding: 10px 12px; background: var(--surface-card); border: 1px solid var(--line-panel);
-    border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
+    border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: var(--fs-12);
     color: var(--navy-500); font-style: italic; }
 
   /* ------ buttons ------ */
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: none; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; font-size: var(--fs-13); font-weight: 600; border: 1px solid transparent; background: none; }
   .btn.primary { background: var(--accent); color: var(--text-inverse); }
   .btn.primary:hover { background: var(--accent-hover); }
   .btn.primary:disabled { opacity: .5; }
   .btn.ghost { background: var(--surface-hover); color: var(--text-body); }
   .btn.ghost:hover { background: var(--navy-200); }
-  .btn.sm { padding: 4px 9px; font-size: 12px; }
+  .btn.sm { padding: 4px 9px; font-size: var(--fs-12); }
 
   /* ------ inputs ------ */
   input.f, textarea.f, select.f {
@@ -369,8 +400,8 @@
     font: inherit; font-size: var(--fs-14); color: var(--text-strong); background: var(--surface-card); outline: none;
   }
   input.f:focus, textarea.f:focus, select.f:focus { border-color: var(--line-focus); box-shadow: var(--focus-ring); }
-  textarea.f { resize: vertical; line-height: 1.55; }
-  .titlein { font-size: 19px; font-weight: 700; }
+  textarea.f { resize: vertical; line-height: var(--lh-base); }
+  .titlein { font-size: var(--fs-19); font-weight: 700; }
   .checkset { display: flex; flex-wrap: wrap; gap: 8px; }
   .checkset label {
     display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px;
@@ -378,7 +409,7 @@
   }
   .checkset label:hover { border-color: var(--crimson-200); }
   .checkset input { accent-color: var(--crimson-600); }
-  .hint { color: var(--navy-500); font-size: 12px; margin-top: 4px; }
+  .hint { color: var(--navy-500); font-size: var(--fs-12); margin-top: 4px; }
 
   /* ------ repeatable editor cards (weaknesses, mitigation links) ------ */
   /* The card border is the ONLY heavy container: surface fill + border + radius + padding. */
@@ -386,11 +417,11 @@
   .ecard-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; user-select: none; }
   .ecard.collapsed .ecard-head { padding: 9px 12px; }
   .ecard-body { padding: 2px 14px 14px; }
-  .ecard-sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--navy-700); font-weight: 600; font-family: ui-monospace, "SFMono-Regular", monospace; }
-  .card-toggle { border: none; background: none; color: var(--navy-500); font-size: 11px; line-height: 1; padding: 2px 3px; }
+  .ecard-sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-13); color: var(--navy-700); font-weight: 600; font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .card-toggle { border: none; background: none; color: var(--navy-500); font-size: var(--fs-11); line-height: var(--lh-1); padding: 2px 3px; }
   .card-toggle:hover { color: var(--navy-800); }
   .ecard .field + .field { margin-top: var(--field-gap); }
-  .cardx { border: none; background: none; color: var(--navy-500); font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .cardx { border: none; background: none; color: var(--navy-500); font-size: var(--fs-15); line-height: var(--lh-1); padding: 2px 6px; border-radius: 6px; }
   .cardx:hover { background: var(--crimson-50); color: var(--crimson-600); }
   .link-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
   .link-row select { flex: 1; }
@@ -398,27 +429,27 @@
   /* ------ inline style-guide bar ------ */
   .field { position: relative; }
   /* one muted ~12px single-line hint under each label; row height reserved so fields align */
-  .sg-hint { color: var(--navy-500); font-size: 12px; line-height: 1.4; margin: 0 0 6px; min-height: 17px;
+  .sg-hint { color: var(--navy-500); font-size: var(--fs-12); line-height: var(--lh-tight); margin: 0 0 6px; min-height: 17px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sg-panel { display: none; margin-top: 8px; padding: 10px 12px; background: var(--surface-card); border: 1px solid var(--line-control); border-radius: var(--r-8); font-size: var(--fs-12); }
   .sg-panel.show { display: block; }
   .sg-sec { margin-bottom: 8px; }
   .sg-sec:last-child { margin-bottom: 0; }
-  .sg-k { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 10px; color: var(--navy-600); margin-bottom: 3px; }
+  .sg-k { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: var(--fs-10); color: var(--navy-600); margin-bottom: 3px; }
   .sg-panel ul { margin: 0; padding-left: 16px; color: var(--navy-600); }
   .sg-panel ul li { margin-bottom: 2px; }
   .sg-ex { color: var(--navy-700); font-style: italic; margin: 0 0 5px; }
   /* inline per-field guidance — a compact <details> that replaces the old rail mode */
   .fguide { margin-top: 8px; }
   .fguide > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-    font-size: 11px; font-weight: 600; color: var(--navy-500); user-select: none; padding: 2px 0; }
+    font-size: var(--fs-11); font-weight: 600; color: var(--navy-500); user-select: none; padding: 2px 0; }
   .fguide > summary::-webkit-details-marker { display: none; }
-  .fguide > summary::before { content: "\24D8"; color: var(--navy-500); font-size: 13px; }
+  .fguide > summary::before { content: "\24D8"; color: var(--navy-500); font-size: var(--fs-13); }
   .fguide[open] > summary { color: var(--navy-700); }
   .fguide > summary:hover { color: var(--crimson-600); }
   .fguide .sg-panel { display: block; margin-top: 6px; }
   /* "view change" affordance on the read-view provenance line — reveals the latest diff inline */
-  .lc-diff { border: none; background: none; color: var(--crimson-600); font-weight: 600; font-size: 12px;
+  .lc-diff { border: none; background: none; color: var(--crimson-600); font-weight: 600; font-size: var(--fs-12);
     padding: 0 0 0 4px; cursor: pointer; }
   .lc-diff:hover { text-decoration: underline; }
 
@@ -437,7 +468,7 @@
     width: 9px; right: var(--preview-w); margin-right: -4px; cursor: col-resize; z-index: 40; }
   #preview-resizer::after { content: ""; position: absolute; top: 0; left: 4px; width: 1px; height: 100%; background: transparent; transition: background .12s; }
   #preview-resizer:hover::after, body.resizing #preview-resizer::after { background: var(--crimson-600); left: 3px; width: 3px; }
-  #preview .ptitle { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--navy-500); font-weight: 700; margin: 0 0 12px; }
+  #preview .ptitle { font-size: var(--fs-11); text-transform: uppercase; letter-spacing: .08em; color: var(--navy-500); font-weight: 700; margin: 0 0 12px; }
 
   /* ------ toast ------ */
   .toast { position: fixed; bottom: 20px; right: 22px; background: var(--navy-900); color: var(--text-inverse); padding: 10px 16px; border-radius: var(--r-10); font-size: var(--fs-13); box-shadow: var(--shadow-toast); opacity: 0; transition: opacity .2s, transform .2s; transform: translateY(8px); pointer-events: none; z-index: 50; }
@@ -445,11 +476,11 @@
   .toast.err { background: var(--crimson-700); }
 
   /* ------ validation channels ------ */
-  .err-summary { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 10px 14px; margin: 16px 0 4px; font-size: 13px; }
+  .err-summary { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 10px 14px; margin: 16px 0 4px; font-size: var(--fs-13); }
   .err-summary strong { display: block; margin-bottom: 5px; }
   .err-summary ul { margin: 0; padding-left: 18px; }
-  .err-summary code { font-family: ui-monospace, monospace; font-size: 12px; }
-  .fld-msg { font-size: 12px; margin-top: 5px; line-height: 1.4; }
+  .err-summary code { font-family: ui-monospace, monospace; font-size: var(--fs-12); }
+  .fld-msg { font-size: var(--fs-12); margin-top: 5px; line-height: var(--lh-tight); }
   .fld-msg.err { color: var(--crimson-700); }
   /* --amber on a light surface fails contrast; --amber-700 is the text-only step.
      Amber stays a fill only on dots and bar segments, never on type. */
@@ -476,23 +507,23 @@
   /* ------ saved dialog ------ */
   .saved-dialog { position: fixed; bottom: 20px; right: 22px; max-width: 340px; background: var(--surface-card); border: 1px solid var(--line-panel); border-left: 4px solid var(--status-ok); color: var(--text-body-read); padding: 13px 16px; border-radius: var(--r-10); font-size: var(--fs-13); box-shadow: var(--shadow-dialog); z-index: 60; display: none; }
   .saved-dialog.show { display: block; }
-  .saved-dialog code { font-family: ui-monospace, monospace; font-size: 12px; color: var(--navy-900); }
+  .saved-dialog code { font-family: ui-monospace, monospace; font-size: var(--fs-12); color: var(--navy-900); }
   .saved-dialog .sd-actions { margin-top: 10px; display: flex; gap: 12px; align-items: center; }
   .saved-dialog a { color: var(--crimson-600); font-weight: 600; text-decoration: none; }
   .saved-dialog a:hover { text-decoration: underline; }
-  .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-500); font-size: 12px; }
+  .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-500); font-size: var(--fs-12); }
 
   /* ------ screen switcher (lives in the top bar) ------ */
   .screens { display: flex; }
-  .screens button { border: none; background: none; color: var(--navy-500); font-size: 13px;
+  .screens button { border: none; background: none; color: var(--navy-500); font-size: var(--fs-13);
     font-weight: 600; padding: 0 15px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .screens button:hover { color: var(--navy-800); }
   .screens button.on { color: var(--navy-900); border-bottom-color: var(--crimson-600); }
 
   /* ------ style-guide field tree ------ */
-  .sg-group { padding: 9px 15px 5px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--navy-500); font-weight: 700; background: var(--tint); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+  .sg-group { padding: 9px 15px 5px; font-size: var(--fs-10); text-transform: uppercase; letter-spacing: .07em; color: var(--navy-500); font-weight: 700; background: var(--tint); border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
   .sg-frow { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
-  .sg-frow .fname { font-size: 13px; color: var(--navy-800); font-family: ui-monospace, "SFMono-Regular", monospace; }
+  .sg-frow .fname { font-size: var(--fs-13); color: var(--navy-800); font-family: ui-monospace, "SFMono-Regular", monospace; }
   .badge.cov { font-variant-numeric: tabular-nums; }
   .badge.cov.c-hi { background: var(--status-ok-bg); color: var(--status-ok-fg); }
   .badge.cov.c-mid { background: var(--status-advice-bg); color: var(--amber-700); }
@@ -503,7 +534,7 @@
   .slot-list { list-style: none; margin: 6px 0 0; padding: 0; }
   .slot-list li { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
   .slot-list li input { flex: 1; }
-  .slotcount { color: var(--navy-500); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+  .slotcount { color: var(--navy-500); font-size: var(--fs-11); font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; }
   #preview .sg-fieldwrap { border: 1px solid var(--border); border-radius: 10px; padding: 14px 15px; background: var(--tint); }
   #preview .sg-fieldwrap .f { background: var(--surface-card); }
 
@@ -516,8 +547,8 @@
      the model the occasional one, and the left column is read first. */
   .ov-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
     padding-bottom: 12px; margin-bottom: 2px; border-bottom: 1px solid var(--border); }
-  .ov-head h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
-  .ov-facts { margin: 0; font-size: 13px; color: var(--navy-500); }
+  .ov-head h2 { margin: 0; font-size: var(--fs-20); font-weight: 700; letter-spacing: -.01em; }
+  .ov-facts { margin: 0; font-size: var(--fs-13); color: var(--navy-500); }
   .ov-col { background: var(--tint); border: 1px solid var(--border2); border-radius: var(--r-10);
     padding: 2px 16px 12px; }
   /* A labelled block inside a band — the shared primitive for "several short things
@@ -528,64 +559,54 @@
   .readsec > .ov-block:first-child { padding-top: 0; }
   .readsec > .ov-block:last-child { padding-bottom: 0; }
   .ov-block > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 9px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-600); }
-  .ov-block > .k .n { margin-left: auto; font-size: 12px; font-weight: 500; letter-spacing: 0;
+  .ov-block > .k .n { margin-left: auto; font-size: var(--fs-12); font-weight: 500; letter-spacing: 0;
     text-transform: none; color: var(--navy-500); }
   .ov-block .card { margin-bottom: 8px; padding: 11px 13px; }
   .ov-block .card:last-child { margin-bottom: 0; }
   /* An all-clear is the least valuable thing on a dashboard — it earns one line. */
   .ov-block .ov-clean { padding: 9px 12px; gap: 9px; }
-  .ov-block .ov-clean p { font-size: 13px; }
+  .ov-block .ov-clean p { font-size: var(--fs-13); }
   .ov-block .ov-clean .ok-i { margin-top: 5px; }
   /* One figure, one sentence, one click through to the screen that can act on it. */
   .ov-line { display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left;
     border: none; background: none; padding: 5px 7px; margin: 0 -7px; border-radius: var(--r-6);
-    font: inherit; font-size: 13px; color: var(--navy-700); }
+    font: inherit; font-size: var(--fs-13); color: var(--navy-700); }
   .ov-line:hover { background: var(--surface-hover); color: var(--navy-900); }
-  .ov-line-n { font-size: 15px; font-weight: 700; color: var(--navy-900);
+  .ov-line-n { font-size: var(--fs-15); font-weight: 700; color: var(--navy-900);
     font-variant-numeric: tabular-nums; min-width: 38px; }
   .ov-fold > summary { list-style: none; display: flex; align-items: baseline; gap: 10px;
     cursor: pointer; padding: 5px 7px; margin: 0 -7px; border-radius: var(--r-6);
-    font-size: 13px; color: var(--navy-700); user-select: none; }
+    font-size: var(--fs-13); color: var(--navy-700); user-select: none; }
   .ov-fold > summary::-webkit-details-marker { display: none; }
   .ov-fold > summary:hover { background: var(--surface-hover); color: var(--navy-900); }
   .ov-fold[open] > summary { color: var(--navy-900); font-weight: 600; }
   .ov-fold-b { padding: 2px 0 10px 48px; }
   .ov-fold-b .ov-gap-desc { margin: 0 0 8px; }
-  .ov-stats { display: flex; gap: 12px; flex-wrap: wrap; }
-  .ov-stat { flex: 1; min-width: 120px; border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: 14px 16px; background: var(--surface-card); }
-  .ov-stat .num { font-size: 28px; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .ov-stat .lbl { font-size: 13px; color: var(--navy-500); margin-top: 4px; }
-  .ov-cov-overall { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-  .ov-cov-overall .pct { font-size: 24px; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .ov-cov-overall .lbl { font-size: 12px; color: var(--navy-500); }
-  .ov-cov-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border2); }
-  .ov-cov-row:last-child { border-bottom: none; }
-  .ov-cov-row .ent { font-size: 14px; color: var(--navy-700); font-family: ui-monospace, "SFMono-Regular", monospace; }
   .ov-gap-group { margin-bottom: 10px; }
   .ov-gap-head { display: flex; align-items: center; gap: 8px; }
-  .ov-gap-head .gname { font-weight: 600; color: var(--navy-900); font-size: 14px; }
-  .ov-gap-desc { color: var(--navy-600); font-size: 13px; line-height: 1.55; margin: 5px 0 10px; max-width: var(--measure); }
+  .ov-gap-head .gname { font-weight: 600; color: var(--navy-900); font-size: var(--fs-14); }
+  .ov-gap-desc { color: var(--navy-600); font-size: var(--fs-13); line-height: var(--lh-base); margin: 5px 0 10px; max-width: var(--measure); }
   .ov-chips { display: flex; flex-wrap: wrap; align-items: center; }
   /* A warning that names no entity (a whole-catalog observation) has nothing to put in
      a chip. It used to render an empty chip row under a bare label and a count, which
      is why "Unused vocabulary 1" said nothing at all. Show the message instead. */
-  .ov-warn-msg { color: var(--navy-700); font-size: 14px; line-height: 1.55; margin: 5px 0 0; max-width: var(--measure); }
+  .ov-warn-msg { color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-base); margin: 5px 0 0; max-width: var(--measure); }
   /* Long id lists get cut to a readable run; the rest is one click away. */
-  .ov-more { border: none; background: none; color: var(--crimson-600); font-size: 12px;
+  .ov-more { border: none; background: none; color: var(--crimson-600); font-size: var(--fs-12);
     font-weight: 600; padding: 3px 6px; margin: 0 0 6px; border-radius: 6px; }
   .ov-more:hover { background: var(--crimson-50); }
   /* Cross-system rows: what it is, what state it is in, who is asking. */
   .ins-row { display: flex; align-items: baseline; gap: 9px; padding: 8px 0;
     border-bottom: 1px solid var(--border2); flex-wrap: wrap; }
   .ins-row:last-child { border-bottom: none; }
-  .ins-name { font-size: 14px; color: var(--navy-900); font-weight: 500; }
-  .ins-meta { font-size: 12px; color: var(--navy-500); margin-left: auto; }
+  .ins-name { font-size: var(--fs-14); color: var(--navy-900); font-weight: 500; }
+  .ins-meta { font-size: var(--fs-12); color: var(--navy-500); margin-left: auto; }
   /* Charts are CSS bars, not a library: the app is one static file with no build step,
      and a ranked horizontal bar answers "which is worst" better than a pie ever does. */
   .hbars { display: grid; grid-template-columns: minmax(90px, auto) 1fr auto; gap: 7px 12px; align-items: center; }
-  .hbar-k { font-size: 13px; color: var(--navy-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar-k { font-size: var(--fs-13); color: var(--navy-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hbar-k .reflink { font: inherit; }
   .hbar-t { height: 12px; border-radius: var(--r-4); background: var(--navy-100); overflow: hidden; }
   .hbar-f { height: 100%; border-radius: var(--r-4); background: var(--navy-500); }
@@ -597,7 +618,7 @@
   .hbar-f.c-hi { background: var(--status-ok); }
   .hbar-f.c-mid { background: var(--amber); }
   .hbar-f.c-lo { background: var(--accent); }
-  .hbar-k.ent { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 13px; }
+  .hbar-k.ent { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: var(--fs-13); }
   /* Stacked: the segments of one row are parts of that row's total, so they butt up
      against each other and only the ends of the run are rounded. */
   .hbar-t.stack { display: flex; }
@@ -607,13 +628,13 @@
   .ov-bar-legend .dot.sev-high { background: var(--sev-high-spine); }
   .ov-bar-legend .dot.sev-medium { background: var(--sev-medium-spine); }
   .ov-bar-legend .dot.sev-low { background: var(--sev-low-spine); }
-  .ov-block .ov-bar-legend { margin-top: 9px; font-size: 12px; }
-  .hbar-v { font-size: 13px; color: var(--navy-700); font-variant-numeric: tabular-nums; }
-  .hbar-v .u { color: var(--navy-500); font-size: 12px; }
+  .ov-block .ov-bar-legend { margin-top: 9px; font-size: var(--fs-12); }
+  .hbar-v { font-size: var(--fs-13); color: var(--navy-700); font-variant-numeric: tabular-nums; }
+  .hbar-v .u { color: var(--navy-500); font-size: var(--fs-12); }
   /* `display: contents` so the parked chips rejoin the same wrapping flex row. */
   .ov-rest { display: contents; }
   .ov-rest.hide { display: none; }
-  .ov-chip { display: inline-flex; align-items: center; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px;
+  .ov-chip { display: inline-flex; align-items: center; font-family: ui-monospace, "SFMono-Regular", monospace; font-size: var(--fs-12);
     padding: 3px 9px; border-radius: 6px; background: var(--navy-100); color: var(--navy-700); border: 1px solid var(--border);
     cursor: pointer; margin: 0 6px 6px 0; }
   .ov-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
@@ -623,24 +644,19 @@
   /* Status is a CSS dot, not a glyph — Keel has no icon set and says the word instead. */
   .ov-clean .ok-i { width: 8px; height: 8px; border-radius: var(--r-round); background: var(--status-ok);
     flex-shrink: 0; margin-top: 6px; }
-  .ov-clean p { margin: 0; color: var(--navy-700); font-size: 14px; line-height: 1.55; max-width: var(--measure); }
+  .ov-clean p { margin: 0; color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-base); max-width: var(--measure); }
   .ov-clean p b { color: var(--status-ok-fg); }
   .ov-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
   .ov-grid2 > section { margin-top: 14px; }
   .ov-grid2 > div > .readsec:first-child { margin-top: 0; }
   @media (max-width: 900px) { .ov-grid2 { grid-template-columns: 1fr; } }
-  .ov-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--navy-100); margin: 8px 0 6px; }
-  .ov-bar-seg { height: 100%; }
-  .ov-bar-seg.verified, .ov-bar-seg.shared { background: var(--green); }
-  .ov-bar-seg.draft, .ov-bar-seg.local { background: var(--amber); }
-  .ov-bar-seg.unset, .ov-bar-seg.none { background: var(--navy-200); }
-  .ov-bar-legend { display: flex; gap: 16px; font-size: 13px; color: var(--navy-500); flex-wrap: wrap; }
+  .ov-bar-legend { display: flex; gap: 16px; font-size: var(--fs-13); color: var(--navy-500); flex-wrap: wrap; }
   .ov-bar-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
-  .ov-activity-row { padding: 11px 0; border-bottom: 1px solid var(--border2); font-size: 14px; }
+  .ov-activity-row { padding: 11px 0; border-bottom: 1px solid var(--border2); font-size: var(--fs-14); }
   .ov-activity-row:last-child { border-bottom: none; }
   .ov-activity-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .ov-activity-msg { color: var(--navy-900); font-weight: 500; }
-  .ov-activity-meta { color: var(--navy-500); font-size: 12px; }
+  .ov-activity-meta { color: var(--navy-500); font-size: var(--fs-12); }
   .ov-activity-row .ov-chips { margin-top: 7px; }
 
   /* ------ reports screen ------ */
@@ -668,35 +684,35 @@
      and neither of them reads as the thing to look at. */
   .sev.quiet.sev-high { background: var(--crimson-50); color: var(--crimson-700);
     border-color: var(--crimson-200); font-weight: var(--fw-semibold); }
-  .fscenario { margin: 10px 0 0; font-size: 14px; line-height: 1.65; color: var(--navy-800); max-width: var(--measure); }
+  .fscenario { margin: 10px 0 0; font-size: var(--fs-14); line-height: var(--lh-prose); color: var(--navy-800); max-width: var(--measure); }
   /* Why the grade is what it is. This is the first question a reader asks of a graded
      finding, so it sits directly under the scenario on its own surface — it used to be
      12px muted type at the foot of the card, below the requirements it justifies. */
   .fwhy { margin-top: 12px; padding: 10px 12px; background: var(--tint); border: 1px solid var(--border2);
-    border-radius: var(--r-8); font-size: 13px; line-height: 1.6; color: var(--navy-700); max-width: var(--measure); }
-  .fwhy .k, .freqs-k { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    border-radius: var(--r-8); font-size: var(--fs-13); line-height: var(--lh-prose); color: var(--navy-700); max-width: var(--measure); }
+  .fwhy .k, .freqs-k { display: block; font-size: var(--fs-10); font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--navy-600); margin-bottom: 5px; }
   /* The chain the grade rests on: asset, weakness, attacker, what moved since last time.
      Facts that need naming to be understood get a label here; the ones that read on their
      own (harm, surface, exploitation cost) stay unlabelled badges below. */
   .fchain { display: grid; grid-template-columns: 116px 1fr; gap: 8px 14px; margin: 13px 0 0; }
-  .fchain dt { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  .fchain dt { font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-600); padding-top: 3px; }
-  .fchain dd { margin: 0; font-size: 14px; line-height: 1.55; color: var(--navy-700); max-width: var(--measure); }
+  .fchain dd { margin: 0; font-size: var(--fs-14); line-height: var(--lh-base); color: var(--navy-700); max-width: var(--measure); }
   .finding .badges { margin-top: 13px; }
   .freqs { margin-top: 15px; border-top: 1px solid var(--border2); padding-top: 12px; }
   /* Requirement rows: checkbox and text on one line. A dedicated class, not .cdesc,
      because that carries white-space: pre-wrap and would keep the template's newlines. */
-  .req-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; font-size: 14px; color: var(--navy-700); }
+  .req-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; font-size: var(--fs-14); color: var(--navy-700); }
   .req-row input { margin: 4px 0 0; flex-shrink: 0; accent-color: var(--crimson-600); }
-  .req-row label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; line-height: 1.5; }
+  .req-row label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; line-height: var(--lh-base); }
   .req-meta { display: block; font-family: ui-monospace, "SFMono-Regular", monospace;
-    font-size: 11px; color: var(--navy-500); margin-top: 2px; }
-  .req-note { margin: 4px 0 0 24px; color: var(--navy-500); font-size: 13px; font-style: italic;
-    line-height: 1.55; max-width: var(--measure); }
-  .req-ignored { margin-top: 9px; color: var(--navy-500); font-size: 13px; font-style: italic;
-    line-height: 1.55; max-width: var(--measure); }
-  .rep-qa { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--navy-700); max-width: var(--measure); }
+    font-size: var(--fs-11); color: var(--navy-500); margin-top: 2px; }
+  .req-note { margin: 4px 0 0 24px; color: var(--navy-500); font-size: var(--fs-13); font-style: italic;
+    line-height: var(--lh-base); max-width: var(--measure); }
+  .req-ignored { margin-top: 9px; color: var(--navy-500); font-size: var(--fs-13); font-style: italic;
+    line-height: var(--lh-base); max-width: var(--measure); }
+  .rep-qa { margin-top: 6px; font-size: var(--fs-14); line-height: var(--lh-prose); color: var(--navy-700); max-width: var(--measure); }
   .rep-qa .meta { display: inline-block; min-width: 18px; font-weight: 700; color: var(--navy-500); }
   /* Anything that names an entity in the model is a way into it. */
   .reflink { border: none; background: none; padding: 0; font: inherit; font-weight: inherit;
@@ -707,11 +723,11 @@
   /* No Edit button and no mode switch. The read view IS the document being checked, so
      a separate form would mean checking one thing and correcting another. Controls wear
      the surrounding type and only show a box on hover or focus; every change saves. */
-  .rep-status { font-size: 11px; padding: 2px 9px; border-radius: var(--r-4); font-weight: 700;
+  .rep-status { font-size: var(--fs-11); padding: 2px 9px; border-radius: var(--r-4); font-weight: 700;
     text-transform: lowercase; }
   .rep-status.draft { background: var(--amber-50); color: var(--amber-700); }
   .rep-status.final { background: var(--navy-200); color: var(--navy-700); }
-  .savestate { font-size: 12px; color: var(--navy-500); white-space: nowrap; align-self: center; }
+  .savestate { font-size: var(--fs-12); color: var(--navy-500); white-space: nowrap; align-self: center; }
   .savestate.ok { color: var(--status-ok-fg); }
   .savestate.err { color: var(--status-error); }
   .ie { display: block; width: 100%; max-width: var(--measure); font: inherit; color: inherit;
@@ -727,21 +743,21 @@
   .sev select.ie-grade:focus { text-decoration: underline; }
   .fchain select.ie, .badges select.ie { display: inline-block; width: auto; max-width: none; }
   .finding .fdrop { margin-left: 4px; border: none; background: none; color: var(--navy-500);
-    font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: var(--r-6); }
+    font-size: var(--fs-15); line-height: var(--lh-1); padding: 2px 6px; border-radius: var(--r-6); }
   .finding .fdrop:hover { background: var(--crimson-50); color: var(--accent); }
   .rep-empty { color: var(--navy-500); font-style: italic; }
   /* Body copy, and in a band. At 13px on the bare page background it was the only prose
      on the screen without a container and half a step off the prose under it — which is
      exactly the pair of tells that makes a page feel arbitrary. */
-  .rep-final p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--navy-700);
+  .rep-final p { margin: 0; font-size: var(--fs-14); line-height: var(--lh-prose); color: var(--navy-700);
     max-width: var(--measure); }
   .rep-final b { color: var(--navy-900); font-weight: 600; }
   .nr-field { margin-bottom: 16px; max-width: 520px; }
-  .nr-field > label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  .nr-field > label { display: block; font-size: var(--fs-10); font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--navy-600); margin-bottom: 5px; }
   .nr-field .hint { margin-top: 5px; }
   .rep-dates { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 16px 0 0; }
-  .rep-dates .k { font-size: 10px; font-weight: 700; text-transform: uppercase;
+  .rep-dates .k { font-size: var(--fs-10); font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--navy-600); }
   .rep-dates .ov-chip { margin: 0; }
 
@@ -753,7 +769,7 @@
   .rep-aside > .readsec { margin-top: 0; }
   .fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; }
   .fold > summary::-webkit-details-marker { display: none; }
-  .fold > summary::before { content: "\25B8"; color: var(--navy-500); font-size: 10px; width: 9px; flex-shrink: 0; }
+  .fold > summary::before { content: "\25B8"; color: var(--navy-500); font-size: var(--fs-10); width: 9px; flex-shrink: 0; }
   .fold[open] > summary::before { content: "\25BE"; }
   .fold > summary:hover h3 { color: var(--accent-hover); }
   .fold > summary h3 { margin: 0; }
@@ -762,7 +778,7 @@
   /* Tabs inside a detail view. Same treatment as the top bar, one step quieter — they
      switch a view of one entity, not the screen you are on. */
   .subtabs { display: flex; margin: 16px 0 0; border-bottom: 1px solid var(--border); }
-  .subtabs button { border: none; background: none; color: var(--navy-500); font-size: 13px;
+  .subtabs button { border: none; background: none; color: var(--navy-500); font-size: var(--fs-13);
     font-weight: 600; padding: 8px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
   /* Flush left. Padded, the first tab's label started 14px in while everything else on
      the page started at the content edge, giving the eye a third left margin to track. */
@@ -776,23 +792,20 @@
   /* Options run most-useful-first for the reader receiving this: the asks, then the
      evidence for them, then the framing. A sub-option greys out with its parent. */
   .exp-group { margin-bottom: 16px; }
-  .exp-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  .exp-k { font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-600); margin: 0 0 7px; }
-  .exp-opt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--navy-700);
+  .exp-opt { display: flex; align-items: center; gap: 8px; font-size: var(--fs-13); color: var(--navy-700);
     padding: 3px 0; cursor: pointer; }
   .exp-opt input { accent-color: var(--crimson-600); flex-shrink: 0; }
-  .exp-opt.sub { margin-left: 20px; font-size: 12px; color: var(--navy-600); }
+  .exp-opt.sub { margin-left: 20px; font-size: var(--fs-12); color: var(--navy-600); }
   .exp-opt.off { opacity: .45; cursor: default; }
   .exp-actions { display: flex; gap: 8px; margin: 4px 0 12px; }
   /* 12px, not 11: with the full pane behind it this is text someone proofreads before
      sending, not a thumbnail. */
   .exp-preview { border: 1px solid var(--line-panel); border-radius: var(--r-8); background: var(--surface-card);
-    font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px; line-height: 1.65;
+    font-family: ui-monospace, "SFMono-Regular", monospace; font-size: var(--fs-12); line-height: var(--lh-prose);
     color: var(--navy-700); white-space: pre-wrap; padding: 16px 18px; overflow-x: auto; }
-  .exp-note { font-size: 12px; color: var(--navy-500); margin: 0 0 10px; line-height: 1.5; }
-  .ov-rail-legend { padding: 16px 15px; color: var(--navy-500); font-size: 13px; line-height: 1.6; }
-  .ov-legend .ov-leg-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500); font-weight: 700; margin: 0 0 6px; }
-  .ov-legend p { color: var(--navy-600); font-size: 13px; margin: 0 0 6px; line-height: 1.65; }
+  .exp-note { font-size: var(--fs-12); color: var(--navy-500); margin: 0 0 10px; line-height: var(--lh-base); }
 </style>
 </head>
 <body>
@@ -3169,7 +3182,9 @@ const REPORT_EXPORT_GROUPS = [
   { key: "requirements", label: "Requirements", opts: [
     { key: "reqs", label: "Include them" },
     { key: "owner", label: "Who owns each", sub: "reqs" },
-    { key: "covered", label: "Ones already covered", sub: "reqs" },
+    // "Already covered" said nothing about WHERE: covered last time, covered by some
+    // policy elsewhere, or present in this deployment? It is the last one.
+    { key: "covered", label: "Ones this system already has", sub: "reqs" },
   ] },
   { key: "evidence", label: "Evidence", opts: [
     { key: "scenario", label: "The scenario behind each" },
@@ -3215,14 +3230,16 @@ function buildReportMarkdown(rep, mitInfo, s) {
   if (s.header) {
     lines.push(`# Security requirements — ${rep.system_name}`, "");
     lines.push(`Assessed ${rep.date} by ${rep.assessor}.`, "");
-    if (s.delta && rep.delta_summary) lines.push(rep.delta_summary, "");
   }
+  // NOT nested under `header`: the delta is its own option, and hiding it whenever the
+  // title line was switched off made the checkbox look broken.
+  if (s.delta && rep.delta_summary) lines.push(rep.delta_summary, "");
 
   const reqLine = r => {
     const info = r.mitigation_id ? mitInfo[r.mitigation_id] : null;
     const label = info ? info.name : (r.description || r.mitigation_id);
     const owner = s.owner && info && info.owner ? ` (owner: ${info.owner})` : "";
-    const note = r.coverage_status === "already_covered" ? " — already covered" : "";
+    const note = r.coverage_status === "already_covered" ? " — already in place in this system" : "";
     return `- ${label}${owner}${note}`;
   };
 
@@ -3234,12 +3251,17 @@ function buildReportMarkdown(rep, mitInfo, s) {
     const wantsBody = s.scenario || s.reasoning || s.grades || s.chain;
     if (!reqs.length && !wantsBody) continue;
     any = true;
-    if (s.grades) lines.push(`**${f.id}** — severity ${f.risk.severity}, likelihood ${f.risk.likelihood}`, "");
-    else if (wantsBody) lines.push(`**${f.id}**`, "");
-    if (s.scenario) lines.push(f.scenario, "");
-    // No "Why:" lead-in. `risk.reasoning` is authored as a sentence that stands on its
-    // own, so it drops into a ticket as prose rather than as a labelled fragment.
-    if (s.reasoning && f.risk.reasoning) lines.push(f.risk.reasoning, "");
+    // The id line, then the story, with no blank line between them: the id names the
+    // finding and the sentences under it ARE the finding, not a separate section.
+    if (s.grades) lines.push(`**${f.id}** — severity ${f.risk.severity}, likelihood ${f.risk.likelihood}`);
+    else if (wantsBody) lines.push(`**${f.id}**`);
+    // Scenario and reasoning are one paragraph. No "Why:" lead-in either — reasoning is
+    // authored as a sentence that stands on its own, so it reads as the next thing said
+    // about the finding rather than as a labelled fragment.
+    const story = [s.scenario ? f.scenario : "", s.reasoning ? f.risk.reasoning : ""]
+      .filter(t => (t || "").trim()).join(" ");
+    if (story) lines.push(story, "");
+    else if (s.grades || wantsBody) lines.push("");
     if (s.chain) {
       lines.push(`- Asset: ${f.asset}`);
       lines.push(`- Weakness: ${f.vulnerability}`);

@@ -32,6 +32,7 @@ The kit was extracted from `keel/static/index.html` and describes it as it stood
 - **Primary navigation is a top bar, not a strip in the rail.** Five text tabs stretched across a 320px rail read as a cramped segmented control and pushed the rail's own header into a second squeezed row. The tabs also now survive collapsing the rail.
 - **navy-400 is not a text colour.** It measures 2.62:1 on white. It stays in the ramp for rules, dots and the low severity spine; text that used it moved to navy-500, which was itself darkened to `#636e88` so the quiet tier clears 4.5:1 on all four Keel surfaces. `--green-700` was added as green's text-only step, mirroring `--amber-700`. Badges are 11px, not 10.
 - **Prose has a measure.** Body copy caps at `var(--measure)` (74ch). The editor pane is `1fr` and runs to the full width of a large display.
+- **The type ramp is referenced, not retyped.** Every `font-size` and `line-height` in `index.html` is `var(--fs-*)` / `var(--lh-*)`; there is not one raw value outside `:root`. A ramp only declared in `:root` is a suggestion — the app had 117 raw sizes against 6 token uses, and eight line heights against four tokens. Line heights are now exactly five: `--lh-1`, `--lh-tight` 1.35, `--lh-base` 1.55, `--lh-prose` 1.65. Form controls inherit type (`button, input, select, textarea`), because without that any control missing an explicit size falls through to the browser's 13.333px, which is not on the ramp and cannot be reached from it.
 
 ## Where things are
 
