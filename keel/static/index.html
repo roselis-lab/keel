@@ -751,7 +751,17 @@
   .fold > summary h3 { margin: 0; }
   .fold-body { margin-top: 12px; }
 
-  /* ------ report export rail ------ */
+  /* Tabs inside a detail view. Same treatment as the top bar, one step quieter — they
+     switch a view of one entity, not the screen you are on. */
+  .subtabs { display: flex; margin: 16px 0 0; border-bottom: 1px solid var(--border); }
+  .subtabs button { border: none; background: none; color: var(--navy-500); font-size: 13px;
+    font-weight: 600; padding: 8px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .subtabs button:hover { color: var(--navy-800); }
+  .subtabs button.on { color: var(--navy-900); border-bottom-color: var(--crimson-600); }
+
+  /* ------ report hand-off ------ */
+  .handoff { display: grid; grid-template-columns: 300px 1fr; gap: 26px; align-items: start; margin-top: 20px; }
+  @media (max-width: 1100px) { .handoff { grid-template-columns: 1fr; } }
   /* Options run most-useful-first for the reader receiving this: the asks, then the
      evidence for them, then the framing. A sub-option greys out with its parent. */
   .exp-group { margin-bottom: 16px; }
@@ -763,9 +773,11 @@
   .exp-opt.sub { margin-left: 20px; font-size: 12px; color: var(--navy-600); }
   .exp-opt.off { opacity: .45; cursor: default; }
   .exp-actions { display: flex; gap: 8px; margin: 4px 0 12px; }
+  /* 12px, not 11: with the full pane behind it this is text someone proofreads before
+     sending, not a thumbnail. */
   .exp-preview { border: 1px solid var(--line-panel); border-radius: var(--r-8); background: var(--surface-card);
-    font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 11px; line-height: 1.6;
-    color: var(--navy-700); white-space: pre-wrap; padding: 11px 13px; overflow-x: auto; }
+    font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px; line-height: 1.65;
+    color: var(--navy-700); white-space: pre-wrap; padding: 16px 18px; overflow-x: auto; }
   .exp-note { font-size: 12px; color: var(--navy-500); margin: 0 0 10px; line-height: 1.5; }
   .ov-rail-legend { padding: 16px 15px; color: var(--navy-500); font-size: 13px; line-height: 1.6; }
   .ov-legend .ov-leg-k { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-500); font-weight: 700; margin: 0 0 6px; }
@@ -828,7 +840,8 @@ const state = {
   reportMitInfo: {},     // mitigation_id -> { name, owner } for the open report
   reportSave: "",        // "", "saving", "ok" or "err" — the inline save indicator
   reportExport: null,    // hand-off options for the open system (see REPORT_EXPORT_DEFAULTS)
-  reportExportOpen: false, // is the hand-off rail showing — off by default, you read first
+  reportTab: "report",   // "report" | "handoff" — a tab inside the report, not a rail
+  reportFilter: "",      // reports rail: matches system name, id, description and ids
   reportNew: null,       // in-progress "assess a new system" form, or null
   reportAside: {},       // which folded footer sections ("discarded"/"dialogue") are open
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
@@ -2212,9 +2225,8 @@ function switchScreen(name) {
   // which is a different noun on Style guide (fields) and Reports (systems).
   const titles = { overview: "Library", threats: "Threats", mitigations: "Mitigations", style: "Fields", reports: "Systems" };
   document.getElementById("railTitle").textContent = titles[name] || "";
-  // Overview and Reports have no rail search; Threats/Mitigations/Style all filter.
-  const noSearch = name === "overview" || name === "reports";
-  document.getElementById("searchWrap").style.display = noSearch ? "none" : "";
+  // Only the Overview has no rail list to filter.
+  document.getElementById("searchWrap").style.display = name === "overview" ? "none" : "";
   // The Overview's rail has no list to show, so it gives its column back to the page.
   document.body.classList.toggle("no-rail", name === "overview");
   // The faceted filter panel serves Threats + Mitigations + Style; (re)build it per
@@ -2230,9 +2242,11 @@ function switchScreen(name) {
   const search = document.getElementById("search");
   if (search) {
     search.placeholder = name === "mitigations" ? "Filter mitigations…"
-      : name === "style" ? "Filter fields…" : "Filter threats…";
+      : name === "style" ? "Filter fields…"
+      : name === "reports" ? "System, threat or control id…" : "Filter threats…";
     search.value = name === "mitigations" ? state.mitFilter
-      : name === "style" ? state.styleFilter : state.filter;
+      : name === "style" ? state.styleFilter
+      : name === "reports" ? state.reportFilter : state.filter;
   }
   const newBtn = document.getElementById("newThreatBtn");
   if (newBtn) {
@@ -2310,7 +2324,7 @@ function renderMain() {
 }
 function renderRight() {
   if (state.screen === "overview") return renderOverviewRight();
-  if (state.screen === "reports") { applyPreviewVisibility(); return renderReportExport(); }
+  if (state.screen === "reports") return applyPreviewVisibility();
   if (state.screen === "style") return renderStylePreview();
   if (state.screen === "mitigations") return renderMitPreview();
   return renderPreview();
@@ -2321,15 +2335,10 @@ function renderRight() {
 // Style-guide screen's live author preview. Otherwise collapse its grid column (see
 // body.no-preview). Called from every right-rail render, so it tracks each mode change.
 function previewVisible() {
-  // The right rail earns its column when it shows a genuinely DIFFERENT artifact from
-  // the main pane: on Style guide, what a threat author sees; on Reports, what the
-  // product team receives. Threats and mitigations read and edit on ONE surface — the
-  // read view IS the preview, so there is nothing for a third pane to duplicate.
-  //
-  // On Reports it is off until asked for. Deciding what to hand over is the LAST thing
-  // you do with an assessment, and a panel open from the start both narrows the report
-  // you came to read and invites acting before reading.
-  if (state.screen === "reports") return state.reportExportOpen && !!state.currentReport;
+  // Only the Style-guide author preview earns a third column: it is the one place where
+  // you need to see two artifacts AT ONCE (the field you are editing and what an author
+  // will read). The report hand-off does not — you finish reading, then you decide what
+  // to send — so it is a tab inside the report and takes the full width when open.
   return state.screen === "style";
 }
 function applyPreviewVisibility() {
@@ -2714,18 +2723,33 @@ async function loadReports() {
   if (state.screen === "reports") { renderReportsRail(); renderReportsMain(); }
 }
 
+// The filter reaches past the system name into the latest assessment's ids (see
+// list_reports' `keywords`), so "CTRL-HACT-CRITICAL" finds every system that still owes
+// that control. Matching a handful of names would not be worth a search box.
+function reportMatches(s) {
+  const q = (state.reportFilter || "").trim().toLowerCase();
+  if (!q) return true;
+  return (s.system_id + " " + s.system_name + " " + (s.keywords || "")).toLowerCase().includes(q);
+}
+
 function renderReportsRail() {
   const el = document.getElementById("list");
-  const items = state.reportsList || [];
+  const all = state.reportsList || [];
+  const items = all.filter(reportMatches);
   el.innerHTML = items.length ? items.map(s => {
     const sel = state.reportSelected && state.reportSelected.system_id === s.system_id;
     const plural = s.report_count === 1 ? "report" : "reports";
     return `<div class="row ${sel ? "active" : ""}" data-system="${esc(s.system_id)}">
       <span class="rid">${esc(s.system_id)}</span>
-      <span class="rtitle">${esc(s.system_name)} · ${s.report_count} ${plural}${s.has_delta ? " · delta" : ""}</span>
+      <span class="rtitle">${esc(s.system_name)}</span>
+      <div class="badges"><span class="badge soft">${s.report_count} ${plural}</span>
+        ${s.status === "draft" ? '<span class="badge cov c-mid">draft</span>' : ""}
+        ${s.has_delta ? '<span class="badge type">delta</span>' : ""}</div>
     </div>`;
-  }).join("") : '<div class="empty" style="margin-top:40px">No reports yet.</div>';
-  document.getElementById("count").textContent = items.length ? String(items.length) : "";
+  }).join("")
+    : `<div class="empty" style="margin-top:40px">${all.length ? "No system matches that." : "No reports yet."}</div>`;
+  document.getElementById("count").textContent = all.length
+    ? (items.length === all.length ? String(all.length) : `${items.length}/${all.length}`) : "";
   el.querySelectorAll(".row").forEach(r => r.onclick = () => openReportSystem(r.dataset.system));
 }
 
@@ -2734,7 +2758,6 @@ function renderReportsMain() {
   if (state.reportNew) {
     m.innerHTML = newReportHtml();
     wireNewReport();
-    renderReportExport();
     return;
   }
   if (!state.currentReport) {
@@ -2742,12 +2765,11 @@ function renderReportsMain() {
       <button type="button" class="reflink" id="emptyNewReport">assess a new one</button>.</div>`;
     const b = document.getElementById("emptyNewReport");
     if (b) b.onclick = () => newReport();
-    renderReportExport();
     return;
   }
   m.innerHTML = reportDetailHtml(state.currentReport);
   wireReportDetail();
-  renderReportExport();
+  if (state.reportTab === "handoff") wireHandoff();
 }
 
 // Assessments normally arrive from the assessment skill, which writes the file. This is
@@ -2848,6 +2870,7 @@ async function openReportSystem(systemId, date) {
     state.reportSelected = { system_id: systemId, date: pick };
     state.reportSave = "";
     state.reportNew = null;   // opening a report leaves the "assess a system" form
+    state.reportTab = "report";   // you read an assessment before deciding what to send
   } catch (e) {
     toast(e.message, true);
     return;
@@ -2907,7 +2930,6 @@ let reportSaveTimer = null;
 function scheduleReportSave() {
   state.reportSave = "saving";
   paintSaveState();
-  renderReportExport();          // the hand-off preview tracks every edit
   clearTimeout(reportSaveTimer);
   reportSaveTimer = setTimeout(saveReport, 500);
 }
@@ -3062,14 +3084,19 @@ function reportDetailHtml(rep) {
   // record can be WRONG (a typo, a grade written down differently from how it was
   // decided) without the system having changed, and the system can change without the
   // old record being wrong. Correcting keeps the date — nothing was re-assessed.
-  const handoff = `<button class="btn ghost" id="repHandoff"
-    title="Choose what goes to the product team">Hand-off${state.reportExportOpen ? " ×" : ""}</button>`;
   const actions = draft
-    ? `<span class="savestate" id="repSave"></span>${handoff}
+    ? `<span class="savestate" id="repSave"></span>
        <button class="btn primary" id="repFinalize" title="Freeze this report as a dated record">Finalize</button>`
-    : `${handoff}
-       <button class="btn ghost" id="repCorrect" title="Fix a mistake in this record, keeping its date">Correct</button>
+    : `<button class="btn ghost" id="repCorrect" title="Fix a mistake in this record, keeping its date">Correct</button>
        <button class="btn ghost" id="repReopen" title="Assess this system again — a new draft dated today, findings carried forward">New assessment</button>`;
+
+  // A tab, not a third column. The hand-off was stealing 360px of every report's width
+  // permanently to serve the last thing anyone does with one; as a tab it costs nothing
+  // until asked for, and then gets the whole pane.
+  const tabs = `<nav class="subtabs">
+    <button data-rtab="report" class="${state.reportTab === "report" ? "on" : ""}">Report</button>
+    <button data-rtab="handoff" class="${state.reportTab === "handoff" ? "on" : ""}">Hand-off</button>
+  </nav>`;
 
   return `<div class="detail">
     <div class="dhead">
@@ -3082,6 +3109,8 @@ function reportDetailHtml(rep) {
       <div class="hactions">${actions}</div>
     </div>
     ${dateChips}
+    ${tabs}
+    ${state.reportTab === "handoff" ? handoffHtml() : `
     ${draft ? "" : `<p class="rep-final">This report is final. <b>Correct</b> it if the record itself is wrong — the date stays, because nothing was re-assessed. Start a <b>new assessment</b> if the system has changed since; that opens a fresh draft dated today with these findings carried forward.</p>`}
     ${readsec("System", rProse("system_description", rep.system_description, "prose"))}
     ${(draft || rep.delta_summary)
@@ -3093,7 +3122,7 @@ function reportDetailHtml(rep) {
     <div class="rep-aside">
       ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
       ${fold("dialogue", "Assessor dialogue", (rep.dialogue || []).length, dialogue)}
-    </div>
+    </div>`}
   </div>`;
 }
 
@@ -3150,7 +3179,6 @@ const REPORT_EXPORT_DEFAULTS = {
 // Versioned: bumping the prefix retires anyone's saved set when the defaults change,
 // which is the only way a changed default reaches someone who already used the panel.
 const LS_REPORT_EXPORT = "keel.reportExport.v2.";
-const LS_HANDOFF = "keel.handoffOpen";
 
 function reportExportSettings() {
   if (state.reportExport) return state.reportExport;
@@ -3221,15 +3249,10 @@ function buildReportMarkdown(rep, mitInfo, s) {
   return lines.join("\n").trimEnd();
 }
 
-// The third grid column, which Reports never used. It earns it here: the hand-off is
-// visible the whole time you read the report, not buried in a section at the foot.
-function renderReportExport() {
-  const el = document.getElementById("preview");
-  if (!el || state.screen !== "reports") return;
-  if (!state.currentReport) {
-    el.innerHTML = '<p class="ptitle">Send to the product team</p><div class="empty" style="margin-top:6vh">—</div>';
-    return;
-  }
+// The hand-off tab, full width: what to include on the left, the exact text that will
+// leave on the right. It used to be a 360px rail, where the preview was a column of
+// wrapped mono fragments and every report was permanently 360px narrower for it.
+function handoffHtml() {
   const s = reportExportSettings();
   const groups = REPORT_EXPORT_GROUPS.map(g => `<div class="exp-group">
       <p class="exp-k">${esc(g.label)}</p>
@@ -3240,34 +3263,42 @@ function renderReportExport() {
           ${esc(o.label)}</label>`;
       }).join("")}
     </div>`).join("");
-
   const md = buildReportMarkdown(state.currentReport, state.reportMitInfo || {}, s);
-  el.innerHTML = `<p class="ptitle">Send to the product team</p>
-    <p class="exp-note">Only what is ticked below leaves this screen. Unticking a requirement here does not change the report — untick it in the finding for that.</p>
-    ${groups}
-    <div class="exp-actions">
-      <button class="btn primary" id="expCopy">Copy</button>
-      <button class="btn ghost" id="expDownload">Download</button>
+  return `<div class="handoff">
+    <div>
+      <p class="exp-note">Only what is ticked here leaves this screen. Unticking a requirement here does not change the report — untick it on the finding for that.</p>
+      ${groups}
+      <div class="exp-actions">
+        <button class="btn primary" id="expCopy">Copy</button>
+        <button class="btn ghost" id="expDownload">Download</button>
+      </div>
     </div>
-    <div class="exp-preview" id="expPreview">${esc(md)}</div>`;
+    <div>
+      <p class="exp-k">What leaves this screen</p>
+      <div class="exp-preview" id="expPreview">${esc(md)}</div>
+    </div>
+  </div>`;
+}
 
-  el.querySelectorAll("[data-exp]").forEach(cb => cb.onchange = () => {
+function wireHandoff() {
+  const main = document.getElementById("main");
+  main.querySelectorAll("[data-exp]").forEach(cb => cb.onchange = () => {
     state.reportExport[cb.dataset.exp] = cb.checked;
     saveReportExportSettings();
-    renderReportExport();
+    renderReportsMain();
   });
+  const md = () => buildReportMarkdown(state.currentReport, state.reportMitInfo || {}, reportExportSettings());
   const copy = document.getElementById("expCopy");
   if (copy) copy.onclick = async () => {
-    try { await copyText(md); toast("Copied to clipboard"); }
+    try { await copyText(md()); toast("Copied to clipboard"); }
     catch (e) { toast(e.message, true); }
   };
   const dl = document.getElementById("expDownload");
   if (dl) dl.onclick = () => {
     const rep = state.currentReport;
-    const name = `${rep.system_id}-${rep.date}-requirements.md`;
-    const url = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));
+    const url = URL.createObjectURL(new Blob([md()], { type: "text/markdown" }));
     const a = document.createElement("a");
-    a.href = url; a.download = name; a.click();
+    a.href = url; a.download = `${rep.system_id}-${rep.date}-requirements.md`; a.click();
     URL.revokeObjectURL(url);
   };
 }
@@ -3341,10 +3372,10 @@ function wireReportDetail() {
   on("repFinalize", () => finalizeReport());
   on("repReopen", () => reopenReport());
   on("repCorrect", () => correctReport());
-  on("repHandoff", () => {
-    state.reportExportOpen = !state.reportExportOpen;
-    try { localStorage.setItem(LS_HANDOFF, state.reportExportOpen ? "1" : "0"); } catch (e) { /* private mode */ }
-    renderReportsMain(); renderRight();
+  main.querySelectorAll("[data-rtab]").forEach(b => b.onclick = () => {
+    state.reportTab = b.dataset.rtab;
+    renderReportsMain();
+    main.scrollTop = 0;
   });
   on("addFinding", () => addFinding());
   paintSaveState();
@@ -4415,6 +4446,7 @@ async function saveMitigation() {
 document.getElementById("search").oninput = e => {
   if (state.screen === "mitigations") { state.mitFilter = e.target.value; renderMitRail(); }
   else if (state.screen === "style") { state.styleFilter = e.target.value; renderStyleRail(); }
+  else if (state.screen === "reports") { state.reportFilter = e.target.value; renderReportsRail(); }
   else { state.filter = e.target.value; renderList(); }
 };
 document.getElementById("newThreatBtn").onclick = () =>
@@ -4475,7 +4507,6 @@ function initPreviewResizer() {
 
 initRailToggle();
 initPreviewResizer();
-state.reportExportOpen = localStorage.getItem(LS_HANDOFF) === "1";
 
 // Land wherever the hash points — the Overview when there is no hash. A pasted or
 // edited URL re-routes in place; the app's own navigation uses replaceState, so this

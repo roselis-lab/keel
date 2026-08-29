@@ -71,6 +71,29 @@ def test_list_reports_groups_by_system_with_latest_date(tmp_path, monkeypatch):
     assert by_id["support-bot"]["has_delta"] is False
 
 
+def test_list_reports_keywords_carry_the_ids_a_search_would_look_for(tmp_path, monkeypatch):
+    """Filtering a handful of system NAMES is not worth a search box; finding which
+    systems still owe a given control is."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"findings": [
+        _finding(id="T-TOOL-ABUSE", requirements=[_req("CTRL-HACT-CRITICAL")]),
+    ], "discarded": [{"id": "T-SSRF", "reason": "no url-taking tool"}]})
+
+    kw = report_service.list_reports()[0]["keywords"]
+
+    assert "ctrl-hact-critical" in kw
+    assert "t-tool-abuse" in kw
+    assert "t-ssrf" in kw               # a ruled-out candidate is still worth finding
+    assert "handles checkout" in kw     # and the description
+
+
+def test_list_reports_reports_the_latest_status(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-05-10", {"status": "final"})
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+    assert report_service.list_reports()[0]["status"] == "draft"
+
+
 def test_list_reports_skips_a_malformed_file(tmp_path, monkeypatch):
     """One bad file must not take down the whole listing — this is an archive of many
     independent files, not a single validated catalog."""

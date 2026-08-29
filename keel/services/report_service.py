@@ -75,7 +75,12 @@ def _load_system_reports(system_dir: Path) -> list[Report]:
 
 def list_reports() -> list[dict[str, Any]]:
     """One entry per system folder: {system_id, system_name, latest_date, report_count,
-    has_delta}. A system with no parseable report file is omitted entirely."""
+    has_delta, status, keywords}. A system with no parseable report file is omitted.
+
+    `keywords` is what a rail filter searches beyond the name: the description, and the
+    threat and control ids of the latest assessment. Filtering a handful of system names
+    is not worth a search box — "which systems still owe me CTRL-HACT-CRITICAL" is.
+    """
     root = _reports_dir()
     if not root.is_dir():
         return []
@@ -85,12 +90,18 @@ def list_reports() -> list[dict[str, Any]]:
         reports = _load_system_reports(system_dir)
         if not reports:
             continue
+        latest = reports[0]
+        ids = {f.id for f in latest.findings}
+        ids |= {r.mitigation_id for f in latest.findings for r in f.requirements if r.mitigation_id}
+        ids |= {d.id for d in latest.discarded}
         out.append({
             "system_id": system_dir.name,
-            "system_name": reports[0].system_name,
-            "latest_date": reports[0].date,
+            "system_name": latest.system_name,
+            "latest_date": latest.date,
+            "status": latest.status,
             "report_count": len(reports),
             "has_delta": any(r.delta_summary for r in reports),
+            "keywords": " ".join([latest.system_description, *sorted(ids)]).lower(),
         })
     return out
 
