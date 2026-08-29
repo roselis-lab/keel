@@ -120,7 +120,7 @@ def test_report_parses_minimal():
         date="2026-08-26", assessor="Jane Doe <jane@example.com>",
         findings=[_finding().model_dump()],
         discarded=[{"id": "T-XSS", "reason": "no render path"}],
-        dialogue=[{"question": "q", "answer": "a", "impact": "i"}],
+        meta={"questions": [{"question": "q", "answer": "a", "impact": "i"}]},
     )
     assert r.system_id == "checkout-agent"
     assert len(r.findings) == 1
@@ -131,8 +131,44 @@ def test_report_defaults_lists_to_empty():
         system_id="x", system_name="X", system_description="d",
         date="2026-08-26", assessor="a",
     )
-    assert r.findings == [] and r.discarded == [] and r.dialogue == []
+    assert r.findings == [] and r.discarded == []
     assert r.delta_summary is None
+
+
+def test_report_without_meta_gets_an_empty_one():
+    """Reports written before the block existed still parse, and read as "we kept no
+    record of how this ran" rather than blowing up."""
+    r = Report(
+        system_id="x", system_name="X", system_description="d",
+        date="2026-08-26", assessor="a",
+    )
+    assert r.meta.questions == [] and r.meta.volunteered == [] and r.meta.critique == []
+    assert r.meta.started_at is None
+
+
+def test_meta_keeps_the_three_things_that_improve_the_skill():
+    r = Report(
+        system_id="x", system_name="X", system_description="d",
+        date="2026-08-26", assessor="a",
+        meta={
+            "started_at": "2026-08-26T14:05:00", "finished_at": "2026-08-26T14:58:00",
+            "questions": [{"question": "capped?", "answer": "200 EUR", "impact": "kept it high"}],
+            "volunteered": ["the tool runs under a service account — never asked"],
+            "critique": ["graded on the cap alone; nothing bounded a sequence of calls"],
+        },
+    )
+    assert r.meta.questions[0].impact == "kept it high"
+    # the sharpest signal: a hole in the skill, named
+    assert "never asked" in r.meta.volunteered[0]
+    assert r.meta.critique
+
+
+def test_meta_rejects_an_unknown_field():
+    with pytest.raises(ValidationError):
+        Report(
+            system_id="x", system_name="X", system_description="d",
+            date="2026-08-26", assessor="a", meta={"token_count": 12},
+        )
 
 
 def test_report_rejects_unknown_top_level_field():

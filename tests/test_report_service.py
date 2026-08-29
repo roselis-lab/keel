@@ -22,7 +22,6 @@ VALID_REPORT = {
     "assessor": "Jane Doe <jane@example.com>",
     "findings": [],
     "discarded": [],
-    "dialogue": [],
 }
 
 

@@ -10,6 +10,10 @@ The library is the methodology **crystallized** into a catalog of threats — ea
 
 **REQUIRED — source of truth:** run the assessment strictly by the `assessing-genai-security` methodology and follow it verbatim — all its steps, the data-sufficiency gate, the output format. Nothing here overrides or paraphrases it: it is calibrated. This skill only points to where the library plugs into its steps.
 
+## Note the time you started
+
+Before anything else, record the current timestamp. It goes into the report as `meta.started_at`, and it is the one thing that cannot be reconstructed afterwards. An assessment that costs the specialist two hours is a different product from one that costs twenty minutes, and nobody remembers which it was a week later.
+
 ## Identify the system first (before the methodology's step 1)
 
 Assessments are archived per system under `reports/<system-id>/<YYYY-MM-DD>.yaml`. Before analysing anything, list those folders and read the `system_description` at the top of each system's most recent file. If one plausibly describes the system in front of you, **propose the match and wait** — do not assume it. A specialist with fifty systems will not remember the slug, and two similar agents are easy to confuse.
@@ -49,7 +53,18 @@ Per finding: `id` (the catalog threat id, or a new `T-*` id you coin for somethi
 
 Each requirement is either a catalog control (`mitigation_id` set, `description` omitted) or an ad hoc ask (`mitigation_id: null`, `description` required). `coverage_status` is `needs_implementation`, `already_covered` or `partial`; the last two **require** a `coverage_note` saying what covers it here, and `needs_implementation` must not carry one. Leave `included` out — it defaults to shipping everything except what is already covered, and the specialist decides the rest. A control linked in the catalog but wrong for this system goes in `ignored_mitigations` with the reason, not into `requirements`.
 
-`discarded` is id + reason only, never the full chain. `dialogue` is the exchanges that actually moved the analysis — question, answer, and what it changed — not a transcript.
+`discarded` is id + reason only, never the full chain.
+
+### `meta` — how the run went
+
+This block does not describe the system; it exists so the assessor itself can be improved, and it is the only feedback anyone will get. Fill it honestly, including the parts that make you look bad — a flattering `meta` is worthless.
+
+- `started_at` from the first step above, `finished_at` at write time.
+- `questions` — the exchanges that actually moved the analysis: what you asked, what came back, what it changed. Not a transcript, and not questions whose answers changed nothing.
+- `volunteered` — **facts the specialist gave you that you never asked for.** This is the most valuable line in the report. A question you asked is one the skill already knows to ask; a fact you had to be handed is a hole in the skill, and writing it down is what closes it. If the specialist said "by the way, X" and X mattered, it goes here. Say what would have been wrong without it.
+- `critique` — where the specialist told you your reasoning was wrong, in their words, not softened. If a grade moved because you were pushed, that belongs here as well as in `questions`.
+
+Leave a list empty rather than padding it. An empty `volunteered` on a run where the specialist genuinely volunteered nothing is a real signal; an invented entry destroys the only measurement there is.
 
 Then hand back the link, using the host and port Keel is served on (`127.0.0.1:8000` unless configured otherwise):
 

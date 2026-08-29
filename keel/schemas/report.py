@@ -109,16 +109,48 @@ class Discarded(BaseModel):
 
 
 class DialogueEntry(BaseModel):
-    """One exchange with the specialist during the assessment, and what it changed.
+    """One question the agent asked the specialist, and what the answer changed.
 
-    This is the reasoning that otherwise disappears into chat history: the question the
-    agent asked, the answer or critique it got back, and how the analysis moved.
+    This is the reasoning that otherwise disappears into chat history: the question, the
+    answer it got back, and how the analysis moved because of it.
     """
 
     model_config = ConfigDict(extra="forbid")
     question: str
     answer: str
     impact: str
+
+
+class RunMeta(BaseModel):
+    """How this assessment ran — the record kept to improve the assessor, not the system.
+
+    Everything here is about the process, which is why none of it reaches the hand-off:
+    a product team has nowhere to put "the agent asked four questions". It exists because
+    the only way to make the skill better is to see where it fell short, and the three
+    things that show that are: what it thought to ask, what it FAILED to ask (so the
+    specialist had to volunteer it), and where the specialist said it was wrong.
+
+    `volunteered` is the sharpest of the three. A question the agent asked is a question
+    the skill already knows to ask; a fact the specialist had to supply unprompted is a
+    hole in the skill, named precisely.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    started_at: str | None = Field(
+        None, description="ISO timestamp when the skill began, so the run can be timed"
+    )
+    finished_at: str | None = Field(None, description="ISO timestamp when the report was written")
+    questions: list[DialogueEntry] = Field(
+        default_factory=list, description="What the agent asked, and what each answer changed"
+    )
+    volunteered: list[str] = Field(
+        default_factory=list,
+        description="Context the specialist gave that the agent never asked for — the skill's blind spots",
+    )
+    critique: list[str] = Field(
+        default_factory=list,
+        description="Where the specialist said the agent's reasoning was wrong, in their words",
+    )
 
 
 class Finding(BaseModel):
@@ -158,4 +190,8 @@ class Report(BaseModel):
     delta_summary: str | None = Field(None, description="Re-assessments only: what changed and why")
     findings: list[Finding] = Field(default_factory=list)
     discarded: list[Discarded] = Field(default_factory=list)
-    dialogue: list[DialogueEntry] = Field(default_factory=list)
+    # Named `meta`, not `_meta`: pydantic treats a leading underscore as a private
+    # attribute and would not accept it as a field.
+    meta: RunMeta = Field(
+        default_factory=RunMeta, description="How the assessment ran — see RunMeta"
+    )

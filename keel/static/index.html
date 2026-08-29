@@ -793,9 +793,9 @@
     letter-spacing: .06em; color: var(--navy-600); }
   .rep-dates .ov-chip { margin: 0; }
 
-  /* Ruled out and the assessor dialogue are how WE debug the assessment run, not the
-     specialist's job — a discarded candidate is rare and the Q&A is a trace. They sit
-     at the foot, side by side, folded shut. */
+  /* Ruled out, and how the run itself went, are how WE debug the assessor — not the
+     specialist's job. A discarded candidate is rare, and the run record is a trace.
+     They sit at the foot, side by side, folded shut. */
   .rep-aside { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-top: 16px; }
   @media (max-width: 1100px) { .rep-aside { grid-template-columns: 1fr; } }
   .rep-aside > .readsec { margin-top: 0; }
@@ -899,7 +899,7 @@ const state = {
   reportTab: "report",   // "report" | "handoff" — a tab inside the report, not a rail
   reportFilter: "",      // reports rail: matches system name, id, description and ids
   reportNew: null,       // in-progress "assess a new system" form, or null
-  reportAside: {},       // which folded footer sections ("discarded"/"dialogue") are open
+  reportAside: {},       // which folded footer sections ("discarded"/"meta") are open
   mitFacetsOpen: false, // is the Mitigations filter panel expanded
   mitFilter: "",        // mitigations rail text filter
   mitSelected: null,    // selected mitigation id
@@ -3120,13 +3120,35 @@ function reportDetailHtml(rep) {
         <button type="button" class="reflink" data-jump-threat="${esc(d.id)}">${esc(d.id)}</button> — ${esc(d.reason)}</div>`).join("")
     : '<p class="placeholder">Nothing ruled out.</p>';
 
-  const dialogue = (rep.dialogue || []).length
-    ? rep.dialogue.map(d => `<div class="card">
-        <div class="rep-qa"><span class="meta">Q</span>${esc(d.question)}</div>
-        <div class="rep-qa"><span class="meta">A</span>${esc(d.answer)}</div>
-        <div class="rationale">${esc(d.impact)}</div>
-      </div>`).join("")
-    : '<p class="placeholder">No recorded exchanges.</p>';
+  // How the run went, kept to improve the ASSESSOR rather than to describe the system.
+  // `volunteered` is the sharpest of the three: a question the agent asked is one the
+  // skill already knows to ask, while a fact the specialist had to supply unprompted is
+  // a hole in the skill with its edges drawn.
+  const meta = rep.meta || {};
+  const mBlock = (label, sub, body) => body
+    ? `<div class="ov-block"><p class="k">${esc(label)}${sub ? `<span class="n">${esc(sub)}</span>` : ""}</p>${body}</div>`
+    : "";
+  const qaHtml = (meta.questions || []).map(d => `<div class="card">
+      <div class="rep-qa"><span class="meta">Q</span>${esc(d.question)}</div>
+      <div class="rep-qa"><span class="meta">A</span>${esc(d.answer)}</div>
+      <div class="rationale">${esc(d.impact)}</div>
+    </div>`).join("");
+  const listHtml = xs => (xs || []).length
+    ? `<ul class="plain">${xs.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+  const took = (() => {
+    const ms = Date.parse(meta.finished_at || "") - Date.parse(meta.started_at || "");
+    if (!(ms > 0)) return "";
+    const m = Math.round(ms / 60000);
+    return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+  })();
+  const metaCount = (meta.questions || []).length + (meta.volunteered || []).length
+    + (meta.critique || []).length;
+  const runMeta = (metaCount || took)
+    ? `${took ? `<p class="ov-gap-desc">Took ${esc(took)}, from starting the skill to writing this report.</p>` : ""}
+       ${mBlock("Questions the agent asked", `${(meta.questions || []).length}`, qaHtml)}
+       ${mBlock("Context the specialist volunteered", "never asked for", listHtml(meta.volunteered))}
+       ${mBlock("Where the specialist pushed back", "", listHtml(meta.critique))}`
+    : '<p class="placeholder">Nothing recorded about how this assessment ran.</p>';
 
   // Folded and side by side at the foot: both are a trace of how the assessment ran,
   // useful when debugging the assessor, not part of reviewing the system.
@@ -3179,7 +3201,7 @@ function reportDetailHtml(rep) {
       `— ${findings.length}, worst first`)}
     <div class="rep-aside">
       ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
-      ${fold("dialogue", "Assessor dialogue", (rep.dialogue || []).length, dialogue)}
+      ${fold("meta", "How this assessment ran", metaCount, runMeta)}
     </div>`}
   </div>`;
 }
@@ -3208,9 +3230,9 @@ async function resolveMitigationsForReport(rep) {
 // What goes to the product team, and what it looks like before it goes. The options
 // run most-useful-first for THAT reader: the asks, then the evidence behind them, then
 // the framing. Nothing is mandatory, but turning the asks off leaves an empty document.
-// The assessor dialogue is deliberately absent: it is meta ABOUT this report — how the
-// analysis moved during the run — and there is nowhere in a product team's backlog to
-// put it. It stays on screen, folded, for debugging the assessor.
+// The run record is deliberately absent: it is meta ABOUT this assessment — what the
+// agent asked, what it failed to ask, where it was corrected — and there is nowhere in
+// a product team's backlog to put it. It stays on screen, folded, to improve the skill.
 const REPORT_EXPORT_GROUPS = [
   { key: "requirements", label: "Requirements", opts: [
     { key: "reqs", label: "Include them" },
@@ -3308,10 +3330,6 @@ function buildReportMarkdown(rep, mitInfo, s) {
   if (s.discarded && (rep.discarded || []).length) {
     lines.push("## Ruled out", "");
     lines.push(...rep.discarded.map(d => `- ${d.id} — ${d.reason}`), "");
-  }
-  if (s.dialogue && (rep.dialogue || []).length) {
-    lines.push("## Assessor dialogue", "");
-    for (const d of rep.dialogue) lines.push(`- **Q** ${d.question}`, `  **A** ${d.answer}`, `  ${d.impact}`, "");
   }
   return lines.join("\n").trimEnd();
 }
