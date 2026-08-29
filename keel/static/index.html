@@ -520,8 +520,13 @@
   .ov-facts { margin: 0; font-size: 13px; color: var(--navy-500); }
   .ov-col { background: var(--tint); border: 1px solid var(--border2); border-radius: var(--r-10);
     padding: 2px 16px 12px; }
+  /* A labelled block inside a band — the shared primitive for "several short things
+     that belong together": the dashboard's columns, and a report's system + delta,
+     which were two full bands and two 15px headings for two sentences. */
   .ov-block { padding: 11px 0; border-top: 1px solid var(--border); }
   .ov-block:first-child { border-top: none; }
+  .readsec > .ov-block:first-child { padding-top: 0; }
+  .readsec > .ov-block:last-child { padding-bottom: 0; }
   .ov-block > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 9px;
     font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-600); }
@@ -725,14 +730,17 @@
     font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: var(--r-6); }
   .finding .fdrop:hover { background: var(--crimson-50); color: var(--accent); }
   .rep-empty { color: var(--navy-500); font-style: italic; }
-  .rep-final { margin: 14px 0 0; font-size: 13px; line-height: 1.6; color: var(--navy-600);
+  /* Body copy, and in a band. At 13px on the bare page background it was the only prose
+     on the screen without a container and half a step off the prose under it — which is
+     exactly the pair of tells that makes a page feel arbitrary. */
+  .rep-final p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--navy-700);
     max-width: var(--measure); }
   .rep-final b { color: var(--navy-900); font-weight: 600; }
   .nr-field { margin-bottom: 16px; max-width: 520px; }
   .nr-field > label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--navy-600); margin-bottom: 5px; }
   .nr-field .hint { margin-top: 5px; }
-  .rep-dates { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 14px 0 0; }
+  .rep-dates { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin: 16px 0 0; }
   .rep-dates .k { font-size: 10px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--navy-600); }
   .rep-dates .ov-chip { margin: 0; }
@@ -756,6 +764,9 @@
   .subtabs { display: flex; margin: 16px 0 0; border-bottom: 1px solid var(--border); }
   .subtabs button { border: none; background: none; color: var(--navy-500); font-size: 13px;
     font-weight: 600; padding: 8px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  /* Flush left. Padded, the first tab's label started 14px in while everything else on
+     the page started at the content edge, giving the eye a third left margin to track. */
+  .subtabs button:first-child { padding-left: 0; }
   .subtabs button:hover { color: var(--navy-800); }
   .subtabs button.on { color: var(--navy-900); border-bottom-color: var(--crimson-600); }
 
@@ -3111,11 +3122,12 @@ function reportDetailHtml(rep) {
     ${dateChips}
     ${tabs}
     ${state.reportTab === "handoff" ? handoffHtml() : `
-    ${draft ? "" : `<p class="rep-final">This report is final. <b>Correct</b> it if the record itself is wrong — the date stays, because nothing was re-assessed. Start a <b>new assessment</b> if the system has changed since; that opens a fresh draft dated today with these findings carried forward.</p>`}
-    ${readsec("System", rProse("system_description", rep.system_description, "prose"))}
-    ${(draft || rep.delta_summary)
-      ? readsec("What changed since the last assessment", rProse("delta_summary", rep.delta_summary, "prose"))
-      : ""}
+    ${draft ? "" : `<section class="readsec rep-final"><p>This report is final. <b>Correct</b> it if the record itself is wrong — the date stays, because nothing was re-assessed. Start a <b>new assessment</b> if the system has changed since; that opens a fresh draft dated today with these findings carried forward.</p></section>`}
+    <section class="readsec">
+      <div class="ov-block"><p class="k">System</p>${rProse("system_description", rep.system_description, "prose")}</div>
+      ${(draft || rep.delta_summary) ? `<div class="ov-block"><p class="k">What changed since the last assessment</p>
+        ${rProse("delta_summary", rep.delta_summary, "prose")}</div>` : ""}
+    </section>
     ${readsec("Findings", findingsHtml
       + (draft ? '<button class="btn ghost" id="addFinding" style="margin-top:10px">Add a finding</button>' : ""),
       `— ${findings.length}, worst first`)}
