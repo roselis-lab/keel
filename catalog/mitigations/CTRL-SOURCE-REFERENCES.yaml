@@ -1,12 +1,10 @@
 id: CTRL-SOURCE-REFERENCES
 name: Mandatory Source References
-status: draft
 mitigation_class: detector
 purpose: Enforces mandatory attachment of inline source references to all factual statements and quotations in model outputs, specifying source type, identifier, and timestamp, enabling verification of information and detection of hallucinations. The mechanism operates at the output generation layer and requires the model to provide attribution for factual content. This increases the transparency of model outputs, allows users to independently verify statements, and detects when the model generates content with no real basis in the source.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Inline citation generation (low): Model prompts include an explicit instruction to add inline citations for all factual statements in the format [source_type:identifier]. Citations are generated together with the content, not after the fact.

@@ -1,24 +1,33 @@
 id: T-METADATA-LEAK
-title: Agent metadata leak
+title: The system describes its own internals to whoever asks or triggers an error
 harm: data-exposed
-surface:
-- user-agent
 source:
 - external-attacker
+- error
 weaknesses:
 - component: model
-  text: The agent discloses technical implementation metadata — model version, dependency names/versions, system-prompt fragments, paths, stack traces, configuration IDs — through detailed errors, debug output, or direct answers about its internals; the disclosure serves as reconnaissance for a targeted attack.
+  surface:
+  - model-output
+  text: The agent discloses implementation detail - model version, dependency names and versions, system-prompt fragments, paths, stack traces, configuration ids - through detailed errors, debug output or direct answers about its internals, with nothing between the runtime and the reply that strips them.
   nature: targeted
-reachability: NOT applicable if the agent's output and error messages are unreachable to a potential adversary (a fully internal trusted contour with no external surface).
+reachability: The agent's output and error messages are unreachable to a potential adversary (a fully internal trusted contour with no external surface).
 mitigations:
 - id: CTRL-METADATA-FILTERING
   strength: gating
-  rationale: 'Filtering technical metadata from agent responses conceals implementation details
-
-
-    Hiding system metadata from responses prevents fingerprinting
-
-
-    Hiding the internal system architecture from external interfaces'
-references: []
-tags: []
+  rationale: 'Closes the weakness at the reply boundary: paths, versions, stack traces and internal urls are stripped from every response before it leaves, so neither a verbose error nor a direct question gets the internals out.'
+references:
+- title: 'Bing: ''I will not harm you unless you harm me first'''
+  url: https://simonwillison.net/2023/Feb/15/bing/
+  note: 'Production Bing Chat printed its full internal rules document when asked, reproduced by several people with different prompts - an in-prompt do-not-disclose instruction was the only barrier. Also records Microsoft''s response within days: turn caps, and deflecting questions about Bing itself.'
+- title: Arbitrary File Read - FlowiseAI/Flowise security advisory (GHSA-99pg-hqvx-r4gf)
+  url: https://github.com/FlowiseAI/Flowise/security/advisories/GHSA-99pg-hqvx-r4gf
+  note: 'The verbose-error branch: a malformed filename made the upsert endpoint return the full internal storage path and a valid chatflow id, which was then used to exploit an arbitrary file read against the SQLite store holding API keys. Reconnaissance from error output chaining into a further attack.'
+- title: Assessing Prompt Injection Risks in 200+ Custom GPTs
+  url: https://arxiv.org/abs/2311.11538
+  note: 'The same failure as the Bing case, at two-hundred-app scale: simple text attacks extracted the customised system prompt and the uploaded files, including from GPTs whose prompt explicitly forbade disclosure - confirming systematically rather than anecdotally that an instruction inside the prompt is not a boundary control.'
+- title: 'PLeak: Prompt Leaking Attacks against Large Language Model Applications'
+  url: https://arxiv.org/abs/2405.06823
+  note: Optimised adversarial queries reconstruct system prompts from live applications hosted on Poe, well beyond what hand-written jailbreak queries achieve (ACM CCS 2024). Evidence for the weakness and for the limits of filtering the reply against the prompt text.
+tags:
+- reconnaissance
+- errors

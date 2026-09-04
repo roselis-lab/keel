@@ -1,12 +1,10 @@
 id: CTRL-URL-ALLOWLIST
 name: URL Allowlist and Private Range Blocking
-status: draft
 mitigation_class: gating_control
 purpose: The control restricts the set of URLs that agent tools may send network requests to. At the configuration stage, an allowlist of permitted domains and URL patterns is defined, and all requests to private IP addresses (127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), cloud provider metadata services (169.254.169.254), and internal organizational resources are blocked. Before executing each HTTP request, the system checks the target URL for conformance to the allowlist and absence from the blocked ranges, blocking non-conforming requests. This prevents SSRF attacks in which an attacker, through user input, causes a tool to reach internal resources, cloud instance metadata, or services not directly accessible from outside.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'DNS resolution with IP check (medium): The system performs DNS resolution of the target domain and checks that the resolved IP does not belong to private ranges or blocked networks. After a successful check, establishment of the HTTP connection is permitted. The method detects SSRF via DNS rebinding and spoofing.

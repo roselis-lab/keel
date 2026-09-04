@@ -1,12 +1,10 @@
 id: CTRL-MEMORY-SANITIZATION
 name: Memory Write Filtering
-status: draft
-mitigation_class: corrective
+mitigation_class: gating_control
 purpose: Filters and sanitizes data before it is written to an agent's long-term memory, preventing memory poisoning via malicious content and ensuring data quality. The mechanism operates at the memory write operation level and checks every write request against sanitization policies. This blocks injection attacks via memory poisoning, detects attempts to disclose sensitive data, and preserves the integrity of stored knowledge.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Content filter on write (medium): A content filter checks every memory write for malicious patterns: prompt injection payloads, executable code, hidden instructions. Detected patterns are removed or flagged. This prevents poisoning of the agent''s knowledge base.

@@ -1,12 +1,10 @@
 id: CTRL-MEMORY-ISOLATION
 name: Memory Isolation Between Agents
-status: draft
 mitigation_class: gating_control
 purpose: Isolates memory spaces between agents in multi-agent systems, preventing unauthorized access to other agents' data and cross-context contamination. The mechanism operates at the memory management level and provides each agent an isolated memory region. This protects against data leakage between agents, prevents privilege escalation via shared memory, and ensures confidentiality of agent states.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Per-agent memory spaces (medium): Each agent receives a dedicated memory space or isolated store. Memory access is restricted to the owning agent — other agents cannot read from or write to another''s memory. Isolation is enforced at the infrastructure level. This provides strong isolation but incurs memory management overhead.

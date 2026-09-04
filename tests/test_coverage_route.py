@@ -4,7 +4,7 @@ from keel.main import app
 
 
 def test_coverage_route_shape():
-    r = TestClient(app).get("/style-guide/coverage")
+    r = TestClient(app).get("/api/style-guide/coverage")
     assert r.status_code == 200
     body = r.json()
     assert 0 <= body["overall"] <= 100

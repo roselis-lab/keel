@@ -1,12 +1,10 @@
 id: CTRL-DATA-ACCESS-CONTROL
 name: Data-level access control
-status: draft
 mitigation_class: gating_control
 purpose: Manages the access rights of agents and tools to data sources at the level of individual fields, records, and operations, enforcing the principle of least privilege and preventing unauthorized access to sensitive information. The mechanism is deployed as an authorization layer between the agent or tool and the data sources - databases, APIs, file storage - checking each request against access policies. This prevents mass data exfiltration, limits exposure in the event of compromise, and ensures tenant isolation in multi-tenant systems through row- and column-level security.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Row-level security in the database (medium): At the database level, row-level security (RLS) is configured, where each query is automatically filtered by the tenant or user identifier from the session context. An agent or tool cannot reach another tenant''s data even with a direct SQL injection - the database engine enforces the filter. This gives the strongest isolation, but it requires thorough testing of RLS policies for coverage.

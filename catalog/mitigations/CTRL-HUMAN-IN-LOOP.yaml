@@ -1,12 +1,10 @@
 id: CTRL-HUMAN-IN-LOOP
 name: Human in the Loop for Critical Actions
-status: draft
 mitigation_class: gating_control
 purpose: Enforces mandatory human approval for critical operations initiated by the agent — financial transactions, configuration changes, processing of personal data, destructive actions — as a last line of defense against automated malicious actions and decisions of a compromised agent. The mechanism operates as an approval gate that intercepts critical operations and requires explicit human approval before execution. This guarantees human oversight over the highest-risk operations, provides the ability to intercept errors or malicious actions, and maintains accountability for consequential decisions.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Centralized approval gateway (high): A centralized approval service through which all critical operations must pass before execution. The service integrates with various action sources — agents, tools, API endpoints — through a unified interface. When a critical operation arrives, the service routes the request to the appropriate approver, collects the decision, and only then permits or denies execution. This gives centralized control and an audit trail for all approvals.

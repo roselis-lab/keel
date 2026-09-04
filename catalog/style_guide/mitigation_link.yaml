@@ -13,3 +13,13 @@ fields:
     - For a soft link, say plainly that it does not close the threat.
     avoid:
     - A soft control's rationale claiming it prevents or closes the threat.
+    - A rationale written about a control other than the one linked. 'Mandatory access control segregates data between tenants' on a card that is per-operation authorization; 'a registry with a mandatory authentication policy' on a card that verifies servers before registration and says nothing about authentication. Read the linked card's purpose before writing, and if the control you meant is a different card, link that one. Caught on T-DATA-LEAK (CTRL-ACCESS-CONTROL) and T-CRED-THEFT (CTRL-MCP-REGISTRY).
+  exception:
+    purpose: A rare, narrow carve-out where this specific mitigation doesn't apply to this specific threat, even though the threat itself stays live. Optional — most links won't need one.
+    content_requirements:
+    - One narrow, technical precondition specific to this threat-mitigation pairing.
+    - Phrased so it rarely triggers — a genuine architectural edge case, not a routine excuse to skip the control.
+    avoid:
+    - Restating or duplicating the threat's own reachability — that rules out the whole threat; this rules out only this one control's relevance.
+    - A broad or resourcing-driven condition ('if the team doesn't have time', 'if not prioritized') — that turns an exception into a loophole.
+    - Explaining how the mitigation works or why it generally applies — that's rationale's job; this field is only about when it stops applying.

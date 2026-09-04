@@ -1,139 +1,84 @@
 id: T-SOURCE-POISON
-title: Trusted-source integrity compromise (poisoning)
+title: A source the agent treats as authoritative was written by an untrusted hand
 harm: wrong-decision
-surface:
-- agent-environment
-- agent-agent
 source:
 - external-attacker
+- error
+- accident
 weaknesses:
 - component: knowledge-base
-  text: The RAG corpus is populated from a source with no provenance verification (open ingestion, SEO indexing, free-form text from a tool's output); a poisoned document is cited by the agent as authoritative.
+  surface:
+  - retrieved-content
+  text: The retrieval corpus is populated from a source with no provenance check - open ingestion, indexed web pages, a tool's free-text output - and a document from it is cited by the agent as authoritative.
   nature: targeted
 - component: memory
-  text: The shared memory of a multi-agent system is writable without verification; poisoned data persistently affects all subsequent decisions until removed manually.
+  surface:
+  - memory
+  text: The shared memory of a multi-agent system accepts writes without verification, so what one write put there shapes every later decision until someone removes it by hand.
   nature: targeted
 - component: tool
-  text: A tool/MCP server is connected via a dynamic registry or a third party without integrity and authenticity verification; a substituted tool or a compromised MCP returns false data, and its description may carry a hidden injection for the model.
+  surface:
+  - tool-output
+  text: A tool reached through a dynamic registry or a third party, with no integrity or authenticity check on the way, returns false data that the agent takes as fact.
   nature: targeted
 - component: tool
-  text: The agent is discovered/connected through a registry without authentication; a malicious or compromised peer agent supplies false results into the chain.
-  nature: targeted
-- component: tool
-  text: An in-process tool or agent shares the address space with the agent with no isolation boundary; compromise gives full access to its context and memory.
+  surface:
+  - agent-message
+  text: A peer agent reached through a registry without authentication supplies false results into the chain, and nothing distinguishes them from a trusted colleague's.
   nature: targeted
 - component: model
-  text: In a multi-agent chain, one node's tainted output is accepted by the next as trusted and amplified at each step (cascade).
+  surface:
+  - agent-message
+  text: In a multi-agent chain, one node's tainted output is accepted by the next as established fact and amplified at each step, so a single bad input becomes the chain's conclusion.
   nature: targeted
-reachability: NOT applicable if no source influencing the outputs is reachable for write or substitution by the adversary (corpus, memory, tool and agent registries closed to external write), or the agent relies on no external sources at all.
+reachability: Every source the agent reads was fixed before deployment and is written to by nothing at runtime - no ingestion, no shared memory, no peer results - or the agent reads no external source at all.
 mitigations:
-- id: CTRL-AGENT-AUTHENTICATION
-  strength: gating
-  rationale: Agent authentication at registration prevents substitution with malicious agents
-- id: CTRL-AGENT-ISOLATION
-  strength: gating
-  rationale: 'Isolating a compromised agent in a sandbox limits its impact on the system
-
-
-    Sandbox isolation limits the consequences of an in-process tool compromise by denying it access to the agent''s memory'
-- id: CTRL-AGENT-REGISTRY
-  strength: gating
-  rationale: A trusted agent registry with verification prevents registration of malicious agents
-- id: CTRL-CODE-SANDBOX
-  strength: gating
-  rationale: Isolating tool code in a sandbox limits the consequences of compromise
-- id: CTRL-CONTENT-STRIPPING
-  strength: soft
-  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
-- id: CTRL-CROSS-AGENT-REVIEW
-  strength: gating
-  rationale: 'Cross-checking results between agents reveals contradictions and errors
-
-
-    Validating each agent''s results prevents propagation of errors along the chain'
-- id: CTRL-DATA-EGRESS-MONITORING
-  strength: gating
-  rationale: 'Monitoring outbound data through the MCP server reveals exfiltration
-
-
-    Monitoring of outbound data through MCP'
 - id: CTRL-DATA-VALIDATION
   strength: gating
-  rationale: 'Validating data from tool output before indexing it into RAG prevents ingestion of malicious content
-
-
-    Validating documents before indexing them into RAG prevents ingestion of malicious content'
-- id: CTRL-EXTENSION-RIGHTS
-  strength: gating
-  rationale: Least privilege for extensions
-- id: CTRL-EXTENSION-SANDBOX
-  strength: gating
-  rationale: Isolation of extensions
-- id: CTRL-EXTENSION-UPDATE-CONTROL
-  strength: gating
-  rationale: Controlling IDE extension updates prevents automatic installation of malicious updates
-- id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  strength: gating
-  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
-- id: CTRL-IDE-EXTENSION-ALLOWLIST
-  strength: gating
-  rationale: Only approved extensions
-- id: CTRL-INTEGRITY-VERIFICATION
-  strength: gating
-  rationale: 'Integrity verification of libraries before loading them into the process
-
-
-    Integrity verification (hashes, signatures) of tools detects tampering'
-- id: CTRL-MCP-REGISTRY
-  strength: gating
-  rationale: 'A registry of vetted MCP servers prevents connecting to unvetted ones
-
-
-    A registry of vetted MCP servers'
-- id: CTRL-MEMORY-SANITIZATION
-  strength: gating
-  rationale: Sanitizing input data before storing it in memory prevents poisoning
-- id: CTRL-MEMORY-VERSIONING
-  strength: gating
-  rationale: Memory versioning allows rollback of changes when poisoning is detected
-- id: CTRL-PROMPT-HARDENING
-  strength: soft
-  rationale: Hardening the system prompt against injection
+  rationale: 'Closes the corpus weakness at ingestion: a document is validated against provenance and content rules before it is indexed, so what the agent later cites was checked on the way in rather than trusted for being there.'
 - id: CTRL-RAG-INTEGRITY
   strength: gating
-  rationale: 'Integrity control of the RAG knowledge base through hashing and document signatures
-
-
-    Integrity control of the RAG knowledge base through hashing and signatures of documents from tool output'
-- id: CTRL-TOOL-DESCRIPTION-AUDIT
+  rationale: 'Closes the corpus weakness after ingestion: embeddings and documents carry integrity anchors, so a document altered in the store is refused at retrieval rather than served.'
+- id: CTRL-MEMORY-SANITIZATION
   strength: gating
-  rationale: Auditing descriptions for instructions aimed at the model
+  rationale: 'Closes the shared-memory weakness at the write: content is filtered before it is stored, so a poisoned entry never reaches the state later decisions read from.'
+- id: CTRL-MEMORY-VERSIONING
+  strength: soft
+  rationale: 'Lets a poisoned memory be rolled back once found. It does not close the threat: it restores state afterwards, so the decisions taken in between were taken on the poisoned version.'
+- id: CTRL-AGENT-AUTHENTICATION
+  strength: gating
+  rationale: 'Closes the peer-agent weakness at the connection: an agent that cannot prove who it is does not get to supply results, so a stranger''s output never enters the chain as a colleague''s.'
+- id: CTRL-AGENT-REGISTRY
+  strength: gating
+  rationale: 'Closes the peer-agent weakness at registration: an agent is verified before it is listed, so the registry the chain trusts contains only what someone vouched for.'
+- id: CTRL-MCP-REGISTRY
+  strength: gating
+  rationale: 'Closes the substituted-tool weakness at registration: a tool server is vetted before it can be connected to, so a dynamic lookup resolves only to something already verified.'
 - id: CTRL-TOOL-REGISTRY-INTEGRITY
   strength: gating
-  rationale: An immutable binding in the tool registry precludes substitution during dynamic binding resolution
-- id: CTRL-TOOL-VERIFICATION
-  strength: gating
-  rationale: 'Verification of tools from the registry before first use
-
-
-    Verification of in-process libraries before loading detects malicious code
-
-
-    Integrity verification of MCP server responses
-
-
-    Verification of tools from the registry
-
-
-    Verification of MCP servers via digital signatures'
+  rationale: 'Closes the substituted-tool weakness at resolution: the binding from name to tool is immutable and integrity-checked, so a lookup cannot be redirected between registration and use.'
 - id: CTRL-TRANSPORT-AUTH
   strength: gating
-  rationale: 'mTLS or API-key authentication protects the agent-MCP channel
-
-
-    mTLS or API-key authentication of MCP connections'
-- id: CTRL-VERSION-PINNING
-  strength: gating
-  rationale: Pinning tool versions prevents an unexpected update to a malicious version
-references: []
-tags: []
+  rationale: 'Closes the substituted-tool weakness on the wire: the channel to the tool authenticates both ends, so a result cannot be replaced in transit by a party that is not the tool.'
+- id: CTRL-CROSS-AGENT-REVIEW
+  strength: soft
+  rationale: 'Has one agent check another''s output against the cascade weakness, which surfaces a contradiction before it propagates. It does not close the threat: it produces a signal, and it is model judgement checking model judgement.'
+references:
+- title: A Well-funded Moscow-based Global 'News' Network has Infected Western AI Tools Worldwide with Russian Propaganda
+  url: https://www.newsguardtech.com/special-reports/moscow-based-global-news-network-infected-western-artificial-intelligence-russian-propaganda/
+  note: 'The corpus weakness in the wild: NewsGuard''s audit of ten production chatbots found them repeating the Pravda network''s false narratives about a third of the time and citing its pages as sources - a network that publishes for crawlers and retrieval, not for readers. The rate was contested by independent testers afterwards, so this stands as a documented case, not a measurement.'
+- title: 'PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models'
+  url: https://arxiv.org/abs/2402.07867
+  note: 'Measures the corpus weakness: five injected texts per target question, into a corpus of millions, gave about 90% attacker-chosen answers across eight models. Paraphrase and perplexity-based detection were tested and found insufficient, which bounds how much validation at ingestion can carry on its own.'
+- title: Hacking Gemini's Memory with Prompt Injection and Delayed Tool Invocation
+  url: https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/
+  note: 'The memory weakness in a shipped product: an untrusted uploaded document made Gemini write attacker-chosen false facts to long-term memory, which then shaped later sessions. Google rated it low likelihood and low impact and shipped nothing beyond the existing memory indicator and review page - the roll-back-afterwards posture.'
+- title: 'MCP Security Notification: Tool Poisoning Attacks'
+  url: https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks
+  note: 'The substituted-tool weakness demonstrated: a server can change a tool''s definition after the client approved it, and shadow a trusted server''s tool, with no integrity check between registration and use - shown against Cursor, where the agent then sent every email to the attacker regardless of the recipient the user named.'
+positioning: LLM04 (Data and Model Poisoning) covers this record's corpus and memory paths and also poisoning of the model's weights through training data, which lands on a different component and is not modelled here. LLM08 (Vector and Embedding Weaknesses) overlaps the corpus path and adds retrieval-side leakage, which is the neighbouring disclosure record's question.
+tags:
+- poisoning
+- retrieval
+- memory
+- multi-agent

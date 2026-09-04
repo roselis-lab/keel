@@ -1,22 +1,39 @@
 id: T-SSRF
-title: SSRF via MCP/tools
+title: A tool with network egress connects to an address the model supplied, from inside the network
 harm: code-execution
-surface:
-- agent-environment
 source:
 - external-attacker
 - hallucination
 weaknesses:
 - component: tool
+  surface:
+  - model-output
   text: A tool with network egress accepts an address/URL from the model's arguments and initiates an outbound connection (HTTP, file://) from its own network position (internal vantage) rather than the user's; the address is supplied via injection or an erroneous model output.
   nature: targeted
-reachability: NOT applicable if the tool makes no outbound requests, addresses are hard-coded and model-independent, or internal segments, metadata (169.254.169.254), and localhost are unreachable from the tool's network position (strict egress isolation).
+reachability: The tool makes no outbound requests, or its addresses are hard-coded and model-independent, or internal segments, the metadata endpoint and localhost are unreachable from the tool's network position.
 mitigations:
-- id: CTRL-SSRF-PREVENTION
-  strength: gating
-  rationale: Validation and blocking of internal IP addresses and metadata endpoints
 - id: CTRL-URL-ALLOWLIST
   strength: gating
-  rationale: An allowlist of permitted domains prevents SSRF attacks against internal resources
-references: []
-tags: []
+  rationale: 'Closes the weakness from the destination side: an address not on the list is unreachable, so the internal vantage point buys the model nothing for any target it might be steered toward.'
+- id: CTRL-SSRF-PREVENTION
+  strength: gating
+  rationale: 'Closes the weakness for the targets that matter most: private ranges, the metadata endpoint and localhost are refused at egress, so a model-supplied address cannot land on them even where an allowlist is too coarse to have excluded them.'
+- id: CTRL-TOOL-CALL-VALIDATION
+  strength: gating
+  rationale: Constrains the address argument by schema - a URL format, a scheme allowlist, no file:// - and refuses the malformed and out-of-shape cases at the invocation layer. Which hosts are permissible is a separate question and belongs to the allowlist.
+references:
+- title: LangChain Server-Side Request Forgery vulnerability (CVE-2023-32786)
+  url: https://github.com/advisories/GHSA-6h8p-4hx9-w66c
+  note: 'The weakness as written: text injected into a query makes APIChain''s model emit a URL to a host of the attacker''s choosing and the chain fetches it - the address came from model output, not configuration. The fix added a mandatory domain allowlist on the chain, which is the CTRL-URL-ALLOWLIST shape.'
+- title: SSRFing the Web with the Help of Copilot Studio (CVE-2024-38206)
+  url: https://www.tenable.com/blog/ssrfing-the-web-with-the-help-of-copilot-studio
+  note: 'The internal-vantage half of the reachability line: a tool''s HTTP action issued requests from Azure-internal addresses and reached the metadata service, a managed-identity token, an internal Cosmos DB with master key, and the local subnet, in shared multi-tenant infrastructure. Also a failure mode for CTRL-SSRF-PREVENTION: a blocklist of loopback and metadata addresses existed and was bypassed with a redirect from an attacker''s server.'
+- title: Anthropic, Microsoft MCP Server Flaws Shine a Light on AI Security Risks
+  url: https://securityboulevard.com/2026/01/anthropic-microsoft-mcp-server-flaws-shine-a-light-on-ai-security-risks/
+  note: 'The component-is-a-tool framing: an MCP conversion tool takes a URI argument with no boundary on scheme or destination, so whoever can call the tool can point it at internal or file targets; the proof of concept on EC2 retrieved instance-metadata credentials. Microsoft shipped documentation, not a code fix.'
+- title: ChatGPT Exploited Through SSRF Flaw in Custom GPT Actions
+  url: https://www.esecurityplanet.com/artificial-intelligence/chatgpt-exploited-through-ssrf-flaw-in-custom-gpt-actions/
+  note: 'The same redirect-past-the-filter evasion as the Copilot Studio case, in a second vendor''s product and against a different filter shape: an HTTPS-only rule was bypassed with a redirect to the metadata address plus a smuggled header, yielding a management token from the provider''s own environment. Caveat: the URL was configured by the builder, not emitted by the model - a path to the same effect, not this record''s trigger.'
+tags:
+- egress
+- network

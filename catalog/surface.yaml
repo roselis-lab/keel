@@ -1,5 +1,12 @@
-# Trust boundaries — where untrusted influence crosses in. Where threats sit.
+# The channel through which content reaches a component and is treated as trustworthy.
+# Named on a weakness, never on a threat: a threat is a chain and crosses more than one
+# of these, so a list at the top could not say which weakness sits where. Component +
+# surface together name the place a control has to sit.
 surface:
-  user-agent:        {name: User ↔ Agent,        desc: "What the user sends the agent, and how the agent influences the user."}
-  agent-agent:       {name: Agent ↔ Agent,       desc: "Messages between agents; multi-agent coordination."}
-  agent-environment: {name: Agent ↔ Environment, desc: "Tool calls, external content, actions on the outside world."}
+  user-input:        {name: User input,        desc: "What a person typed or uploaded, in the turn or in the system prompt."}
+  retrieved-content: {name: Retrieved content, desc: "Documents, pages and records that search or a knowledge base pulled into context."}
+  tool-output:       {name: Tool output,       desc: "What a tool call or the environment returned, read back as if it were fact."}
+  agent-message:     {name: Agent message,     desc: "What another agent sent, in a hand-off or a shared plan."}
+  memory:            {name: Memory,            desc: "What an earlier turn wrote down and a later one reads back."}
+  training-data:     {name: Training data,     desc: "What went into the weights before deployment: pre-training, fine-tuning, preference data."}
+  model-output:      {name: Model output,      desc: "The egress side — a component downstream takes what the model produced as an instruction or an authority."}

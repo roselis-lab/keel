@@ -11,6 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Pin the interpreter
+        # CI ran on whatever Python uv happened to pick, so a schema pydantic
+        # generates from the signatures came out a different size than locally and
+        # failed a byte budget. Reproducible beats latest.
+        run: echo "3.14" > .python-version
+
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:

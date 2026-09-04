@@ -1,27 +1,103 @@
 id: T-SUPPLY-DEPS
-title: Installation of hallucinated packages
+title: A component the agent runs is not the one that was intended
 harm: code-execution
-surface:
-- agent-environment
 source:
+- external-attacker
 - hallucination
+- error
 weaknesses:
 - component: downstream
-  text: The agent generates a dependency-install command (npm/pip/go) based on a hallucinated name or a typo; the package does not exist or exists from a different publisher (typosquat/dependency-confusion), and code from an unverified source executes with full access to the environment.
+  surface:
+  - model-output
+  text: The agent generates a dependency-install command from a hallucinated or mistyped name; the package does not exist, or exists under a different publisher, and code from that source runs with the environment's full access.
   nature: targeted
-reachability: NOT applicable if the agent's output cannot lead to dependency installation — it generates no install commands, or there is no path from recommendation to execution.
+- component: tool
+  surface:
+  - tool-output
+  text: A tool reached through a dynamic registry or a third party is substituted, with no integrity or authenticity check between registration and use, and the substitute runs with the tool's access.
+  nature: targeted
+- component: tool
+  surface:
+  - agent-message
+  text: A peer agent registered without verification joins the chain and acts with an agent's standing and reach.
+  nature: targeted
+- component: tool
+  text: An extension or plugin the agent's runtime loads updates itself from a publisher channel, with nothing checking what changed between one version and the next.
+  nature: targeted
+- component: tool
+  text: Versions of tools, servers or models are resolved at runtime rather than pinned, so what ran yesterday is not necessarily what runs today, and no one chose the difference.
+  nature: targeted
+- component: tool
+  text: An in-process tool or extension shares the agent's address space with no isolation boundary, so a substituted component has the agent's full context, memory and credentials rather than its own slice.
+  nature: secondary
+reachability: 'The agent runs nothing it did not ship with: every tool, extension, package and model it uses is fixed before deployment and resolved from nowhere at runtime.'
 mitigations:
 - id: CTRL-INSTALL-COMMAND-BLOCK
   strength: gating
-  rationale: Blocking automatic install commands prevents the agent from executing generated installation commands without review
+  rationale: 'Closes the hallucinated-package weakness at the command: an install the model generated does not run until the package has been checked and a person has agreed, so a name that does not exist gets nowhere.'
 - id: CTRL-INTERNAL-REGISTRY
   strength: gating
-  rationale: An internal registry with an allowlist ensures that only vetted packages are used
+  rationale: 'Closes the hallucinated-package weakness at resolution: every package request goes through a proxy with an allowlist, so a name no one vetted resolves to nothing rather than to whoever registered it first.'
 - id: CTRL-PACKAGE-VALIDATION
   strength: gating
-  rationale: Checking for a package's existence in the registry before installation reveals typo-squatting attacks
+  rationale: 'Closes the hallucinated-package weakness at the boundary between recommendation and install: existence and reputation are checked and a nonexistent or lookalike package is refused.'
 - id: CTRL-SUPPLY-CHAIN-SCANNING
+  strength: soft
+  rationale: 'Flags a new or suspicious dependency on each change. It does not close the threat: it produces a signal, and the path stays open until something acts on that signal.'
+- id: CTRL-MCP-REGISTRY
   strength: gating
-  rationale: SCA scanning of dependencies reveals known vulnerabilities and malicious packages
-references: []
-tags: []
+  rationale: 'Closes the substituted-tool weakness at registration: a tool server is vetted before it can be connected to, so a dynamic lookup resolves only to something already verified.'
+- id: CTRL-TOOL-REGISTRY-INTEGRITY
+  strength: gating
+  rationale: 'Closes the substituted-tool weakness at resolution: the binding from name to tool is immutable and integrity-checked, so it cannot be redirected between registration and use.'
+- id: CTRL-TOOL-VERIFICATION
+  strength: gating
+  rationale: 'Closes the substituted-tool weakness at use: attestations - signature, hash, scan result - are checked before first use and again afterwards, so a tool that changed underneath its name is refused rather than run.'
+- id: CTRL-INTEGRITY-VERIFICATION
+  strength: gating
+  rationale: 'Closes the substitution and update weaknesses at load: a component whose signature or hash does not match what was recorded is not loaded, whichever route it arrived by.'
+- id: CTRL-AGENT-REGISTRY
+  strength: gating
+  rationale: 'Closes the peer-agent weakness at registration: an agent is verified before it is listed and on each launch, so what joins the chain is what someone vouched for.'
+- id: CTRL-AGENT-AUTHENTICATION
+  strength: gating
+  rationale: 'Closes the peer-agent weakness at the connection: an agent that cannot prove who it is does not get to act in the chain at all.'
+- id: CTRL-IDE-EXTENSION-ALLOWLIST
+  strength: gating
+  rationale: 'Closes the extension weakness at install: only extensions from an approved catalog or verified publisher can be installed, so the update channel that matters is one someone chose.'
+- id: CTRL-EXTENSION-UPDATE-CONTROL
+  strength: gating
+  rationale: 'Closes the extension weakness at update: versions are pinned, signatures checked and changes reviewed before an update applies, so the runtime does not silently start running something new.'
+- id: CTRL-VERSION-PINNING
+  strength: gating
+  rationale: 'Closes the drift weakness directly: versions are fixed, so runtime resolution has nothing to resolve and what runs is what was reviewed.'
+- id: CTRL-EXTENSION-SANDBOX
+  strength: gating
+  rationale: 'Closes the isolation weakness for extensions: a substituted extension runs in a restricted environment and reaches only what the sandbox grants, not the agent''s context and credentials.'
+- id: CTRL-CODE-SANDBOX
+  strength: gating
+  rationale: 'Closes the isolation weakness for tool code: a substituted tool runs with no host, network or secret access, so getting a bad component to run gains the attacker the sandbox and nothing beyond it.'
+- id: CTRL-AGENT-ISOLATION
+  strength: gating
+  rationale: 'Closes the isolation weakness for a peer agent: a compromised agent runs inside its own perimeter and cannot reach the memory or credentials of the one that called it.'
+- id: CTRL-EXTENSION-RIGHTS
+  strength: soft
+  rationale: 'Bounds what a substituted extension may do by declared capability. It does not close the threat: it narrows the blast radius of a component that already ran, and a capability it was granted is still its to misuse.'
+references:
+- title: 'Lasso Research: AI Package Hallucinations'
+  url: https://www.lasso.security/blog/ai-package-hallucinations
+  note: 'The hallucinated-package weakness as a recorded case: models repeatedly invented the package name huggingface-cli; a researcher registered an empty package under it and it drew over 30,000 genuine downloads in three months. Whoever registers the name first owns the code that runs.'
+- title: We Have a Package for You! A Comprehensive Analysis of Package Hallucinations by Code Generating LLMs
+  url: https://arxiv.org/abs/2406.10279
+  note: 'Measures the same weakness rather than asserting it: across sixteen code models and over half a million generated samples, at least 5.2% of packages recommended by commercial models and 21.7% by open-source models did not exist - a base rate, not an edge case (USENIX Security 2025).'
+- title: 'Security Alert: Malicious ''postmark-mcp'' npm Package Impersonating Postmark'
+  url: https://postmarkapp.com/blog/information-regarding-malicious-postmark-mcp-package
+  note: 'Vendor statement on a malicious tool server in the wild, and the clearest case for the drift weakness: an npm package impersonating Postmark''s MCP server was benign for fifteen versions - nothing pinned to a checked one - then version sixteen added a backdoor that BCC''d every outbound email to an external server. Postmark had never published an npm package at all, so the tool was never the intended one.'
+- title: Security Update for Amazon Q Developer Extension for Visual Studio Code (AWS-2025-015)
+  url: https://aws.amazon.com/security/security-bulletins/AWS-2025-015/
+  note: 'Vendor bulletin for the extension-update weakness: an inappropriately scoped GitHub token in the build configuration let an attacker commit code into the official extension, which shipped to the marketplace as version 1.84.0 and auto-updated into users'' editors. It failed to run only because of a syntax error. The bulletin does not describe what the code was meant to do.'
+positioning: 'LLM03 (Supply Chain) and ASI04 (Agentic Supply Chain) both include the provenance of training data and model weights, which lands on a different component and a different harm and is not this record. This record is the runtime half: what the agent loads and runs, whichever channel delivered it.'
+tags:
+- supply-chain
+- registry
+- extensions

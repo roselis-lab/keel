@@ -1,0 +1,39 @@
+/* Keel type — no webfonts. The product ships one static HTML file with no build
+   step, so it uses the host OS UI stack and the OS mono stack. That is deliberate:
+   Keel is a tool that sits next to a terminal and a diff view, not a brand surface. */
+:root {
+  --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", monospace;
+
+  /* size ramp — every value is one that appears in the product */
+  --fs-10: 10px;  /* facet group keys, badges, section eyebrows at their smallest */
+  --fs-11: 11px;  /* section labels (.slabel), ids in rows, chips */
+  --fs-12: 12px;  /* meta, hints, counts, secondary lines */
+  --fs-13: 13px;  /* dense body: buttons, cards, prose in cards */
+  --fs-14: 14px;  /* base body + form controls */
+  --fs-15: 15px;  /* rail product title */
+  --fs-19: 19px;  /* inline title input */
+  --fs-20: 20px;  /* detail H2 */
+  --fs-24: 24px;  /* coverage percentage */
+  --fs-28: 28px;  /* overview stat number */
+
+  --lh-tight: 1.35; /* @kind other */ /* row titles */
+  --lh-base: 1.55; /* @kind other */ /* body, inputs */
+  --lh-prose: 1.6; /* @kind other */ /* prose paragraphs */
+  --lh-legend: 1.7; /* @kind other */ /* overview legend prose */
+
+  --fw-regular: 400; /* @kind font */
+  --fw-medium: 500; /* @kind font */ /* row titles, chips */
+  --fw-semibold: 600; /* @kind font */ /* buttons, card titles */
+  --fw-bold: 700; /* @kind font */ /* section labels, numbers */
+
+  /* tracking — tight on large type, wide on uppercase eyebrows */
+  --ls-title: -.01em;
+  --ls-number: -.02em;
+  --ls-eyebrow: .08em;   /* h3.slabel */
+  --ls-key: .06em;       /* .fx-gk, .ov-leg-k */
+  --ls-meta: .05em;      /* li .meta */
+
+  /* every number in Keel is tabular: counts, percentages, diff gutters */
+  --numeric: tabular-nums; /* @kind other */
+}

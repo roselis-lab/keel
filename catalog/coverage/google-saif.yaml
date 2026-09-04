@@ -1,0 +1,136 @@
+source:
+  id: google-saif
+  title: Google Secure AI Framework - risk map
+  version: saif-data @ 2026-08-29
+  url: https://saif.google/secure-ai-framework/risks
+  checked: '2026-08-29'
+  entry_count: 15
+  note: 'The only source here that maps a risk to its controls and to the party accountable for them, which is Keel''s own angle arriving from somewhere else. It is also the only one published as machine-readable YAML, so drift against it is a diff rather than a reading exercise. `group` records SAIF''s persona: who owns the risk, the model creator or the model consumer.'
+entries:
+- ref: DP
+  title: Data Poisoning
+  group: Model creator
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Model-creator concern: it lands on the training pipeline and the weights, which the deploying party does not own; Keel models the system that runs the model, not the one that makes it.'
+- ref: UTD
+  title: Unauthorized Training Data
+  group: Model creator
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Model-creator concern: it lands on the training pipeline and the weights, which the deploying party does not own; Keel models the system that runs the model, not the one that makes it.'
+- ref: MST
+  title: Model Source Tampering
+  group: Model creator
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Model-creator concern: it lands on the training pipeline and the weights, which the deploying party does not own; Keel models the system that runs the model, not the one that makes it.'
+- ref: EDH
+  title: Excessive Data Handling
+  group: Model creator
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Model-creator concern: it lands on the training pipeline and the weights, which the deploying party does not own; Keel models the system that runs the model, not the one that makes it.'
+- ref: MXF
+  title: Model Exfiltration
+  group: Model creator, Model consumer
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-ACCESS-CONTROL
+  - CTRL-PRIVILEGE-CONTROL
+- ref: MDT
+  title: Model Deployment Tampering
+  group: Model creator, Model consumer
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-INTEGRITY-VERIFICATION
+  - CTRL-VERSION-PINNING
+- ref: DMS
+  title: Denial of ML Service
+  group: Model consumer
+  state: covered
+  threats:
+  - T-DOS
+  mitigations: []
+- ref: MRE
+  title: Model Reverse Engineering
+  group: Model consumer
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a threat with the model itself as the asset: an endpoint answering unbounded queries with full outputs lets the model be cloned; harm data-exposed, rate limiting attaches soft.'
+- ref: IIC
+  title: Insecure Integrated Component
+  group: Model consumer
+  state: covered
+  threats:
+  - T-CMD-INJECT
+  - T-SSRF
+  - T-SUPPLY-DEPS
+  mitigations: []
+- ref: PIJ
+  title: Prompt Injection
+  group: Model creator, Model consumer
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-TOOL-ABUSE
+  - T-CODEGEN
+  - T-CMD-INJECT
+  - T-SSRF
+  - T-TOXIC
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-PROMPT-HARDENING
+  - CTRL-CONTENT-STRIPPING
+  - CTRL-EXTERNAL-CONTENT-SANDBOX
+- ref: MEV
+  title: Model Evasion
+  group: Model creator, Model consumer
+  state: covered
+  threats:
+  - T-TOXIC
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-POLICY
+- ref: SDD
+  title: Sensitive Data Disclosure
+  group: Model creator, Model consumer
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-METADATA-LEAK
+  - T-CROSS-TENANT
+  mitigations: []
+- ref: ISD
+  title: Inferred Sensitive Data
+  group: Model creator, Model consumer
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a weakness where the sensitive fact is produced by the model''s own inference rather than read: no data in reach rules it out, so it is not T-DATA-LEAK; harm reputation-legal, with output validation and context filtering attaching at the reply boundary.'
+- ref: IMO
+  title: Insecure Model Output
+  group: Model consumer
+  state: covered
+  threats:
+  - T-CODEGEN
+  mitigations: []
+- ref: RA
+  title: Rogue Actions
+  group: Model consumer
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  mitigations: []

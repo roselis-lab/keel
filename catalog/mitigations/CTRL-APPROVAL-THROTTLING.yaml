@@ -1,12 +1,10 @@
 id: CTRL-APPROVAL-THROTTLING
 name: Throttling and batching of approval requests
-status: draft
 mitigation_class: gating_control
 purpose: Limits the rate of approval requests from the agent to the user and groups similar actions into batched requests, in order to reduce cognitive load and prevent automatic approval without consideration. The mechanism operates between the agent and the user interface, aggregating requests over a time interval and checking patterns against the rate-limiting policy. This prevents exploitation of approval fatigue, where an attacker or a compromised agent deliberately floods the user with requests to obtain automatic approval, and protects against impulsive decisions under the pressure of a stream of notifications.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Batched approval queue (medium): Approval requests are aggregated in queues and presented to the user in batches of several homogeneous operations. Instead of "confirm deletion of file A?", "confirm deletion of file B?", the user sees "confirm deletion of 5 files matching mask X?". This reduces the number of interruptions and lets the user assess the cumulative effect of the operations. Suitable for homogeneous actions with a similar level of risk.

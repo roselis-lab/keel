@@ -1,12 +1,10 @@
 id: CTRL-INTEGRITY-VERIFICATION
 name: Verifying Component Signatures/Hashes
-status: draft
-mitigation_class: detector
+mitigation_class: gating_control
 purpose: Verifies the integrity of components by checking cryptographic signatures and hash sums before loading or execution, ensuring detection of tampering and unauthorized modifications. The mechanism operates at the component acquisition and loading stage, verifying that the acquired artifact matches the expected hash or signature from a trusted source. This detects supply chain compromises, identifies man-in-the-middle tampering, and guarantees that the executed code matches the reviewed and approved version.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'SHA256 checksum verification (medium): For each downloaded component, the system verifies the SHA256 hash against the known-good value from a trusted source (package registry, internal artifact store, vendor signature). A hash mismatch blocks the download and generates an alert. This provides cryptographic verification of integrity but requires infrastructure for managing a hash database.

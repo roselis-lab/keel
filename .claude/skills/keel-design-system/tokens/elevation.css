@@ -1,0 +1,8 @@
+/* Elevation is almost absent: the UI is built from hairlines, not shadows.
+   Only floating layers cast one, and the focus ring is a crimson wash. */
+:root {
+  --shadow-toast: 0 8px 24px rgba(20, 30, 60, .2);
+  --shadow-dialog: 0 10px 30px rgba(20, 30, 60, .18);
+  --focus-ring: 0 0 0 3px var(--crimson-50);
+  --selected-rail-accent: inset 3px 0 0 var(--crimson-600);
+}

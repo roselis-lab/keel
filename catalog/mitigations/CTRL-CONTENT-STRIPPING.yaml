@@ -1,12 +1,10 @@
 id: CTRL-CONTENT-STRIPPING
 name: Removal of hidden instructions
-status: draft
 mitigation_class: process
 purpose: Removes hidden instructions, invisible content, and potentially malicious metadata from external content - HTML documents, files, API responses - before it is passed to the model, preventing indirect prompt injection through embedded commands. The mechanism works as a preprocessing layer at the data-ingestion boundary, parsing the input content with a syntactic parser and extracting only the visible semantic information without markup, comments, metadata, and other hidden elements. This blocks attacks where an attacker embeds instructions in HTML comments, zero-width characters, image metadata, or other hidden channels that the user does not see but the model processes.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'HTML sanitization and text extraction (low): HTML content is passed through a sanitization library with an allowlist of permitted tags and removal of all attributes except those explicitly safe. The HTML is then converted to plain text through text extraction, preserving the semantic structure but without markup. This eliminates XSS vectors and hidden instructions in HTML comments, data URIs, or event handlers, but it may lose formatting important for understanding the document.

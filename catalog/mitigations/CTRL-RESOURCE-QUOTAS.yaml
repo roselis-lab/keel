@@ -1,12 +1,10 @@
 id: CTRL-RESOURCE-QUOTAS
 name: CPU/Memory Quotas for Agents
-status: draft
 mitigation_class: gating_control
 purpose: Sets hard limits on CPU, memory, storage, and network bandwidth consumption by agents and tools, preventing resource exhaustion and ensuring predictable infrastructure costs. The mechanism operates at the container orchestration or runtime level and enforces limits through kernel or hypervisor mechanisms. This protects against runaway agents consuming unbounded resources, ensures fairness in multi-tenant environments, and prevents cost overruns from unexpected resource consumption.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Container resource limits (medium): Container-level resource limits via Docker/Kubernetes: CPU shares, memory limits, disk quotas. Limits are enforced at the kernel level — processes exceeding the limits are terminated or throttled. This provides deterministic resource bounds.

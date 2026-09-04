@@ -1,12 +1,10 @@
 id: CTRL-AGENT-REGISTRY
 name: Agent registry with signature verification
-status: draft
 mitigation_class: gating_control
 purpose: Centrally manages a registry of authorized agents with mandatory verification of cryptographic signatures and checksums before an agent is registered and on each launch. The mechanism operates at the deployment stage and during agent initialization, checking that the registered manifest matches the code actually being launched and blocking any unauthorized modifications or substitutions. This prevents injection of malicious agents into the system, substitution of legitimate agents with compromised versions, and execution of unsigned or unauthorized code under the guise of a trusted agent.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Signed agent manifests (high): All agent manifests are signed with the private key of the developer or the CI/CD pipeline, and the public keys are distributed through an internal PKI. On registration and on each agent launch, the system verifies the manifest signature and compares the hash of the executable code against the registered value. This provides end-to-end integrity and makes it possible to trace the provenance of each agent, but it requires a key management infrastructure and secure storage of the private signing keys.

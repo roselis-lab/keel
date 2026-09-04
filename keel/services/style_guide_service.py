@@ -11,12 +11,13 @@ from typing import Any
 
 import yaml as yaml_mod
 
-from keel.schemas.mitigation import MitigationCreate
+from keel.schemas.mitigation import Implementation, MitigationCreate
 from keel.schemas.style_guide import (
     CoverageReport,
     EntityCoverage,
     FieldCoverage,
     StyleGuideEntity,
+    StyleGuideEntityGuide,
     StyleGuideFieldRead,
     StyleGuideFull,
 )
@@ -27,13 +28,16 @@ from keel.store import get_store
 TRACKED_SLOTS = ("purpose", "content_requirements", "instructions", "avoid", "examples")
 # The minimum bar a field must have to count as authored (drives list_incomplete / the CI gate).
 REQUIRED_SLOTS = ("purpose", "content_requirements")
+# Slots on the record-level bar. A subset of the field slots by design: a record has
+# no `content_requirements` or `examples` of its own, those belong to its fields.
+ENTITY_SLOTS = ("purpose", "instructions", "avoid")
 # All authorable slots (persisted per field).
 SLOTS = (
     "purpose", "content_requirements", "instructions",
     "avoid", "examples", "subfields", "allowed_values",
 )
 # Entities the style guide tracks, in display order.
-ENTITY_ORDER = ("threat", "weakness", "mitigation_link", "mitigation")
+ENTITY_ORDER = ("threat", "weakness", "mitigation_link", "mitigation", "implementation")
 
 # Fields covered by a sub-entity's own bar, so they are not repeated on the parent.
 _SUBENTITY_FIELDS = {"weaknesses", "mitigations"}
@@ -49,7 +53,10 @@ def _canonical_fields(entity_type: str) -> list[str]:
     if entity_type == "mitigation_link":
         return [f for f in MitigationLink.model_fields if f != "id"]
     if entity_type == "mitigation":
-        return [f for f in MitigationCreate.model_fields if f != "id"]
+        # implementations has its own bar, so it is not repeated on the parent.
+        return [f for f in MitigationCreate.model_fields if f not in ("id", "implementations")]
+    if entity_type == "implementation":
+        return list(Implementation.model_fields)
     return []
 
 
@@ -66,12 +73,22 @@ def _read_field(
     )
 
 
+def _read_entity_guide(entity_type: str) -> StyleGuideEntityGuide | None:
+    """None rather than an empty object when nothing is authored, so a caller can tell
+    "this entity has no record-level bar" from "it has one and it is blank"."""
+    stored = get_store().style_guide_entity.get(entity_type) or {}
+    if not any(stored.get(slot) for slot in ENTITY_SLOTS):
+        return None
+    return StyleGuideEntityGuide(**{slot: stored.get(slot) for slot in ENTITY_SLOTS})
+
+
 def _entity(entity_type: str) -> StyleGuideEntity:
     canonical = _canonical_fields(entity_type)
     stored = get_store().style_guide.get(entity_type, {})
     names = list(dict.fromkeys([*canonical, *stored.keys()]))  # canonical first, then extras
     fields = {n: _read_field(entity_type, n, stored.get(n) or {}, canonical) for n in names}
-    return StyleGuideEntity(entity_type=entity_type, fields=fields)
+    return StyleGuideEntity(entity_type=entity_type,
+                            entity=_read_entity_guide(entity_type), fields=fields)
 
 
 def _entity_types() -> list[str]:
@@ -117,6 +134,24 @@ async def update_field(
                 slot[key] = patch[key]
         store.write_style(entity_type)
     return _read_field(entity_type, field_name, entity[field_name], canonical, updated_by)
+
+
+async def update_entity(
+    entity_type: str, patch: dict[str, Any], *, updated_by: str
+) -> StyleGuideEntityGuide | None:
+    """Writes the record-level bar. Unknown entity types are refused here rather than
+    quietly creating a file for a typo."""
+    store = get_store()
+    if entity_type not in _entity_types():
+        raise KeyError(f"unknown entity type {entity_type!r}")
+    unknown = sorted(set(patch) - set(ENTITY_SLOTS))
+    if unknown:
+        raise ValueError(f"unknown slot(s): {', '.join(unknown)}")
+    with store.lock:
+        stored = store.style_guide_entity.setdefault(entity_type, {})
+        stored.update(patch)
+        store.write_style(entity_type)
+    return _read_entity_guide(entity_type)
 
 
 def _completeness(field: StyleGuideFieldRead) -> int:

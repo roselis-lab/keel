@@ -1,0 +1,26 @@
+id: CTRL-ACTIVITY-ANOMALY-DETECTION
+name: Anomaly detection over agent activity
+mitigation_class: detector
+purpose: Surfaces agent behaviour that departs from its established pattern - an unusual rate of tool calls, a target never seen before, access to sensitive resources outside the normal sequence - so that a compromise or a runaway loop is noticed while it is still running rather than during the postmortem.
+formal_implementation_risk: null
+review: null
+maintainer: null
+locus: null
+scope: null
+out_of_scope: null
+control_mechanism: 'The signal is statistical over the recorded activity: call rate, target distribution, argument shape and sequence, compared against a baseline per agent and per tool. It measures what the audit trail already stores, so it adds no instrumentation of its own and inherits that trail''s completeness - which is also its limit, since an event that was never recorded cannot be found anomalous.
+
+
+  Signal quality is the whole question. A baseline drawn from too short a window flags every new legitimate workflow, and one drawn from a compromised period learns the attack as normal. The budget for false positives has to be set against who answers the alert and how fast.
+
+
+  This control does not gate. It raises a signal, and whatever acts on that signal is what closes anything - most often a human decision or a rate limit that the alert triggers. On its own it shortens the time to notice, not the time to stop.'
+failure_behavior: null
+telemetry: null
+anti_patterns: []
+validation: []
+faq: []
+positioning: null
+requires:
+- CTRL-AUDIT-LOGGING
+implementations: []

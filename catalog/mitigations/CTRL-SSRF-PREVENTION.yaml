@@ -1,12 +1,10 @@
 id: CTRL-SSRF-PREVENTION
 name: SSRF Prevention
-status: draft
 mitigation_class: gating_control
 purpose: Blocks requests to internal resources and private IP ranges through URL validation and IP address filtering, preventing server-side request forgery attacks via agent-initiated network requests. The mechanism operates at the network egress layer and checks the destination of every outbound request. This protects internal services from access via the agent, prevents exploitation of metadata endpoints, and blocks attempts to access the internal network through SSRF vectors.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'URL and IP validation (low): URL validation checks that the destination does not point to internal resources: localhost, 127.0.0.1, 10.x.x.x, 172.16.x.x, 192.168.x.x, link-local addresses. Requests to blocked destinations are rejected with an error.

@@ -1,0 +1,12 @@
+/* Corner radii. Nothing is fully rounded except pills and dots — Keel reads as
+   a document tool, so containers stay squarish. */
+:root {
+  --r-4: 4px;    /* hard badge */
+  --r-5: 5px;    /* diff sha chip */
+  --r-6: 6px;    /* icon-button hit area, ov-chip, commit row */
+  --r-8: 8px;    /* button, input, warn banner, diff wrapper */
+  --r-9: 9px;    /* rail search input */
+  --r-10: 10px;  /* card, section surface, toast, stat tile, detail icon */
+  --r-pill: 20px;/* facet chip, soft badge (10px on a 12px line reads as a pill) */
+  --r-round: 50%;/* status dots */
+}

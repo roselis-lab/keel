@@ -1,12 +1,10 @@
 id: CTRL-DLP
 name: Data Loss Prevention (DLP)
-status: draft
-mitigation_class: detector
+mitigation_class: gating_control
 purpose: Detects and blocks the transfer of sensitive data — personal data, credentials, confidential documents — through unauthorized channels or into untrusted contexts, preventing accidental or malicious data exfiltration. The mechanism is deployed as an inspection layer at data flow boundaries and analyzes the content being transmitted for patterns of sensitive information. This protects against accidental leaks through model output, detects attempts at malicious exfiltration, and ensures compliance with data handling requirements.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Pattern matching for sensitive data (medium): All outgoing data passes through a pattern-matching engine that searches for known formats of sensitive data: credit card numbers, SSNs, email addresses, API keys, passwords, internal document markers. Patterns are defined as regular expressions or data fingerprinting rules. When matching content is detected, the transfer is blocked or flagged. This gives high coverage on known patterns but may miss novel formats.

@@ -1,0 +1,77 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Data" subtitle="Counts, coverage, facets, gap chips, risk grades and the git diff" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>html,body{margin:0}body{background:var(--surface-app);font:var(--fs-14)/var(--lh-base) var(--font-sans);color:var(--text-strong);padding:18px 20px}a{color:var(--text-link)}a:hover{color:var(--text-link-hover)}.k{font-size:var(--fs-10);text-transform:uppercase;letter-spacing:var(--ls-key);color:var(--text-faint);font-weight:var(--fw-bold);margin:0 0 7px}.rowz{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.colz{display:flex;flex-direction:column;gap:14px}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { StatTile, CoverageBar, SplitBar, FacetPanel, GapChips, DiffView, RiskBadge, SectionBand } = window.KeelDesignSystem_7d5998;
+const PATCH = `@@ -14,6 +14,10 @@ weaknesses:
+   nature: targeted
+-reachability: NOT applicable if the tool is read-only.
++reachability: NOT applicable if the reachable tools have no operations with
++  real consequences (read-only, no side effects), or the model influences
++  neither the choice of tool nor its arguments.
+ mitigations:
+ - id: CTRL-TOOL-ALLOWLIST`;
+function Demo() {
+  const [open, setOpen] = React.useState(true);
+  const [sel, setSel] = React.useState({ harm: ["code-execution"], surface: [] });
+  const toggle = (k, v) => setSel(s => ({ ...s, [k]: (s[k]||[]).includes(v) ? s[k].filter(x=>x!==v) : [...(s[k]||[]), v] }));
+  const count = Object.values(sel).reduce((n, a) => n + a.length, 0);
+  return (
+    <div className="colz">
+      <div style={{display:"flex",gap:12}}>
+        <StatTile value={13} label="threats" />
+        <StatTile value={71} label="mitigations" />
+        <StatTile value={96} label="links" />
+        <StatTile value={2} label="systems assessed" />
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
+        <div style={{background:"var(--surface-panel)",border:"1px solid var(--line-panel)",borderRadius:"var(--r-10)",padding:"var(--pad-section)"}}>
+          <p className="k">Style-guide coverage</p>
+          <CoverageBar label="threat.weaknesses" percent={100} />
+          <CoverageBar label="threat.reachability" percent={62} />
+          <CoverageBar label="threat.references" percent={15} />
+          <CoverageBar label="threat.mitre_id" percent={0} orphan style={{borderBottom:"none"}} />
+        </div>
+        <div style={{background:"var(--surface-panel)",border:"1px solid var(--line-panel)",borderRadius:"var(--r-10)",padding:"var(--pad-section)"}}>
+          <p className="k">Mitigation status</p>
+          <SplitBar segments={[{tone:"verified",label:"verified",value:44},{tone:"draft",label:"draft",value:27}]} />
+          <p className="k" style={{marginTop:16}}>Implementations recorded</p>
+          <SplitBar segments={[{tone:"ok",label:"recorded",value:9},{tone:"unset",label:"empty",value:62}]} />
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:16,alignItems:"start"}}>
+        <div style={{background:"var(--surface-panel)",border:"1px solid var(--line-panel)",borderRadius:"var(--r-10)",overflow:"hidden"}}>
+          <FacetPanel open={open} onOpen={setOpen} activeCount={count} selected={sel}
+            onToggle={toggle} onClear={() => setSel({harm:[],surface:[]})}
+            groups={[
+              { key:"harm", label:"Harm", options:["wrong-decision","data-exposed","code-execution","downtime","reputation-legal"] },
+              { key:"surface", label:"Surface", options:["user-agent","agent-agent","agent-environment"] },
+            ]} />
+        </div>
+        <div>
+          <p className="k">Severity ramp · the spine carries the ranking</p>
+          {["critical","high","medium","low"].map(lv =>
+            <div key={lv} style={{display:"flex",alignItems:"center",gap:10,background:"var(--surface-panel)",
+              border:"1px solid var(--line-panel)",borderLeft:"4px solid var(--sev-"+lv+"-spine)",
+              borderRadius:"var(--r-10)",padding:"8px 12px",marginBottom:6}}>
+              <RiskBadge level={lv} prefix="severity" />
+              <span style={{fontFamily:"var(--font-mono)",fontSize:"var(--fs-12)",color:"var(--text-muted)"}}>T-TOOL-ABUSE</span>
+            </div>)}
+          <GapChips label="Threats with no mitigation" dashed={false} items={["T-DOS","T-TOXIC","T-METADATA-LEAK"]} style={{marginTop:0}} />
+        </div>
+      </div>
+      <DiffView file="catalog/threats/T-TOOL-ABUSE.yaml" patch={PATCH} />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body></html>

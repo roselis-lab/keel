@@ -1,28 +1,51 @@
 id: T-CMD-INJECT
-title: Command injection / RCE in tools
+title: A tool hands the model's arguments to an interpreter - by interpolation, or as the whole command
 harm: code-execution
-surface:
-- agent-environment
 source:
 - external-attacker
 - hallucination
 weaknesses:
 - component: tool
-  text: A tool builds an interpreter call (shell, SQL, config template) from model-supplied arguments and interpolates them without parameterization/escaping — the boundary between "parameter" and "command" collapses; the control payload reaches the argument via injection or an erroneous model output.
+  surface:
+  - model-output
+  text: A tool builds an interpreter call - shell, SQL, a config template - from model-supplied arguments and interpolates them without parameterization or escaping, so the boundary between parameter and command collapses. The payload arrives in the argument by injection or by the model's own error.
   nature: targeted
-reachability: NOT applicable if the model cannot influence the arguments (hard-coded), or the interpreter runs in an environment with no valuable access/privileges.
+- component: tool
+  surface:
+  - model-output
+  text: A tool exposes an interpreter directly - a shell, an eval - so the model's argument is the program, and it runs on the model's initiative with the tool's access.
+  nature: targeted
+reachability: The model cannot influence the arguments (hard-coded), or the interpreter runs in an environment with no valuable access/privileges.
 mitigations:
-- id: CTRL-INPUT-FILTERING
-  strength: soft
-  rationale: Injection is the vector for this threat; input filtering reduces the likelihood of embedded instructions (soft, best-effort).
 - id: CTRL-INPUT-PARAMETERIZATION
   strength: gating
-  rationale: 'Parameterized queries instead of string interpolation prevent SQL and command injection
-
-
-    Escaping and validation prevent injection of shell commands via user input'
+  rationale: 'Closes the weakness at its root: the call is formed through a parameterized interface, so what the model supplied is always data and never syntax, whatever it contains.'
+- id: CTRL-TOOL-CALL-VALIDATION
+  strength: gating
+  rationale: 'Closes the malformed-argument half: a schema declared per tool constrains type, format and range at the invocation layer, so an argument that could carry a second statement is refused before the tool sees it. A well-formed argument that is still wrong is parameterization''s job, which is why both are linked.'
+- id: CTRL-INPUT-FILTERING
+  strength: soft
+  rationale: 'Pattern-matches the model''s arguments and the content that shaped them for known injection shapes. It does not close the threat: it is a match over an open-ended space, and the interpolation is still there.'
 - id: CTRL-PROMPT-HARDENING
   strength: soft
-  rationale: Injection is the vector for this threat; structural prompt isolation makes overriding instructions harder (soft).
-references: []
-tags: []
+  rationale: 'Makes the model less inclined to carry read content into an argument. It does not close the threat: it leans on model behaviour, and the model''s own error needs no injection.'
+- id: CTRL-COMMAND-SANDBOX
+  strength: gating
+  rationale: 'Closes the direct-interpreter weakness: only allowlisted commands execute, so a shell tool cannot run a destructive utility or arbitrary code even when the model writes it.'
+references:
+- title: LangChain vulnerable to code injection (CVE-2023-29374)
+  url: https://github.com/advisories/GHSA-fprp-p869-w6q2
+  note: 'The direct-interpreter weakness: LLMMathChain passed the model''s output to Python exec(), so a prompt-injected ''math question'' was the program that ran.'
+- title: '@cyanheads/git-mcp-server vulnerable to command injection (CVE-2025-53107)'
+  url: https://github.com/advisories/GHSA-3q26-f695-pp76
+  note: 'The interpolation weakness: git tools built shell strings from model-supplied branch, path and file arguments through child_process.exec, so a value like $(id) executed. The advisory names indirect injection through commit messages the client reads as the delivery path.'
+- title: mcp-server-git argument injection in git_diff and git_checkout (CVE-2025-68144)
+  url: https://github.com/advisories/GHSA-9xwc-hfwc-8w59
+  note: 'The interpolation weakness with no shell metacharacters at all: the reference git server passed model-controlled arguments straight to the git CLI, so a flag-shaped value was read as an option. The shipped fix - reject a leading dash, verify the ref resolves - is argument validation, which is what CTRL-TOOL-CALL-VALIDATION describes.'
+- title: Command Injection in Claude Code echo command allowed bypass of user approval prompt (CVE-2025-54795)
+  url: https://github.com/anthropics/claude-code/security/advisories/GHSA-x56v-x2h6-7j34
+  note: 'The direct-interpreter weakness, and a command allowlist failing at it: the allowlist judged a parsed prefix, so a crafted echo escaped the quoting and ran arbitrary commands with no confirmation. Fixed in 1.0.20 by fixing the parser. Evidence for how CTRL-COMMAND-SANDBOX is implemented wrong, not only that it exists.'
+positioning: 'ASI05 (Unexpected Code Execution) spans two path shapes: the agent driving an interpreter through a tool, which is this record, and text the agent produced being run by something downstream, which is the code-generation record, because it is ruled out by what consumes the output rather than by what the tools can reach.'
+tags:
+- injection
+- interpreter

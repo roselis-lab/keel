@@ -1,8 +1,13 @@
 """Catalog validation.
 
 `catalog/*.yaml` is the source of truth (loaded into memory by `keel.store`). This
-module validates those files against the schemas before they are trusted: strict
-enums, id/filename agreement, unique ids, no unknown fields, and link integrity.
+module answers one question: may this catalog be trusted as it stands. It parses each
+file, checks what only a file can know (its id matches its name, ids are unique, no
+unknown fields, the vocabulary files agree with the Literals), and then hands the parsed
+records to the rule registry, which owns everything decided by looking across records.
+
+Errors only. Anything a half-authored entry may legitimately trip is advice and belongs
+in `catalog_warnings`, which never fails CI on its own.
 Run via `keel validate`; also used in CI.
 """
 from __future__ import annotations
@@ -14,18 +19,11 @@ from pydantic import ValidationError
 
 from keel.schemas.mitigation import MitigationCreate
 from keel.schemas.threat import Threat
-from keel.store import DEFAULT_CATALOG_DIR
+from keel.store import resolve_catalog_dir
 
-# Technique words that must never be a threat/weakness identity (they are mechanisms →
-# they belong in `source` / `references`). Kept LLM-specific so established threat names
-# like "command injection" are not flagged.
-_TECHNIQUE_WORDS = ("prompt injection", "jailbreak")
-
-_MITIGATION_KEYS = {
-    "id", "name", "status", "mitigation_class", "purpose", "formal_implementation_risk",
-    "review", "maintainer", "owner", "locus", "scope", "control_mechanism",
-    "failure_behavior", "telemetry", "anti_patterns", "validation", "faq",
-}
+# Derived, not retyped. The list lived here, in `store.MITIGATION_ORDER` and in the model
+# itself, so adding a field meant remembering three places and finding out on the third.
+_MITIGATION_KEYS = set(MitigationCreate.model_fields)
 
 
 def _fmt_err(e: ValidationError) -> str:
@@ -36,38 +34,12 @@ def _fmt_err(e: ValidationError) -> str:
     return "; ".join(parts)
 
 
-def lint_threat(threat: Threat) -> list[dict[str, str]]:
-    """Non-blocking advice for one threat (no gating control; a technique used as identity).
-    These are the 'amber' nudges the authoring UI shows; they never block a save. Each item
-    carries a `field` (dotted path, or "") so the UI can pin the note to the right input."""
-    out: list[dict[str, str]] = []
-    if threat.mitigations and not any(m.strength == "gating" for m in threat.mitigations):
-        out.append({
-            "field": "mitigations",
-            "msg": "no `gating` mitigation (all soft) — no architectural closure",
-        })
-    for tw in _TECHNIQUE_WORDS:
-        if tw in threat.title.lower():
-            out.append({
-                "field": "title",
-                "msg": f"technique {tw!r} used as the threat title — belongs in source/references",
-            })
-            continue
-        for i, w in enumerate(threat.weaknesses):
-            if tw in w.text.lower() and len(w.text) < 40:
-                out.append({
-                    "field": f"weaknesses.{i}.text",
-                    "msg": f"technique {tw!r} used as a weakness identity — belongs in source/references",
-                })
-                break
-    return out
-
-
-def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
+def validate_catalog(catalog_dir: Path | None = None) -> list[str]:
     """Validate catalog YAML. Checks each record against the Pydantic schema (types and
     strict enums), that a file's `id` matches its filename, that ids are unique, that no
     unknown fields slipped in, and that every threat->mitigation link resolves. Returns
     human-readable errors (empty list = valid)."""
+    catalog_dir = catalog_dir or resolve_catalog_dir()
     errors: list[str] = []
     if not catalog_dir.exists():
         return [f"catalog directory not found: {catalog_dir}"]
@@ -121,14 +93,26 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
         if threat is None:
             continue
 
-        # Link integrity: every mitigation id resolves to a real card.
-        for i, link in enumerate(threat.mitigations):
-            if link.id not in mit_ids:
-                errors.append(f"{rel}: mitigations[{i}] references unknown mitigation {link.id!r}")
 
-        # Non-blocking authoring advice (no gating control; a technique used as identity).
-        for item in lint_threat(threat):
-            errors.append(f"{rel}: {item['msg']}")
+
+    # The four vocabulary files are the human gloss for the Literals that enforce them.
+    # They must agree in both directions, or the gloss silently describes a schema that
+    # no longer exists.
+    from keel.vocabulary import vocabulary_errors
+
+    errors.extend(vocabulary_errors(catalog_dir))
+
+    from keel.services.coverage_service import coverage_errors
+
+    errors.extend(coverage_errors(catalog_dir))
+
+    # Everything decided by looking across records - a link to nothing, a card that does
+    # not say what it does, a coverage row naming something deleted - comes from the one
+    # rule registry, so `keel validate` and a write cannot disagree about what is wrong.
+    errors.extend(
+        f"{f['entity_type']}/{f['entity_id']}: {f['message']}"
+        for f in catalog_findings(catalog_dir) if f["severity"] == "error"
+    )
 
     sg_dir = catalog_dir / "style_guide"
     if sg_dir.is_dir():
@@ -139,3 +123,49 @@ def validate_catalog(catalog_dir: Path = DEFAULT_CATALOG_DIR) -> list[str]:
                 errors.append(f"{rel}: expected a mapping with a 'fields' mapping")
 
     return errors
+
+
+def _catalog_for(catalog_dir: Path | None = None):
+    """Load the records the rules run over. Rules are pure and never read the disk, so
+    the loading is done once here."""
+    from keel.rules import Catalog
+    from keel.services.coverage_service import load_sources
+    from keel.store import Store
+
+    catalog_dir = catalog_dir or resolve_catalog_dir()
+    store = Store(catalog_dir)
+    return Catalog.from_store(store, coverage=load_sources(catalog_dir))
+
+
+def catalog_findings(catalog_dir: Path | None = None) -> list[dict[str, str | None]]:
+    """Every rule, over every record. The sweep entry point; `keel validate` and the
+    dashboard both read this."""
+    from keel.rules import check_all
+
+    catalog_dir = catalog_dir or resolve_catalog_dir()
+    if not catalog_dir.exists():
+        return []
+    return [f.as_dict() for f in check_all(_catalog_for(catalog_dir))]
+
+
+def catalog_warnings_structured(catalog_dir: Path | None = None) -> list[dict[str, str | None]]:
+    """The advisory half of the sweep, in the shape the dashboard already renders.
+
+    `category` is the rule's code. Kept as a separate function because errors and advice
+    go to different places in the UI and fail CI differently."""
+    return [
+        {"category": f["code"], "entity_type": f.get("entity_type"),
+         "entity_id": f.get("entity_id"), "message": _sentence(f)}
+        for f in catalog_findings(catalog_dir) if f["severity"] == "advice"
+    ]
+
+
+def _sentence(finding: dict[str, str | None]) -> str:
+    """A finding as one line that stands on its own, for a terminal or a log."""
+    subject = finding.get("entity_id")
+    return f"{subject}: {finding['message']}" if subject else finding["message"]
+
+
+def catalog_warnings(catalog_dir: Path | None = None) -> list[str]:
+    """Advisory findings as sentences. Never fails CI on its own; `--strict` does."""
+    return [w["message"] for w in catalog_warnings_structured(catalog_dir)]

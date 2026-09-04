@@ -1,21 +1,19 @@
 id: CTRL-TOOL-CALL-VALIDATION
-name: Validation and Monitoring of Tool Calls
-status: draft
-mitigation_class: detector
-purpose: Validates and monitors tool calls before execution through argument schema validation, detection of anomalous patterns, and comprehensive logging, providing detective capability for incident investigation and preventive enforcement through schema checks. The mechanism operates at the tool invocation layer and checks every call against defined policies. This surfaces malformed or malicious tool calls, provides an audit of all tool usage, and detects anomalies indicative of compromise.
+name: Schema validation of tool call arguments
+mitigation_class: gating_control
+purpose: Stops a call that is malformed against the tool's own contract from reaching the tool. It catches the class of failure where the model produces arguments of the wrong shape, type or range - not a well-formed call that should not have been made.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
-control_mechanism: 'Schema validation (medium): JSON schema validation of arguments against the tool definition. Calls with invalid arguments are rejected. Schema enforcement provides a preventive control at the call boundary.
+control_mechanism: 'The enforcement point sits at the tool invocation layer, between the runtime and the tool. Every call is validated against the schema declared in the tool definition - types, required fields, enumerations, ranges, formats - and a call that fails is rejected rather than passed on with a warning.
 
 
-  Anomaly detection (high): Statistical analysis of calls to detect anomalies: unusual target domains, abnormal frequencies, suspicious patterns. Anomalies are flagged for investigation.
+  The guarantee is deterministic and its limit is exact: the schema decides shape, never intent. A call that is well formed and wrong passes, which is what makes this a floor under other controls rather than a substitute for them.
 
 
-  Comprehensive logging (low): All tool calls are logged with arguments, timestamp, user context, and result. Logs are used for incident investigation and compliance.'
+  Non-bypass rests on the tool being reachable only through the invocation layer. A tool that can also be called directly is outside this control''s guarantee.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -1,12 +1,10 @@
 id: CTRL-TOOL-REGISTRY-INTEGRITY
 name: Immutable Binding in the Tool Registry
-status: draft
 mitigation_class: gating_control
 purpose: Enforces immutability of entries in the tool registry through cryptographic integrity verification, signatures, or hash chains, preventing tampering with tool definitions after registration. The mechanism operates at the registry storage layer and verifies integrity on every tool retrieval. This guarantees that tools execute in the form in which they were registered, detects tampering attempts, and provides a chain of accountability for tool definitions.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Digital signatures (high): Each registry entry is signed with a private key at registration. Upon retrieval, the signature is verified against the stored public key. Invalid signatures reject loading of the tool.

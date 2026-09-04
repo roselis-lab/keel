@@ -1,0 +1,50 @@
+id: T-CROSS-TENANT
+title: One party's data surfaces in another's session through shared state
+harm: data-exposed
+source:
+- external-attacker
+- error
+- accident
+weaknesses:
+- component: memory
+  surface:
+  - memory
+  text: Session context or long-term memory is shared across users or tenants without partition, so what one party wrote is in the state the next party's request reads.
+  nature: targeted
+- component: tool
+  surface:
+  - tool-output
+  text: A tool connection is shared across tenants and carries state of its own - a cache, a cursor, a connection-level context - so one tenant's result comes back on another tenant's call.
+  nature: targeted
+reachability: The deployment serves a single tenant, or nothing the agent reads persists beyond the request that wrote it - there is no shared state for one party's data to be sitting in when another party's request arrives.
+mitigations:
+- id: CTRL-TENANT-ISOLATION
+  strength: gating
+  rationale: The weakness is state shared across tenants. Partitioning by tenant identifier at every data access layer makes another tenant's rows unreachable rather than merely unrequested.
+  exception: null
+- id: CTRL-SESSION-ISOLATION
+  strength: gating
+  rationale: 'Closes the same weakness one level down: context, cache and state partitioned per session, so a request cannot read what an earlier session of a different user left behind.'
+  exception: null
+- id: CTRL-MEMORY-ISOLATION
+  strength: gating
+  rationale: Where agents share a memory space, this partitions it per agent. It closes the weakness for the multi-agent case that session isolation does not reach.
+  exception: null
+references:
+- title: redis-py Race Condition vulnerability (GHSA-24wv-mv5m-xv4h / CVE-2023-28858)
+  url: https://github.com/advisories/GHSA-24wv-mv5m-xv4h
+  note: 'The shared-connection weakness as a disclosed CVE: a pooled async Redis connection left open after a cancelled command returned response data to the client of an unrelated request, off by one. The advisory names ChatGPT as an affected product.'
+- title: A bug revealed ChatGPT users' chat history, personal and billing data
+  url: https://www.helpnetsecurity.com/2023/03/27/chatgpt-data-leak/
+  note: 'The incident behind that CVE, with OpenAI''s postmortem: for about nine hours on 20 March 2023 users saw other users'' conversation titles, and some subscribers had name, billing address and card last-four shown to another user, because a shared cache layer answered one user''s request with another''s data. Also records what shipped: a check that cached data matches the requesting user. OpenAI''s own page refuses automated fetch, so cited through this report.'
+- title: Auditing Prompt Caching in Language Model APIs
+  url: https://arxiv.org/html/2502.07776
+  note: 'Measures the shared-connection weakness at provider scale: prompt caching detected at 8 of 17 API providers, 7 of them sharing the cache across all users, so a co-tenant learns another tenant''s prompt prefixes from time-to-first-token. After disclosure several providers moved to per-organization caches.'
+- title: 'I Know What You Asked: Prompt Leakage via KV-Cache Sharing in Multi-Tenant LLM Serving'
+  url: https://www.ndss-symposium.org/ndss-paper/i-know-what-you-asked-prompt-leakage-via-kv-cache-sharing-in-multi-tenant-llm-serving/
+  note: 'The same weakness one level down from the provider survey above: KV-cache prefix sharing in vLLM and SGLang lets a co-tenant reconstruct another''s prompt outright, not merely infer its prefix from timing - shared state inside the serving stack itself.'
+positioning: LLM02 groups this with every other disclosure. It is a record of its own because its rule-out is about the deployment's shape - one tenant, or no persistent state - and says nothing about whether the agent's audience may see what it reads, which is the neighbouring record's question.
+tags:
+- data
+- multi-tenant
+- memory

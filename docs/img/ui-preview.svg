@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="Keel's review-first UI: the three-pane threat editor, with the list on the left, the schema-built form in the middle and preview or guidance on the right">
+  <defs>
+    <clipPath id="kw"><rect x="6" y="6" width="948" height="548" rx="14"/></clipPath>
+  </defs>
+
+  <rect x="6" y="6" width="948" height="548" rx="14" fill="#ffffff" stroke="#c9d1dc"/>
+  <g clip-path="url(#kw)">
+    <rect x="236" y="52" width="476" height="502" fill="#f4f6fb"/>
+
+    <!-- top nav -->
+    <rect x="6" y="6" width="948" height="46" fill="#ffffff"/>
+    <line x1="6" y1="52" x2="954" y2="52" stroke="#dfe3ec"/>
+    <text x="28" y="37" fill="#17203a" font-size="18" font-weight="800" letter-spacing="-0.3">Keel</text>
+    <text x="404" y="35" fill="#6b7690" font-size="13">Overview</text>
+    <text x="486" y="35" fill="#d6294e" font-size="13" font-weight="700">Threats</text>
+    <rect x="486" y="44" width="50" height="3" rx="1.5" fill="#d6294e"/>
+    <text x="560" y="35" fill="#6b7690" font-size="13">Mitigations</text>
+    <text x="656" y="35" fill="#6b7690" font-size="13">Style guide</text>
+    <text x="748" y="35" fill="#6b7690" font-size="13">Coverage</text>
+    <text x="834" y="35" fill="#6b7690" font-size="13">Reports</text>
+
+    <!-- LEFT RAIL -->
+    <rect x="6" y="52" width="230" height="502" fill="#ffffff"/>
+    <line x1="236" y1="52" x2="236" y2="554" stroke="#dfe3ec"/>
+    <rect x="20" y="66" width="200" height="30" rx="8" fill="#f6f8fc" stroke="#dfe3ec"/>
+    <text x="34" y="86" fill="#97a0b5" font-size="12">Filter threats...</text>
+
+    <text x="24" y="124" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-SUPPLY-DEPS</text>
+    <text x="24" y="140" fill="#17203a" font-size="12">A component the agent runs is...</text>
+
+    <!-- active row -->
+    <rect x="6" y="154" width="230" height="48" fill="#fdeef1"/>
+    <rect x="6" y="154" width="3" height="48" fill="#d6294e"/>
+    <text x="24" y="173" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-TOOL-ABUSE</text>
+    <text x="24" y="190" fill="#17203a" font-size="12" font-weight="600">A tool the agent legitimately...</text>
+
+    <text x="24" y="228" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-TOXIC</text>
+    <text x="24" y="244" fill="#17203a" font-size="12">The organization's voice says...</text>
+    <text x="24" y="280" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-DATA-LEAK</text>
+    <text x="24" y="296" fill="#17203a" font-size="12">Data the agent may read reaches...</text>
+    <text x="24" y="332" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-SOURCE-POISON</text>
+    <text x="24" y="348" fill="#17203a" font-size="12">A source the agent treats as...</text>
+    <text x="24" y="384" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-HALLUCINATION</text>
+    <text x="24" y="400" fill="#17203a" font-size="12">The model is confidently wrong...</text>
+
+    <!-- EDITOR -->
+    <text x="260" y="82" fill="#38415f" font-size="11" font-weight="700" letter-spacing="0.6">TITLE</text>
+    <rect x="260" y="90" width="428" height="40" rx="8" fill="#ffffff" stroke="#d7dce8"/>
+    <text x="274" y="115" fill="#17203a" font-size="13.5" font-weight="600">A tool the agent legitimately holds changes state...</text>
+    <text x="260" y="150" fill="#97a0b5" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-TOOL-ABUSE</text>
+
+    <!-- HARM band -->
+    <text x="260" y="184" fill="#38415f" font-size="12" font-weight="700" letter-spacing="0.6">HARM</text>
+    <line x1="302" y1="180" x2="688" y2="180" stroke="#eef1f7"/>
+    <text x="260" y="202" fill="#97a0b5" font-size="11">the consequence class - one per threat</text>
+    <rect x="260" y="210" width="220" height="34" rx="8" fill="#ffffff" stroke="#d7dce8"/>
+    <text x="274" y="232" fill="#17203a" font-size="13">data-integrity</text>
+    <path d="M462,223 l6,6 l6,-6" fill="none" stroke="#97a0b5" stroke-width="1.5"/>
+
+    <!-- WEAKNESSES band -->
+    <text x="260" y="284" fill="#38415f" font-size="12" font-weight="700" letter-spacing="0.6">WEAKNESSES</text>
+    <line x1="352" y1="280" x2="688" y2="280" stroke="#eef1f7"/>
+
+    <!-- weakness card (expanded) -->
+    <rect x="260" y="292" width="428" height="176" rx="10" fill="#f6f8fc" stroke="#dfe3ec"/>
+    <text x="276" y="316" fill="#6b7690" font-size="11" font-weight="700">1</text>
+    <text x="666" y="316" fill="#97a0b5" font-size="13">x</text>
+
+    <text x="276" y="340" fill="#4a5570" font-size="11">component</text>
+    <rect x="276" y="346" width="150" height="28" rx="7" fill="#ffffff" stroke="#d7dce8"/>
+    <text x="288" y="364" fill="#17203a" font-size="12">tool</text>
+    <path d="M406,357 l5,5 l5,-5" fill="none" stroke="#97a0b5" stroke-width="1.4"/>
+
+    <text x="446" y="340" fill="#4a5570" font-size="11">nature</text>
+    <rect x="446" y="346" width="140" height="28" rx="7" fill="#ffffff" stroke="#d7dce8"/>
+    <text x="458" y="364" fill="#17203a" font-size="12">targeted</text>
+    <path d="M566,357 l5,5 l5,-5" fill="none" stroke="#97a0b5" stroke-width="1.4"/>
+
+    <text x="276" y="398" fill="#4a5570" font-size="11">surface - the channels it is reached through</text>
+    <rect x="276" y="406" width="16" height="16" rx="4" fill="#d6294e"/>
+    <path d="M279,414 l3,3 l6,-7" fill="none" stroke="#fff" stroke-width="1.6"/>
+    <text x="300" y="419" fill="#17203a" font-size="12">model-output</text>
+    <rect x="392" y="406" width="16" height="16" rx="4" fill="#fff" stroke="#c3cad9"/>
+    <text x="416" y="419" fill="#4a5570" font-size="12">tool-output</text>
+    <rect x="496" y="406" width="16" height="16" rx="4" fill="#fff" stroke="#c3cad9"/>
+    <text x="520" y="419" fill="#4a5570" font-size="12">retrieved-content</text>
+
+    <text x="276" y="446" fill="#4a5570" font-size="11">text</text>
+    <text x="276" y="462" fill="#232d4a" font-size="11.5">A reachable tool performs a consequential write and the call runs...</text>
+
+    <!-- collapsed weaknesses -->
+    <rect x="260" y="478" width="428" height="30" rx="8" fill="#f6f8fc" stroke="#dfe3ec"/>
+    <text x="276" y="497" fill="#6b7690" font-size="12">&gt;</text>
+    <text x="294" y="497" fill="#38415f" font-size="12">tool - arguments steered by content the model read</text>
+    <rect x="260" y="516" width="428" height="30" rx="8" fill="#f6f8fc" stroke="#dfe3ec"/>
+    <text x="276" y="535" fill="#6b7690" font-size="12">&gt;</text>
+    <text x="294" y="535" fill="#38415f" font-size="12">tool - confirmation not differentiated by risk (secondary)</text>
+
+    <!-- RIGHT RAIL -->
+    <rect x="712" y="52" width="242" height="502" fill="#ffffff"/>
+    <line x1="712" y1="52" x2="712" y2="554" stroke="#dfe3ec"/>
+    <rect x="728" y="68" width="120" height="28" rx="8" fill="#eef1f7"/>
+    <rect x="730" y="70" width="58" height="24" rx="7" fill="#ffffff" stroke="#d7dce8"/>
+    <text x="759" y="86" text-anchor="middle" fill="#17203a" font-size="11" font-weight="700">Preview</text>
+    <text x="818" y="86" text-anchor="middle" fill="#6b7690" font-size="11">Guidance</text>
+
+    <text x="728" y="128" fill="#17203a" font-size="12.5" font-weight="700">A tool the agent legitimately</text>
+    <text x="728" y="145" fill="#17203a" font-size="12.5" font-weight="700">holds changes or destroys state</text>
+
+    <text x="728" y="176" fill="#6b7690" font-size="11">Harm</text>
+    <rect x="762" y="165" width="90" height="16" rx="4" fill="#d6294e"/>
+    <text x="807" y="177" text-anchor="middle" fill="#fff" font-size="9.5" font-weight="700" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">data-integrity</text>
+
+    <text x="728" y="208" fill="#97a0b5" font-size="10" font-weight="700" letter-spacing="0.5">REACHABILITY</text>
+    <text x="728" y="226" fill="#38415f" font-size="11">The reachable tools have no</text>
+    <text x="728" y="241" fill="#38415f" font-size="11">operations with real consequences,</text>
+    <text x="728" y="256" fill="#38415f" font-size="11">or the model influences neither</text>
+    <text x="728" y="271" fill="#38415f" font-size="11">the tool nor its arguments.</text>
+
+    <text x="728" y="302" fill="#97a0b5" font-size="10" font-weight="700" letter-spacing="0.5">MITIGATIONS</text>
+    <text x="728" y="322" fill="#1f9d57" font-size="12" font-weight="700">gating 7</text>
+    <text x="800" y="322" fill="#6b7690" font-size="12">soft 12</text>
+
+    <rect x="728" y="346" width="210" height="1" fill="#eef1f7"/>
+    <text x="728" y="368" fill="#97a0b5" font-size="10" font-weight="700" letter-spacing="0.5">CHECKS</text>
+    <text x="728" y="387" fill="#1f9d57" font-size="11">ok  has a gating mitigation</text>
+    <text x="728" y="404" fill="#1f9d57" font-size="11">ok  5 references</text>
+    <text x="728" y="421" fill="#e0a021" font-size="11">!   CTRL-AUDIT-LOGGING has no</text>
+    <text x="742" y="436" fill="#e0a021" font-size="11">acceptance criteria yet</text>
+  </g>
+</svg>

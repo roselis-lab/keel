@@ -1,12 +1,10 @@
 id: CTRL-EXTENSION-RIGHTS
 name: Restricting IDE Extension Privileges
-status: draft
 mitigation_class: gating_control
 purpose: Limits the privileges of IDE extensions to the minimally necessary set of permissions through explicit declaration of capabilities in the manifest, mandatory approval for extension-contributed tools, and monitoring of anomalies in extension behavior. The mechanism operates at the level of the extension sandbox and the IDE permissions system, checking each request for resource access against declared and approved permissions. This prevents privilege escalation through malicious extensions, limits the blast radius of a compromised extension, and enforces the principle of least privilege even for trusted extensions.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Capability-based permissions (low): Each extension must explicitly declare all required permissions in the manifest: filesystem access paths, network domains, IDE APIs, external tool integrations. Runtime enforcement checks each access request against declared permissions and blocks undeclared access. This gives an explicit surface area for security review but requires accurate manifest declarations.

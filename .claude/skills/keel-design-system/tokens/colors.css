@@ -1,0 +1,50 @@
+/* Keel palette — lifted verbatim from keel/keel/static/index.html :root.
+   Two hues carry the whole product: navy (structure, text, chrome) and crimson
+   (the single accent — selection, primary action, focus, danger). Amber and green
+   are semantic only (advice / verified). */
+:root {
+  /* --- navy ramp: text, chrome, structure --- */
+  --navy-900: #17203a;
+  --navy-800: #232d4a;
+  --navy-700: #38415f;
+  --navy-600: #4a5570;
+  --navy-500: #6b7690;
+  --navy-400: #97a0b5;
+  --navy-200: #d7dce8;
+  --navy-100: #eef1f7;
+
+  /* --- crimson ramp: the only accent --- */
+  --crimson-700: #b81f42;
+  --crimson-600: #d6294e;
+  --crimson-200: #f6c9d3;
+  --crimson-50:  #fdeef1;
+
+  /* --- semantic hues (status only, never decoration) --- */
+  --amber: #e0a021;
+  --amber-50: #fdf3e0;
+  --amber-700: #8f6410;  /* text-only step — #e0a021 on --amber-50 fails contrast */
+  --green: #1f9d57;
+  --green-50: #eaf4ee;
+  --green-200: #bfe3cd;
+
+  /* --- surfaces --- */
+  --bg: #f4f6fb;      /* app background behind every pane */
+  --panel: #ffffff;   /* rails, preview, cards on tint */
+  --tint: #f6f8fc;    /* section surfaces, gutters, inert tab strip */
+  --white: #ffffff;
+
+  /* --- hairlines: border on panel edges, border2 inside a panel --- */
+  --border: #dfe3ec;
+  --border2: #eef1f7;
+
+  /* --- unified-diff channels (GitHub-native look) --- */
+  --diff-add-bg: #e6ffec;
+  --diff-add-gutter: #cdffd8;
+  --diff-add-gutter-fg: #2b7d47;
+  --diff-add-fg: #17683a;
+  --diff-del-bg: #ffeef0;
+  --diff-del-gutter: #ffdce0;
+  --diff-del-gutter-fg: #b0374f;
+  --diff-del-fg: #9e1c3a;
+  --diff-hunk-bg: #eef1f7;
+}

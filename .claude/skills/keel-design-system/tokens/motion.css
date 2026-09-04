@@ -1,0 +1,8 @@
+/* Motion is functional and short. No easing curves are declared in the product —
+   the browser default is used — and nothing moves that the user did not click. */
+:root {
+  --dur-hover: .12s; /* @kind other */ /* background / border-color on hover */
+  --dur-layer: .2s; /* @kind other */ /* toast opacity + 8px rise */
+  --ease: ease; /* @kind other */ /* product default; no custom curves */
+  --toast-rise: 8px; /* @kind spacing */
+}

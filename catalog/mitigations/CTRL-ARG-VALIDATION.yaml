@@ -1,12 +1,10 @@
 id: CTRL-ARG-VALIDATION
 name: Strict validation of ToolCall arguments
-status: draft
 mitigation_class: gating_control
 purpose: Validates ToolCall arguments against a strict JSON schema before they are passed to the tool, ensuring conformance of types, required fields, permissible value ranges, and formats at the boundary between the agent and execution. The mechanism is deployed in a middleware or instrumentation layer, intercepting tool calls and validating each parameter before it reaches the runtime. This prevents injection through parameters, passing of malicious instructions in arguments, exploitation of edge cases in tool logic, and manipulation through incorrect data types or structures.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'JSON Schema validation (low): For each tool a JSON Schema is defined with types, required fields, enum values, min/max constraints, and pattern regular expressions for string fields. Before a tool is called, arguments are validated against the schema with the generation of informative errors on mismatch. This gives deterministic checking and a standardized contract, but it requires maintaining and versioning schemas as tool APIs change.

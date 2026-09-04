@@ -1,12 +1,10 @@
 id: CTRL-SUPPLY-CHAIN-SCANNING
 name: Supply Chain Scanning and SCA
-status: draft
 mitigation_class: detector
 purpose: Performs SCA scanning of dependencies on every PR with detection of new packages, alerts on nonexistent or suspicious packages and typosquatting variants, providing continuous monitoring of supply chain risks. The mechanism operates at the CI/CD pipeline layer and integrates with dependency management. This surfaces known vulnerabilities in dependencies, detects malicious packages masquerading as legitimate ones, and provides visibility into the security posture of the supply chain.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Vulnerability scanning (medium): Automated scanning of dependencies for known vulnerabilities via CVE databases and security advisories. Tools: Snyk, Dependabot, OWASP Dependency-Check. Findings block the merge or generate warnings.

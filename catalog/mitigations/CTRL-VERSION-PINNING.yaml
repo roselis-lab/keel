@@ -1,12 +1,10 @@
 id: CTRL-VERSION-PINNING
 name: Pinned Versions of Tools and Models
-status: draft
 mitigation_class: gating_control
 purpose: The control pins the specific versions of tools, MCP servers, and models that the agent uses in its operation. Instead of dynamically resolving the latest versions, the system binds each component to an exact version by semantic versioning, commit hash, or attestation identifier. At agent initialization, the system loads only the specified versions of components and rejects attempts to use other versions, including newer ones. This prevents automatic updating to a malicious or unstable version if an attacker has compromised the upstream repository, and also protects against supply-chain attacks where a malicious version is published under the same identifier.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Manifest-based pinning (medium): The agent configuration contains a manifest with exact versions of all dependencies: tool@1.2.3, mcp-server@abc123def, model@claude-3-opus-20240229. A mismatch blocks loading. The manifest is cryptographically signed to protect against tampering.

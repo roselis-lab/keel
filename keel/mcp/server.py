@@ -7,6 +7,7 @@ Two transports via one code path:
 import asyncio
 import json
 import sys
+from pathlib import Path
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -16,6 +17,7 @@ import mcp.types as types
 from mcp.server.lowlevel import Server
 
 from keel.config import settings
+from keel.lib.style_guide import SERVER_INSTRUCTIONS
 from keel.mcp.registry import get_tool_list
 from keel.mcp.tools import dispatch_tool
 
@@ -55,6 +57,9 @@ async def handle_call_tool(ctx, params) -> types.CallToolResult:
 server = Server(
     settings.mcp_server_name,
     version=settings.mcp_server_version,
+    # Said once here rather than repeated on every write tool, where five copies of the
+    # same paragraph were 11% of the tool list and were paid for in every conversation.
+    instructions=SERVER_INSTRUCTIONS,
     lifespan=server_lifespan,
     on_list_tools=handle_list_tools,
     on_call_tool=handle_call_tool,
@@ -97,8 +102,9 @@ def run_http() -> None:
 
 
 def main():
-    """Entry point. `validate` checks the catalog YAML; `--http` selects Streamable
-    HTTP; no args runs the stdio MCP server."""
+    """Entry point. `validate` checks the catalog YAML, `schema` regenerates the JSON
+    Schema files, `style-guide export|import` moves the whole guide in bulk, `--http`
+    selects Streamable HTTP, and no args runs the stdio MCP server."""
     args = sys.argv[1:]
     if args and args[0] == "schema":
         from keel.schema_export import DEFAULT_SCHEMA_DIR, schemas_are_fresh, write_schemas
@@ -113,15 +119,55 @@ def main():
             write_schemas()
             print(f"Wrote JSON Schema to {DEFAULT_SCHEMA_DIR}", file=sys.stderr)
         return
-    if args and args[0] == "validate":
-        from keel.catalog import validate_catalog
+    if args and args[0] == "style-guide":
+        # Bulk YAML in and out is a migration, not authoring, and it used to be two MCP
+        # tools. A model authoring a card never needs to move the whole guide at once,
+        # and `import --replace` clears every entity it touches — not something to leave
+        # sitting in a tool list where a host may auto-approve it.
+        import asyncio as _asyncio
 
+        from keel.services import style_guide_service as sg
+
+        sub = args[1] if len(args) > 1 else ""
+        if sub == "export":
+            print(_asyncio.run(sg.export_yaml()))
+            return
+        if sub == "import":
+            path = args[2] if len(args) > 2 else ""
+            if not path:
+                print("usage: keel style-guide import <file.yaml> [--replace]", file=sys.stderr)
+                raise SystemExit(2)
+            mode = "replace" if "--replace" in args else "merge"
+            text = Path(path).read_text(encoding="utf-8")
+            result = _asyncio.run(sg.import_yaml(text, mode=mode, updated_by="cli:import"))
+            print(f"Imported ({mode}): {result}", file=sys.stderr)
+            return
+        print("usage: keel style-guide export | import <file.yaml> [--replace]", file=sys.stderr)
+        raise SystemExit(2)
+
+    if args and args[0] == "validate":
+        from keel.catalog import catalog_warnings, validate_catalog
+
+        strict = "--strict" in args
         errs = validate_catalog()
+        warns = catalog_warnings()
+
+        # Advisory tier: printed to stderr, but never fails CI on its own (only --strict does).
+        if warns:
+            print(f"Warnings ({len(warns)}):", file=sys.stderr)
+            for w in warns:
+                print(f"  ! {w}", file=sys.stderr)
+
         if errs:
             print(f"Catalog invalid ({len(errs)} problem(s)):", file=sys.stderr)
             for e in errs:
                 print(f"  - {e}", file=sys.stderr)
             raise SystemExit(1)
+
+        if warns and strict:
+            print(f"--strict: {len(warns)} warning(s) treated as errors.", file=sys.stderr)
+            raise SystemExit(1)
+
         print("Catalog is valid.", file=sys.stderr)
     elif "--http" in args:
         run_http()

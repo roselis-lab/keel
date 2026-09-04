@@ -1,12 +1,10 @@
 id: CTRL-GOAL-VALIDATION
 name: Validating Goal Alignment with Business Objectives
-status: draft
 mitigation_class: detector
 purpose: Validates the agent's goals and planned actions for alignment with organizational business objectives, policies, and constraints at each execution stage, preventing goal hijacking and the execution of actions contrary to the intended agent purpose. The mechanism operates as a validation checkpoint in the agent's planning and execution loop, evaluating proposed goals and actions against defined boundaries. This detects attempts to rewrite the agent's objective function, identifies drift from the intended purpose, and blocks the execution of actions outside the legitimate scope.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Goal taxonomy validation (medium): A formal taxonomy of permissible agent goals is defined with a mapping to organizational objectives. Before execution begins and at each step, the agent''s current goal is checked for membership in the allowed goal taxonomy. Goals outside the taxonomy are rejected. This gives a strict boundary but requires upfront formalization of all legitimate goals.

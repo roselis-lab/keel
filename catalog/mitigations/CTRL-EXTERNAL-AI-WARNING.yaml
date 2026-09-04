@@ -1,12 +1,10 @@
 id: CTRL-EXTERNAL-AI-WARNING
 name: External AI Risk Warning
-status: draft
 mitigation_class: detector
 purpose: Informs users of the risks of transmitting data to external AI services through explicit UI notifications that include the name of the recipient service, the categories of data being sent, and the implications for privacy and compliance, ensuring informed consent before using external AI capabilities. The mechanism activates on any data flow to an external AI service and displays a notice through a persistent UI element or acknowledgment dialog. This ensures transparency of data practices, supports compliance with privacy regulations, and enables users to make informed decisions about using external AI.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'Persistent UI banner for external AI (low): A persistent UI banner or indicator that is visible while an external AI service is actively in use. The banner includes the service name, a brief description of the data being transmitted, and a link to a detailed privacy notice. This ensures persistent awareness without blocking the workflow but may be ignored due to banner blindness.

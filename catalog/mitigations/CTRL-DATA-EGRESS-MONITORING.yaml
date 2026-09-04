@@ -1,12 +1,10 @@
 id: CTRL-DATA-EGRESS-MONITORING
 name: Outbound data monitoring
-status: draft
 mitigation_class: detector
 purpose: Monitors all of the system's outbound traffic - API calls, file uploads, network connections, clipboard operations - for unauthorized transfer of sensitive data beyond the trusted perimeter, ensuring detection of data exfiltration and policy violations. The mechanism is deployed as an inspection layer at all outbound traffic points and analyzes the content of outgoing data by applying DLP rules, anomaly detection, and threat feeds. This detects active exfiltration during compromise, surfaces shadow data flows, and identifies policy violations through unauthorized data transfer channels.
 formal_implementation_risk: null
 review: null
 maintainer: null
-owner: null
 locus: null
 scope: null
 control_mechanism: 'DLP scanning of outbound traffic (high): All outbound traffic is passed through a DLP scanner that checks the content for personal data, credentials, and confidential documents via pattern matching and ML classifiers. When a transfer of sensitive data is detected, it is blocked or flagged for review with an alert to the security team. This gives content-aware protection, but it adds latency to all outbound communications.

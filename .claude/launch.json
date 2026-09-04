@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "keel-web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "keel.main:app", "--port", "8420", "--reload"],
+      "port": 8420
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+/* The app is one CSS grid: rail | editor | preview, full viewport height.
+   Both side tracks are user-driven — the rail collapses to a strip, the preview
+   is drag-resized and goes to 0 on screens that do not earn it. */
+:root {
+  --rail-w: 320px;
+  --rail-w-collapsed: 44px;
+  --preview-w: 360px;
+  --resizer-w: 9px;
+  --app-h: 100vh;
+}

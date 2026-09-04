@@ -1,0 +1,22 @@
+/* One spacing scale, multiples of 4. Plus three named rhythm tokens the editor
+   depends on so a read view and its edit form keep the same vertical music. */
+:root {
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  --field-gap: 24px;    /* between two fields in a form section */
+  --section-gap: 44px;  /* before a detached band (gaps bar) */
+  --input-h: 38px;      /* min-height of every single-line control */
+
+  /* container paddings that recur verbatim */
+  --pad-rail-row: 10px 15px;
+  --pad-card: 13px 15px;
+  --pad-section: 12px 14px;
+  --pad-main: 30px 40px;
+}

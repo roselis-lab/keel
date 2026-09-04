@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 190" width="960" height="190" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="How an assessment runs: your system, candidate threats, the reachability filter, mitigations and whether they are in place here, risk, and the two-part assessment">
+  <defs>
+    <marker id="af-arw" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L6.5,3 L0,6" fill="none" stroke="#7d8590" stroke-width="1.6"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="24" fill="#7d8590" font-size="12" font-weight="700" letter-spacing="1.5">RUNNING AN ASSESSMENT</text>
+
+  <rect x="20" y="44" width="136" height="76" rx="12" fill="#eef1f7" stroke="#c9d1dc"/>
+  <text x="88" y="78" text-anchor="middle" fill="#1f2937" font-size="14" font-weight="700">Your system</text>
+  <text x="88" y="97" text-anchor="middle" fill="#5b6675" font-size="11">the architecture</text>
+
+  <rect x="176" y="44" width="136" height="76" rx="12" fill="#3f4a63"/>
+  <text x="244" y="78" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Candidates</text>
+  <text x="244" y="97" text-anchor="middle" fill="#c8cfdd" font-size="11">match weaknesses</text>
+
+  <rect x="332" y="44" width="136" height="76" rx="12" fill="#fff8e8" stroke="#e0a021" stroke-dasharray="5 4"/>
+  <text x="400" y="78" text-anchor="middle" fill="#8a6212" font-size="14" font-weight="700">Reachability</text>
+  <text x="400" y="97" text-anchor="middle" fill="#8a6212" font-size="11">live here?</text>
+
+  <rect x="488" y="44" width="136" height="76" rx="12" fill="#e7f4ec" stroke="#b3dcc4"/>
+  <text x="556" y="78" text-anchor="middle" fill="#186c40" font-size="14" font-weight="700">Mitigations</text>
+  <text x="556" y="97" text-anchor="middle" fill="#3d7256" font-size="11">in place here?</text>
+
+  <rect x="644" y="44" width="136" height="76" rx="12" fill="#fdeef1" stroke="#f2bfcb"/>
+  <text x="712" y="78" text-anchor="middle" fill="#a81d3e" font-size="14" font-weight="700">Risk</text>
+  <text x="712" y="97" text-anchor="middle" fill="#a3536b" font-size="11">likelihood, severity</text>
+
+  <rect x="800" y="40" width="140" height="84" rx="12" fill="#d6294e"/>
+  <text x="870" y="76" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">Report</text>
+  <text x="870" y="95" text-anchor="middle" fill="#f8d3db" font-size="11">trail + findings</text>
+
+  <line x1="156" y1="82" x2="174" y2="82" stroke="#7d8590" stroke-width="1.6" marker-end="url(#af-arw)"/>
+  <line x1="312" y1="82" x2="330" y2="82" stroke="#7d8590" stroke-width="1.6" marker-end="url(#af-arw)"/>
+  <line x1="468" y1="82" x2="486" y2="82" stroke="#7d8590" stroke-width="1.6" marker-end="url(#af-arw)"/>
+  <line x1="624" y1="82" x2="642" y2="82" stroke="#7d8590" stroke-width="1.6" marker-end="url(#af-arw)"/>
+  <line x1="780" y1="82" x2="798" y2="82" stroke="#7d8590" stroke-width="1.6" marker-end="url(#af-arw)"/>
+
+  <text x="20" y="158" fill="#5b6675" font-size="11.5">The gate is symmetric: missing a fact means ask. Dropping a threat because a fact was absent is the same mistake as confirming one on a guess.</text>
+  <text x="20" y="178" fill="#7d8590" font-size="11.5">Every finding is marked as from the catalog or not, so the ones the catalog did not have are countable rather than absorbed.</text>
+</svg>
