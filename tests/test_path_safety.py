@@ -120,9 +120,18 @@ def test_the_guard_holds_with_the_pattern_disabled(store, monkeypatch):
     import keel.store as st
 
     monkeypatch.setattr(st, "is_safe_stem", lambda stem: None)
-    for bad in ("../../pwned", "T/../../pwned", "/etc/passwd", r"..\..\pwned"):
-        with pytest.raises((ValueError, OSError)):
-            store._path("threats", bad)
+    directory = (store.dir / "threats").resolve()
+    for bad in ("../../pwned", "T/../../pwned", "/etc/passwd", r"..\..\pwned",
+                "sub/dir/pwned", "."):
+        # The property, not the shape of the answer. Refusing is one correct outcome;
+        # so is returning a path that stays put. `..\..\pwned` is a traversal on
+        # Windows and an ordinary file name on POSIX, where a backslash is just a
+        # character - asserting that it raises made a correct POSIX result a failure.
+        try:
+            path = store._path("threats", bad)
+        except (ValueError, OSError):
+            continue
+        assert path.parent == directory, f"{bad!r} escaped to {path.parent}"
 
 
 def test_the_report_guard_holds_with_its_patterns_disabled(tmp_path, monkeypatch):

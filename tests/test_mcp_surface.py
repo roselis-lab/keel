@@ -107,10 +107,19 @@ def test_write_tools_name_their_style_guide_entity_and_nothing_more():
 
 
 def test_the_tool_list_stays_small():
-    """Every name and description is paid for in every conversation with the server."""
-    size = len(json.dumps(get_tool_list()))
+    """Every name and description is paid for in every conversation with the server.
+
+    The budget is on what we write. `inputSchema` is generated from the signatures by
+    pydantic and its size moves with the Python and pydantic version, so holding it to a
+    byte count fails on a runner with a different interpreter and tells the author
+    nothing they can act on. The descriptions are the thing that bloats and the thing an
+    edit can fix, so they are what is measured; the total keeps a loose cap with room for
+    the generated half to differ across environments."""
+    tools = get_tool_list()
     assert len(TOOL_REGISTRY) <= 26, sorted(TOOL_REGISTRY)
-    assert size < 24_000, size
+    written = sum(len(t["name"]) + len(t["description"]) for t in tools)
+    assert written < 15_000, written
+    assert len(json.dumps(tools)) < 28_000, len(json.dumps(tools))
 
 
 def test_removed_tools_are_gone():
