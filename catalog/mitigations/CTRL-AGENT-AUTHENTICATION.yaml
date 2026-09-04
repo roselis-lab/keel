@@ -1,6 +1,5 @@
 id: CTRL-AGENT-AUTHENTICATION
 name: Agent-to-agent authentication
-status: draft
 mitigation_class: gating_control
 purpose: Provides cryptographic authenticity verification of agents when they establish connections with one another, using mutual TLS authentication or signed tokens with a limited lifetime. The mechanism operates at the transport layer and the application session layer, blocking the ability for one agent to impersonate another or for an unauthorized participant to join the agent mesh. This prevents man-in-the-middle attacks between agents, injection of malicious commands through spoofed sources, and compromise of the chain of trust in multi-agent systems.
 formal_implementation_risk: null

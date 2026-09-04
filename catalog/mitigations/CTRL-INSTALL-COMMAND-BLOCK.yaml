@@ -1,6 +1,5 @@
 id: CTRL-INSTALL-COMMAND-BLOCK
 name: Blocking Automatic Install Commands
-status: draft
 mitigation_class: gating_control
 purpose: Blocks the automatic execution of LLM-generated install commands without prior verification of the package in the registry, reputation checks, and user confirmation, preventing supply chain attacks through malicious packages and typosquatting. The mechanism operates at the command execution layer and intercepts install commands (npm install, pip install, apt-get) before execution. This prevents the installation of malicious packages, protects against typosquatting attacks where the model generates similar but malicious package names, and ensures human oversight for dependency additions.
 formal_implementation_risk: null

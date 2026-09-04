@@ -11,7 +11,10 @@ below is there to keep that true.
 """
 import yaml
 
+import pytest
+
 import keel.config
+from keel.errors import Conflict, Invalid, NotFound
 from keel.services import report_service
 
 VALID_REPORT = {
@@ -47,11 +50,6 @@ def test_reports_dir_honors_override(tmp_path, monkeypatch):
 
 def test_list_reports_missing_dir_returns_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path / "nope"))
-    assert report_service.list_reports() == []
-
-
-def test_list_reports_empty_dir_returns_empty(tmp_path, monkeypatch):
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     assert report_service.list_reports() == []
 
 
@@ -135,19 +133,19 @@ def test_get_report_returns_parsed_report(tmp_path, monkeypatch):
     assert result["report"]["system_name"] == "Checkout Agent"
 
 
-def test_get_report_missing_file_returns_error_not_exception(tmp_path, monkeypatch):
+def test_get_report_missing_raises_not_found_naming_what_exists(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    result = report_service.get_report("no-such-system", "2026-08-26")
-    assert result["success"] is False
-    assert "error" in result
+    with pytest.raises(NotFound) as exc:
+        report_service.get_report("no-such-system", "2026-08-26")
+    assert "no-such-system" in exc.value.message
+    assert exc.value.hint          # an error that only rejects makes the caller guess
 
 
-def test_get_report_malformed_file_returns_error_not_exception(tmp_path, monkeypatch):
+def test_get_report_malformed_file_is_invalid_not_a_crash(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_broken(tmp_path, "broken-system", "2026-08-01")
-    result = report_service.get_report("broken-system", "2026-08-01")
-    assert result["success"] is False
-    assert "error" in result
+    with pytest.raises(Invalid):
+        report_service.get_report("broken-system", "2026-08-01")
 
 
 # --------------------------------------------------------------------------- #
@@ -172,7 +170,9 @@ def test_save_report_replaces_a_draft(tmp_path, monkeypatch):
     assert reread["system_description"] == "Now also issues refunds."
 
 
-def test_save_report_refuses_a_final_report(tmp_path, monkeypatch):
+def test_editing_a_final_report_is_allowed_and_drops_it_back_to_draft(tmp_path, monkeypatch):
+    """A document that changed after sign-off is not signed off any more. Blocking the
+    edit instead just made the reader classify their own typo before fixing it."""
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
 
@@ -180,11 +180,23 @@ def test_save_report_refuses_a_final_report(tmp_path, monkeypatch):
         "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_name="Rewritten")
     )
 
-    assert result["success"] is False
-    assert "final" in result["error"]
-    assert report_service.get_report("checkout-agent", "2026-08-26")["report"][
-        "system_name"
-    ] == "Checkout Agent"
+    assert result["success"] is True
+    assert result["reverted_to_draft"] is True
+    reread = report_service.get_report("checkout-agent", "2026-08-26")["report"]
+    assert reread["system_name"] == "Rewritten"
+    assert reread["status"] == "draft"
+
+
+def test_editing_a_draft_does_not_report_a_reversion(tmp_path, monkeypatch):
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    _write_report(tmp_path, "checkout-agent", "2026-08-26")
+
+    result = report_service.save_report(
+        "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_name="Rewritten")
+    )
+
+    assert result["success"] is True
+    assert result["reverted_to_draft"] is False
 
 
 def test_save_report_refuses_a_body_that_moves_the_report(tmp_path, monkeypatch):
@@ -192,18 +204,15 @@ def test_save_report_refuses_a_body_that_moves_the_report(tmp_path, monkeypatch)
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
 
-    moved = report_service.save_report(
-        "checkout-agent", "2026-08-26", dict(VALID_REPORT, date="2026-01-01")
-    )
-    renamed = report_service.save_report(
-        "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_id="other-system")
-    )
-
-    assert moved["success"] is False
-    assert renamed["success"] is False
+    for body in (dict(VALID_REPORT, date="2026-01-01"),
+                 dict(VALID_REPORT, system_id="other-system")):
+        with pytest.raises(Invalid, match="cannot be changed"):
+            report_service.save_report("checkout-agent", "2026-08-26", body)
 
 
 def test_save_report_cannot_finalize_through_the_body(tmp_path, monkeypatch):
+    """Status is a consequence of editing, never something a save body sets. Otherwise a
+    report signs itself off in the same call that changed it."""
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
 
@@ -211,23 +220,26 @@ def test_save_report_cannot_finalize_through_the_body(tmp_path, monkeypatch):
         "checkout-agent", "2026-08-26", dict(VALID_REPORT, status="final")
     )
 
-    assert result["success"] is False
-    assert "finalize" in result["error"]
+    assert result["success"] is True
+    assert result["report"]["status"] == "draft"
 
 
 def test_save_report_rejects_an_invalid_body(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
 
-    result = report_service.save_report("checkout-agent", "2026-08-26", {"system_id": "x"})
+    with pytest.raises(Invalid) as exc:
+        report_service.save_report("checkout-agent", "2026-08-26", {"system_id": "x"})
 
-    assert result["success"] is False
-    assert result["errors"]
+    # Every bad field at once, each with its path - not one sentence per round trip.
+    assert len(exc.value.details) > 1
+    assert all(d["message"] for d in exc.value.details)
 
 
 def test_save_report_will_not_create_a_missing_report(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    assert report_service.save_report("ghost", "2026-08-26", VALID_REPORT)["success"] is False
+    with pytest.raises(NotFound):
+        report_service.save_report("ghost", "2026-08-26", VALID_REPORT)
 
 
 def test_finalize_freezes_and_is_idempotent(tmp_path, monkeypatch):
@@ -238,29 +250,6 @@ def test_finalize_freezes_and_is_idempotent(tmp_path, monkeypatch):
     again = report_service.finalize_report("checkout-agent", "2026-08-26")
     assert again["success"] is True
     assert again["report"]["status"] == "final"
-
-
-def test_correct_unlocks_a_final_report_without_moving_its_date(tmp_path, monkeypatch):
-    """Fixing a mistake in the record is not a re-assessment — nothing was looked at
-    again, so moving the date would misstate when the work was done."""
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-
-    result = report_service.correct_report("checkout-agent", "2026-08-26")
-
-    assert result["report"]["status"] == "draft"
-    assert result["report"]["date"] == "2026-08-26"
-    assert [r["date"] for r in report_service.get_report_series("checkout-agent")] == ["2026-08-26"]
-    # and now it saves
-    assert report_service.save_report(
-        "checkout-agent", "2026-08-26", dict(VALID_REPORT, system_name="Fixed")
-    )["success"] is True
-
-
-def test_correct_on_an_already_editable_draft_is_a_no_op(tmp_path, monkeypatch):
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26")
-    assert report_service.correct_report("checkout-agent", "2026-08-26")["report"]["status"] == "draft"
 
 
 def test_create_report_makes_an_empty_draft(tmp_path, monkeypatch):
@@ -280,11 +269,11 @@ def test_create_report_never_lands_on_an_existing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
 
-    result = report_service.create_report(
-        "checkout-agent", "Something Else", "d", "a", "2026-08-26",
-    )
+    with pytest.raises(Conflict) as exc:
+        report_service.create_report(
+            "checkout-agent", "Something Else", "d", "a", "2026-08-26")
 
-    assert result["success"] is False
+    assert "get_report" in exc.value.hint          # names the way forward
     assert report_service.get_report("checkout-agent", "2026-08-26")["report"][
         "system_name"
     ] == "Checkout Agent"
@@ -292,48 +281,13 @@ def test_create_report_never_lands_on_an_existing_file(tmp_path, monkeypatch):
 
 def test_create_report_rejects_an_unusable_system_id(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    assert report_service.create_report("Not A Slug", "n", "d", "a", "2026-09-01")["success"] is False
-    assert report_service.create_report("ok-slug", "n", "d", "a", "01-09-2026")["success"] is False
+    with pytest.raises(Invalid) as exc:
+        report_service.create_report("Not A Slug", "n", "d", "a", "2026-09-01")
+    assert exc.value.field == "system_id"
+    assert "lowercase" in exc.value.hint
 
-
-def test_reopen_copies_a_final_report_into_a_new_draft(tmp_path, monkeypatch):
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-
-    result = report_service.reopen_report("checkout-agent", "2026-08-26", today="2026-09-01")
-
-    assert result["report"]["date"] == "2026-09-01"
-    assert result["report"]["status"] == "draft"
-    # the record it revises is untouched
-    original = report_service.get_report("checkout-agent", "2026-08-26")["report"]
-    assert original["status"] == "final"
-    assert [r["date"] for r in report_service.get_report_series("checkout-agent")] == [
-        "2026-09-01", "2026-08-26",
-    ]
-
-
-def test_reopen_refuses_to_clobber_todays_draft(tmp_path, monkeypatch):
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-    _write_report(tmp_path, "checkout-agent", "2026-09-01", {"system_name": "Work in progress"})
-
-    result = report_service.reopen_report("checkout-agent", "2026-08-26", today="2026-09-01")
-
-    assert result["success"] is False
-    assert report_service.get_report("checkout-agent", "2026-09-01")["report"][
-        "system_name"
-    ] == "Work in progress"
-
-
-def test_reopen_defaults_to_today(tmp_path, monkeypatch):
-    import datetime
-
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-
-    result = report_service.reopen_report("checkout-agent", "2026-08-26")
-
-    assert result["report"]["date"] == datetime.date.today().isoformat()
+    with pytest.raises(Invalid):
+        report_service.create_report("ok-slug", "n", "d", "a", "01-09-2026")
 
 
 # --------------------------------------------------------------------------- #
@@ -343,7 +297,7 @@ def _finding(**over):
     base = dict(
         id="T-TOOL-ABUSE", from_catalog=True, scenario="s",
         source={"who": "external-attacker", "motive": "m", "access": "a"},
-        asset="a", attack_surface="user-agent", vulnerability="v",
+        asset="a", attack_surface="user-input", vulnerability="v",
         exploitation_complexity="low", harm="wrong-decision",
         risk={"likelihood": "high", "severity": "high", "reasoning": "r"},
         delta="new", requirements=[], ignored_mitigations=[],
@@ -486,7 +440,47 @@ def test_ids_that_would_escape_the_archive_are_refused(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
 
-    assert report_service.get_report("../../etc", "passwd")["success"] is False
-    assert report_service.get_report("checkout-agent", "../../../secrets")["success"] is False
+    for system_id, date in (("../../etc", "passwd"),
+                            ("checkout-agent", "../../../secrets")):
+        with pytest.raises(Invalid):
+            report_service.get_report(system_id, date)
     assert report_service.get_report_series("../..") == []
-    assert report_service.save_report("../evil", "2026-08-26", VALID_REPORT)["success"] is False
+    with pytest.raises(Invalid):
+        report_service.save_report("../evil", "2026-08-26", VALID_REPORT)
+
+
+def test_a_bad_date_is_reported_against_the_date(tmp_path, monkeypatch):
+    """The UI highlights by `field`. Blaming the id when the date is malformed sends the
+    caller to fix something that was already right."""
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    with pytest.raises(Invalid) as exc:
+        report_service.create_report("ok-slug", "n", "d", "a", "01-09-2026")
+    assert exc.value.field == "date"
+    assert "YYYY-MM-DD" in exc.value.hint
+
+
+def test_what_get_report_returns_is_what_save_report_takes(tmp_path, monkeypatch):
+    """The round trip the whole assessment flow rests on: read a report, change it, write
+    it back. The MCP tool unwraps the service envelope so these two shapes match; a hint
+    once claimed they matched on the service too, which sent a caller straight back into
+    the same refusal."""
+    import asyncio
+
+    from keel.mcp.tools import dispatch_tool
+
+    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
+    report_service.create_report("round-trip", "n", "d", "a", "2026-09-01")
+
+    async def go():
+        doc = await dispatch_tool("get_report", {"system_id": "round-trip", "date": "2026-09-01"})
+        assert "system_id" in doc and "success" not in doc, doc
+        doc["delta_summary"] = "changed"
+        saved = await dispatch_tool(
+            "save_report",
+            {"system_id": "round-trip", "date": "2026-09-01", "report": doc},
+        )
+        assert saved["success"] is True, saved
+        again = await dispatch_tool("get_report", {"system_id": "round-trip", "date": "2026-09-01"})
+        assert again["delta_summary"] == "changed"
+
+    asyncio.run(go())

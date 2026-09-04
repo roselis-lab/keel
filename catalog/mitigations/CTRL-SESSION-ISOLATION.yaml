@@ -1,6 +1,5 @@
 id: CTRL-SESSION-ISOLATION
 name: User Session Isolation
-status: draft
 mitigation_class: gating_control
 purpose: Enforces strict separation of data between user sessions through isolation of context, cache, and state, preventing information leakage from one user to another via shared infrastructure. The mechanism operates at the session management layer and guarantees that each user has a fully isolated execution environment. This protects against accidental data leakage between tenants, prevents context contamination, and ensures data confidentiality in multi-user systems.
 formal_implementation_risk: null

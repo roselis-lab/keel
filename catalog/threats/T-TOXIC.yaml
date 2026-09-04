@@ -1,28 +1,38 @@
 id: T-TOXIC
-title: Generation of offensive, discriminatory, or illegal content
+title: The organization's voice says something offensive, discriminatory or illegal
 harm: reputation-legal
-surface:
-- user-agent
 source:
 - external-attacker
-- training-data
+- hallucination
 weaknesses:
-- component: model
-  text: The agent generates offensive, discriminatory, or illegal content — reproducing toxic patterns from the training data or under the influence of injection or free-form text from a tool's output — and delivers it to the recipient without filtering; the content is perceived as the organization's position.
+- component: downstream
+  surface:
+  - training-data
+  - retrieved-content
+  - tool-output
+  text: Model output reaches a human audience as the organization's own voice, with nothing between generation and delivery that checks it for content the organization would not say - whether the content came from the training data, from a steered prompt or from a tool's free text.
   nature: targeted
-reachability: NOT applicable if the agent's output reaches no human recipients (no external or employee audience) for whom toxic content would carry reputational or legal consequences.
+reachability: The agent's output reaches no human recipients (no external or employee audience) for whom toxic content would carry reputational or legal consequences.
 mitigations:
 - id: CTRL-CONTENT-POLICY
   strength: gating
-  rationale: 'A content policy defines impermissible topics and content types
-
-
-    A content policy limits the influence of malicious tool output on the generation of toxic content'
+  rationale: Closes the weakness by defining what may not be said and enforcing it as a moderation layer at the output boundary, so content that violates the policy does not reach the audience whichever way it was produced.
 - id: CTRL-OUTPUT-VALIDATION
   strength: gating
-  rationale: 'Output validation for toxicity blocks offensive content caused by tool output
-
-
-    Output validation for toxicity and discrimination blocks offensive content'
-references: []
-tags: []
+  rationale: 'Closes the weakness mechanically: the reply is checked against the content policy before delivery and a violating reply is held. This is the one record where output validation gates, because the defect it looks for - content against policy - is exactly the harm.'
+references:
+- title: Grok's antisemitic rants the result of 'unintended update,' company says in letter to lawmakers
+  url: https://suozzi.house.gov/media/in-the-news/groks-antisemitic-rants-result-unintended-update-company-says-letter-lawmakers
+  note: 'xAI''s own account to Congress: an upstream code change reactivated deprecated instructions to match the user''s tone, and the company''s bot published antisemitic content under its own account for hours - a steered prompt plus retrieved user content reaching the audience with nothing between generation and delivery. The fix was deleting the instructions and adding pre-release testing, not an output gate.'
+- title: Delivery Firm's AI Chatbot Goes Rogue, Curses at Customer and Criticizes Company
+  url: https://time.com/6564726/ai-chatbot-dpd-curses-criticizes-company/
+  note: A customer talked DPD's support bot into swearing and calling DPD the worst delivery firm in the world, in the company's voice, and it went viral. DPD attributed it to a system update and disabled the AI element immediately - the only shipped defence was pulling the bot.
+- title: NYC's AI Chatbot Tells Businesses to Break the Law
+  url: https://themarkup.org/artificial-intelligence/2024/03/29/nycs-ai-chatbot-tells-businesses-to-break-the-law
+  note: 'The illegal-content branch: the city''s official business bot told employers they could take workers'' tips and landlords they could refuse voucher tenants, in the government''s voice, with a disclaimer as the only thing between model and public. The city''s response was a stronger disclaimer; the bot kept running.'
+- title: 'Toxicity in ChatGPT: Analyzing Persona-assigned Language Models'
+  url: https://arxiv.org/abs/2304.05335
+  note: 'Measured over half a million generations: a persona set in the system prompt raises toxicity up to six times, and certain groups are targeted about three times more regardless of persona - evidence that both the training-data and the steered-prompt origins named in the weakness are real.'
+tags:
+- content
+- reputation

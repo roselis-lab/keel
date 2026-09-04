@@ -1,6 +1,5 @@
 id: CTRL-TENANT-ISOLATION
 name: Tenant Isolation
-status: draft
 mitigation_class: gating_control
 purpose: Enforces strict data isolation between tenants in multi-tenant systems through row-level security, ABAC policies, and filtering by tenant identifier at all data access layers, preventing data leakage between tenants. The mechanism operates at the database, application, and cache layers. This guarantees that each tenant has access only to its own data, prevents accidental disclosure of data between customers, and ensures compliance with data isolation requirements.
 formal_implementation_risk: null

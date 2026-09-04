@@ -1,6 +1,5 @@
 id: CTRL-INPUT-PARAMETERIZATION
 name: Parameterized APIs Instead of String Concatenation
-status: draft
 mitigation_class: gating_control
 purpose: Ensures that all commands, queries, and API calls are formed through parameterized interfaces instead of string concatenation, eliminating injection vulnerabilities through separation of code and data. The mechanism is applied at the level of code generation and tool invocation where the model or agent forms commands — SQL queries, shell commands, URL parameters, API requests — and guarantees that external data is always passed as parameters, not as part of the command syntax. This prevents SQL injection, command injection, path traversal, and related injection attacks through structural separation of concerns.
 formal_implementation_risk: null

@@ -34,6 +34,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from keel.errors import Conflict, Invalid, NotFound, invalid_from_pydantic
 from keel.schemas.report import Report
 from keel.store import dump_yaml
 
@@ -255,20 +256,54 @@ def insights() -> dict[str, Any]:
 
 
 def _report_path(system_id: str, date: str) -> Path | None:
-    """The file for one report, or None when either id would escape the archive."""
+    """The file for one report, or None when either part would escape the archive.
+
+    Two checks, and only the second is load-bearing. The patterns give a readable refusal
+    and keep ids to a shape; the resolve-and-compare is what actually holds, because a
+    pattern is one edit away from being wrong and does not survive a symlink, a
+    normalisation quirk, or a platform that rewrites the name on the way to disk. This
+    was pattern-only, which made it the last place in the codebase where a regex was the
+    whole boundary.
+    """
     if not SYSTEM_ID_RE.match(system_id) or not DATE_RE.match(date):
         return None
-    return _reports_dir() / system_id / f"{date}.yaml"
+
+    root = _reports_dir().resolve()
+    system_dir = (root / system_id).resolve()
+    path = (system_dir / f"{date}.yaml").resolve()
+    if system_dir.parent != root or path.parent != system_dir:
+        return None
+    return path
+
+
+def _require_path(system_id: str, date: str):
+    """The file, or a NotFound that says what dates do exist for this system."""
+    path = _report_path(system_id, date)
+    if path is None:
+        raise Invalid(
+            f"{system_id!r} / {date!r} is not a valid system id and date",
+            hint="system_id is lowercase letters, digits and hyphens; date is YYYY-MM-DD",
+        )
+    if not path.is_file():
+        dates = [r["date"] for r in get_report_series(system_id)]
+        raise NotFound(
+            f"no assessment of {system_id!r} on {date}",
+            entity_type="report", entity_id=system_id,
+            hint=f"it has {', '.join(dates)}" if dates
+                 else "call list_reports to see the assessed systems",
+        )
+    return path
 
 
 def get_report(system_id: str, date: str) -> dict[str, Any]:
-    """`{"success": True, "report": {...}}`, or `{"success": False, "error": "..."}`."""
-    path = _report_path(system_id, date)
-    if path is None or not path.is_file():
-        return {"success": False, "error": f"No report for {system_id!r} on {date!r}"}
+    """`{"success": True, "report": {...}}`. Raises NotFound or Invalid."""
+    path = _require_path(system_id, date)
     report = _load_report_file(path)
     if report is None:
-        return {"success": False, "error": f"Report {system_id}/{date}.yaml could not be parsed"}
+        raise Invalid(
+            f"the report on disk for {system_id} / {date} does not parse",
+            hint="open it with the repair editor, or fix the YAML by hand",
+        )
     return {"success": True, "report": report.model_dump()}
 
 
@@ -279,67 +314,142 @@ def _write(path: Path, report: Report) -> None:
     path.write_text(dump_yaml(report.model_dump()), encoding="utf-8")
 
 
-def save_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, Any]:
-    """Replace one report with a corrected version. Refuses to touch a final report."""
-    path = _report_path(system_id, date)
-    if path is None:
-        return {"success": False, "error": "invalid system id or date"}
-    if not path.is_file():
-        return {"success": False, "error": f"No report for {system_id!r} on {date!r}"}
+def catalog_reference_errors(report: Report) -> list[str]:
+    """Every id in a report that does not resolve to a catalog entry.
 
+    A requirement for something the catalog does not have is a normal, wanted outcome —
+    it is how an assessment tells the library what it is missing, and `insights()` reads
+    it as the library's own to-do list. The way to record one is `mitigation_id: null`
+    plus a `description` saying what is needed. Inventing a plausible-looking id instead
+    is a different thing wearing the same clothes: it reads as a cataloged control, it
+    resolves to nothing, and nothing downstream can tell the two apart.
+
+    So a non-null id has to be real. Checked on save, against the catalog as it stands —
+    reports already on disk are never re-checked, because a control renamed years later
+    must not make an archived assessment unreadable.
+    """
+    from keel.store import get_store
+
+    store = get_store()
+    errors: list[str] = []
+
+    def check_mitigation(mid: str | None, where: str) -> None:
+        if mid and mid not in store.mitigations:
+            errors.append(
+                f"{where}: no mitigation {mid!r} in the catalog. If the control is not in "
+                f"the library, leave mitigation_id empty and describe the ask instead — "
+                f"that is what tells the library what it is missing."
+            )
+
+    for i, f in enumerate(report.findings):
+        if f.from_catalog and f.id not in store.threats:
+            errors.append(
+                f"findings[{i}]: marked from_catalog but no threat {f.id!r} is in the "
+                f"catalog. Set from_catalog to false if this threat is specific to this system."
+            )
+        for k, r in enumerate(f.requirements):
+            check_mitigation(r.mitigation_id, f"findings[{i}].requirements[{k}]")
+        for k, ig in enumerate(f.ignored_mitigations):
+            check_mitigation(ig.mitigation_id, f"findings[{i}].ignored_mitigations[{k}]")
+
+    for i, d in enumerate(report.discarded):
+        if d.id not in store.threats:
+            errors.append(f"discarded[{i}]: no threat {d.id!r} in the catalog")
+
+    return errors
+
+
+def missing_prerequisites(report: Report) -> list[str]:
+    """Advice, not an error: a requirement whose prerequisite the report does not ask for.
+
+    A control that presupposes another one is not verifiable on its own, so shipping the
+    ask without its prerequisite hands the product team something they cannot sign off.
+    This never blocks a save - the assessor may have good reason, and a half-written
+    draft trips it constantly."""
+    from keel.store import get_store
+
+    store = get_store()
+    asked = {
+        r.mitigation_id
+        for f in report.findings for r in f.requirements
+        if r.mitigation_id and r.included is not False
+    }
+    out: list[str] = []
+    for mid in sorted(asked):
+        for prereq in (store.mitigations.get(mid) or {}).get("requires") or []:
+            if prereq not in asked:
+                out.append(
+                    f"{mid} presupposes {prereq}, which this assessment does not ask for - "
+                    f"its acceptance criteria cannot be checked without it"
+                )
+    return out
+
+
+def save_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, Any]:
+    """Write a report. Editing is always allowed; a final report goes back to draft.
+
+    There used to be three verbs here — save, correct, reopen — and between them they
+    asked the reader to classify their own edit before making it. Nobody wants to answer
+    "is this a correction or a re-assessment?" before fixing a typo. So: edit whenever
+    you like, and touching a final report drops it back to draft, because a document
+    that changed after being signed off is not signed off any more. Finalising again is
+    the whole ceremony.
+    """
+    path = _require_path(system_id, date)
     existing = _load_report_file(path)
     if existing is None:
-        return {"success": False, "error": "the report on disk could not be parsed"}
-    if existing.status == "final":
-        return {
-            "success": False,
-            "error": "this report is final — open it as a new draft to revise it",
-        }
+        raise Invalid(
+            f"the report on disk for {system_id} / {date} does not parse",
+            hint="open it with the repair editor, or fix the YAML by hand",
+        )
 
     try:
         report = Report(**data)
     except ValidationError as exc:
-        return {"success": False, "error": "invalid report", "errors": exc.errors()}
+        raise invalid_from_pydantic(
+            exc,
+            hint="pass the report document itself - system_id, system_name, date, "
+                 "assessor, findings. The MCP get_report hands you exactly that; the "
+                 "service function wraps it in {success, report}, so unwrap first",
+        ) from exc
     # The path IS the identity. Accepting a body that disagrees with it would let a save
     # of one report silently land on another.
     if report.system_id != system_id or report.date != date:
-        return {"success": False, "error": "system_id and date cannot be changed by a save"}
-    if report.status != "draft":
-        return {"success": False, "error": "use finalize to move a report out of draft"}
+        raise Invalid(
+            "system_id and date cannot be changed by a save",
+            hint="create_report starts a new one; this call only rewrites this document",
+        )
 
+    ref_errors = catalog_reference_errors(report)
+    if ref_errors:
+        raise Invalid(
+            "the assessment names catalog entries that do not exist",
+            details=[{"field": None, "message": m} for m in ref_errors],
+            hint="for a control the library does not have, leave mitigation_id empty and "
+                 "write the ask in description",
+        )
+
+    # Status is not the caller's to set here: it is a consequence of editing, and
+    # finalising is a separate, deliberate act.
+    was_final = existing.status == "final"
+    report.status = "draft"
     _write(path, report)
-    return {"success": True, "report": report.model_dump()}
+    return {
+        "success": True,
+        "report": report.model_dump(),
+        "reverted_to_draft": was_final,
+        "advice": missing_prerequisites(report),
+    }
 
 
 def finalize_report(system_id: str, date: str) -> dict[str, Any]:
     """Freeze a draft. Already-final is not an error — the caller got what it wanted."""
-    path = _report_path(system_id, date)
-    if path is None or not path.is_file():
-        return {"success": False, "error": f"No report for {system_id!r} on {date!r}"}
+    path = _require_path(system_id, date)
     report = _load_report_file(path)
     if report is None:
-        return {"success": False, "error": "the report on disk could not be parsed"}
+        raise Invalid(f"the report on disk for {system_id} / {date} does not parse")
     if report.status != "final":
         report.status = "final"
-        _write(path, report)
-    return {"success": True, "report": report.model_dump()}
-
-
-def correct_report(system_id: str, date: str) -> dict[str, Any]:
-    """Unlock a final report for correction, keeping its date.
-
-    Fixing a mistake in the record is not a re-assessment: nothing about the system was
-    looked at again, so moving the date would be a lie about when the work was done.
-    Already-draft is not an error — the caller wanted it editable and it is.
-    """
-    path = _report_path(system_id, date)
-    if path is None or not path.is_file():
-        return {"success": False, "error": f"No report for {system_id!r} on {date!r}"}
-    report = _load_report_file(path)
-    if report is None:
-        return {"success": False, "error": "the report on disk could not be parsed"}
-    if report.status != "draft":
-        report.status = "draft"
         _write(path, report)
     return {"success": True, "report": report.model_dump()}
 
@@ -355,45 +465,28 @@ def create_report(
     date = date or datetime.date.today().isoformat()
     path = _report_path(system_id, date)
     if path is None:
-        return {"success": False, "error": "system id must be lowercase letters, digits and hyphens"}
+        # Name the half that is actually wrong: the UI highlights by `field`, and a
+        # caller sent to fix the id when the date was malformed fixes nothing.
+        bad_id = not SYSTEM_ID_RE.match(system_id)
+        raise Invalid(
+            f"{system_id!r} is not a usable system id" if bad_id
+            else f"{date!r} is not a usable date",
+            field="system_id" if bad_id else "date",
+            hint="lowercase letters, digits and hyphens - 'checkout-agent', not "
+                 "'Checkout Agent'" if bad_id else "YYYY-MM-DD",
+        )
     if path.exists():
-        return {"success": False, "error": f"{system_id} already has a report for {date}"}
+        raise Conflict(
+            f"{system_id} already has an assessment dated {date}",
+            entity_type="report", entity_id=system_id,
+            hint="open it with get_report and save into it, or use another date",
+        )
     try:
         report = Report(
             system_id=system_id, system_name=system_name,
             system_description=system_description, date=date, assessor=assessor,
         )
     except ValidationError as exc:
-        return {"success": False, "error": "invalid report", "errors": exc.errors()}
+        raise invalid_from_pydantic(exc) from exc
     _write(path, report)
-    return {"success": True, "report": report.model_dump()}
-
-
-def reopen_report(system_id: str, date: str, today: str | None = None) -> dict[str, Any]:
-    """Copy a report into a new draft dated today, leaving the original untouched.
-
-    This is a NEW assessment of a changed system, not a correction — see
-    `correct_report` for that. Refuses to overwrite an existing file, so starting one
-    twice in a day cannot discard the draft already in progress.
-    """
-    source_path = _report_path(system_id, date)
-    if source_path is None or not source_path.is_file():
-        return {"success": False, "error": f"No report for {system_id!r} on {date!r}"}
-    report = _load_report_file(source_path)
-    if report is None:
-        return {"success": False, "error": "the report on disk could not be parsed"}
-
-    new_date = today or datetime.date.today().isoformat()
-    target_path = _report_path(system_id, new_date)
-    if target_path is None:
-        return {"success": False, "error": "invalid date"}
-    if target_path.exists():
-        return {
-            "success": False,
-            "error": f"a report for {new_date} already exists — open that one instead",
-        }
-
-    report.date = new_date
-    report.status = "draft"
-    _write(target_path, report)
     return {"success": True, "report": report.model_dump()}

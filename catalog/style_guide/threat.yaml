@@ -1,22 +1,41 @@
+entity:
+  purpose: One threat is one harm reachable in an architecture. The weaknesses are the different paths to it, and one condition rules out all of them at once. The reader is an LLM assessor deciding what applies to a real system; every rule here exists because without it that assessor reaches a wrong verdict, and no rule exists for tidiness.
+  instructions:
+  - Apply the splitting test before naming anything. Two threats if and only if ruling one out does not rule out the other. Several paths to the same harm closed by several controls are one threat - that is what mitigation links are for, and an assessor reads them without difficulty. What makes a second record is a second rule-out condition.
+  - Check the record against its own reachability. Write one honest condition under which this threat is not a live path, then read every weakness against it. If you need an 'or' to reach a weakness the first half does not cover, that weakness belongs to another threat - otherwise an assessor rules the whole record out on a condition true of half of it.
+  - Settle the harm first, then the reachability, and only then write the title. A title chosen first tends to be the subject you arrived with, and the record gets bent to fit it.
+  - Do not take a source's entry as the unit. OWASP mixes a mechanism, a consequence class, a lifecycle stage and a system property in one list of ten; turning each into a threat produces records of different kinds with no rule-out condition an assessor can apply. Anchor on the harm and let the matrix carry the mapping, many to many.
+  avoid:
+  - A reachability true of some weaknesses and not others. The assessor rules the record out on that condition and misses the paths it does not cover. The tell is an 'or' that exists to reach one weakness the rest of the sentence does not.
+  - A record anchored on a step instead of an outcome - a credential obtained, a package installed. The harm floats with what the step is used for next, so the assessor cannot classify it, and the reachability slides into naming a control because a step has no honest rule-out of its own. Re-anchor on the moment of use; if the harm still floats, the weaknesses belong to the threats they enable.
+  - A record-level field written over the first weakness instead of all of them. A title that says 'through the response' when one weakness leaks through a tool's egress, or a source list without `error` when one weakness fires from a misconfiguration alone, hides the record from the assessor whose case it omits. Caught on T-DATA-LEAK.
+  - A link resting on a weakness the record does not have - three injection controls on a record with no injection weakness, five extension controls on a record with no weakness about extensions. An assessment counts that link as coverage of something the record never described. Add the weakness or move the link. Caught on T-DATA-LEAK and T-SOURCE-POISON.
+  - A source's entry copied across as a record. It is a mapping and lives in the coverage matrix; as a record it has no rule-out condition an assessor can apply.
+  - A record per path, or a record per field value - two records whose difference is which `source` drives them or which `surface` they arrive by. The assessor copes; the author edits both forever, and the second one drifts. One record, and the field carries both values.
 fields:
   title:
-    purpose: Name what goes wrong, in a few words.
+    purpose: 'What tells this record apart from the others under the same harm. Feeds candidate match: an assessor scans titles to decide which records to open, so a title that names the class instead of the difference sends them past the right record or into the wrong one.'
     content_requirements:
-    - Name the outcome or scenario, not a technique or a restated consequence.
+    - Name the shape of the path - the boundary crossed, the kind of state, the way the effect lands - at the altitude that would tell this record apart from a sibling under the same harm, even where no sibling exists yet.
+    - Written over every weakness the record holds, not over the first one. A title that fits three weaknesses and omits the fourth hides the record from the assessor whose case is the fourth.
     avoid:
-    - A technique as the title (prompt injection, jailbreak) — that is a mechanism, not a threat.
-    - Just the harm restated.
-    examples:
-    - Sensitive data disclosure through the response
-    - Unauthorized or destructive tool action
+    - Restating the harm. 'Sensitive data disclosure' under data-exposed says nothing the harm field does not already say, and leaves an assessor with three records under that harm no way to tell which one is theirs. Caught on T-DATA-LEAK and T-HALLUCINATION.
+    - A technique as the title (prompt injection, jailbreak) - that is a mechanism, not a threat.
+    - A protocol, a vendor or a product in the title - 'via MCP', 'in LangChain'. The same condition is there over any other tool channel, and the title makes the applicability decision for the reader, wrongly. Caught on T-CRED-THEFT and T-SSRF.
+    examples: []
+    instructions: null
   harm:
-    purpose: The consequence class — what actually breaks.
+    purpose: 'The consequence class - what actually breaks when this threat fires. Feeds candidate match: an assessor walks the harm classes against a system to find what is even in play, so a record filed under the wrong class is not mislabelled, it is unreachable from the question that would have found it.'
     content_requirements:
-    - One primary value from catalog/harm.yaml.
-  surface:
-    purpose: Which trust boundary the untrusted influence crosses to reach the weakness.
-    content_requirements:
-    - One or more values from catalog/surface.yaml, matching the reachability path.
+    - One value from catalog/harm.yaml.
+    - What breaks at the moment the threat fires, not what follows later. A fine follows a disclosure and an outage sometimes follows destroyed state; neither is the harm of the record that produced it.
+    - Where two classes both look right, take the one the `reachability` is about. The two fields answer the same question from opposite ends - what breaks, and what would have to be absent for nothing to break - so they name the same thing or one of them is wrong. A rule-out written about privileges points at code-execution; one written about data under differentiated authorization points at data-exposed.
+    - Where a threat ends in an intermediate state rather than an outcome - a credential obtained, a foothold established - the harm is what that state is used for, and the record fires at the point of use, not at the point the state was reached.
+    avoid:
+    - A second class in a note or a parenthesis. How many harms a record may rest on is the record-level bar's job, and the answer there is one.
+    - Reading the class off the mechanism. An injection can land as any of the five; what it rides in on decides nothing about what breaks.
+    examples:
+    - 'A stolen token: `code-execution`, because the threat fires when the token is used and what breaks is that a privileged action ran. Not `data-exposed`, which is what a different threat about the same token would land as if its rule-out were about data.'
   source:
     purpose: Who or what drives the threat.
     content_requirements:
@@ -25,26 +44,44 @@ fields:
     avoid:
     - Attacker-only when the threat fires from a plain model mistake.
   reachability:
-    purpose: The rule-out gate — when this threat is NOT a live path in a given system.
+    purpose: The rule-out gate — the condition under which this threat is not a live path in a given system.
     content_requirements:
-    - Frame as "NOT applicable if …".
+    - State the condition itself, as a plain sentence. The field is already labelled; writing "NOT applicable if" into every value repeats the label and buries the condition.
     - About the path not being reachable or the asset not being material.
     - Judge on the un-mitigated architecture (before controls).
     avoid:
     - Re-negating the weakness itself.
     - Naming a control — closing the weakness is the mitigation's job, not the carve-out's.
     examples:
-    - NOT applicable if the model cannot influence the arguments (hard-coded), or the interpreter runs with no valuable access.
+    - The model cannot influence the arguments (they are hard-coded), or the interpreter runs with no valuable access.
   references:
-    purpose: Provenance — where this maps in public catalogs.
+    purpose: Evidence — what makes us confident this threat is real, and where a reader can check.
     content_requirements:
-    - Each entry is {id, url} with a real, working link.
-    - Relevant CWE / CAPEC / OWASP-LLM / ATLAS ids.
+    - Each entry is {title, url, note} with a real, working link.
+    - The note says in one line what the source actually supports, so a later reader does not have to open it to find out why it is here.
+    - Prefer a recorded incident, a vendor advisory or a paper over a taxonomy entry — something that shows the threat happening.
     avoid:
-    - Using a reference to rule out or to build chains — provenance only.
+    - Framework mappings. Which OWASP or ATLAS entries this threat answers lives in catalog/coverage/ and is shown on the card automatically; a reference repeating it is a second copy that will drift.
+    - Using a reference to rule out or to build chains — evidence only.
+    examples:
+    - '{title: ''EchoLeak: zero-click exfiltration in Microsoft 365 Copilot'', url: ''https://...'', note: ''Shows the whole path end to end — untrusted mail content reaching a tool that could reach data, with no user action.''}'
   tags:
     purpose: Coarse labels for grouping and search.
     content_requirements:
     - Short, lowercase, reusable labels.
     avoid:
     - Encoding meaning here that belongs in a real field.
+  positioning:
+    purpose: How this entry sits relative to the entries in the sources Keel tracks. Only what the mapping itself does not already say.
+    content_requirements:
+    - Write it only where the shapes differ. A source entry that lines up one-to-one with this one needs nothing here - the mapping already says it.
+    - Where a source entry is broader, say what the rest of it is and where that lands, so a reader who came from that entry can find the other half.
+    - Where this entry answers a source in a shape of its own (a mechanism carried across many entries rather than one row), say which shape and why.
+    - 'Written so it stays true as the catalog grows: about this entry''s relationship to the source, never about the set of entries answering that source.'
+    avoid:
+    - Catalog state - which entries exist, what is still a gap, what is planned. All of that is computed and shown, and a sentence repeating it is wrong the day it changes.
+    - A to-do. This field describes a relationship, not work outstanding.
+    - Restating the mapping. That an entry answers ASI02 is already recorded; this field is only for what that fact leaves unsaid.
+    - Framework mappings written out by hand - the ids live in catalog/coverage/ and reach the card automatically.
+    examples:
+    - 'ASI02 groups everything an agent''s tools can be turned to, which spans two harms: an action that should not have been taken, and a read that should not have been served. This entry is the first of those; the second anchors to `data-exposed` and is therefore a separate threat.'

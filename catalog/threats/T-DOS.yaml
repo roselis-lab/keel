@@ -1,50 +1,57 @@
 id: T-DOS
-title: Resource / cost exhaustion (token-DoS)
+title: Unbounded input or an unbounded loop consumes what others need
 harm: downtime
-surface:
-- user-agent
-- agent-agent
 source:
 - external-attacker
+- hallucination
 - accident
 weaknesses:
 - component: model
-  text: 'User input exhausts resources: long prompts, recursive requests, triggering heavy processing.'
+  surface:
+  - user-input
+  text: Input reaches the model with no bound on its size or on the work it triggers - a very long prompt, a request that unfolds into heavy processing - and the cost is paid from a pool others draw on.
   nature: targeted
 - component: tool
-  text: Recursive delegation between agents or an infinite tool-call loop with no depth/iteration limit exhausts compute and message queues.
+  surface:
+  - agent-message
+  text: Agents delegate to one another, or a tool loop runs, with no limit on depth or iteration count, so a cycle or a runaway plan consumes compute and queue capacity until something outside it stops.
   nature: targeted
 - component: model
-  text: Free-form text from a tool's output crafted for recursive or resource-heavy processing by the agent.
+  surface:
+  - tool-output
+  text: Free-form text returned by a tool is processed with no bound on the work it may trigger, so a payload shaped for recursion or heavy processing arrives through a channel nobody rate-limits.
   nature: targeted
 - component: tool
-  text: A tool with network access is used for mass/resource-heavy outbound requests.
+  surface:
+  - model-output
+  text: A tool with network access sends requests outward with no cap on volume or rate, so the model can be steered or can err into a flood that exhausts the organization's egress, quota or bill.
   nature: targeted
-reachability: NOT applicable if the reachable endpoint accepts no untrusted/unbounded input and initiates no inter-agent or tool loops (no delegation, fixed depth), or the resource is not shared with other consumers.
+reachability: The endpoint accepts no untrusted or unbounded input, initiates no inter-agent or tool loops, and its tools have no unmetered outbound path - or nothing it consumes is shared with anyone else.
 mitigations:
 - id: CTRL-ITERATION-LIMITS
   strength: gating
-  rationale: Limiting recursion depth and iteration count prevents infinite loops
-- id: CTRL-RATE-LIMITING
-  strength: gating
-  rationale: 'Rate limiting prevents abuse of tools with network access
-
-
-    Rate limiting on tool requests prevents DoS via bulk crafted output
-
-
-    Rate limiting on user requests prevents DoS via user input'
-- id: CTRL-RESOURCE-QUOTAS
-  strength: gating
-  rationale: 'Resource quotas limit CPU/memory/network consumption by tools
-
-
-    Resource quotas (CPU, memory, time) protect against DoS via recursion'
+  rationale: 'Closes the loop weakness: depth, iteration count and total steps per task are bounded, so a cycle terminates at the bound rather than at exhaustion.'
 - id: CTRL-TOKEN-LIMITS
   strength: gating
-  rationale: 'Token limits prevent resource exhaustion via long prompts
-
-
-    Token limits prevent resource exhaustion via long tool output'
-references: []
-tags: []
+  rationale: 'Closes the size half of the input weakness and the tool-output weakness: the tokens a request or a tool result may carry are capped, so the largest unit of work has a known ceiling.'
+- id: CTRL-RATE-LIMITING
+  strength: gating
+  rationale: 'Closes the rate half of the input weakness and the outbound weakness: requests per user and calls per tool are capped, so neither a caller nor a steered tool can turn volume into exhaustion.'
+- id: CTRL-RESOURCE-QUOTAS
+  strength: gating
+  rationale: 'Closes all four weaknesses at the floor: hard limits on CPU, memory and bandwidth per agent and tool mean that whatever the path, consumption stops at the quota rather than at the shared pool''s end.'
+references:
+- title: OpenAI ChatGPT Crawler Reflective DDoS Vulnerability
+  url: https://github.com/bf/security-advisories/blob/main/2025-01-ChatGPT-Crawler-Reflective-DDOS-Vulnerability.md
+  note: 'The outbound weakness: the attributions endpoint fetched every URL in a list with no cap on its length, so one request turned OpenAI''s crawler into a flood against a site of the caller''s choosing. OpenAI disabled the endpoint after public disclosure.'
+- title: vLLM 0.5.2.2 vulnerable to Denial of Service (CVE-2024-11040)
+  url: https://github.com/advisories/GHSA-hhr6-7642-8pmh
+  note: 'The user-input weakness, the work-it-triggers half: one completions request with beam search and a high best_of hangs the engine and blocks new requests for everyone - the cost is paid from the shared pool.'
+- title: An Engorgio Prompt Makes Large Language Model Babble on
+  url: https://arxiv.org/abs/2412.19394
+  note: 'Measures the user-input weakness: crafted prompts suppress the end-of-sequence token and drive thirteen open models to two to thirteen times longer outputs, reaching over 90% of the length limit, with a run against a resource-limited service showing the availability hit (ICLR 2025).'
+positioning: LLM10 (Unbounded Consumption) lines up with this record and also names model extraction through high-volume querying, which is a disclosure of the model rather than an exhaustion of shared resources and is not modelled here.
+tags:
+- availability
+- cost
+- loops

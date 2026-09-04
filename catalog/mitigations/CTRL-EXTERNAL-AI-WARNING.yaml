@@ -1,6 +1,5 @@
 id: CTRL-EXTERNAL-AI-WARNING
 name: External AI Risk Warning
-status: draft
 mitigation_class: detector
 purpose: Informs users of the risks of transmitting data to external AI services through explicit UI notifications that include the name of the recipient service, the categories of data being sent, and the implications for privacy and compliance, ensuring informed consent before using external AI capabilities. The mechanism activates on any data flow to an external AI service and displays a notice through a persistent UI element or acknowledgment dialog. This ensures transparency of data practices, supports compliance with privacy regulations, and enables users to make informed decisions about using external AI.
 formal_implementation_risk: null

@@ -1,6 +1,5 @@
 id: CTRL-RATE-LIMITING
 name: Request Rate Limiting and Quotas
-status: draft
 mitigation_class: gating_control
 purpose: Limits the rate of requests to models and tools through per-user limits, global quotas, and adaptive throttling, preventing abuse, resource exhaustion, and cost overruns from runaway agents or malicious use. The mechanism operates at the API gateway level and tracks request counts per identity and globally. This protects against DoS via excessive API calls, prevents accidental cost blowups, and ensures fair resource allocation among users.
 formal_implementation_risk: null

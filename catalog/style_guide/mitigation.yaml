@@ -1,8 +1,28 @@
+entity:
+  purpose: 'One card is one control: something an organisation adopts, written so it can be adopted for any threat it closes rather than only the first one.'
+  instructions:
+  - Apply the splitting test before naming anything. Two controls are two cards if and only if an organisation could adopt one without the other. If adopting the first always means adopting the second, they are one card, and the second is part of its control mechanism or an entry in its acceptance criteria.
+  - Pick mitigation_class first. It is a switch that sets how control_mechanism and failure_behavior are read, so choosing it after writing either means rewriting both.
+  - Write every field against the control, never against the threat that prompted the card. Test it by asking whether the card would still read correctly linked to an unrelated threat.
+  avoid:
+  - Two controls in one card, where an organisation could plainly ship half of it.
+  - A card carrying the shape of its first occasion - the name, the scope or the acceptance criteria written against one threat. That card will not link to a second threat without reading oddly, so the same control gets written twice under two names.
+  - Anything of the form 'the organisation decides' or 'depending on your risk appetite'. Org-specific content goes in `implementations`, or nowhere.
 fields:
   name:
-    purpose: Name of the mitigation.
-  status:
-    purpose: Status of the card. Before the card passes verification (Stage 0 of the acceptance process) the status is draft; verified once it passes.
+    purpose: What the control is, at the altitude a reader would go looking for it. The name is the first thing that decides whether a card is found and reused, or written a second time under another name.
+    content_requirements:
+    - Name the control, not one occasion of using it. If the name only fits the first threat it was written against, it is a use of the control rather than the control.
+    - Use the name the field already has where one exists - a reader arrives with the industry's word, not with ours.
+    - It should be possible to link the card to a second, unrelated threat without the name reading oddly. If it cannot, the name is too narrow.
+    avoid:
+    - A name carrying the threat it was first written for. 'Human decision on the path of an irreversible action' is a sentence about one link; the control is human-in-the-loop for agent actions.
+    - A name carrying the deployment ('approval service'), the vendor, or the mechanism's implementation detail.
+    - A restated purpose. The name is a handle, not a summary.
+    examples:
+    - Human-in-the-loop for agent actions
+    - Least-privilege identity for agent tool calls
+    instructions: null
   mitigation_class:
     purpose: 'One of gating_control / detector / process / evidential_mitigation / corrective. The class is a switch: it sets how the Control mechanism and Failure behavior sections are read.'
     content_requirements:
@@ -27,14 +47,19 @@ fields:
     examples:
     - An allowlist is enforced at request time but never re-synced after new tools are registered, so anything added after initial rollout is silently permitted.
   scope:
-    purpose: A deterministic rule for the condition under which the mitigation applies or fires, formulated through a property of the system, an operation, or an asset.
+    purpose: A deterministic rule for when this control applies, stated through a property of the system, the operation, or the asset - so two readers with the same architecture reach the same answer.
     content_requirements:
-    - Deterministic rule - no 'by team decision' or 'by model decision'.
-    - Strictness levels, if any, set through a deterministic property (system class, criticality, chain type).
-    - Profiles (same mitigation varied by a deterministic property) described here, not as separate cards.
-    - 'Boundary: explicitly state what is out of the mitigation''s scope.'
+    - 'Deterministic: no ''by team decision'' and no ''if the model judges it risky''.'
+    - Written about the class of operations this control governs, not about any one threat. A card links to many threats over its life, and a scope written against the first of them is wrong by the second.
+    - Structure it. A rule with several independent tests reads as a list or a table; as one paragraph nobody checks their own system against it.
+    - Strictness levels, where they exist, set by a deterministic property of the contour (criticality, regulation, blast radius) rather than by a choice.
+    - Profiles - the same control varied by such a property - belong here, not as separate cards.
     avoid:
-    - Variation dictated by the team's timeline or resources - that is a temporary exception in the acceptance log, not scope.
+    - Writing it against the threat the card was created for. Why this control fits that threat is the link's `rationale`; scope is about the control alone.
+    - 'Mechanism: where the check is computed, when it is registered, what the middleware does. That is `control_mechanism`. Scope answers WHEN it applies, not HOW it fires.'
+    - The boundary. What the control deliberately does not cover is `out_of_scope`, its own field so its absence is visible.
+    - A blanket carve-out by a technical label ('read-only operations') without checking it against the tests above - a read that carries regulated data out is not exempt because it is a read.
+    - Variation dictated by a team's timeline or resources - that is a temporary exception in the acceptance record, not scope.
   control_mechanism:
     purpose: 'Read per mitigation_class: the concrete mechanism and the deterministic guarantee it holds.'
     content_requirements:
@@ -44,22 +69,26 @@ fields:
     - 'evidential_mitigation: what is stored (event types, mandatory attributes, per-event integrity anchors - ID + hash); where it is emitted (instrumentation points on the platform side); the completeness guarantee (append-only, cryptographic chain) that needed events are not lost or falsified.'
     - 'corrective: the remediation action (concrete component / runbook performing rollback / kill-switch / containment); the trigger (deterministic, or an explicit decision authority + SLA); the deterministic guarantee it brings the system to a known-good state, not a partial or ambiguous one.'
   failure_behavior:
-    purpose: 'Read per mitigation_class: what happens when the mitigation fails, and how that failure is discovered.'
+    purpose: 'What happens when the control itself fails, and what makes it so. The value is what lets a reader ask the question that matters across a whole system: what here fails open.'
     content_requirements:
-    - 'gating_control: fail-closed / fail-open + justification. For blocking controls the default is fail-closed.'
-    - 'detector: what happens when detection fails (the detector is silent or unavailable); how a ''blind'' detector is discovered.'
-    - 'process: what happens if the process is skipped or not conducted on time; how this is discovered.'
-    - 'evidential_mitigation: loss of an event must not be silent - the inability to log is recorded with an explicit loss marker; a break of integrity is discovered automatically.'
-    - 'corrective: what happens if the corrective action itself fails or cannot complete - it must fail toward a safe / contained state, not leave the system mid-remediation in an ambiguous state; how a stuck or failed remediation is detected.'
-  telemetry:
-    purpose: The events that are logged, the mandatory attributes of each (including attribution to a person or subject), and where the evidence is stored.
-    content_requirements:
-    - The list of events that are logged.
-    - 'Mandatory attributes of each event, including attribution: actor, initiator, object, decision taken, result.'
-    - Where the evidence is stored.
+    - 'value: fail_closed (the guarded thing stops), fail_open (it continues unguarded), or degraded (it continues with a named, reduced guarantee).'
+    - 'note: every condition counted as a failure - unavailable, expired, unauthenticated, state lost - and what happens in each.'
+    - Say what makes the value flip. Whether a blind detector is a shrug or a full stop is a property of the contour, not of the control's kind, so a card that can go either way names the property that decides.
+    - Say how the failure is noticed. A control that fails silently is indistinguishable from one that is working.
     avoid:
-    - Duplicating attributes already in Control mechanism.
-    - Listing standard identifiers (session_id, timestamp, user_id) unless they have specific requirements here.
+    - Deriving the value from mitigation_class. A detector is not automatically fail_open and a gate is not automatically fail_closed.
+    - fail_open with no justification - it is a real answer, but never a default.
+    - Describing a control that was built wrong. That is formal_implementation_risk; this field is a correct control breaking at runtime.
+  telemetry:
+    purpose: 'The evidence this control leaves behind: which events, what each one has to carry, and where the record is held.'
+    content_requirements:
+    - One entry per event, with the name as it is emitted and one line saying what the event establishes.
+    - 'Attributes without which the event proves nothing - attribution above all: who acted, on what, and what was decided.'
+    - Include the event that fires when the control REFUSES. The count of refusals is what says whether the control is doing anything at all.
+    - 'evidence: where the record is held and for how long. A log the producing system can rewrite is not evidence.'
+    avoid:
+    - Attributes already implied by the mechanism - this field is what is written down, not how the control works.
+    - Standard identifiers (timestamp, session id) unless this control needs something specific of them.
   anti_patterns:
     purpose: An explicit list of implementations that look like the mitigation but are not - a clean list of 'how NOT to do it', including at minimum the 'formal' variant from Risk of formal implementation.
     content_requirements:
@@ -71,12 +100,14 @@ fields:
     - A vague 'if implemented poorly' entry with no diagnostic signal — a reader must be able to go check for it.
     - Anti_patterns as a verbatim copy-paste of formal_implementation_risk with no added entry.
   validation:
-    purpose: Pass/fail acceptance criteria with test scenarios. Base criteria are the mandatory adoption bar; additional criteria cover the mitigation's specifics.
+    purpose: Pass/fail acceptance criteria with the scenario that decides each. Base criteria are the bar for anyone adopting the control at all; situational ones apply to some contours and not others.
     content_requirements:
     - Each criterion is a pass/fail statement; if it cannot be, it is not a criterion.
     - Each criterion checks what the others do not. Thresholds and numeric values go here.
-    - 'A test scenario per criterion: a drill, a red-team case, or a reproducible audit check.'
-    - Run frequency is driven by the change-triggers in Review; the calendar cadence is only a safety-net.
+    - 'A scenario per criterion: a drill, a red-team case, or a reproducible audit check - something someone can actually run.'
+    - 'Mark a criterion situational (base: false) when it depends on the contour, not when it is merely harder. A situational criterion says which contour it is for.'
+    - Between them, the criteria should catch the anti-patterns the card lists. An anti-pattern nothing would catch is a warning nobody can act on.
+    - Run frequency comes from the change-triggers in Review; a calendar cadence is only the safety net.
   review:
     purpose: Change-triggers for revising the card + a safety-net review cadence. If the safety-net run regularly finds something, the list of change-triggers is incomplete.
     content_requirements:
@@ -87,13 +118,17 @@ fields:
     - A fixed frequency (monthly/quarterly/annual) written into the card.
     - Re-describing operational re-testing of a deployed instance — that's validation's job, not this field's.
   locus:
-    purpose: Which layer the mitigation naturally belongs to - the product (application logic) or the infrastructure/platform - with a short rationale, not a bare label (the boundary is often a split). This is the shared-responsibility call.
+    purpose: Which layer this control's mechanism belongs to, and why. A reader arrives asking whether this is something to build once for everyone; the value answers that and the note says on what it depends.
     content_requirements:
-    - State which layer this control's mechanism architecturally belongs to — product (application logic) or infrastructure/platform — and why, as a general property of the mechanism itself, not a specific organization's deployment.
-    - If the mechanism genuinely spans both layers for any implementation of it, name the interface/handoff point in general terms (e.g. 'the point where a request crosses from application code into the shared execution runtime').
+    - 'value: product, infrastructure, or split. Say it about the mechanism itself, not about any one organisation''s deployment.'
+    - 'note: what makes it so - and where it would be otherwise. A control that pays to centralise across many agents may be plain application code for a team with one.'
+    - 'split: name the handoff in general terms - the point where a call crosses from application code into the shared path, and which side holds which half.'
     avoid:
-    - A bare label ('infrastructure'/'product') with no rationale.
-    - Describing a specific organization's actual platform, team, or deployment split — that's what `implementation.coverage`/`covers` capture; this field states the mechanism's natural home in the abstract.
+    - Writing it as settled for every reader. This field helps someone decide, so a sentence that leaves them nothing to decide has failed at its job.
+    - Describing a particular company's platform or team split - that is `implementations`, a different axis.
+    - A value with a note that only restates it ('infrastructure, because it is infrastructure').
+    examples:
+    - split - the mechanism is an interception point in the runtime, so wherever several agents share one, a single enforcement serves all of them. A team with one agent gains nothing from that and can hold the same stop in its own code. The handoff is where a call crosses into the shared execution path.
   maintainer:
     purpose: Name + contact for operational communication.
     content_requirements:
@@ -108,3 +143,28 @@ fields:
     avoid:
     - Duplicating content that lives in another field — the FAQ exists for exactly what those fields don't cover.
     - Sneaking a new requirement, threshold, or scope change into an answer — that belongs in scope/validation, not here.
+  positioning:
+    purpose: How this entry sits relative to the entries in the sources Keel tracks. Only what the mapping itself does not already say.
+    content_requirements:
+    - Write it only where the shapes differ. A source entry that lines up one-to-one with this one needs nothing here - the mapping already says it.
+    - Where a source entry is broader, say what the rest of it is and where that lands, so a reader who came from that entry can find the other half.
+    - Where this entry answers a source in a shape of its own (a mechanism carried across many entries rather than one row), say which shape and why.
+    - 'Written so it stays true as the catalog grows: about this entry''s relationship to the source, never about the set of entries answering that source.'
+    avoid:
+    - Catalog state - which entries exist, what is still a gap, what is planned. All of that is computed and shown, and a sentence repeating it is wrong the day it changes.
+    - A to-do. This field describes a relationship, not work outstanding.
+    - Restating the mapping. That an entry answers ASI02 is already recorded; this field is only for what that fact leaves unsaid.
+    - Framework mappings written out by hand - the ids live in catalog/coverage/ and reach the card automatically.
+    examples:
+    - 'ASI02 groups everything an agent''s tools can be turned to, which spans two harms: an action that should not have been taken, and a read that should not have been served. This entry is the first of those; the second anchors to `data-exposed` and is therefore a separate threat.'
+  out_of_scope:
+    purpose: What this control deliberately does not cover, and where that is handled instead.
+    content_requirements:
+    - Name what a reader would reasonably expect this control to catch and it does not, so they stop looking here and go where it is handled.
+    - Where the control is structurally the wrong answer for a case rather than merely absent, say so and name the pattern that fits - claiming a card that cannot work is worse than an admitted gap.
+    - Bounded by the same deterministic properties `scope` uses, so the two read as one rule seen from both sides.
+    avoid:
+    - A restated negation of scope ('everything not listed above') - that is what scope already says.
+    - Anything conditioned on a team's time or priorities. That is an exception in the acceptance record, not a boundary.
+    examples:
+    - A stream of near-identical decisions. At that rate a person approves without reading, which looks like the control working and is not; the path needs sampling with a bound on the aggregate, recorded as a deliberate choice.

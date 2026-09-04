@@ -1,6 +1,5 @@
 id: CTRL-RAG-INTEGRITY
 name: RAG Store Integrity
-status: draft
 mitigation_class: gating_control
 purpose: Protects the RAG vector store from poisoning and unauthorized modification through embedding integrity controls, data source verification, and access control on knowledge base operations. The mechanism operates at the RAG pipeline level and ensures that only verified content enters the knowledge base. This prevents knowledge base corruption via malicious documents, detects embedding tampering, and ensures the authenticity of retrieval results.
 formal_implementation_risk: null

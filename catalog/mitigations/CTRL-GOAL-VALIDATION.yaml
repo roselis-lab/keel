@@ -1,6 +1,5 @@
 id: CTRL-GOAL-VALIDATION
 name: Validating Goal Alignment with Business Objectives
-status: draft
 mitigation_class: detector
 purpose: Validates the agent's goals and planned actions for alignment with organizational business objectives, policies, and constraints at each execution stage, preventing goal hijacking and the execution of actions contrary to the intended agent purpose. The mechanism operates as a validation checkpoint in the agent's planning and execution loop, evaluating proposed goals and actions against defined boundaries. This detects attempts to rewrite the agent's objective function, identifies drift from the intended purpose, and blocks the execution of actions outside the legitimate scope.
 formal_implementation_risk: null

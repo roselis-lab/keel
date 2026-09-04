@@ -1,6 +1,5 @@
 id: CTRL-AI-CODE-REVIEW
 name: Enhanced security review for AI-generated code
-status: draft
 mitigation_class: detector
 purpose: Ensures an in-depth security review of code generated or modified by AI, with mandatory inspection of diffs exceeding an AI-content threshold, tracking of security-regression patterns, and assignment of codeowners for sensitive areas of the codebase. The mechanism is triggered in the CI/CD pipeline before merge and at the code review stage, applying elevated requirements to AI-generated code compared to code from trusted developers. This surfaces vulnerabilities that a model may introduce due to hallucinating secure patterns, copying vulnerable code from the training set, or insufficient understanding of the specific project's security context.
 formal_implementation_risk: null

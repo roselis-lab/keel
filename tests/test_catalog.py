@@ -1,5 +1,5 @@
 """Catalog validation: the shipped catalog is valid, and bad records are caught."""
-from keel.catalog import _MITIGATION_KEYS, validate_catalog
+from keel.catalog import validate_catalog
 
 
 def test_shipped_catalog_is_valid():
@@ -7,15 +7,16 @@ def test_shipped_catalog_is_valid():
     assert validate_catalog() == []
 
 
-def test_implementations_is_a_known_mitigation_key():
-    assert "implementations" in _MITIGATION_KEYS
-
-
-def test_validate_accepts_mitigation_with_implementations(tmp_path):
-    (tmp_path / "threats").mkdir()
-    (tmp_path / "mitigations").mkdir()
+def test_validate_accepts_mitigation_with_implementations(catalog_dir):
+    tmp_path = catalog_dir()
     (tmp_path / "mitigations" / "CTRL-Z.yaml").write_text(
         "id: CTRL-Z\nname: Z\nmitigation_class: gating_control\n"
+        "purpose: Stops the action leaving on model judgement.\n"
+        "scope: Every tool call that moves money.\n"
+        "out_of_scope: Reads that change nothing.\n"
+        "control_mechanism: A middleware before the call.\n"
+        "locus: {value: infrastructure, note: A property of the runtime.}\n"
+        "failure_behavior: {value: fail_closed, note: Without an approval nothing runs.}\n"
         "implementations:\n"
         "- title: Platform sandbox\n"
         "  description: Tool calls run in a locked-down container.\n"
@@ -52,7 +53,8 @@ def test_validate_flags_dangling_mitigation(tmp_path):
         "mitigations:\n- {id: CTRL-GHOST, strength: gating, rationale: x}\n",
         encoding="utf-8",
     )
-    assert any("unknown mitigation" in e for e in validate_catalog(tmp_path))
+    assert any("CTRL-GHOST" in e and "not in the catalog" in e
+               for e in validate_catalog(tmp_path))
 
 
 def test_validate_flags_id_filename_mismatch(tmp_path):

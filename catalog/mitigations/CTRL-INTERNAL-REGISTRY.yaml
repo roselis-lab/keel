@@ -1,6 +1,5 @@
 id: CTRL-INTERNAL-REGISTRY
 name: Internal Package Proxies/Repositories
-status: draft
 mitigation_class: gating_control
 purpose: Routes all requests to package registries through an internal proxy server with an allowlist of permitted packages and a denylist of known malicious ones, ensuring control over the dependency landscape and protection against supply chain attacks. The mechanism operates at the level of network configuration and package manager config, intercepting all registry requests. This prevents the installation of malicious packages, blocks slopsquatting attacks through hallucinated package names, and provides visibility into the dependencies in use.
 formal_implementation_risk: null

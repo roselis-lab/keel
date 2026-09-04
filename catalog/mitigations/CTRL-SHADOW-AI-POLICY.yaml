@@ -1,6 +1,5 @@
 id: CTRL-SHADOW-AI-POLICY
 name: Policy for Use of External AI Services
-status: draft
 mitigation_class: gating_control
 purpose: Defines a corporate policy for the use of external AI services with explicit allowlisting of approved services, categorization of data permitted for external processing, and an approval process for new services, preventing shadow IT and uncontrolled data disclosure. The mechanism operates at the level of policy enforcement and user training. This provides governance over the use of AI tools, protects against accidental data leakage through unauthorized services, and establishes clear guidelines for employees.
 formal_implementation_risk: null

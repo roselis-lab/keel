@@ -1,6 +1,5 @@
 id: CTRL-PLAN-VALIDATION
 name: Plan Validation
-status: draft
 mitigation_class: detector
 purpose: Validates an agent's action plans for logical correctness, feasibility, and compliance with constraints before execution, detecting reasoning errors and invalid action sequences at the planning stage. The mechanism operates as a plan verification layer that analyzes the proposed plan against domain rules and system capabilities. This prevents execution of logically flawed plans, detects impossible action sequences, and enables early detection of agent reasoning failures.
 formal_implementation_risk: null

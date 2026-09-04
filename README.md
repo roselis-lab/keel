@@ -111,9 +111,8 @@ Keel ships as skills under `.claude/skills/`, in two groups: running an assessme
 - **`assess-genai-with-library`** binds that methodology to Keel's MCP: candidate threats, a `reachability` match on the target system, then mitigations and whether their `implementations` are actually in place. It polishes the final assessment through `tighten-text` (concision) and `humanizer` (natural voice). Both are substance-preserving.
 
 **Working with the model**
-- **`check-style`** reviews an entry's prose against the style guide, the content review that the deterministic `keel validate` cannot do.
-- **`checking-model-coverage`** takes new external material (an OWASP or ATLAS update, a CVE, an advisory) and decides whether the model already covers it, on both the threat side and the mitigation side, or whether there is a gap.
-- **`folding-into-the-model`** writes a confirmed gap into the model, surfacing the judgment calls and asking before any consequential change to an existing entry, rather than deciding silently.
+- **`folding-into-the-model`** is the authoring path, and it starts by finding out whether there is anything to author. Given a subject or a piece of incoming external material (an OWASP or ATLAS update, a CVE, an advisory), it decides what kind of thing it is and whether the model already answers it, on the threat side and the mitigation side alike. A covered item ends there, as a row in the coverage matrix. A confirmed gap goes on through a research gate, the test for whether it is one record or part of one, and the per-field bar, surfacing the judgment calls and asking before any consequential change rather than deciding silently.
+- **`check-style`** judges what was written against the style guide: the per-field bar, and the record-level checks no single field can carry. This is the content review the deterministic `keel validate` cannot do, and it runs on every entry before the work is reported as done.
 
 ## Authoring UI
 
@@ -133,21 +132,27 @@ The form and its dropdowns read a JSON Schema generated from the Pydantic models
 
 ## Why not just OWASP, ATLAS, or MAESTRO
 
-Keel builds on all three and reuses their framing; the assessment reports its findings as a delta against MITRE ATLAS. They give you a shared language and stop there. A working practice needs more: it has to be lean enough to actually run, produce checkable evidence, and live in one shared place a team can grow with its systems. Each framework also has its own blind spot.
+Keel builds on all three and reuses their framing. They give you a shared language and stop there, which leaves two problems standing.
+
+**A threat model is an encyclopedia, not an engine.** It is read, not run. Nothing in it answers the only question that matters in front of a real system: is this reachable here at all?
+
+**And it is someone else's encyclopedia.** It was not written about your architecture. Taking it as it stands does not fit; editing it to fit turns it into your own encyclopedia within a quarter - just as dead, and now wrong as well.
+
+The second problem is what makes the first one hard. An engine over somebody's list is easy. What is hard is a list you can rewrite for yourself that does not rot while you do it. Each framework also has its own blind spot.
 
 | Framework | Blind spot |
 | --- | --- |
 | **OWASP LLM Top 10** | One ranked list that mixes different kinds of thing: mechanisms (Prompt Injection becomes a threat only once it reaches a real asset through an agent's privileges), consequence classes (Sensitive Information Disclosure), generic software risk (Supply Chain), and teaching traps (System Prompt Leakage wrongly treats the system prompt as a security boundary). A good coverage checklist, a poor threat model. |
-| **MITRE ATLAS** | Adversary-side. It describes what the attacker does, not where in your architecture a control goes or who owns it. A companion to a threat model, not a replacement. |
-| **CSA MAESTRO** | Without CI/CD rules, control owners, and proof of implementation it stays an architectural map, not an enforcement mechanism. It is also overkill for a single-agent, single-tool setup. |
+| **MITRE ATLAS** | Adversary-side, and a catalogue rather than a procedure. It tells you what has been done to systems like yours; it cannot tell you whether any of it is reachable in yours. A companion to a threat model, not a replacement. |
+| **CSA MAESTRO** | An architectural map you read, with no rule for deciding what applies to the system in front of you. It is also overkill for a single-agent, single-tool setup. |
 
-Keel works a different axis from the frameworks above. It makes the language operable, lean, and shared.
+Keel works a different axis. Everything in it serves one of those two problems.
 
-- It stays lean. The model carries only what is live (the weakness, how it is reached, the consequence, and whether it is reachable), and the catalog is a floor, so you skip the overhead of a full layered methodology on a single-agent setup. It also separates what OWASP conflates: a mechanism becomes a finding only once it reaches a real asset.
-- It is operable. The assessor walks the model against a real system and returns findings, which is what separates framework literacy from a working practice.
-- It insists on evidence. The data-sufficiency gate and the rule that "model behavior is not a mitigation" stop an assessment from claiming a control works without proof; a SOFT control that only hinders leaves the threat open.
-- It centralizes. One shared model, queried over MCP, gives every team the same definitions, so the same threats get written once and reused.
-- It is built to grow. Each team extends and prunes it into its own living model, carrying its edits forward as its systems change.
+**Against the encyclopedia.** Every threat carries a `reachability` - the condition under which it is not a live path in a given system - so the model can be run against an architecture rather than read. The assessor walks it and returns findings with a delta against the last run, and a finding the catalog did not have is recorded as such rather than quietly absorbed. That is what separates framework literacy from a working practice.
+
+**Against it being someone else's.** The model is YAML in git and forks. `implementations` is a layer of its own: the shared card defines the control and how to accept it, your implementation records how you built it, and the two move on different clocks - which is also what lets an assessment ask whether a control is in place *here* rather than whether it exists in general. The style guide, the review skill and the record-level rules are what keep a fork from decaying into a private mess, because a model nobody can edit safely is one nobody edits.
+
+It also separates what OWASP conflates: a mechanism becomes a finding only once it reaches a real asset. And it stays lean, so a single-agent setup does not pay for a full layered methodology.
 
 ## Interfaces
 

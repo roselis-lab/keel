@@ -1,6 +1,5 @@
 id: CTRL-CONTENT-POLICY
 name: Content policy and ethical standards
-status: draft
 mitigation_class: gating_control
 purpose: Defines and enforces rules of acceptable content across all input and output flows of the system, blocking the generation or processing of toxic, discriminatory, illegal, or otherwise unacceptable material in accordance with ethical standards and regulatory requirements. The mechanism is deployed as a content moderation layer at the system's boundaries - user input, model output, external data ingestion - and applies a combination of ML classifiers, rule-based filters, and policy checks to detect violations. This prevents reputational damage from generating harmful content, ensures compliance with content regulations, and protects users from exposure to objectionable material.
 formal_implementation_risk: null

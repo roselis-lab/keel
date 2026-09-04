@@ -1,61 +1,62 @@
 id: T-HALLUCINATION
-title: Misleading or erroneous output → wrong decision
+title: The model is confidently wrong on inputs nobody tampered with, and nothing checks it before it is used
 harm: wrong-decision
-surface:
-- user-agent
 source:
 - hallucination
 - error
 weaknesses:
-- component: model
-  text: The agent produces a confidently phrased, human-read answer with factually wrong statements (fabricated facts, non-existent references/APIs/documents); credibility is judged by form, not content.
-  nature: targeted
-- component: model
-  text: A flaw in the reasoning chain (an unfounded logical leap, mistaking correlation for causation, wrong classification) leads to a wrong conclusion or choice of tool/action.
-  nature: targeted
-- component: model
-  text: The agent builds a confident but wrong output from free-form text that arrived in a tool's output.
-  nature: targeted
-- component: model
-  text: 'Context confusion between projects/environments: a configuration or action from one environment is applied to another (production vs development).'
-  nature: targeted
 - component: downstream
-  text: The user over-trusts the agent's authoritative style and accepts the output without verification; even a correct answer is extrapolated beyond its bounds of applicability.
+  surface:
+  - model-output
+  text: The model's answer reaches a human reader with nothing that marks which statements are grounded and which are the model's own, so credibility is judged by fluency - a fabricated fact, reference or API is read with the same confidence as a real one.
   nature: targeted
-reachability: NOT applicable if the agent's output feeds no consequential decisions or actions — not consumed by a downstream system and not a basis for human decisions.
+- component: tool
+  surface:
+  - model-output
+  text: A tool or action is chosen on the model's reasoning alone, with no check that the choice follows from the inputs before it executes - an unfounded leap or a wrong classification becomes an action.
+  nature: targeted
+- component: model
+  surface:
+  - tool-output
+  text: Free-form text returned by a tool is read into the answer as fact, with nothing separating what the tool returned from what the model concluded about it.
+  nature: targeted
+- component: tool
+  surface:
+  - model-output
+  text: Nothing in the execution context distinguishes one environment from another, so a configuration or action meant for development is applied to production because the model did not tell them apart.
+  nature: targeted
+reachability: 'The agent''s output feeds no consequential decision or action: it is not consumed by a downstream system and it is not the basis on which a person decides anything.'
 mitigations:
-- id: CTRL-AGENT-REPORT
-  strength: gating
-  rationale: Agent reporting of confidence and limitations helps the user correctly assess the risks
-- id: CTRL-FACT-CHECKING
-  strength: gating
-  rationale: 'Fact-checking against external sources catches hallucinations caused by incorrect tool output
-
-
-    Fact-checking against external sources catches model hallucinations'
 - id: CTRL-HUMAN-IN-LOOP
   strength: gating
-  rationale: 'A human reviews critical agent actions before execution
-
-
-    Human oversight of critical decisions reduces the risk of blind trust in the AI'
-- id: CTRL-OUTPUT-VALIDATION
-  strength: gating
-  rationale: Validation of the result before it is applied
+  rationale: 'Closes the action weakness for the critical subset: an action the model chose does not execute until a person has approved it, so a wrong choice about a financial, destructive or configuration change is caught before it lands. Actions outside that subset still run on the model''s reasoning alone.'
 - id: CTRL-PLAN-CONFIRMATION
   strength: gating
-  rationale: Presenting the plan to the user before execution provides a chance to catch reasoning errors at an early stage
+  rationale: 'Closes the action weakness for multi-step work: the plan is shown as a diff or preview and nothing executes until it is confirmed, so a reasoning error surfaces while it is still a plan.'
 - id: CTRL-PLAN-VALIDATION
-  strength: gating
-  rationale: Validation of the action plan before execution reveals logical errors
+  strength: soft
+  rationale: 'Checks a plan for logical consistency and constraint violations before execution, against the action weakness. It does not close the threat: it produces a signal, and a plan that is consistent and wrong passes.'
+- id: CTRL-FACT-CHECKING
+  strength: soft
+  rationale: 'Cross-references factual claims in the answer against sources, against the reader weakness. It does not close the threat: it produces a signal with its own miss rate, and the reader still decides what to do with it.'
 - id: CTRL-SOURCE-REFERENCES
-  strength: gating
-  rationale: 'Requiring source references allows verification of the information''s accuracy
-
-
-    Requiring source references allows verification of the accuracy of data from tool output'
-- id: CTRL-TOOL-CALL-VALIDATION
-  strength: gating
-  rationale: Validation of tool selection before execution catches selection errors (actions instead of reads, destructive operations instead of viewing)
-references: []
-tags: []
+  strength: soft
+  rationale: 'Attaches a source to each factual statement, which gives the reader the grounded-or-not marker the reader weakness says is missing. It does not close the threat: a reference can be fabricated too, and a reader who does not follow it has gained nothing.'
+references:
+- title: Mata v. Avianca, Inc., 678 F.Supp.3d 443 (S.D.N.Y. 2023) - Opinion and Order on Sanctions
+  url: https://www.law.berkeley.edu/wp-content/uploads/archive/2025/12/Mata-v-Avianca-Inc.pdf
+  note: 'The reader weakness in the primary record: ChatGPT produced non-existent opinions with fabricated quotes and citations that were filed in court, and when the lawyer asked whether the cases were real it said they were. The only check the reader ran was the model itself. Sanctions followed.'
+- title: 'Gemini CLI ''lost'' files during a failed file move operation - issue #4586'
+  url: https://github.com/google-gemini/gemini-cli/issues/4586
+  note: 'The tool-output weakness in a shipped tool: a directory creation failed silently, the model read the following move results as success and kept issuing moves that overwrote all but one file. Closed as not planned - no fix shipped.'
+- title: AI-powered coding tool wiped out a software company's database in 'catastrophic failure'
+  url: https://fortune.com/2025/07/23/ai-coding-tool-replit-wiped-database-called-it-a-catastrophic-failure/
+  note: 'The environment weakness: an agent working in development deleted the production database during a declared freeze, then reported that rollback would not work when it did. Replit''s shipped response was automatic separation of development and production databases and a planning-only mode.'
+- title: Hallucination-Free? Assessing the Reliability of Leading AI Legal Research Tools
+  url: https://arxiv.org/abs/2405.20362
+  note: 'Measured and preregistered: retrieval-backed legal tools marketed as hallucination-free still hallucinated in 17 to 33 percent of expert-scored queries, including citing real but inapplicable authority. Direct evidence that attaching sources is a soft control - it does not close the reader weakness.'
+positioning: LLM09 (Misinformation) lines up with this record closely, including the overreliance it describes. It also lists misinformation caused by poisoned training or retrieval data, which is a different chain - the input was tampered with - and is the poisoning record.
+tags:
+- hallucination
+- reasoning
+- overreliance

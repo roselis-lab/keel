@@ -5,6 +5,21 @@ from keel.services.style_guide_service import get_coverage
 from keel.store import get_store
 
 
+def _findings_for_the_served_catalog(store: Any) -> list[dict[str, Any]]:
+    """The rules, run over what is loaded rather than over the files.
+
+    `keel validate` reads the directory, because its question is whether the files may be
+    trusted. The dashboard's question is different: what is wrong with the catalog people
+    are looking at right now. Re-reading the disk here would let the two disagree the
+    moment a write lands, which is exactly when someone is looking.
+    """
+    from keel.rules import Catalog, check_all
+    from keel.services.coverage_service import load_sources
+
+    cat = Catalog.from_store(store, coverage=load_sources(store.dir))
+    return [f.as_dict() for f in check_all(cat)]
+
+
 async def get_stats() -> dict[str, Any]:
     """Return counts across the library."""
     store = get_store()
@@ -17,26 +32,17 @@ async def get_stats() -> dict[str, Any]:
 
 
 async def check_library_health() -> dict[str, Any]:
-    """Surface content and integrity gaps in the library."""
+    """Everything the dashboard needs to say how the library is doing.
+
+    Three tiers, deliberately separate. `errors` are hard defects found when the catalog
+    was loaded — a record that failed its schema is not being served at all. `warnings`
+    are advisory: real, but a half-authored draft may legitimately trip them.
+
+    Everything except the load problems comes from the one rule registry, so the
+    dashboard cannot know something the write that caused it did not.
+    """
     store = get_store()
-    threats = list(store.threats.values())
-    mitigation_ids = set(store.mitigations)
-
-    missing_weaknesses = sorted(t["id"] for t in threats if not t.get("weaknesses"))
-    missing_harm = sorted(t["id"] for t in threats if not (t.get("harm") or "").strip())
-    without_mitigation = sorted(t["id"] for t in threats if not (t.get("mitigations")))
-    dangling_links = sorted(
-        f'{t["id"]}::{link["id"]}'
-        for t in threats
-        for link in (t.get("mitigations") or [])
-        if link.get("id") not in mitigation_ids
-    )
-
     mitigations = list(store.mitigations.values())
-    status_counts = {"draft": 0, "verified": 0, "unset": 0}
-    for m in mitigations:
-        status_counts[m.get("status") if m.get("status") in ("draft", "verified") else "unset"] += 1
-
     impl_counts = {"shared": 0, "local_only": 0, "none": 0}
     for m in mitigations:
         impls = m.get("implementations") or []
@@ -48,25 +54,28 @@ async def check_library_health() -> dict[str, Any]:
             impl_counts["local_only"] += 1
 
     coverage = await get_coverage()
-    issues = {
-        "threats_missing_weaknesses": missing_weaknesses,
-        "threats_missing_harm": missing_harm,
-        "threats_without_mitigation": without_mitigation,
-        "dangling_mitigation_links": dangling_links,
-    }
+    findings = _findings_for_the_served_catalog(store)
+    errors = [f for f in findings if f["severity"] == "error"]
+    warnings = [f for f in findings if f["severity"] == "advice"]
     return {
         "success": True,
         "stats": await get_stats(),
         "style_guide_coverage": coverage.overall,
-        "issues": issues,
-        "issue_count": sum(len(v) for v in issues.values()),
-        "mitigation_status_counts": status_counts,
+        # Two kinds of hard defect, kept apart because they are fixed differently.
+        # `load_problems` are records that failed their schema and are not being served
+        # at all - the file has to be repaired before anything else is true about it.
+        # `errors` are records that loaded and are wrong against the rest of the catalog.
+        "load_problems": store.problems,
+        "errors": errors,
+        "error_count": len(store.problems) + len(errors),
+        # Advisory: real, but a half-authored draft may legitimately trip them.
+        "warnings": warnings,
+        "warning_count": len(warnings),
         "implementation_coverage_counts": impl_counts,
     }
 
 
 async def get_catalog_warnings() -> dict[str, Any]:
-    """Structured advisory warnings for the dashboard (see `keel.catalog.catalog_warnings_structured`)."""
-    from keel.catalog import catalog_warnings_structured
-
-    return {"warnings": catalog_warnings_structured(get_store().dir)}
+    """The advisory half of the sweep, for the dashboard's own warnings block."""
+    return {"warnings": [f for f in _findings_for_the_served_catalog(get_store())
+                         if f["severity"] == "advice"]}

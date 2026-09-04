@@ -16,3 +16,6 @@ venv/
 .mypy_cache/
 dist/
 build/
+
+# Assessment runs are local: real system names and findings, never committed.
+reports/

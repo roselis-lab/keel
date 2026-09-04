@@ -23,6 +23,23 @@
       "title": "Nature",
       "type": "string"
     },
+    "surface": {
+      "description": "The channels this weakness is reached through, when it is about content crossing into the component. A list, because one condition is often reachable over several channels and one control closes it on all of them - splitting it per channel would make three weaknesses of one. Empty for a weakness about the component's own authority, which nothing has to flow in to exploit",
+      "items": {
+        "enum": [
+          "user-input",
+          "retrieved-content",
+          "tool-output",
+          "agent-message",
+          "memory",
+          "training-data",
+          "model-output"
+        ],
+        "type": "string"
+      },
+      "title": "Surface",
+      "type": "array"
+    },
     "text": {
       "description": "Architectural condition: cause + where + defect",
       "title": "Text",

@@ -1,6 +1,5 @@
 id: CTRL-TOOL-ALLOWLIST
 name: ToolCall Allowlist
-status: draft
 mitigation_class: gating_control
 purpose: Restricts the list of tools that an agent may invoke autonomously, through a centralized registry of allowed tools or individual assignments per agent, implementing the principle of least privilege and limiting the attack surface. The mechanism operates at the tool registry layer and checks every tool invocation against the allowlist. This prevents unauthorized use of tools, limits the potential damage from a compromised agent, and ensures controlled expansion of capabilities.
 formal_implementation_risk: null

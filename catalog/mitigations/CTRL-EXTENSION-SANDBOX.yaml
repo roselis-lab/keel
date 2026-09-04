@@ -1,6 +1,5 @@
 id: CTRL-EXTENSION-SANDBOX
 name: Sandboxing IDE Extensions
-status: draft
 mitigation_class: gating_control
 purpose: Isolates IDE extensions in a restricted execution environment with controlled access to resources — filesystem, network, terminal — preventing unauthorized access to sensitive data and system commands even when an extension is compromised. The mechanism is deployed at the level of the extension host process or browser sandbox, intercepting all resource requests and checking them against policy. This limits the blast radius of malicious or compromised extensions, prevents data exfiltration through extensions, and blocks attempts at arbitrary code execution through extension vulnerabilities.
 formal_implementation_risk: null

@@ -1,0 +1,83 @@
+source:
+  id: owasp-llm
+  title: OWASP Top 10 for LLM Applications
+  version: '2025'
+  released: '2024-11-18'
+  url: https://genai.owasp.org/llm-top-10/
+  checked: '2026-08-29'
+  entry_count: 10
+  note: The common language. Whatever else a reader knows, they know this list, so an entry we cannot account for reads as a hole in Keel rather than a difference of opinion.
+entries:
+- ref: LLM01
+  title: Prompt Injection
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-TOOL-ABUSE
+  - T-CODEGEN
+  - T-CMD-INJECT
+  - T-SSRF
+  - T-TOXIC
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-PROMPT-HARDENING
+  - CTRL-CONTENT-STRIPPING
+  - CTRL-EXTERNAL-CONTENT-SANDBOX
+- ref: LLM02
+  title: Sensitive Information Disclosure
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-CROSS-TENANT
+  - T-METADATA-LEAK
+  mitigations: []
+- ref: LLM03
+  title: Supply Chain
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations: []
+- ref: LLM04
+  title: Data and Model Poisoning
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations: []
+- ref: LLM05
+  title: Improper Output Handling
+  state: covered
+  threats:
+  - T-CODEGEN
+  mitigations: []
+- ref: LLM06
+  title: Excessive Agency
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-RISK-BASED-APPROVAL
+- ref: LLM07
+  title: System Prompt Leakage
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: LLM08
+  title: Vector and Embedding Weaknesses
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations: []
+- ref: LLM09
+  title: Misinformation
+  state: covered
+  threats:
+  - T-HALLUCINATION
+  mitigations: []
+- ref: LLM10
+  title: Unbounded Consumption
+  state: covered
+  threats:
+  - T-DOS
+  mitigations: []

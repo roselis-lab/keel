@@ -1,44 +1,50 @@
 ---
 name: check-style
-description: Use when reviewing the content quality of a Keel threat entry — after authoring or migrating a threat, or auditing the catalog's writing. Not for structural checks (schema, links, vocab), which are `keel validate`.
+description: Use to judge a Keel entry against the style guide - a threat or a mitigation card - after writing or changing one, or when auditing the catalog's content. Not for structural checks (schema, links, vocabularies), which are `keel validate`.
 ---
 
 # check-style
 
-## Overview
+Judges the **content** of an entry against the **style guide**: the per-field bar, and the few things about a record that no single field's bar can hold.
 
-Reviews the **content** of a threat against the **style guide** — the per-field authoring bar and the single source of truth. This skill *applies* the bar; it does not own the rules. If a field is wrong but the bar is silent, fix the **bar**, not the entry.
+This skill *applies* the bar, it does not own it. If a field is wrong and the bar is silent, the finding is against the **bar**, and the fix is `update_style_guide`, not a patch to the entry. Re-encoding rules here would create a second source of truth that drifts.
 
-Judgement, not structure. The deterministic gate (schema, links, vocab, lints) is `keel validate`, run separately in CI. Assume it already passed.
+Judgment, not structure. The deterministic gate - schema, links, vocabularies, rules - is `uv run keel validate` and `check_library_health`. Assume it passed. It cannot read a sentence, which is the whole reason this exists.
 
-## Review
+## Two modes
 
-Dispatch review agents in parallel (~4–5 threats each). **REQUIRED:** each agent follows [rubric.md](rubric.md) — the procedure, not the rules. In short:
+**One entry, after a write.** The default, and the one that matters. Run it on whatever you just created or changed, in the same turn, before reporting it as done. No agents, no report file: read the entry, apply [rubric.md](rubric.md), give the verdict in the reply.
 
-1. `get_style_guide(entity_type="threat")` (+ `weakness`, `mitigation_link`) → each field's bar.
-2. Rate each populated field **PASS / MINOR / FAIL** against *its own bar*.
-3. Apply the two judgement invariants no single field's bar can hold (rubric §B).
+**The catalog, as an audit.** Dispatch review agents in parallel, four or five entries each, same rubric. Write the collected result using [report-template.md](report-template.md), to a path the caller names.
+
+## Procedure
+
+Both modes run [rubric.md](rubric.md). In short:
+
+1. Fetch the bar. `get_style_guide(entity_type="threat")` plus `weakness` and `mitigation_link`, or `get_style_guide(entity_type="mitigation")` plus `implementation`.
+2. Rate every populated field **PASS / MINOR / FAIL** against *its own bar*.
+3. Apply the record-level checks in rubric section B - the ones that need reading the whole entry.
 
 ```
-THREAT_ID | field | PASS/MINOR/FAIL | current | expected (per bar) | reason
+ENTRY_ID | field | PASS/MINOR/FAIL | current | expected (per bar) | reason
 ```
 
-## Report
-
-Write `threat_model_reports/<YYYY-MM-DD_HHMM>/report.md` ([report-template.md](report-template.md)): status, counts, top-3 priorities.
+`current` and `expected` are not optional. A finding without both cannot be acted on by anyone but its author.
 
 ## Severity
 
 | | Criteria |
 |---|---|
-| **critical** | A field badly breaks its bar with security impact — a technique or consequence sitting in `weakness`; `reachability` that re-negates the weakness or names a control; a `soft` link claiming it closes the threat |
-| **major** | Vague/non-architectural `weakness`; wrong `nature`; attacker-only `source` on a threat real without an attacker; thin `reachability` |
-| **minor** | Wording, title, tags, reference relevance |
+| **critical** | The record is the wrong shape: an umbrella covering chains closed by different controls, a card named after the threat that prompted it, a technique or a consequence sitting in `weakness`, `reachability` that re-negates the weakness or names a control, a `soft` link claiming it closes the threat, a card with no evidence behind a claim that needs it |
+| **major** | A vague or non-architectural `weakness`, a wrong `nature`, an attacker-only `source` on a threat that is real without one, thin `reachability`, `scope` written against one threat, org-specific prose in a card field, acceptance criteria that no reviewer could check |
+| **minor** | Wording, title phrasing, tags, reference relevance |
 
 ## Common mistakes
 
 | Mistake | Fix |
 |---|---|
-| Re-encoding rules in the review | Fetch them from the style guide; if missing, fix the bar |
-| "Good enough" verdict | PASS or FAIL — MINOR is a defect, not a hedge |
-| No `current` / `expected` | A fix skill can't act on it — always include both |
+| Re-encoding rules in the review | Fetch them from the style guide; if a rule is missing, the finding is against the bar |
+| A "good enough" verdict | PASS or FAIL. MINOR is a defect, not a hedge |
+| No `current` or `expected` | Always both, or the finding is unactionable |
+| Judging only the fields | The record-level checks in rubric B are where the expensive mistakes are |
+| Passing a fluent card | Fluency is what a card written from memory has. Check that the evidence exists and supports what the card claims |

@@ -1,95 +1,80 @@
 id: T-DATA-LEAK
-title: Sensitive data disclosure through the response
+title: Data the agent may read reaches an audience that may not
 harm: data-exposed
-surface:
-- agent-environment
-- user-agent
 source:
 - external-attacker
 - hallucination
+- error
+- accident
 weaknesses:
 - component: tool
-  text: A tool has access to sensitive data (PII, secrets, regulated) and can exfiltrate it — into free-form text that enters the context, or into an external system beyond the perimeter.
+  text: A tool reaches data under an authorization the agent's audience does not hold, and hands it back into the context as free text. Whatever the tool can read, the model can repeat.
   nature: targeted
 - component: tool
-  text: A tool with filesystem access reads sensitive files (.env, secrets, configs) on the model's initiative.
+  surface:
+  - model-output
+  text: A tool sends data to a destination outside the perimeter, with the destination taken from the model's own arguments. Whatever is in the context can leave by that route.
   nature: targeted
-- component: memory
-  text: Session context or memory is not isolated between users/tenants; one party's data ends up in another's response (including cross-tenant through a shared MCP).
+- component: tool
+  surface:
+  - model-output
+  text: A tool with filesystem access reads files that hold secrets or configuration - .env, credentials, service config - on the model's initiative, with no scoping to what the task needs.
   nature: targeted
 - component: model
-  text: The agent holds sensitive data in context (RAG of internal information, shared MAS memory) while the output audience is external; the response paraphrases it to an unauthorized recipient.
+  surface:
+  - retrieved-content
+  text: Retrieval pulls internal material into the context while the reply goes to a recipient outside the organization; the model paraphrases what it was given to whoever asked.
   nature: targeted
-reachability: NOT applicable if there is no data under differentiated authorization in the agent's context and access — everything it can reach is already available to any recipient of its output (data and audience in one access zone).
+- component: model
+  surface:
+  - retrieved-content
+  - user-input
+  text: The model acts on content it read as though it were instruction, so text placed where the agent will read it - a document, a page, a ticket body - can direct it to disclose what it can reach.
+  nature: targeted
+reachability: There is no data under differentiated authorization anywhere in the agent's context or reach - everything it can read is already available to any recipient of its output and to any destination its tools can send to.
 mitigations:
-- id: CTRL-ACCESS-CONTROL
-  strength: gating
-  rationale: Mandatory access control segregates data between tenants
-- id: CTRL-CONTENT-STRIPPING
-  strength: soft
-  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
-- id: CTRL-CONTEXT-FILTERING
-  strength: gating
-  rationale: 'Context filtering removes confidential data from tool output before use
-
-
-    Context filtering removes confidential data before it is sent to the user'
 - id: CTRL-DATA-ACCESS-CONTROL
   strength: gating
-  rationale: 'Access control restricts the tool''s access to only the necessary data
-
-
-    Restricting the tool''s access to only the necessary directories'
-- id: CTRL-DATA-EGRESS-MONITORING
+  rationale: Closes the first weakness at the source. Field- and record-level control bounds what a tool returns to what the requesting principal may hold, so the context never contains what the audience could not have asked for directly.
+- id: CTRL-ACCESS-CONTROL
   strength: gating
-  rationale: 'Egress traffic monitoring detects unauthorized exfiltration of PII
-
-
-    Monitoring of all outbound data to external systems
-
-
-    Monitoring of file operations reveals atypical access to sensitive files'
+  rationale: 'Closes the first and third weaknesses one step earlier than data-level control: the read operation itself is authorized against the audience''s rights before it runs, so a tool cannot be asked to fetch on behalf of someone who could not fetch it themselves.'
+- id: CTRL-CONTEXT-FILTERING
+  strength: gating
+  rationale: Where a tool or retrieval legitimately returns more than the audience may see, this strips it at the context boundary - before the model reads it or before the reply leaves. It closes the fourth weakness where the source cannot be scoped.
 - id: CTRL-DLP
   strength: gating
-  rationale: 'DLP filtering of PII/secrets before transmission to external systems
-
-
-    A DLP system blocks leakage of sensitive data to external systems
-
-
-    DLP filtering intercepts PII/secrets in tool responses
-
-
-    Filtering of tool output removes PII and secrets before they reach the agent
-
-
-    Filtering of tool output blocks transmission of secret contents into responses'
-- id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  strength: gating
-  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
-- id: CTRL-INPUT-FILTERING
-  strength: soft
-  rationale: Injection is the vector for this threat; input filtering reduces the likelihood of embedded instructions (soft, best-effort).
-- id: CTRL-MEMORY-ISOLATION
-  strength: gating
-  rationale: Memory isolation between agents prevents leakage of other users' data
-- id: CTRL-PROMPT-HARDENING
-  strength: soft
-  rationale: Injection is the vector for this threat; structural prompt isolation makes overriding instructions harder (soft).
-- id: CTRL-SESSION-ISOLATION
-  strength: gating
-  rationale: 'Session isolation prevents data leakage between users
-
-
-    Session isolation prevents leakage of tool output between users
-
-
-    Strict session isolation segregates the contexts of different users'
-- id: CTRL-TENANT-ISOLATION
-  strength: gating
-  rationale: Logical or physical isolation of data between tenants
+  rationale: Closes the egress weakness. A tool sending data outward on the model's say-so is inspected at the perimeter and the transfer blocked, so the destination the model chose never receives it.
 - id: CTRL-URL-ALLOWLIST
   strength: gating
-  rationale: Allowlist of permitted external systems
-references: []
-tags: []
+  rationale: 'Closes the egress weakness from the other side: a destination not on the list is unreachable, so the route is closed for every destination the model might be steered toward rather than for the ones an inspector recognizes.'
+- id: CTRL-DATA-EGRESS-MONITORING
+  strength: soft
+  rationale: 'Notices data leaving by the egress weakness after the fact. It does not close the threat: it produces a signal, and the path stays open until something acts on that signal.'
+- id: CTRL-CONTENT-STRIPPING
+  strength: soft
+  rationale: 'Removes hidden instructions from external content before the model reads it, which lowers how often the steering weakness fires. It does not close the threat: an instruction in plain text that the model chooses to follow was never hidden.'
+- id: CTRL-INPUT-FILTERING
+  strength: soft
+  rationale: 'Catches known injection patterns in what the model reads, against the steering weakness. It does not close the threat: it is a pattern match over an open-ended space.'
+- id: CTRL-PROMPT-HARDENING
+  strength: soft
+  rationale: 'Makes the model less inclined to treat read content as instruction. It does not close the threat: it leans on model behaviour, which is never a guarantee.'
+- id: CTRL-EXTERNAL-CONTENT-SANDBOX
+  strength: soft
+  rationale: 'Processes external content in isolation before it enters the context, which limits what a steered model can be made to do with it. It does not close the threat here: the content still enters and the model still reads it - it gates execution, not disclosure.'
+references:
+- title: 'ForcedLeak: AI agent risks exposed in Salesforce Agentforce'
+  url: https://noma.security/blog/forcedleak-agent-risks-exposed-in-salesforce-agentforce/
+  note: 'The egress weakness with the destination taken from model output: instructions in a Web-to-Lead description field made Agentforce read CRM lead data and encode it in an image URL to an expired but still allowlisted domain. Salesforce''s shipped fix was preventing agent output from being sent to untrusted URLs - an allowlist, not a filter.'
+- title: 'GitHub MCP Exploited: Accessing private repositories via MCP'
+  url: https://invariantlabs.ai/blog/mcp-github-vulnerability
+  note: 'The first weakness - a tool reaching data its audience may not hold: a crafted issue in a public repo steered an agent whose GitHub token spanned all repos into reading private-repo contents and writing them into a public pull request. No patch; the authors call it architectural.'
+- title: Permissive Default Allowlist Enables Unauthorized File Read and Network Exfiltration in Claude Code (CVE-2025-55284)
+  url: https://github.com/anthropics/claude-code/security/advisories/GHSA-x5gv-jw7f-j6xj
+  note: 'The filesystem weakness in the vendor''s own advisory: untrusted content in context made Claude Code read a file and send it out through DNS-lookup commands that sat on the no-confirmation allowlist. Fixed in 1.0.4 by removing those commands from the allowlist.'
+positioning: 'LLM02 (Sensitive Information Disclosure) is a consequence class and is wider than this record in two directions. Disclosure of the system''s own metadata - prompt fragments, versions, paths - rests on a different rule-out and is its own record. So does one tenant''s data surfacing in another''s session through shared state: that path is ruled out by single-tenancy or statelessness, which says nothing about this one.'
+tags:
+- data
+- retrieval
+- egress

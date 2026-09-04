@@ -1,6 +1,5 @@
 id: CTRL-FACT-CHECKING
 name: Fact Verification
-status: draft
 mitigation_class: detector
 purpose: Verifies factual claims in model output through cross-reference with authoritative sources and confidence scoring, detecting hallucinations and factual errors before unreliable information is used for decision-making. The mechanism operates as a post-generation validation layer, extracting checkable claims from model output and verifying them against knowledge bases, trusted APIs, or search results. This detects model hallucinations, prevents the spread of misinformation, and increases the reliability of model outputs for decision-critical use cases.
 formal_implementation_risk: null

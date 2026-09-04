@@ -46,7 +46,13 @@
     },
     "Reference": {
       "additionalProperties": false,
+      "description": "Evidence for the threat: an incident, a paper, an advisory.\n\nNOT a framework mapping. Which OWASP or ATLAS entries this threat answers is\nrecorded once in `catalog/coverage/` and read back from there, so a reference\nthat only says \"this is LLM01\" is a duplicate of the coverage matrix.",
       "properties": {
+        "note": {
+          "description": "One line: what this source actually supports. A bare link asks every later reader to re-derive why it was worth citing",
+          "title": "Note",
+          "type": "string"
+        },
         "title": {
           "title": "Title",
           "type": "string"
@@ -61,7 +67,8 @@
       },
       "required": [
         "title",
-        "url"
+        "url",
+        "note"
       ],
       "title": "Reference",
       "type": "object"
@@ -91,6 +98,23 @@
           "title": "Nature",
           "type": "string"
         },
+        "surface": {
+          "description": "The channels this weakness is reached through, when it is about content crossing into the component. A list, because one condition is often reachable over several channels and one control closes it on all of them - splitting it per channel would make three weaknesses of one. Empty for a weakness about the component's own authority, which nothing has to flow in to exploit",
+          "items": {
+            "enum": [
+              "user-input",
+              "retrieved-content",
+              "tool-output",
+              "agent-message",
+              "memory",
+              "training-data",
+              "model-output"
+            ],
+            "type": "string"
+          },
+          "title": "Surface",
+          "type": "array"
+        },
         "text": {
           "description": "Architectural condition: cause + where + defect",
           "title": "Text",
@@ -111,6 +135,7 @@
     "harm": {
       "enum": [
         "wrong-decision",
+        "data-integrity",
         "data-exposed",
         "code-execution",
         "downtime",
@@ -120,6 +145,7 @@
       "type": "string"
     },
     "id": {
+      "description": "Letters, digits, dot, hyphen and underscore. It is also the file name, so anything that could be read as a path is refused",
       "title": "Id",
       "type": "string"
     },
@@ -130,8 +156,21 @@
       "title": "Mitigations",
       "type": "array"
     },
+    "positioning": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How this entry sits relative to the entries in the sources Keel tracks - only what the mapping itself does not already say. Where a source's entry is broader than this one, say what the rest of it is and where that lives. Never catalog state (which is computed) and never a to-do",
+      "title": "Positioning"
+    },
     "reachability": {
-      "description": "Rule-out gate on the un-mitigated arch: 'NOT applicable if\u2026'",
+      "description": "Rule-out gate: the condition under which this threat is not a live path at all, judged on the un-mitigated architecture",
       "title": "Reachability",
       "type": "string"
     },
@@ -149,24 +188,11 @@
           "internal",
           "hallucination",
           "error",
-          "accident",
-          "training-data"
+          "accident"
         ],
         "type": "string"
       },
       "title": "Source",
-      "type": "array"
-    },
-    "surface": {
-      "items": {
-        "enum": [
-          "user-agent",
-          "agent-agent",
-          "agent-environment"
-        ],
-        "type": "string"
-      },
-      "title": "Surface",
       "type": "array"
     },
     "tags": {

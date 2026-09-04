@@ -1,6 +1,5 @@
 id: CTRL-CROSS-AGENT-REVIEW
 name: Cross-checking of actions between agents
-status: draft
 mitigation_class: detector
 purpose: Organizes cross-checking of decisions and actions of some agents by others with an independent role or set of checks, surfacing contradictions, errors, and anomalies before they propagate along the agent chain or lead to irreversible consequences. The mechanism is embedded into the multi-agent system's workflow as a validation checkpoint between agents or after critical decisions, where a reviewer agent analyzes the rationale, outcome, and potential issues of the previous action. This provides defense-in-depth against a single point of failure in an individual agent's logic, detects compromise or malfunction of one agent through cross-check, and increases the reliability of consensus decisions.
 formal_implementation_risk: null

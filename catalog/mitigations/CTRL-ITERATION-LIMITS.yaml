@@ -1,6 +1,5 @@
 id: CTRL-ITERATION-LIMITS
 name: Iteration and Recursion Limits
-status: draft
 mitigation_class: gating_control
 purpose: Bounds the number of iterations, recursion depth, and total steps an agent may perform within a single task, preventing runaway execution, infinite loops, and resource exhaustion. The mechanism operates at the agent runtime level and checks counters at every step of the execution loop. This blocks agents from uncontrolled expansion activity, protects against DoS via resource consumption, and provides a termination guarantee even under compromised or malfunctioning agent logic.
 formal_implementation_risk: null

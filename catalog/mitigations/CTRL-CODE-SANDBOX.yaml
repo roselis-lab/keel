@@ -1,6 +1,5 @@
 id: CTRL-CODE-SANDBOX
 name: Isolated execution of generated code
-status: draft
 mitigation_class: gating_control
 purpose: Isolates the execution of code generated or modified by the model in a constrained environment with no access to the network, the host file system, secrets, or other resources beyond those explicitly permitted, preventing compromise of the main system when malicious or vulnerable code is executed. The mechanism deploys the code in a sandbox - a container, virtual machine, or isolated interpreter - and intercepts all attempts to access resources at the runtime or operating-system level. This blocks attacks through code injection, prevents escape from isolation into the host system, and limits the blast radius of vulnerabilities in the generated code.
 formal_implementation_risk: null

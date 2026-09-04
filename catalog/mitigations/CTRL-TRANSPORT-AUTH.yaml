@@ -1,6 +1,5 @@
 id: CTRL-TRANSPORT-AUTH
 name: mTLS or API Key for MCP Connections
-status: draft
 mitigation_class: gating_control
 purpose: Enforces authentication of connections between the agent and MCP servers through mutual TLS with client certificates or API key authentication with signing, preventing man-in-the-middle attacks and connection to rogue servers. The mechanism operates at the transport layer and verifies the identity of both parties to the connection. This guarantees that the agent connects only to authorized MCP servers, protects credentials in transit, and provides mutual authentication.
 formal_implementation_risk: null

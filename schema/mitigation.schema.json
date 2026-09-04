@@ -1,5 +1,31 @@
 {
   "$defs": {
+    "FailureDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "description": "Why this value, in this control's terms",
+          "minLength": 1,
+          "title": "Note",
+          "type": "string"
+        },
+        "value": {
+          "enum": [
+            "fail_closed",
+            "fail_open",
+            "degraded"
+          ],
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "note"
+      ],
+      "title": "FailureDecision",
+      "type": "object"
+    },
     "FaqItem": {
       "properties": {
         "answer": {
@@ -88,6 +114,90 @@
       "title": "Implementation",
       "type": "object"
     },
+    "LocusDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "description": "Why this value, in this control's terms",
+          "minLength": 1,
+          "title": "Note",
+          "type": "string"
+        },
+        "value": {
+          "enum": [
+            "product",
+            "infrastructure",
+            "split"
+          ],
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "note"
+      ],
+      "title": "LocusDecision",
+      "type": "object"
+    },
+    "Telemetry": {
+      "additionalProperties": false,
+      "description": "The evidence a control leaves behind.\n\nStructured rather than prose because the events are the thing: they are counted,\ncompared against what a system actually emits, and one day joined across controls\ninto a single trace. None of that is possible against a paragraph.",
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/$defs/TelemetryEvent"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Where the record is held and for how long - a log the producing system can rewrite is not evidence",
+          "title": "Evidence"
+        }
+      },
+      "title": "Telemetry",
+      "type": "object"
+    },
+    "TelemetryEvent": {
+      "additionalProperties": false,
+      "description": "One logged event and what it has to carry to be worth logging.",
+      "properties": {
+        "attributes": {
+          "description": "Attributes without which the event proves nothing - attribution above all: who acted, on what, what was decided",
+          "items": {
+            "type": "string"
+          },
+          "title": "Attributes",
+          "type": "array"
+        },
+        "name": {
+          "description": "The event's name, as it is emitted",
+          "title": "Name",
+          "type": "string"
+        },
+        "records": {
+          "description": "What this event establishes, in one line",
+          "title": "Records",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "records"
+      ],
+      "title": "TelemetryEvent",
+      "type": "object"
+    },
     "ValidationCheck": {
       "description": "One pass/fail acceptance criterion with its test scenario.",
       "properties": {
@@ -132,6 +242,7 @@
       "type": "object"
     }
   },
+  "additionalProperties": false,
   "properties": {
     "anti_patterns": {
       "anyOf": [
@@ -164,15 +275,14 @@
     "failure_behavior": {
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/$defs/FailureDecision"
         },
         {
           "type": "null"
         }
       ],
       "default": null,
-      "description": "Read per mitigation_class",
-      "title": "Failure Behavior"
+      "description": "What happens when the control fails, and what makes it so"
     },
     "faq": {
       "anyOf": [
@@ -203,7 +313,7 @@
       "title": "Formal Implementation Risk"
     },
     "id": {
-      "description": "Unique mitigation ID (e.g. CTRL-ACCESS-CONTROL)",
+      "description": "Unique mitigation ID (e.g. CTRL-ACCESS-CONTROL). It is also the file name, so anything that could be read as a path is refused",
       "title": "Id",
       "type": "string"
     },
@@ -217,15 +327,14 @@
     "locus": {
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/$defs/LocusDecision"
         },
         {
           "type": "null"
         }
       ],
       "default": null,
-      "description": "product / infrastructure / split + rationale",
-      "title": "Locus"
+      "description": "Which layer this control's mechanism belongs to, and why"
     },
     "maintainer": {
       "anyOf": [
@@ -256,6 +365,32 @@
       "title": "Name",
       "type": "string"
     },
+    "out_of_scope": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What this control deliberately does not cover, and where that is handled instead. Its own field because a boundary written at the end of a long scope is the first thing dropped, and an absent field is visible",
+      "title": "Out Of Scope"
+    },
+    "positioning": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How this entry sits relative to the entries in the sources Keel tracks - only what the mapping itself does not already say. Where a source's entry is broader than this one, say what the rest of it is and where that lives. Never catalog state (which is computed) and never a to-do",
+      "title": "Positioning"
+    },
     "purpose": {
       "anyOf": [
         {
@@ -268,6 +403,14 @@
       "default": null,
       "description": "1-3 sentences: which class of failure it prevents",
       "title": "Purpose"
+    },
+    "requires": {
+      "description": "Mitigation ids this control presupposes. Use it only when this card's acceptance criteria cannot be checked without the other one being in place - not for controls that merely pair well",
+      "items": {
+        "type": "string"
+      },
+      "title": "Requires",
+      "type": "array"
     },
     "review": {
       "anyOf": [
@@ -292,37 +435,19 @@
         }
       ],
       "default": null,
-      "description": "Deterministic applicability rule + profiles + boundary",
+      "description": "Deterministic applicability rule + profiles",
       "title": "Scope"
-    },
-    "status": {
-      "anyOf": [
-        {
-          "enum": [
-            "draft",
-            "verified"
-          ],
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "draft | verified",
-      "title": "Status"
     },
     "telemetry": {
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/$defs/Telemetry"
         },
         {
           "type": "null"
         }
       ],
-      "default": null,
-      "title": "Telemetry"
+      "default": null
     },
     "validation": {
       "anyOf": [

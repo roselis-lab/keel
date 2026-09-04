@@ -1,6 +1,5 @@
 id: CTRL-MEMORY-VERSIONING
 name: Memory Versioning and Rollback
-status: draft
 mitigation_class: corrective
 purpose: Provides versioning of an agent's long-term memory with the ability to roll back to previous states, enabling recovery from accidental corruption, malicious poisoning, or unwanted modifications. The mechanism operates at the memory store level and creates checkpoints or snapshots of memory state. This guarantees recoverability when memory is compromised, provides an audit trail of memory changes, and enables forensic analysis of incidents.
 formal_implementation_risk: null

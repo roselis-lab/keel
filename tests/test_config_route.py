@@ -4,7 +4,7 @@ from keel.main import app
 
 
 def test_config_route_returns_repo_url():
-    r = TestClient(app).get("/config")
+    r = TestClient(app).get("/api/config")
     assert r.status_code == 200
     body = r.json()
     assert "repo_url" in body

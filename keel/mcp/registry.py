@@ -11,7 +11,8 @@ from typing import Any, Callable, get_type_hints
 
 from pydantic import Field, create_model
 
-from keel.lib.i18n import DEFAULT_LOCALE, SUPPORTED_LOCALES
+from keel.errors import KeelError
+
 from keel.lib.style_guide import register_tool_entity, get_tool_style_pointer
 
 
@@ -116,14 +117,31 @@ def get_tool_list() -> list[dict[str, Any]]:
 
 
 async def dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    """Dispatch a tool call by name using the registry."""
+    """Dispatch a tool call by name using the registry.
+
+    Service failures arrive here as typed exceptions and leave as a payload carrying the
+    kind, the field, and a hint about what would have been right. Tools therefore contain
+    no error branches: they describe the happy path and let this translate the rest."""
     defn = TOOL_REGISTRY.get(name)
     if defn is None:
-        return {"error": f"Unknown tool '{name}'", "success": False}
+        return {
+            "success": False, "code": "not_found",
+            "error": f"unknown tool {name!r}",
+            "hint": f"available: {', '.join(sorted(TOOL_REGISTRY))}",
+        }
 
-    lang = arguments.get("lang", DEFAULT_LOCALE)
-    if lang not in SUPPORTED_LOCALES:
-        arguments = {**arguments, "lang": DEFAULT_LOCALE}
-
-    kwargs = {k: v for k, v in arguments.items() if k not in ("session", "lang")}
-    return await defn.handler(**kwargs)
+    kwargs = {k: v for k, v in arguments.items() if k != "session"}
+    try:
+        return await defn.handler(**kwargs)
+    except KeelError as exc:
+        return exc.as_dict()
+    except TypeError as exc:
+        # A missing or misspelled argument. The schema says what is allowed, but the
+        # caller has evidently not used it, so repeat it here rather than echo Python.
+        params = list(defn.input_schema.get("properties", {}))
+        required = defn.input_schema.get("required", [])
+        return {
+            "success": False, "code": "invalid", "error": str(exc),
+            "hint": f"{name} takes {', '.join(params) or 'no arguments'}"
+                    + (f"; required: {', '.join(required)}" if required else ""),
+        }

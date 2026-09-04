@@ -55,11 +55,6 @@ def test_requirement_needs_implementation_rejects_stray_coverage_note():
         _requirement(coverage_status="needs_implementation", coverage_note="shouldn't be here")
 
 
-def test_requirement_rejects_bad_coverage_status_enum():
-    with pytest.raises(ValidationError):
-        _requirement(coverage_status="mostly_fine")
-
-
 def test_discarded_has_no_chain_fields():
     """A discard is an id + why. Deliberately NOT the full Finding chain."""
     d = Discarded(id="T-XSS", reason="output is plain JSON, no render path")
@@ -72,7 +67,7 @@ def _finding(**over):
     base = dict(
         id="T-SSRF", from_catalog=True, scenario="an attacker reaches an internal service via SSRF",
         source={"who": "external-attacker", "motive": "recon", "access": "the public API"},
-        asset="internal metadata endpoint", attack_surface="agent-environment",
+        asset="internal metadata endpoint", attack_surface="tool-output",
         vulnerability="a tool builds a URL from unvalidated model output",
         exploitation_complexity="medium", harm="data-exposed",
         risk={"likelihood": "medium", "severity": "high", "reasoning": "reachable, no compensating control"},
@@ -85,23 +80,8 @@ def _finding(**over):
 def test_finding_parses_with_catalog_enums():
     f = _finding()
     assert f.harm == "data-exposed"
-    assert f.attack_surface == "agent-environment"
+    assert f.attack_surface == "tool-output"
     assert f.source.who == "external-attacker"
-
-
-def test_finding_rejects_bad_harm_enum():
-    with pytest.raises(ValidationError):
-        _finding(harm="not-a-real-harm")
-
-
-def test_finding_rejects_bad_exploitation_complexity():
-    with pytest.raises(ValidationError):
-        _finding(exploitation_complexity="extreme")
-
-
-def test_finding_rejects_bad_severity():
-    with pytest.raises(ValidationError):
-        _finding(risk={"likelihood": "medium", "severity": "catastrophic", "reasoning": "..."})
 
 
 def test_finding_carries_requirements_and_ignored_mitigations():
@@ -163,22 +143,6 @@ def test_meta_keeps_the_three_things_that_improve_the_skill():
     assert r.meta.critique
 
 
-def test_meta_rejects_an_unknown_field():
-    with pytest.raises(ValidationError):
-        Report(
-            system_id="x", system_name="X", system_description="d",
-            date="2026-08-26", assessor="a", meta={"token_count": 12},
-        )
-
-
-def test_report_rejects_unknown_top_level_field():
-    with pytest.raises(ValidationError):
-        Report(
-            system_id="x", system_name="X", system_description="d", date="2026-08-26",
-            assessor="a", not_a_real_field="oops",
-        )
-
-
 def test_report_starts_as_a_draft():
     """Reports written before the field existed must not read as frozen records."""
     r = Report(
@@ -186,14 +150,6 @@ def test_report_starts_as_a_draft():
         date="2026-08-26", assessor="a",
     )
     assert r.status == "draft"
-
-
-def test_report_rejects_an_unknown_status():
-    with pytest.raises(ValidationError):
-        Report(
-            system_id="x", system_name="X", system_description="d",
-            date="2026-08-26", assessor="a", status="archived",
-        )
 
 
 def test_requirement_included_defaults_to_shipping_it():

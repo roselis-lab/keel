@@ -1,6 +1,5 @@
 id: CTRL-SECURITY-GATES
 name: Mandatory Security Gates in CI
-status: draft
 mitigation_class: gating_control
 purpose: Enforces mandatory automated security checks on every PR and commit — SAST, DAST, SCA, secret scanning, IaC scanning — with merge blocking on failed checks and mandatory review for diffs with a high proportion of AI-generated code, preventing vulnerabilities from entering the codebase. The mechanism operates at the CI/CD pipeline level and is a mandatory gate before merge. This ensures a consistent security baseline for all code, detects vulnerabilities at the earliest stage, and imposes elevated requirements on AI-generated code.
 formal_implementation_risk: null

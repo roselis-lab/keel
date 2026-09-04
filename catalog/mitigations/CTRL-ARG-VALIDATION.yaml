@@ -1,6 +1,5 @@
 id: CTRL-ARG-VALIDATION
 name: Strict validation of ToolCall arguments
-status: draft
 mitigation_class: gating_control
 purpose: Validates ToolCall arguments against a strict JSON schema before they are passed to the tool, ensuring conformance of types, required fields, permissible value ranges, and formats at the boundary between the agent and execution. The mechanism is deployed in a middleware or instrumentation layer, intercepting tool calls and validating each parameter before it reaches the runtime. This prevents injection through parameters, passing of malicious instructions in arguments, exploitation of edge cases in tool logic, and manipulation through incorrect data types or structures.
 formal_implementation_risk: null

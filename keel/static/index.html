@@ -58,7 +58,11 @@
        These encode one rule: the space ABOVE a heading is larger than the space below
        it, so a heading binds to its own content instead of floating between two things.
        Keep --gap-label smaller than the top of --pad-section, or that inverts. */
-    --pad-section: 16px 18px;   /* inside a band: .readsec, an editor fieldset, .ov-col */
+    /* Split so the horizontal half can be reused in a calc. A shorthand cannot: the
+       whole declaration is dropped as invalid, silently, and the band goes back to
+       running the width of the display. */
+    --pad-section-x: 18px;
+    --pad-section: 16px var(--pad-section-x);   /* inside a band: .readsec, an editor fieldset, .ov-col */
     --pad-card: 15px 17px;      /* inside a card sitting on a band */
     --gap-band: 16px;           /* between bands */
     --gap-card: 10px;           /* between cards inside a band */
@@ -84,7 +88,8 @@
     /* navy-400 is NOT a text step — it measures 2.62:1 on white and cannot carry type
        on any Keel surface. It stays in the ramp for rules, dots and the low spine. */
     --text-muted: var(--navy-500); --text-faint: var(--navy-500); --text-inverse: #ffffff;
-    --text-link: var(--crimson-600); --text-link-hover: var(--crimson-700);
+    --text-link: var(--navy-800); --text-link-hover: var(--navy-900);
+    --line-link: var(--navy-200); --line-link-hover: var(--navy-500);
     --surface-app: var(--bg); --surface-panel: var(--panel); --surface-section: var(--tint);
     --surface-card: var(--white); --surface-inset: var(--tint);
     --surface-selected: var(--crimson-50); --surface-hover: var(--navy-100);
@@ -303,7 +308,28 @@
     font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     color: var(--navy-500); margin: 0 0 5px; border: 0; padding: 0;
   }
-  .prose { white-space: pre-wrap; color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-prose); max-width: var(--measure); }
+  /* Markdown output supplies its own blocks, so the pre-wrap that made raw newlines
+     visible would now add a blank line after every one of them. */
+  .prose > p { margin: 0 0 var(--gap-hint); }
+  .prose > p:last-child { margin-bottom: 0; }
+  .prose ul.md, .prose ol.md { margin: 0 0 var(--gap-hint); padding-left: 20px; }
+  .prose ul.md li, .prose ol.md li { margin-bottom: 4px; }
+  .prose code { font-family: var(--font-mono); font-size: var(--fs-12);
+    background: var(--navy-100); border-radius: var(--r-4); padding: 1px 4px; }
+  .prose a { color: var(--text-link); text-decoration: underline;
+    text-decoration-color: var(--line-link); text-underline-offset: 2px; }
+  /* A table is the readable form of a set of yes/no tests, which is what a control's
+     applicability actually is. Hairlines only, like every other surface here. */
+  table.md { border-collapse: collapse; margin: 0 0 var(--gap-hint); width: 100%;
+    max-width: none; font-size: var(--fs-13); }
+  table.md th, table.md td { border: 1px solid var(--line-inner); padding: 6px 10px;
+    text-align: left; vertical-align: top; line-height: var(--lh-base); }
+  table.md th { background: var(--surface-card); font-weight: 600; color: var(--navy-900);
+    font-size: var(--fs-12); }
+  table.md td { color: var(--navy-800); }
+  .prose:has(table.md) { max-width: none; }
+
+  .prose { color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-prose); max-width: var(--measure); }
   .warn { background: var(--crimson-50); border: 1px solid var(--crimson-200); color: var(--crimson-700); border-radius: 8px; padding: 9px 12px; font-size: var(--fs-13); }
   .placeholder { color: var(--navy-500); font-style: italic; }
   .card { border: 1px solid var(--line-panel); border-radius: var(--r-10); padding: var(--pad-card);
@@ -320,12 +346,28 @@
   ul.plain { margin: 6px 0 0; padding-left: 0; list-style: none; }
   ul.plain li { border-left: 2px solid var(--navy-200); padding: 3px 0 3px 10px; margin-bottom: 7px; color: var(--navy-700); }
   ul.plain li .meta { font-size: var(--fs-11); color: var(--navy-500); text-transform: uppercase; letter-spacing: .05em; }
+  /* A reference is a title, a note saying what it supports, and a link to go check.
+     Setting the title and the URL both in full body weight made every entry read as two
+     headings, and buried the note - which is the part that says why the entry is here. */
+  .ref-title { display: block; font-size: var(--fs-14); color: var(--navy-900); }
+  .ref-note { display: block; font-size: var(--fs-13); color: var(--navy-700);
+    line-height: var(--lh-base); margin-top: 2px; max-width: var(--measure); }
+  .ref-url { display: block; margin-top: 3px; font-size: var(--fs-12); color: var(--navy-500);
+    text-decoration: underline; text-decoration-color: var(--line-link);
+    text-underline-offset: 2px; word-break: break-all; }
+  .ref-url:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
 
   /* ------ read view (per-section surfaces, breadcrumb, omit-empty) ------ */
   /* A read/document view, so each populated section sits on its own subtle surface,
      unlike the edit form (whose only heavy container is the repeatable-card border). */
+  /* A band that runs to the edge of a wide display while its text stops at 74ch leaves
+     the reader with a long empty right half and no way to tell whether anything is
+     there. The band follows the measure it was already keeping. */
   .readsec { background: var(--tint); border: 1px solid var(--line-inner); border-radius: var(--r-10);
-    padding: var(--pad-section); margin-top: var(--gap-band); }
+    padding: var(--pad-section); margin-top: var(--gap-band);
+    max-width: calc(var(--measure) + 2 * var(--pad-section-x)); }
+  /* Tables and repeatable cards carry their own columns and are allowed the full pane. */
+  .readsec:has(table.md), .readsec:has(.ecard), .readsec:has(.hbars) { max-width: none; }
   .readsec .prose { color: var(--navy-800); }
   .readsec .card { background: var(--surface-card); }
   .notauthored { color: var(--navy-500); font-size: var(--fs-12); font-style: italic; margin: 16px 0 0; }
@@ -339,7 +381,7 @@
   .gap-chip:hover { background: var(--crimson-50); color: var(--crimson-700); border-color: var(--crimson-200); }
   .crumb { display: flex; align-items: center; gap: 6px; font-size: var(--fs-12); color: var(--navy-500); margin-bottom: 12px; }
   .crumb-type { border: none; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--navy-500); }
-  .crumb-type:hover { color: var(--crimson-600); text-decoration: underline; }
+  .crumb-type:hover { color: var(--text-link-hover); text-decoration: underline; }
   .crumb-sep { color: var(--navy-500); }
   .crumb-id { font-family: ui-monospace, "SFMono-Regular", monospace; color: var(--navy-500); }
   /* A card that jumps to a linked entity on click. */
@@ -479,11 +521,62 @@
   .fguide:hover .fguide-wrap, .fguide:focus-within .fguide-wrap { grid-template-rows: 1fr; }
   .fguide .sg-panel { display: block; margin-top: 6px; }
   /* "view change" affordance on the read-view provenance line — reveals the latest diff inline */
-  /* The one link that sits on the bare page rather than inside a band. Since the page
-     dropped a step, crimson-600 measures 4.33 there — links off-surface take the 700. */
-  .lc-diff { border: none; background: none; color: var(--accent-hover); font-weight: 600; font-size: var(--fs-12);
-    padding: 0 0 0 4px; cursor: pointer; }
-  .lc-diff:hover { text-decoration: underline; }
+  .lc-diff { border: none; background: none; color: var(--text-link); font-weight: 600; font-size: var(--fs-12);
+    padding: 0 0 0 4px; cursor: pointer;
+    text-decoration: underline; text-decoration-color: var(--line-link); text-underline-offset: 2px; }
+  .lc-diff:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
+
+  /* ------ coverage ------ */
+  /* None of the three states is an error, so none of them is crimson. Covered is the
+     pass green, a gap is the amber advice colour because it is work not yet done, and a
+     decline is navy: it is a decision, and decisions are structure. */
+  .badge.cov-yes { background: var(--green-50); color: var(--green-700); border-color: var(--green-200); }
+  .badge.cov-no { background: var(--navy-100); color: var(--navy-700); border-color: var(--border); }
+  .badge.cov-gap { background: var(--amber-50); color: var(--amber-700); border-color: var(--sev-medium-line); }
+  .cov-rail-bar { margin: 6px 0 2px; height: 6px; }
+  .hbar-f.cov-seg-no { background: var(--navy-400); }
+  .cov-lede { font-size: var(--fs-14); line-height: var(--lh-prose); color: var(--navy-700);
+    max-width: var(--measure); margin: 0 0 var(--gap-band); }
+  .cov-group { margin-bottom: var(--gap-band); }
+  .cov-group > .slabel { margin-bottom: var(--gap-label); }
+  .cov-row { display: grid; grid-template-columns: minmax(90px, auto) 1fr auto; gap: 2px 12px;
+    align-items: baseline; padding: 9px 0; border-top: 1px solid var(--border2); }
+  .cov-row:first-of-type { border-top: none; padding-top: 0; }
+  .cov-ref { font-family: var(--font-mono); font-size: var(--fs-12); color: var(--navy-500); }
+  .cov-title { font-size: var(--fs-14); color: var(--navy-900); }
+  .cov-ids, .cov-note { grid-column: 2 / -1; margin: 2px 0 0; font-size: var(--fs-13);
+    line-height: var(--lh-base); color: var(--navy-600); max-width: var(--measure); }
+  /* The reasoning on a row is the most valuable text on this screen: it is what turns
+     "they missed it" into "they considered it, and here is where the line falls". */
+  .cov-note { color: var(--navy-700); }
+
+  .cites { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;
+    margin: 6px 0 0; font-size: var(--fs-12); }
+  .cites .k { font-size: var(--fs-10); font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--navy-500); }
+  a.cite { font-family: var(--font-mono); color: var(--text-link);
+    text-decoration: underline; text-decoration-color: var(--line-link);
+    text-underline-offset: 2px; }
+  a.cite:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
+  .cite-none { color: var(--navy-500); }
+  /* A decision leads with its value; the reasoning follows as ordinary prose. */
+  .decision { margin: 0 0 var(--gap-hint); }
+  .decision .dv { font-size: var(--fs-15); font-weight: 600; color: var(--navy-900); }
+  .maintainer { font-size: var(--fs-11); color: var(--navy-500); }
+  /* One line per tier instead of three type sizes fighting on one row. */
+  .linkhead { display: flex; align-items: center; gap: 8px; }
+  .linktitle { font-size: var(--fs-14); color: var(--navy-900); margin-top: 2px; }
+  .linkwhy { margin: 4px 0 0; font-size: var(--fs-13); line-height: var(--lh-base);
+    color: var(--navy-700); max-width: var(--measure); }
+  .fold > summary { cursor: pointer; font-size: var(--fs-13); color: var(--text-link);
+    list-style: none; }
+  .fold > summary::-webkit-details-marker { display: none; }
+  .fold > summary::before { content: "b8 "; color: var(--navy-500); }
+  .fold[open] > summary::before { content: "be "; }
+  .fold-body { margin-top: var(--gap-hint); }
+
+  .cite-note { margin: 4px 0 0; font-size: var(--fs-13); line-height: var(--lh-base);
+    color: var(--navy-600); max-width: var(--measure); }
 
   /* ------ right preview ------ */
   #preview { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
@@ -541,8 +634,9 @@
   .saved-dialog.show { display: block; }
   .saved-dialog code { font-family: ui-monospace, monospace; font-size: var(--fs-12); color: var(--navy-900); }
   .saved-dialog .sd-actions { margin-top: 10px; display: flex; gap: 12px; align-items: center; }
-  .saved-dialog a { color: var(--crimson-600); font-weight: 600; text-decoration: none; }
-  .saved-dialog a:hover { text-decoration: underline; }
+  .saved-dialog a { color: var(--text-link); font-weight: 600;
+    text-decoration: underline; text-decoration-color: var(--line-link); text-underline-offset: 2px; }
+  .saved-dialog a:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
   .saved-dialog .sd-close { margin-left: auto; border: none; background: none; color: var(--navy-500); font-size: var(--fs-12); }
 
   /* ------ screen switcher (lives in the top bar) ------ */
@@ -625,10 +719,61 @@
      a chip. It used to render an empty chip row under a bare label and a count, which
      is why "Unused vocabulary 1" said nothing at all. Show the message instead. */
   .ov-warn-msg { color: var(--navy-700); font-size: var(--fs-14); line-height: var(--lh-base); margin: 5px 0 0; max-width: var(--measure); }
+  /* Hard errors, above both columns and full width. Advisory warnings sit inside a
+     block as chips because they are nudges about quality; these are not. A record here
+     failed to load, so the app is serving less than the catalog claims — that belongs
+     where it cannot be scrolled past. The band is absent entirely when there are none. */
+  /* Colour is graded to importance, not to the band's subject. A crimson wash on the
+     whole thing shouted before the reader knew what was wrong, and put the file path,
+     the message and the marker at one loudness. So: the spine says "danger" once, and
+     the only other crimson is the marker naming which records are actually missing
+     from the app. Everything else is the same navy structure every block wears. */
+  .ov-errors { background: var(--surface-card); border: 1px solid var(--border);
+    border-left: 2px solid var(--sev-high-spine); border-radius: var(--r-10);
+    padding: var(--pad-card); margin-bottom: var(--gap-band); }
+  .ov-errors > .k { display: flex; align-items: baseline; gap: 8px; margin: 0 0 var(--gap-label);
+    font-size: var(--fs-10); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--navy-600); }
+  .ov-errors > .k .n { margin-left: auto; font-size: var(--fs-12); font-weight: 500;
+    letter-spacing: 0; text-transform: none; color: var(--navy-500); }
+  /* Two parts, always in this shape: a metadata line, then the message. Laid out as one
+     wrapping row, a long message pushed the marker onto a third line and it read as its
+     own entry — the same defect twice looked like two different defects. */
+  .ov-err-row { padding: 7px 0; border-top: 1px solid var(--border2); }
+  .ov-err-row:first-of-type { border-top: 0; padding-top: 0; }
+  .ov-err-head { display: flex; align-items: baseline; gap: 10px; }
+  .ov-err-loc { border: none; background: none; padding: 0; cursor: pointer;
+    font-family: var(--font-mono); font-size: var(--fs-12); color: var(--text-link);
+    text-decoration: underline; text-decoration-color: var(--line-link);
+    text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  .ov-err-loc:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
+  .ov-err-msg { color: var(--navy-800); font-size: var(--fs-14); line-height: var(--lh-base);
+    max-width: var(--measure); margin: 2px 0 0; }
+  .ov-err-field { font-family: var(--font-mono); font-size: var(--fs-12); color: var(--navy-500);
+    margin-right: 8px; }
+  .ov-err-gh { margin-left: auto; font-size: var(--fs-12); color: var(--navy-500);
+    text-decoration: underline; text-decoration-color: var(--line-link); text-underline-offset: 2px; }
+  .ov-err-gh:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
+  /* Repair opens in place. A record that would not parse has no form to render, so the
+     honest editor for it is its own text — and it is refused on save if it still would
+     not load, which is the same gate the loader applies. */
+  .ov-repair:empty { display: none; }
+  .ov-repair { margin-top: 10px; }
+  .ov-repair textarea { width: 100%; box-sizing: border-box; min-height: 220px; resize: vertical;
+    font-family: var(--font-mono); font-size: var(--fs-12); line-height: var(--lh-base);
+    color: var(--navy-900); background: var(--tint); border: 1px solid var(--border);
+    border-radius: var(--r-6); padding: 10px 12px; }
+  .ov-repair textarea:focus { outline: none; border-color: var(--line-focus); box-shadow: var(--focus-ring); }
+  .ov-repair-actions { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+  .ov-repair-err { color: var(--status-error); font-size: var(--fs-13); line-height: var(--lh-base);
+    margin: 9px 0 0; max-width: var(--measure); }
+  .ov-err-drop { font-size: var(--fs-11); font-weight: 600; color: var(--status-error); }
+  .ov-errors .ov-err-fix { font-size: var(--fs-13); color: var(--navy-600); margin: var(--gap-label) 0 0; max-width: var(--measure); }
   /* Long id lists get cut to a readable run; the rest is one click away. */
-  .ov-more { border: none; background: none; color: var(--crimson-600); font-size: var(--fs-12);
-    font-weight: 600; padding: 3px 6px; margin: 0 0 6px; border-radius: 6px; }
-  .ov-more:hover { background: var(--crimson-50); }
+  .ov-more { border: none; background: none; color: var(--text-link); font-size: var(--fs-12);
+    font-weight: 600; padding: 3px 6px; margin: 0 0 6px; border-radius: 6px;
+    text-decoration: underline; text-decoration-color: var(--line-link); text-underline-offset: 2px; }
+  .ov-more:hover { background: var(--navy-100); text-decoration-color: var(--line-link-hover); }
   /* Cross-system rows: what it is, what state it is in, who is asking. */
   .ins-row { display: flex; align-items: baseline; gap: 9px; padding: 8px 0;
     border-bottom: 1px solid var(--border2); flex-wrap: wrap; }
@@ -748,8 +893,10 @@
   .rep-qa .meta { display: inline-block; min-width: 18px; font-weight: 700; color: var(--navy-500); }
   /* Anything that names an entity in the model is a way into it. */
   .reflink { border: none; background: none; padding: 0; font: inherit; font-weight: inherit;
-    color: var(--text-link); cursor: pointer; text-align: left; }
-  .reflink:hover { color: var(--text-link-hover); text-decoration: underline; }
+    color: var(--text-link); cursor: pointer; text-align: left;
+    text-decoration: underline; text-decoration-color: var(--line-link);
+    text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  .reflink:hover { color: var(--text-link-hover); text-decoration-color: var(--line-link-hover); }
 
   /* ------ report: a draft is edited where it is read ------ */
   /* No Edit button and no mode switch. The read view IS the document being checked, so
@@ -848,6 +995,7 @@
     <button data-screen="threats">Threats</button>
     <button data-screen="mitigations">Mitigations</button>
     <button data-screen="style">Style guide</button>
+    <button data-screen="coverage">Coverage</button>
     <button data-screen="reports">Reports</button>
   </nav>
 </div>
@@ -928,9 +1076,16 @@ const state = {
   validation: { errors: [], advice: [] },  // last /threats/validate result
   view: "structure",    // editor view: "structure" | "yaml"
   config: { repo_url: "" },  // GET /config
+  vocabulary: {},        // GET /vocabulary — {harm|surface|source|components: {value: {name, desc}}}
+  coverageMatrix: null,  // GET /coverage — the tracked sources and their entries
+  coverageCites: {},     // GET /coverage/citations — Keel id -> the entries naming it
+  coverageSel: null,     // selected source id
+  coverageFilter: "",
+  coverageState: "",     // "" | covered | out_of_scope | gap
   screen: "overview",   // top-level screen: "overview" | "threats" | "mitigations" | "style"
   coverage: null,       // GET /style-guide/coverage
-  health: null,         // GET /health/library — { stats, style_guide_coverage, issues, issue_count }
+  health: null,         // GET /health/library - { stats, style_guide_coverage, errors, warnings }
+  rules: {},            // GET /rules - code -> { label, explanation }, served not mirrored
   railMode: "preview",  // threats right rail: "preview" | "guidance"
   guidance: null,       // { entity, field, targetId } of the focused form field
   styleSel: null,       // style screen: { entity, field } selected in the tree
@@ -944,13 +1099,90 @@ window.state = state;   // exposed for smoke checks / debugging
 // ------------------------------------------------------------- helpers ----- //
 const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+// --------------------------------------------------------------- markdown --- //
+// A small, deliberately incomplete Markdown, for the fields that carry an authoring
+// bar. A control's applicability is a set of yes/no tests and reads as a table; a list
+// of anti-patterns reads as a list. Written as one paragraph the same content is a wall
+// nobody checks themselves against, which is how a bar stops being used.
+//
+// Escaped FIRST, then marked up. Nothing in a field can introduce a tag, because by the
+// time the markup runs there are no angle brackets left to become one. That order is the
+// whole safety argument - not a filter that has to anticipate what to strip. Absent on
+// purpose: raw HTML, images, and any link whose scheme is not http(s).
+function mdInline(escaped) {
+  return escaped
+    .replace(/`([^`]+)`/g, (_, code) => "<code>" + code + "</code>")
+    .replace(/\*\*([^*]+)\*\*/g, (_, t) => "<strong>" + t + "</strong>")
+    // A scheme allowlist, so javascript: and data: are not "not handled yet" but simply
+    // not a link at all.
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      (_, text, url) => '<a href="' + url + '" target="_blank" rel="noopener">' + text + "</a>");
+}
+
+function md(raw) {
+  if (!raw) return "";
+  const lines = esc(String(raw)).split("\n");
+  const bullet = /^\s*[-*]\s+(.*)$/;
+  const number = /^\s*\d+[.)]\s+(.*)$/;
+  const isRule = s => s.includes("-") && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(s);
+  const cells = s => s.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(c => c.trim());
+  const startsTable = i => lines[i].includes("|") && i + 1 < lines.length && isRule(lines[i + 1]);
+
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (startsTable(i)) {
+      const head = cells(lines[i]);
+      i += 2;
+      const body = [];
+      while (i < lines.length && lines[i].trim() && lines[i].includes("|")) {
+        body.push(cells(lines[i]));
+        i += 1;
+      }
+      const th = head.map(c => "<th>" + mdInline(c) + "</th>").join("");
+      const rows = body.map(r => "<tr>" + r.map(c => "<td>" + mdInline(c) + "</td>").join("") + "</tr>").join("");
+      out.push('<table class="md"><thead><tr>' + th + "</tr></thead><tbody>" + rows + "</tbody></table>");
+      continue;
+    }
+
+    if (bullet.test(lines[i]) || number.test(lines[i])) {
+      const ordered = number.test(lines[i]);
+      const items = [];
+      while (i < lines.length && (bullet.test(lines[i]) || number.test(lines[i]))) {
+        items.push((lines[i].match(ordered ? number : bullet) || [])[1] || "");
+        i += 1;
+      }
+      const tag = ordered ? "ol" : "ul";
+      out.push("<" + tag + ' class="md">'
+        + items.map(t => "<li>" + mdInline(t) + "</li>").join("")
+        + "</" + tag + ">");
+      continue;
+    }
+
+    if (!lines[i].trim()) { i += 1; continue; }
+
+    const para = [];
+    while (i < lines.length && lines[i].trim()
+           && !bullet.test(lines[i]) && !number.test(lines[i]) && !startsTable(i)) {
+      para.push(lines[i]);
+      i += 1;
+    }
+    out.push("<p>" + mdInline(para.join(" ")) + "</p>");
+  }
+  return out.join("");
+}
+
+// The API lives under /api so the app can own the bare paths (/threats/T-X is a view,
+// not JSON). One place knows the prefix; call sites keep writing "/threats".
+const API = "/api";
+
 async function api(method, url, body) {
   const opt = { method, headers: {} };
   if (body !== undefined) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
-  const r = await fetch(url, opt);
+  const r = await fetch(API + url, opt);
   const txt = await r.text();
   const data = txt ? JSON.parse(txt) : {};
-  if (!r.ok) throw new Error(data.detail || (method + " " + url + " → " + r.status));
+  if (!r.ok) throw new Error(data.error || data.detail || (method + " " + url + " → " + r.status));
   return data;
 }
 const j = url => api("GET", url);
@@ -976,16 +1208,27 @@ function itemSchema(rootSchema, prop) {
   if (prop && prop.items && prop.items.$ref) return resolveRef(rootSchema, prop.items.$ref);
   return prop && prop.items ? prop.items : prop;
 }
-// Enum values for a scalar prop (properties.harm) or an array-of-enum prop (properties.surface).
+// Enum values for a scalar prop (properties.harm), an array-of-enum prop
+// (properties.source), or an OPTIONAL enum, which pydantic emits as
+// anyOf:[{enum},{type:null}] — an `X | None` field would otherwise read as no enum at
+// all and its whole filter group would silently vanish from the panel.
 function enumValues(rootSchema, prop) {
   if (!prop) return [];
   if (Array.isArray(prop.enum)) return prop.enum;
+  if (Array.isArray(prop.anyOf)) {
+    for (const branch of prop.anyOf) {
+      const vals = enumValues(rootSchema, branch);
+      if (vals.length) return vals;
+    }
+    return [];
+  }
   const it = itemSchema(rootSchema, prop);
   return (it && Array.isArray(it.enum)) ? it.enum : [];
 }
 const threatProp = name => (state.schema.threat.properties || {})[name];
 const harmEnum = () => enumValues(state.schema.threat, threatProp("harm"));
-const surfaceEnum = () => enumValues(state.schema.threat, threatProp("surface"));
+const weaknessProp = name => ((state.schema.weakness || {}).properties || {})[name];
+const surfaceEnum = () => enumValues(state.schema.weakness, weaknessProp("surface"));
 const sourceEnum = () => enumValues(state.schema.threat, threatProp("source"));
 // Weakness component enum — resolved via the standalone weakness schema.
 const componentEnum = () => {
@@ -1003,9 +1246,24 @@ const strengthEnum = () => {
   return mp && mp.strength && Array.isArray(mp.strength.enum) ? mp.strength.enum : [];
 };
 
+// The enum token is the value on disk and stays visible; the gloss is what makes it
+// readable. `downstream` means "a system that executes or consumes the agent's output",
+// and that sentence lived in a file nothing read.
+function vocabEntry(kind, value) {
+  return (state.vocabulary[kind] || {})[value] || null;
+}
+function vocabLabel(kind, value) {
+  const e = vocabEntry(kind, value);
+  return e && e.name ? e.name : value;
+}
+function vocabDesc(kind, value) {
+  const e = vocabEntry(kind, value);
+  return e && e.desc ? e.desc : "";
+}
+
 // --------------------------------------------------------------- boot ------ //
 async function boot() {
-  const [sThreat, sWeak, sMitLink, sMit, style, cov, tr, mi, cfg, health] = await Promise.all([
+  const [sThreat, sWeak, sMitLink, sMit, style, cov, tr, mi, cfg, health, rules, vocab, covMatrix, covCites] = await Promise.all([
     j("/schema/threat"),
     j("/schema/weakness"),
     j("/schema/mitigation_link"),
@@ -1015,7 +1273,11 @@ async function boot() {
     j(THREATS_RICH_URL),        // rich rail items — everything the Threats facets need (13 threats, fine over REST)
     j(MITS_RICH_URL),           // rich rail items — everything the Mitigations facets need
     j("/config"),               // { repo_url } — empty string when unset
-    j("/health/library"),       // { stats, issues, issue_count } — seeds the "needs attention" facet
+    j("/health/library"),       // { stats, errors, warnings } - seeds the "needs attention" facet
+    j("/rules"),                // how findings are grouped and explained
+    j("/vocabulary"),           // the human gloss the Literals cannot carry
+    j("/coverage"),             // the matrix, so a card can say who else names it
+    j("/coverage/citations"),
   ]);
   state.schema.threat = sThreat;
   state.schema.weakness = sWeak;
@@ -1028,12 +1290,20 @@ async function boot() {
   state.health = health;
   setMitData(mi.mitigations || []);
   state.config = cfg || { repo_url: "" };
+  state.vocabulary = vocab || {};
+  // Keyed by code so a finding can look up its own label without a scan.
+  state.rules = Object.fromEntries(((rules || {}).rules || []).map(r => [r.code, r]));
+  state.coverageMatrix = covMatrix || null;
+  state.coverageCites = covCites || {};
+  if (covMatrix && covMatrix.sources.length) state.coverageSel = covMatrix.sources[0].source.id;
 }
 
 // The rich rail URLs — each item carries everything its facet panel needs.
-const THREATS_RICH_URL = "/threats?brief=false&include=harm&include=surface&include=source" +
-  "&include=weaknesses&include=mitigations&include=references&include=tags";
-const MITS_RICH_URL = "/mitigations?brief=false&include=status&include=implementations&include=purpose";
+const THREATS_RICH_URL = "/threats?brief=false&include=harm&include=source" +
+  "&include=weaknesses&include=mitigations&include=references&include=positioning" +
+  "&include=reachability&include=tags";
+const MITS_RICH_URL = "/mitigations?brief=false&include=implementations&include=purpose" +
+  "&include=positioning";
 
 // Seed mitRich (facets) plus the derived mitList/mitById the threats editor still uses.
 function setMitData(rich) {
@@ -1047,15 +1317,10 @@ function setMitData(rich) {
 // --------------------------------------------------------------- rail ------ //
 // Threat ids flagged in /health/library (any gap). Returns null when health isn't loaded.
 function attentionThreatIds() {
-  const iss = state.health && state.health.issues;
-  if (!iss) return null;
-  const ids = new Set();
-  const add = arr => (arr || []).forEach(x => ids.add(String(x).split("::")[0]));
-  add(iss.threats_missing_weaknesses);
-  add(iss.threats_missing_harm);
-  add(iss.threats_without_mitigation);
-  add(iss.dangling_mitigation_links);
-  return ids;
+  const errors = state.health && state.health.errors;
+  if (!errors) return null;
+  return new Set(errors.filter(f => f.entity_type === "threat" && f.entity_id)
+                       .map(f => f.entity_id));
 }
 
 // Broadened text search: id, title, weakness text, reachability.
@@ -1069,7 +1334,7 @@ function threatMatchesText(t, f) {
 function threatFacetValues(t, key) {
   switch (key) {
     case "harm": return t.harm ? [t.harm] : [];
-    case "surface": return t.surface || [];
+    case "surface": return [...new Set((t.weaknesses || []).flatMap(w => w.surface || []))];
     case "source": return t.source || [];
     case "component": return [...new Set((t.weaknesses || []).map(w => w.component).filter(Boolean))];
     case "nature": return [...new Set((t.weaknesses || []).map(w => w.nature).filter(Boolean))];
@@ -1144,10 +1409,10 @@ function renderFacetPanel(spec) {
 function threatFacetDefs() {
   const tags = [...new Set(state.threats.flatMap(t => t.tags || []))].sort();
   return [
-    { key: "harm", label: "Harm", opts: harmEnum().map(v => [v, v]) },
-    { key: "surface", label: "Surface", opts: surfaceEnum().map(v => [v, v]) },
-    { key: "source", label: "Source", opts: sourceEnum().map(v => [v, v]) },
-    { key: "component", label: "Component", opts: componentEnum().map(v => [v, v]) },
+    { key: "harm", label: "Harm", opts: harmEnum().map(v => [v, vocabLabel("harm", v)]) },
+    { key: "surface", label: "Surface", opts: surfaceEnum().map(v => [v, vocabLabel("surface", v)]) },
+    { key: "source", label: "Source", opts: sourceEnum().map(v => [v, vocabLabel("source", v)]) },
+    { key: "component", label: "Component", opts: componentEnum().map(v => [v, vocabLabel("components", v)]) },
     { key: "nature", label: "Nature", opts: natureEnum().map(v => [v, v]) },
     { key: "mitigation", label: "Mitigation", opts: [["gating", "has gating"], ["soft", "all soft"], ["none", "none"]] },
     { key: "references", label: "References", opts: [["has", "has refs"], ["none", "no refs"]] },
@@ -1465,12 +1730,16 @@ async function toggleDiff(cfg, sha) {
 // Read view — the NEW threat fields.
 function readThreat(t) {
   const badge = (cls, v) => `<span class="badge ${cls}">${esc(v)}</span>`;
-  const surface = (t.surface || []).map(v => badge("type", v)).join(" ") || '<span class="placeholder">none</span>';
   const source = (t.source || []).map(v => badge("type", v)).join(" ") || '<span class="placeholder">none</span>';
 
+  // The surface is read off the weaknesses, not off the threat: a chain crosses more
+  // than one boundary, so the pairing of component and channel only means anything per
+  // weakness. A weakness with no surface is about the component's own authority.
   const weaknesses = (t.weaknesses || []).length
     ? `<ul class="plain">${t.weaknesses.map(w => `
-        <li><div class="meta">${esc(w.component)}${w.nature ? " · " + esc(w.nature) : ""}</div>${esc(w.text)}</li>`).join("")}</ul>`
+        <li><div class="meta">${esc(w.component)}${
+          (w.surface || []).length ? " ← " + (w.surface || []).map(v => esc(vocabLabel("surface", v))).join(", ") : ""
+        }${w.nature ? " · " + esc(w.nature) : ""}</div>${esc(w.text)}</li>`).join("")}</ul>`
     : '<div class="warn">No weaknesses authored.</div>';
 
   // Linked mitigations — each card jumps to that mitigation.
@@ -1493,22 +1762,23 @@ function readThreat(t) {
   // An optional prose section: shown only when it has content; else recorded as a gap
   // (with the edit-form field to jump to when its chip is clicked).
   const optProse = (label, field, v, sub) => {
-    if (v && String(v).trim()) return readsec(label, `<div class="prose">${esc(v)}</div>`, sub);
+    if (v && String(v).trim()) return readsec(label, `<div class="prose">${md(v)}</div>`, sub);
     omitted.push({ label, field }); return "";
   };
   const refsHtml = (t.references || []).length
     ? readsec("References", `<ul class="plain">${t.references.map(r =>
-        `<li><span class="meta">${esc(r.title)}</span> <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`)
+        `<li><span class="ref-title">${esc(r.title)}</span>${
+          r.note ? `<span class="ref-note">${esc(r.note)}</span>` : ""
+        }<a class="ref-url" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></li>`).join("")}</ul>`)
     : (omitted.push({ label: "References", field: "references" }), "");
   const tagsHtml = (t.tags || []).length
     ? readsec("Tags", `<div class="badges">${(t.tags || []).map(x => badge("tag", x)).join(" ")}</div>`)
     : (omitted.push({ label: "Tags", field: "tags" }), "");
 
   const sections = [
-    readsec("Surface", `<div class="badges">${surface}</div>`, "— where the interaction happens"),
     readsec("Source", `<div class="badges">${source}</div>`, "— who or what drives it"),
-    readsec("Weaknesses", weaknesses, "— architectural conditions"),
-    optProse("Reachability", "reachability", t.reachability, "— when NOT a live path"),
+    readsec("Weaknesses", weaknesses, "— architectural conditions, each on a component and its channel"),
+    optProse("Reachability", "reachability", t.reachability, "— the condition that rules it out"),
     readsec(`Mitigations (${(t.mitigations || []).length})`, mits),
     refsHtml,
     tagsHtml,
@@ -1525,6 +1795,7 @@ function readThreat(t) {
         <div class="hbadges badges">
           ${t.harm ? badge("harm", t.harm) : '<span class="badge soft" style="color:var(--crimson-600)">no harm</span>'}
         </div>
+        ${citationsHtml(t.id, t.positioning)}
       </div>
       <div class="hactions">
         <button class="btn ghost" id="editBtn">Edit</button>
@@ -1543,8 +1814,13 @@ function readThreat(t) {
 function styleField(entity, field) {
   const ents = state.style && state.style.entities;
   const ent = ents && ents[entity];
-  return (ent && ent.fields && ent.fields[field]) || null;
+  if (!ent) return null;
+  // An empty field name means the bar for the record itself, which has no field to
+  // hang on. Same slot names, so everything downstream reads it like any other.
+  if (!field) return ent.entity || {};
+  return (ent.fields && ent.fields[field]) || null;
 }
+const isRecordBar = sel => !!sel && !sel.field;
 // One-line hint (the field's purpose), shown above the input at all times.
 // The *From variants take a style-field-like object directly, so the style-guide
 // editor's right pane can render the SAME markup fed from an in-progress draft.
@@ -1614,7 +1890,8 @@ function wireInlineGuidance() {
 
 // Edit form — built by walking the threat schema's field order.
 // Only the schema-simple fields are editable here; weakness/mitigation editors are deferred.
-const EDITABLE = new Set(["title", "harm", "surface", "source", "reachability", "tags"]);
+const EDITABLE = new Set(["title", "harm", "source", "reachability",
+                          "positioning", "tags"]);
 
 function editThreat(t) {
   const d = state.draft;
@@ -1648,6 +1925,34 @@ function editThreat(t) {
   </div>`;
 }
 
+// Which tracked sources name this entry. Derived from the coverage matrix, never stored
+// on the card — the matrix is written source-first so a gap has a row to be empty in,
+// and storing the same fact both ways is two places to drift.
+//
+// Naming nothing is a real answer and gets said out loud: it means this is Keel's own,
+// which is worth as much to a sceptical reader as the corroboration is.
+function citationsHtml(entityId, positioning) {
+  // One line under the title, not a section. Who else names an entry is context for
+  // reading it, and a whole band of chrome for two identifiers put a fact worth four
+  // words on the same footing as the entry's own content.
+  if (!state.coverageMatrix) return "";           // not loaded on this screen yet
+  const cites = (state.coverageCites || {})[entityId] || [];
+  // `positioning` sits with the citations because it is about the same thing: where this
+  // entry stands relative to the published lists. It lives on the entry rather than on a
+  // coverage row, since a row is about the whole set of ids answering a source and a
+  // sentence written about one of them stops being true when a second joins it.
+  const note = (positioning || "").trim()
+    ? `<p class="cite-note">${esc(positioning.trim())}</p>` : "";
+  if (!cites.length) {
+    return `<p class="cites"><span class="k">Corroborated by</span>
+      <span class="cite-none">nothing Keel tracks &mdash; this one is ours</span></p>` + note;
+  }
+  return `<p class="cites"><span class="k">Corroborated by</span>${cites.map(c =>
+    `<a class="cite" href="${esc(c.url)}" target="_blank" rel="noopener"
+       title="${esc(c.source_title)} ${esc(c.version)} &mdash; ${esc(c.title)}">${esc(c.ref)}</a>`
+  ).join("")}</p>` + note;
+}
+
 function fieldEditor(name, d) {
   // Each threat field is a SECTION: a semantic fieldset/legend (no card border).
   // The one-line hint reserves its row; verbose guidance lives in the right rail.
@@ -1660,22 +1965,27 @@ function fieldEditor(name, d) {
       ${inlineGuidance("threat", name, tId)}
     </fieldset>`;
   if (name === "harm") {
-    const opts = harmEnum().map(v => `<option value="${esc(v)}" ${v === d.harm ? "selected" : ""}>${esc(v)}</option>`).join("");
+    const opts = harmEnum().map(v => `<option value="${esc(v)}" ${v === d.harm ? "selected" : ""}>${esc(vocabLabel("harm", v))} — ${esc(vocabDesc("harm", v))}</option>`).join("");
     return wrap("Harm", `<select class="f" id="f_harm">${opts}</select>`);
   }
-  if (name === "surface" || name === "source") {
-    const vals = name === "surface" ? surfaceEnum() : sourceEnum();
+  if (name === "source") {
+    const vals = sourceEnum();
     const chosen = new Set(d[name] || []);
     const boxes = vals.map(v => `
-      <label><input type="checkbox" data-set="${name}" value="${esc(v)}" ${chosen.has(v) ? "checked" : ""}>${esc(v)}</label>`).join("");
+      <label title="${esc(vocabDesc("source", v))}"><input type="checkbox" data-set="${name}" value="${esc(v)}" ${chosen.has(v) ? "checked" : ""}>${esc(vocabLabel("source", v))}</label>`).join("");
     // Sentence case: the label is a heading now, and a lowercase word under a 15px
     // heading treatment reads as an unformatted field name rather than a section.
-    return wrap(name === "surface" ? "Surface" : "Source", `<div class="checkset">${boxes}</div>`);
+    return wrap("Source", `<div class="checkset">${boxes}</div>`);
   }
   if (name === "reachability") {
     return wrap("Reachability",
-      `<textarea class="f" id="f_reachability" rows="4" placeholder="NOT applicable if…">${esc(d.reachability)}</textarea>`,
-      "— NOT applicable if…");
+      `<textarea class="f" id="f_reachability" rows="4" placeholder="When is this not a live path at all?">${esc(d.reachability)}</textarea>`,
+      "— the condition that rules this threat out");
+  }
+  if (name === "positioning") {
+    return wrap("Positioning",
+      `<textarea class="f" id="f_positioning" rows="4" placeholder="Only where the shapes differ - what the rest of a broader source entry is, and where it lands.">${esc(d.positioning || "")}</textarea>`,
+      "— relative to the tracked sources");
   }
   if (name === "tags") {
     return wrap("Tags",
@@ -1707,15 +2017,18 @@ function weaknessesEditor() {
   const open = state.wkOpen || new Set();
   const cards = ws.map((w, i) => {
     const isOpen = open.has(i);
-    const summary = `${esc(w.component || "—")}${(w.text || "").trim() ? " · " + esc((w.text || "").trim().slice(0, 40)) : ""}`;
+    const summary = `${esc(w.component || "—")}${(w.surface || []).length ? " ← " + esc((w.surface || []).join(", ")) : ""}${(w.text || "").trim() ? " · " + esc((w.text || "").trim().slice(0, 40)) : ""}`;
     const head = `<div class="ecard-head" data-widx="${i}">
         <button type="button" class="card-toggle wk-toggle" data-widx="${i}" aria-expanded="${isOpen}" title="${isOpen ? "Collapse" : "Expand"}">${isOpen ? "▾" : "▸"}</button>
         <span class="ecard-sum">${isOpen ? "Weakness " + (i + 1) : summary}</span>
         <button type="button" class="cardx wk-remove" data-widx="${i}" title="Remove weakness">×</button>
       </div>`;
     if (!isOpen) return `<div class="ecard wk-card collapsed" data-widx="${i}">${head}</div>`;
-    const compOpts = comps.map(c => `<option value="${esc(c)}" ${c === w.component ? "selected" : ""}>${esc(c)}</option>`).join("");
+    const compOpts = comps.map(c => `<option value="${esc(c)}" ${c === w.component ? "selected" : ""}>${esc(vocabLabel("components", c))} — ${esc(vocabDesc("components", c))}</option>`).join("");
     const natOpts = nats.map(n => `<option value="${esc(n)}" ${n === w.nature ? "selected" : ""}>${esc(n)}</option>`).join("");
+    const chosenSurf = new Set(w.surface || []);
+    const surfBoxes = surfaceEnum().map(v => `
+      <label title="${esc(vocabDesc("surface", v))}"><input type="checkbox" class="wk-surface" data-widx="${i}" value="${esc(v)}" ${chosenSurf.has(v) ? "checked" : ""}>${esc(vocabLabel("surface", v))}</label>`).join("");
     return `<div class="ecard wk-card open" data-widx="${i}">
       ${head}
       <div class="ecard-body">
@@ -1723,6 +2036,12 @@ function weaknessesEditor() {
         <h3 class="slabel">Component</h3>
         ${hintRow("weakness", "component")}
         <select class="f wk-component" data-widx="${i}">${compOpts}</select>
+      </div>
+      <div class="field" data-entity="weakness" data-field="surface">
+        <h3 class="slabel">Surface</h3>
+        ${hintRow("weakness", "surface")}
+        <div class="checkset">${surfBoxes}</div>
+        <div class="hint">Leave all unchecked for a weakness about the component's own authority.</div>
       </div>
       <div class="field" data-entity="weakness" data-field="text">
         <h3 class="slabel">Text</h3>
@@ -1829,6 +2148,10 @@ function referencesEditor() {
         <h3 class="slabel">URL</h3>
         <input class="f ref-url" data-ridx="${i}" id="ref_url_${i}" value="${esc(r.url || "")}" placeholder="https://…">
       </div>
+      <div class="field" data-field="note">
+        <h3 class="slabel">Note</h3>
+        <textarea class="f ref-note-input" data-ridx="${i}" id="ref_note_${i}" rows="2" placeholder="what this source actually supports">${esc(r.note || "")}</textarea>
+      </div>
       </div>
     </div>`;
   }).join("");
@@ -1873,14 +2196,16 @@ function enterEdit() {
   state.draft = {
     title: t.title || "",
     harm: t.harm || (harmEnum()[0] || ""),
-    surface: [...(t.surface || [])],
+    positioning: t.positioning || "",
     source: [...(t.source || [])],
     reachability: t.reachability || "",
     tags: [...(t.tags || [])],
     weaknesses: (t.weaknesses || []).map(w => ({
-      component: w.component, text: w.text || "", nature: w.nature || "targeted",
+      component: w.component, surface: [...(w.surface || [])], text: w.text || "",
+      nature: w.nature || "targeted",
     })),
-    references: (t.references || []).map(r => ({ title: r.title || "", url: r.url || "" })),
+    references: (t.references || []).map(r => ({
+      title: r.title || "", url: r.url || "", note: r.note || "" })),
   };
   // Progressive disclosure: the FIRST repeatable card is expanded, the rest collapse.
   state.wkOpen = new Set((t.weaknesses || []).length ? [0] : []);
@@ -1905,13 +2230,14 @@ function newThreat() {
   const harm0 = harmEnum()[0] || "";
   state.selected = id;
   state.current = {
-    id, title, harm: harm0, surface: [], source: [],
-    weaknesses: [], reachability: "", mitigations: [], references: [], tags: [],
+    id, title, harm: harm0, source: [],
+    weaknesses: [], reachability: "", mitigations: [], references: [],
+    positioning: "", tags: [],
   };
   state.draft = {
     isNew: true,
-    title, harm: harm0, surface: [], source: [],
-    reachability: "", tags: [], weaknesses: [], references: [],
+    title, harm: harm0, source: [],
+    reachability: "", tags: [], weaknesses: [], references: [], positioning: "",
   };
   state.wkOpen = new Set(); state.mlOpen = new Set(); state.refOpen = new Set();
   state.editing = true; state.view = "structure";
@@ -2029,6 +2355,11 @@ function wireWeaknesses() {
     const text = card.querySelector(".wk-text");
     const nat = card.querySelector(".wk-nature");
     if (comp) comp.onchange = () => d.weaknesses[i].component = comp.value;
+    card.querySelectorAll(".wk-surface").forEach(box => box.onchange = () => {
+      const cur = new Set(d.weaknesses[i].surface || []);
+      box.checked ? cur.add(box.value) : cur.delete(box.value);
+      d.weaknesses[i].surface = surfaceEnum().filter(v => cur.has(v));   // stable order
+    });
     if (text) text.oninput = () => d.weaknesses[i].text = text.value;
     if (nat) nat.onchange = () => d.weaknesses[i].nature = nat.value;
     const rm = card.querySelector(".wk-remove");
@@ -2042,7 +2373,7 @@ function wireWeaknesses() {
   });
   const add = document.getElementById("addWeakness");
   if (add) add.onclick = () => {
-    d.weaknesses.push({ component: componentEnum()[0] || "", text: "", nature: "targeted" });
+    d.weaknesses.push({ component: componentEnum()[0] || "", surface: [], text: "", nature: "targeted" });
     (state.wkOpen || (state.wkOpen = new Set())).add(d.weaknesses.length - 1);   // open the new card
     renderDetail();
   };
@@ -2057,6 +2388,8 @@ function wireReferences() {
     const url = card.querySelector(".ref-url");
     if (title) title.oninput = () => d.references[i].title = title.value;
     if (url) url.oninput = () => d.references[i].url = url.value;
+    const note = card.querySelector(".ref-note-input");
+    if (note) note.oninput = () => d.references[i].note = note.value;
     const rm = card.querySelector(".ref-remove");
     if (rm) rm.onclick = e => { e.stopPropagation(); d.references.splice(i, 1); shiftRefOpen(i); renderDetail(); };
     const head = card.querySelector(".ecard-head");
@@ -2068,7 +2401,7 @@ function wireReferences() {
   });
   const add = document.getElementById("addReference");
   if (add) add.onclick = () => {
-    d.references.push({ title: "", url: "" });
+    d.references.push({ title: "", url: "", note: "" });
     (state.refOpen || (state.refOpen = new Set())).add(d.references.length - 1);   // open the new card
     renderDetail();
   };
@@ -2078,6 +2411,13 @@ function wireReferences() {
 // Assemble the full threat the way the server wants it: the draft plus the id and
 // the separately-managed pieces (mitigations/references live on state.current).
 // Falls back to state.current when not editing, so preview/insights work in read view.
+// An unset optional enum reads as "" in a <select>. The schema wants the key gone, so
+// the draft is normalised here and everything downstream — the live validator and the
+// save body alike — takes the cleaned list.
+function draftWeaknesses(list) {
+  return (list || []).map(({ surface, ...w }) => (surface && surface.length) ? { ...w, surface } : w);
+}
+
 function assembleThreat() {
   const d = state.draft || {};
   const c = state.current || {};
@@ -2086,12 +2426,12 @@ function assembleThreat() {
     id: c.id,
     title: pick("title", ""),
     harm: pick("harm", undefined),
-    surface: pick("surface", []),
     source: pick("source", []),
-    weaknesses: pick("weaknesses", []),
+    weaknesses: draftWeaknesses(pick("weaknesses", [])),
     reachability: pick("reachability", ""),
     mitigations: c.mitigations || [],
     references: pick("references", []),
+    positioning: pick("positioning", null),
     tags: pick("tags", []),
   };
 }
@@ -2200,11 +2540,10 @@ async function saveThreat() {
   const body = {
     title: d.title,
     harm: d.harm,
-    surface: d.surface,
     source: d.source,
     reachability: d.reachability,
     tags: d.tags,
-    weaknesses: d.weaknesses,
+    weaknesses: draftWeaknesses(d.weaknesses),
     references: d.references,
   };
   // A new threat is POSTed as a full record (id required, no links yet); an existing
@@ -2212,7 +2551,7 @@ async function saveThreat() {
   const isCreate = isNew;
   const url = isCreate ? "/threats" : "/threats/" + encodeURIComponent(state.selected);
   if (isCreate) { body.id = state.selected; body.mitigations = []; }
-  const r = await fetch(url, {
+  const r = await fetch(API + url, {
     method: isCreate ? "POST" : "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -2280,7 +2619,7 @@ function switchScreen(name) {
   document.querySelectorAll("#screens button").forEach(b => b.classList.toggle("on", b.dataset.screen === name));
   // The tab in the top bar names the screen; this eyebrow names what the LIST holds,
   // which is a different noun on Style guide (fields) and Reports (systems).
-  const titles = { overview: "Library", threats: "Threats", mitigations: "Mitigations", style: "Fields", reports: "Systems" };
+  const titles = { overview: "Library", threats: "Threats", mitigations: "Mitigations", style: "Fields", coverage: "Sources", reports: "Systems" };
   document.getElementById("railTitle").textContent = titles[name] || "";
   // Only the Overview has no rail list to filter.
   document.getElementById("searchWrap").style.display = name === "overview" ? "none" : "";
@@ -2300,30 +2639,34 @@ function switchScreen(name) {
   if (search) {
     search.placeholder = name === "mitigations" ? "Filter mitigations…"
       : name === "style" ? "Filter fields…"
+      : name === "coverage" ? "Filter entries…"
       : name === "reports" ? "System, threat or control id…" : "Filter threats…";
     search.value = name === "mitigations" ? state.mitFilter
       : name === "style" ? state.styleFilter
+      : name === "coverage" ? state.coverageFilter
       : name === "reports" ? state.reportFilter : state.filter;
   }
   const newBtn = document.getElementById("newThreatBtn");
   if (newBtn) {
     // ＋ New has no meaning on the Overview (nothing to author) or Style guide (the
     // fields come from the schema). Everywhere else it starts the screen's own entity.
-    newBtn.style.display = (name === "style" || name === "overview") ? "none" : "";
+    newBtn.style.display = (name === "style" || name === "overview" || name === "coverage") ? "none" : "";
     newBtn.title = name === "mitigations" ? "Create a new mitigation"
       : name === "reports" ? "Assess a system by hand" : "Create a new threat";
   }
   renderRail(); renderMain(); renderRight();
   writeRoute();
   if (name === "overview") loadOverview();   // refresh the dashboard on each entry
+  if (name === "coverage") loadCoverage();
   if (name === "reports") loadReports();
 }
 
 // ===================================================================== //
-// Routing. The location hash IS the app's state, so a reload lands where //
-// you were rather than back on the Overview, and any view can be linked. //
+// Routing. The path IS the app's state, so a reload lands where you were //
+// rather than back on the Overview, and any view can be linked. It was a //
+// hash only because the API used to own /threats and /mitigations.       //
 // ===================================================================== //
-const ROUTE_SCREENS = ["overview", "threats", "mitigations", "style", "reports"];
+const ROUTE_SCREENS = ["overview", "threats", "mitigations", "style", "coverage", "reports"];
 let applyingRoute = false;   // suppresses writeRoute while a route is being restored
 
 function writeRoute() {
@@ -2333,19 +2676,20 @@ function writeRoute() {
   if (s === "threats" && state.selected) parts.push(state.selected);
   else if (s === "mitigations" && state.mitSelected) parts.push(state.mitSelected);
   else if (s === "style" && state.styleSel) parts.push(state.styleSel.entity, state.styleSel.field);
+  else if (s === "coverage" && state.coverageSel) parts.push(state.coverageSel);
   else if (s === "reports" && state.reportSelected) {
     parts.push(state.reportSelected.system_id, state.reportSelected.date);
   }
-  const hash = "#/" + parts.map(encodeURIComponent).join("/");
-  // replaceState, not a hash assignment: walking the Back button through every row you
-  // clicked in a rail is not what anyone means by "back".
-  if (location.hash !== hash) history.replaceState(null, "", hash);
+  const path = "/" + parts.map(encodeURIComponent).join("/");
+  // replaceState, not a push: walking the Back button through every row you clicked in
+  // a rail is not what anyone means by "back".
+  if (location.pathname !== path) history.replaceState(null, "", path);
 }
 
-// Restore whatever the hash names. A stale link (an entry since renamed or deleted)
+// Restore whatever the path names. A stale link (an entry since renamed or deleted)
 // falls back to the bare screen rather than erroring — the URL outlives the data.
 async function applyRoute() {
-  const [screen, a, b] = (location.hash || "").replace(/^#\/?/, "")
+  const [screen, a, b] = location.pathname
     .split("/").filter(Boolean).map(decodeURIComponent);
   applyingRoute = true;
   try {
@@ -2356,7 +2700,8 @@ async function applyRoute() {
     } else if (screen === "mitigations" && a) {
       await selectMit(a);
       if (!state.currentMit) clearMitSelection();
-    } else if (screen === "style" && a && b) selectStyleField(a, b);
+    } else if (screen === "coverage" && a) { await loadCoverage(); selectCoverage(a); }
+    else if (screen === "style" && a && b) selectStyleField(a, b);
     else if (screen === "reports" && a) await openReportSystem(a, b);
   } catch (e) {
     toast("That link no longer resolves — showing the list instead", true);
@@ -2367,6 +2712,7 @@ async function applyRoute() {
 }
 function renderRail() {
   if (state.screen === "overview") return renderOverviewRail();
+  if (state.screen === "coverage") return renderCoverageRail();
   if (state.screen === "reports") return renderReportsRail();
   if (state.screen === "style") return renderStyleRail();
   if (state.screen === "mitigations") return renderMitRail();
@@ -2374,6 +2720,7 @@ function renderRail() {
 }
 function renderMain() {
   if (state.screen === "overview") return renderOverviewMain();
+  if (state.screen === "coverage") return renderCoverageMain();
   if (state.screen === "reports") return renderReportsMain();
   if (state.screen === "style") return renderStyleDetail();
   if (state.screen === "mitigations") return renderMitDetail();
@@ -2413,7 +2760,7 @@ async function loadOverview() {
     j("/health/library"), j("/style-guide/coverage"), j("/health/warnings"), j("/history/recent?limit=15"),
     j("/reports/insights"),
   ]);
-  state.health = h.status === "fulfilled" ? h.value : (state.health || { stats: {}, issues: {}, issue_count: 0 });
+  state.health = h.status === "fulfilled" ? h.value : (state.health || { stats: {}, errors: [], warnings: [] });
   state.coverage = cov.status === "fulfilled" ? cov.value : state.coverage;
   state.warnings = warn.status === "fulfilled" ? warn.value.warnings : [];
   state.recentActivity = act.status === "fulfilled" ? act.value : { available: false, commits: [] };
@@ -2442,26 +2789,24 @@ function renderOverviewRight() {
   applyPreviewVisibility();
 }
 
-// The gap groups the health endpoint reports, in review order. "No gating mitigation"
-// is a per-threat lint, not part of /health/library, so it is intentionally absent.
-const OV_GAP_GROUPS = [
-  { key: "threats_missing_weaknesses", label: "Missing weaknesses", desc: "no architectural conditions authored yet" },
-  { key: "threats_missing_harm", label: "Missing harm", desc: "no harm classified yet" },
-  { key: "threats_without_mitigation", label: "No linked mitigation", desc: "no control linked yet" },
-  { key: "dangling_mitigation_links", label: "Dangling links", desc: "a link points at a missing mitigation" },
-];
+// The rule list is served, not mirrored. Two copies of it lived here and fell behind the
+// backend every time a rule was added or renamed; a screen that groups findings has no
+// business also deciding what the groups are.
+const ruleLabel = code => (state.rules[code] || {}).label || code;
+const ruleExplanation = code => (state.rules[code] || {}).explanation || "";
 
-// Categories `catalog_warnings_structured()` can emit — mirrors keel/catalog.py. Each
-// carries the same one-line explanation the gap groups do: a bare label and a count
-// ("Unused vocabulary 1") says nothing about what was found or why it matters.
-const OV_WARNING_GROUPS = [
-  { key: "over_graded_strength", label: "Over-graded links",
-    desc: "the link is graded gating, but the mitigation it points at is not a gating control" },
-  { key: "missing_references", label: "Missing references",
-    desc: "no source recorded — nothing maps the threat to CWE, CAPEC, OWASP-LLM or ATLAS" },
-  { key: "unused_nature", label: "Unused vocabulary",
-    desc: "a term the vocabulary offers that no entry in the catalog actually uses" },
-];
+// Findings grouped by rule, largest group first. A bare label and a count ("Unused
+// vocabulary 1") says nothing about what was found, so each group carries the rule's own
+// one-line explanation.
+function findingGroups(findings) {
+  const by = new Map();
+  for (const f of findings || []) {
+    if (!by.has(f.code)) by.set(f.code, []);
+    by.get(f.code).push(f);
+  }
+  return [...by.entries()].map(([code, items]) => ({ code, items }))
+    .sort((a, b) => b.items.length - a.items.length);
+}
 
 // Long id lists are unreadable as one wall of chips. Show a run, park the rest behind
 // one click. The cut is announced, never silent.
@@ -2565,7 +2910,7 @@ function estateBlocks(blk) {
     parts.push(blk("Missing from the library", `${ins.off_catalog.length}`, rows));
   }
 
-  // Dead weight: a card ruled out as often as it is confirmed is scoped wrong.
+  // Dead weight: a threat ruled out as often as it is confirmed is scoped wrong.
   const misfits = (ins.threat_activity || [])
     .filter(a => a.ruled_out.length && a.ruled_out.length >= a.confirmed.length);
   if (misfits.length) {
@@ -2573,7 +2918,7 @@ function estateBlocks(blk) {
       <button type="button" class="ins-name reflink" data-jump-threat="${esc(a.id)}">${esc(a.title)}</button>
       <span class="ins-meta">ruled out ${a.ruled_out.length}&times;, confirmed ${a.confirmed.length}&times;</span>
     </div>`).join("");
-    parts.push(blk("Cards that keep not applying", `${misfits.length}`, rows));
+    parts.push(blk("Threats that keep not applying", `${misfits.length}`, rows));
   }
 
   if (ins.drafts.length) {
@@ -2587,7 +2932,6 @@ function estateBlocks(blk) {
 function overviewHtml() {
   const h = state.health || {};
   const stats = h.stats || {};
-  const issues = h.issues || {};
   const cov = state.coverage || {};
 
   const ins = state.insights || {};
@@ -2605,27 +2949,26 @@ function overviewHtml() {
     <div class="ov-fold-b"><p class="ov-gap-desc">${esc(desc)}</p>${body}</div>
   </details>`;
 
-  const gapCards = OV_GAP_GROUPS.map(g => {
-    const ids = issues[g.key] || [];
-    return ids.length ? foldRow(ids.length, g.label, g.desc, chipRow(ids.map(chip))) : "";
-  }).join("");
-  const gaps = (h.issue_count === 0)
-    ? `<div class="ov-clean"><span class="ok-i"></span>
-        <p><b>Nothing flagged.</b> Every threat has weaknesses, a classified harm, and at least one linked mitigation — and no link dangles.</p></div>`
-    : gapCards;
+  const gapCards = findingGroups(h.errors).map(g =>
+    foldRow(g.items.length, ruleLabel(g.code), ruleExplanation(g.code),
+      chipRow(g.items.filter(f => f.entity_id).map(f => chip(f.entity_id))))).join("");
+  const emptyCatalog = !stats.threats && !stats.mitigations;
+  const gaps = emptyCatalog
+    ? `<p class="placeholder">Nothing in the catalog yet. Entries move here from <code>drafts/</code> once someone has vouched for them.</p>`
+    : !(h.errors || []).length
+      ? `<div class="ov-clean"><span class="ok-i"></span>
+          <p><b>Nothing flagged.</b> Every threat has weaknesses, a classified harm, and at least one linked mitigation.</p></div>`
+      : gapCards;
 
   // Authoring hygiene compressed to three clickable lines. It used to be two segmented
   // bars with legends and a five-row coverage chart — a quarter of the screen spent on
   // numbers that answer "is the catalog tidy", which is not why anyone opens Keel. The
   // breakdown still exists, on the screen that owns it.
-  const sc = h.mitigation_status_counts || { draft: 0, verified: 0, unset: 0 };
   const ic = h.implementation_coverage_counts || { shared: 0, local_only: 0, none: 0 };
   const line = (n, text, attrs) =>
     `<button type="button" class="ov-line" ${attrs}><span class="ov-line-n">${n}</span><span>${esc(text)}</span></button>`;
   const libraryLines = [
     line(overall == null ? "—" : overall + "%", "of the style guide is authored", 'data-goto="style"'),
-    line(sc.draft, `of ${stats.mitigations || 0} mitigations still draft`,
-      'data-ov-filter="status" data-ov-value="draft"'),
     line(ic.none, "carry no recorded implementation",
       'data-ov-filter="implementations" data-ov-value="none"'),
   ].join("");
@@ -2634,23 +2977,21 @@ function overviewHtml() {
   // wireOverview can tell them apart from the Gaps chips above (threats only).
   const warnChip = w =>
     `<span class="ov-chip" data-warn-entity="${esc(w.entity_type)}" data-warn-id="${esc(w.entity_id)}" title="Open ${esc(w.entity_id)}">${esc(w.entity_id)}</span>`;
-  const warningsByCat = {};
-  for (const w of (state.warnings || [])) (warningsByCat[w.category] || (warningsByCat[w.category] = [])).push(w);
-  const warningCards = OV_WARNING_GROUPS.map(g => {
-    const items = warningsByCat[g.key] || [];
-    if (!items.length) return "";
-    // A warning about the catalog as a whole names no entity, so it has no chip to
-    // click — its own message is the only thing that carries the finding.
-    const withId = items.filter(w => w.entity_id);
+  const warningCards = findingGroups(state.warnings || []).map(g => {
+    // A finding about the catalog as a whole names no entity, so it has no chip to
+    // click - its own message is the only thing that carries it.
+    const withId = g.items.filter(w => w.entity_id);
     const body = withId.length
       ? chipRow(withId.map(warnChip))
-      : items.map(w => `<p class="ov-warn-msg">${esc(w.message)}</p>`).join("");
-    return foldRow(items.length, g.label, g.desc, body);
+      : g.items.map(w => `<p class="ov-warn-msg">${esc(w.message)}</p>`).join("");
+    return foldRow(g.items.length, ruleLabel(g.code), ruleExplanation(g.code), body);
   }).join("");
   const warningCount = (state.warnings || []).length;
   const warningsSection = warningCount
     ? warningCards
-    : `<div class="ov-clean"><span class="ok-i"></span><p><b>Nothing flagged.</b> No advisory warnings across the catalog.</p></div>`;
+    : emptyCatalog
+      ? `<p class="placeholder">Nothing to advise on yet.</p>`
+      : `<div class="ov-clean"><span class="ok-i"></span><p><b>Nothing flagged.</b> No advisory warnings across the catalog.</p></div>`;
 
   const act = state.recentActivity || { available: false, commits: [] };
   // A sweeping commit touches every card in the catalog, and dumping all 71 ids inline
@@ -2684,11 +3025,60 @@ function overviewHtml() {
   const blk = (label, meta, body) => `<div class="ov-block">
     <p class="k">${esc(label)}${meta ? `<span class="n">${esc(meta)}</span>` : ""}</p>${body}</div>`;
 
+  // A record that fails its schema is refused at load, so the catalog on disk and the
+  // catalog in the app have diverged. Anything reported as broken has to be fixable
+  // where it is reported, so the file name is the action: a record that loaded opens in
+  // its normal editor, and one that did not opens as raw text right here, because there
+  // is no form to build for something that would not parse. Errors are grouped by file
+  // — three bad fields in one record are one thing to go and fix, not three.
+  const repo = (state.config && state.config.repo_url || "").replace(/\/+$/, "");
+  // A load failure carries the file it came from. A rule finding carries the record it
+  // is about instead, so the path is derived — without this every rule finding grouped
+  // under `undefined`, and the band read "1 file is not valid" above hundreds of lines.
+  const DIRS = { mitigation: "mitigations", threat: "threats", coverage: "coverage" };
+  const fileOf = e => e.file
+    || (DIRS[e.entity_type] && e.entity_id ? `${DIRS[e.entity_type]}/${e.entity_id}.yaml` : "(unknown)");
+  const errFiles = [];
+  for (const e of (h.errors || [])) {
+    const file = fileOf(e);
+    let g = errFiles.find(x => x.file === file);
+    if (!g) errFiles.push(g = { file, dropped: false, items: [] });
+    g.dropped = g.dropped || e.dropped;
+    g.items.push(e);
+  }
+  errFiles.sort((a, b) => (b.dropped - a.dropped) || a.file.localeCompare(b.file));
+  const errRow = g => {
+    const e0 = g.items[0];
+    const onGithub = repo
+      ? `<a class="ov-err-gh" href="${esc(repo)}/edit/main/catalog/${esc(g.file)}" target="_blank" rel="noopener">on GitHub</a>`
+      : "";
+    const lines = g.items.map(e =>
+      `<p class="ov-err-msg">${e.field ? `<span class="ov-err-field">${esc(e.field)}</span>` : ""}${esc(e.message)}</p>`
+    ).join("");
+    return `<div class="ov-err-row" data-err-file="${esc(g.file)}">
+      <div class="ov-err-head">
+        <button type="button" class="ov-err-loc" data-err-open="${esc(g.file)}"
+          data-err-dropped="${g.dropped ? "1" : ""}" data-err-entity="${esc(e0.entity_type || "")}"
+          data-err-id="${esc(e0.entity_id || "")}">${esc(g.file)}</button>
+        ${g.dropped ? `<span class="ov-err-drop">not loaded</span>` : ""}
+        ${onGithub}
+      </div>
+      ${lines}
+      <div class="ov-repair"></div></div>`;
+  };
+  const errorBand = errFiles.length
+    ? `<div class="ov-errors">
+        <p class="k">${errFiles.length} ${errFiles.length === 1 ? "file is" : "files are"} not valid<span class="n">${errFiles.filter(g => g.dropped).length} not being served</span></p>
+        ${errFiles.map(errRow).join("")}
+      </div>`
+    : "";
+
   return `<div class="detail">
     <div class="ov-head">
       <h2>Library overview</h2>
       <p class="ov-facts">${esc(facts)}</p>
     </div>
+    ${errorBand}
     <div class="ov-grid2">
       <section>
         <h3 class="slabel">Assessed systems</h3>
@@ -2698,7 +3088,7 @@ function overviewHtml() {
         <h3 class="slabel">The library</h3>
         <div class="ov-col">
           ${blk("Authoring", null, libraryLines)}
-          ${blk("Gaps to review", h.issue_count ? `${h.issue_count} across the library` : null, gaps)}
+          ${blk("Gaps to review", (h.errors || []).length ? `${h.errors.length} across the library` : null, gaps)}
           ${blk("Catalog warnings", warningCount ? `${warningCount} across the library` : null, warningsSection)}
           ${blk("Recent activity", null, activityRows)}
         </div>
@@ -2710,6 +3100,7 @@ function overviewHtml() {
 function wireOverview() {
   document.querySelectorAll(".ov-chip[data-threat]").forEach(c => c.onclick = () => overviewOpenThreat(c.dataset.threat));
   document.querySelectorAll(".ov-chip[data-warn-entity]").forEach(c => c.onclick = () => overviewOpenEntity(c.dataset.warnEntity, c.dataset.warnId));
+  document.querySelectorAll("[data-err-open]").forEach(el => el.onclick = () => openRepair(el));
   document.querySelectorAll("[data-ov-filter]").forEach(el => el.onclick = () => overviewOpenMitigationsFiltered(el.dataset.ovFilter, el.dataset.ovValue));
   document.querySelectorAll("[data-goto]").forEach(el => el.onclick = () => switchScreen(el.dataset.goto));
   // Reveal a capped chip list in place; the button has done its job and goes away.
@@ -2733,6 +3124,47 @@ function wireJumpLinks(root) {
     b.onclick = () => jumpToThreat(b.dataset.jumpThreat));
   root.querySelectorAll("[data-jump-mit]").forEach(b =>
     b.onclick = () => jumpToMit(b.dataset.jumpMit));
+}
+
+// Act on a file the loader rejected. A record that still loaded (one bad link, the rest
+// intact) has a real entry, so its own editor is the right tool. A record that did not
+// load has no entry and no parseable shape, so the only honest editor is its text.
+async function openRepair(el) {
+  const file = el.dataset.errOpen;
+  if (!el.dataset.errDropped) {
+    overviewOpenEntity(el.dataset.errEntity, el.dataset.errId);
+    return;
+  }
+  const panel = el.closest(".ov-err-row").querySelector(".ov-repair");
+  if (panel.firstChild) { panel.innerHTML = ""; return; }   // second click closes it
+
+  let data;
+  try { data = await j("/catalog/file?path=" + encodeURIComponent(file)); }
+  catch (e) { toast(e.message, true); return; }
+
+  panel.innerHTML = `<textarea spellcheck="false"></textarea>
+    <div class="ov-repair-actions">
+      <button type="button" class="btn primary sm" data-repair-save>Save</button>
+      <button type="button" class="btn ghost sm" data-repair-cancel>Cancel</button>
+    </div>
+    <p class="ov-repair-err" hidden></p>`;
+  const ta = panel.querySelector("textarea");
+  ta.value = data.text;
+  ta.focus();
+
+  panel.querySelector("[data-repair-cancel]").onclick = () => { panel.innerHTML = ""; };
+  panel.querySelector("[data-repair-save]").onclick = async () => {
+    const msg = panel.querySelector(".ov-repair-err");
+    let res;
+    try { res = await api("PUT", "/catalog/file", { path: file, text: ta.value }); }
+    catch (e) { toast(e.message, true); return; }
+    if (res.success) { toast("Saved " + file); loadOverview(); return; }
+    // Refused, not written: the same gate the loader applies, reported the same way.
+    msg.hidden = false;
+    msg.innerHTML = res.errors
+      .map(e => (e.field ? `<span class="ov-err-field">${esc(e.field)}</span>` : "") + esc(e.message))
+      .join("<br>");
+  };
 }
 
 // Open a threat from an overview gap chip: cross to the Threats screen, then select it.
@@ -2787,6 +3219,129 @@ function reportMatches(s) {
   const q = (state.reportFilter || "").trim().toLowerCase();
   if (!q) return true;
   return (s.system_id + " " + s.system_name + " " + (s.keywords || "")).toLowerCase().includes(q);
+}
+
+// ===================================================================== //
+// Coverage. Keel's claim about the lists it says it keeps up with, and  //
+// the only screen whose value is in the rows that are NOT green.        //
+// ===================================================================== //
+async function loadCoverage() {
+  if (state.coverageMatrix) return;
+  try {
+    const [m, cites] = await Promise.all([j("/coverage"), j("/coverage/citations")]);
+    state.coverageMatrix = m;
+    state.coverageCites = cites || {};
+    if (!state.coverageSel && m.sources.length) state.coverageSel = m.sources[0].source.id;
+  } catch (e) {
+    state.coverageMatrix = { sources: [], warnings: [] };
+    toast(e.message, true);
+  }
+  renderRail(); renderMain();
+}
+
+function selectCoverage(id) {
+  state.coverageSel = id;
+  renderRail(); renderMain(); writeRoute();
+}
+
+// A gap is work not yet done, not a fault — amber, the advice colour. Out of scope is a
+// boundary Keel drew, so it is navy like any other piece of structure. Crimson appears
+// nowhere on this screen: none of these three states is an error.
+const COV_STATE = {
+  covered: { label: "covered", cls: "cov-yes" },
+  out_of_scope: { label: "out of scope", cls: "cov-no" },
+  gap: { label: "gap", cls: "cov-gap" },
+};
+
+function renderCoverageRail() {
+  const el = document.getElementById("list");
+  const srcs = (state.coverageMatrix && state.coverageMatrix.sources) || [];
+  el.innerHTML = srcs.length ? srcs.map(s => {
+    const c = s.counts, total = s.imported || 1;
+    const seg = (n, cls) => n ? `<span class="hbar-f ${cls}" style="width:${(n / total) * 100}%"></span>` : "";
+    return `<div class="row ${s.source.id === state.coverageSel ? "active" : ""}" data-cov="${esc(s.source.id)}">
+      <span class="rtitle">${esc(s.source.title)}</span>
+      <span class="rid">${esc(s.source.version)}</span>
+      <div class="hbar-t stack cov-rail-bar">${seg(c.covered, "c-hi")}${seg(c.out_of_scope, "cov-seg-no")}${seg(c.gap, "c-mid")}</div>
+      <div class="badges"><span class="badge soft">${c.covered} covered</span>
+        ${c.out_of_scope ? `<span class="badge soft">${c.out_of_scope} out of scope</span>` : ""}
+        ${c.gap ? `<span class="badge cov c-mid">${c.gap} gap</span>` : ""}</div>
+    </div>`;
+  }).join("") : `<div class="empty" style="margin-top:40px">No sources tracked.</div>`;
+  document.getElementById("count").textContent = srcs.length ? String(srcs.length) : "";
+  el.querySelectorAll(".row").forEach(r => r.onclick = () => selectCoverage(r.dataset.cov));
+}
+
+function renderCoverageMain() {
+  const m = document.getElementById("main");
+  const data = state.coverageMatrix;
+  if (!data) return m.innerHTML = `<div class="empty">Loading…</div>`;
+  const s = data.sources.find(x => x.source.id === state.coverageSel);
+  if (!s) return m.innerHTML = `<div class="empty">Select a source.</div>`;
+
+  const src = s.source, c = s.counts;
+  const q = (state.coverageFilter || "").toLowerCase();
+  const rows = s.entries.filter(e =>
+    (!state.coverageState || e.state === state.coverageState) &&
+    (!q || e.ref.toLowerCase().includes(q) || e.title.toLowerCase().includes(q)
+      || (e.group || "").toLowerCase().includes(q)));
+
+  // Grouped where the source groups its own entries (an ATLAS tactic); one flat run of
+  // a hundred rows is a list nobody reads to the end of.
+  const groups = [];
+  for (const e of rows) {
+    const key = e.group || "";
+    let g = groups.find(x => x.key === key);
+    if (!g) groups.push(g = { key, items: [] });
+    g.items.push(e);
+  }
+
+  const entryRow = e => {
+    const st = COV_STATE[e.state];
+    const ids = [...e.threats, ...e.mitigations];
+    const links = ids.map(id => id.startsWith("CTRL-")
+      ? `<button type="button" class="reflink" data-jump-mit="${esc(id)}">${esc(id)}</button>`
+      : `<button type="button" class="reflink" data-jump-threat="${esc(id)}">${esc(id)}</button>`).join(" · ");
+    return `<div class="cov-row">
+      <span class="cov-ref">${esc(e.ref)}</span>
+      <span class="cov-title">${esc(e.title)}</span>
+      <span class="badge ${st.cls}">${st.label}</span>
+      ${links ? `<p class="cov-ids">${links}</p>` : ""}
+      ${e.note ? `<p class="cov-note">${esc(e.note)}</p>` : ""}
+    </div>`;
+  };
+
+  const filters = ["", "covered", "out_of_scope", "gap"].map(v => {
+    const label = v ? COV_STATE[v].label : "all";
+    const n = v ? c[v] : s.imported;
+    return `<button type="button" class="ov-chip ${state.coverageState === v ? "on" : ""}" data-cov-state="${v}">${label} ${n}</button>`;
+  }).join("");
+
+  const partial = s.imported !== src.entry_count;
+  m.innerHTML = `<div class="detail">
+    <div class="dhead">
+      <div><h2>${esc(src.title)}</h2>
+        <p class="dsub">${esc(src.version)}${src.released ? " · released " + esc(src.released) : ""} · read against the source on ${esc(src.checked)}</p></div>
+      <a class="reflink" href="${esc(src.url)}" target="_blank" rel="noopener">the source</a>
+    </div>
+    ${src.note ? `<p class="cov-lede">${esc(src.note)}</p>` : ""}
+    <div class="readsec">
+      <div class="ov-block">
+        <p class="k">Where Keel stands<span class="n">${s.imported} of ${src.entry_count} entries${partial ? " — the rest are not yet read in" : ""}</span></p>
+        <div class="chiprow">${filters}</div>
+      </div>
+    </div>
+    ${groups.map(g => `<div class="readsec cov-group">
+      ${g.key ? `<h3 class="slabel">${esc(g.key)}</h3>` : ""}
+      ${g.items.map(entryRow).join("")}
+    </div>`).join("") || `<div class="empty">Nothing matches that.</div>`}
+  </div>`;
+
+  m.querySelectorAll("[data-cov-state]").forEach(btn => btn.onclick = () => {
+    state.coverageState = btn.dataset.covState;
+    renderCoverageMain();
+  });
+  wireJumpLinks(m);
 }
 
 function renderReportsRail() {
@@ -2946,7 +3501,13 @@ async function openReportSystem(systemId, date) {
 // A draft is edited in place: no Edit button, no mode switch. Every control carries a
 // dot-path into state.currentReport (data-rp) and a change schedules one debounced PUT
 // of the whole report. Going final swaps every control back to plain text.
-const reportEditable = () => (state.currentReport || {}).status === "draft";
+// Every report is editable. This used to gate on status, which meant a specialist who
+// spotted a wrong grade in a final report had to first decide whether their edit was a
+// "correction" or a "re-assessment" and press a different button for each. Nobody wants
+// to classify their own typo. Editing is now always allowed and drops the report back to
+// draft, so the signature is the thing that has to be renewed, not the text that has to
+// be locked.
+const reportEditable = () => !!state.currentReport;
 
 // Fixed by keel/schemas/report.py, which is not served through /schema (that endpoint
 // covers catalog entities). Keep these in step with the Literals there.
@@ -2994,17 +3555,31 @@ function scheduleReportSave() {
 async function saveReport() {
   const sel = state.reportSelected;
   if (!sel || !state.currentReport) return;
+  let saved;
   try {
-    // The response is deliberately discarded: replacing state.currentReport mid-typing
-    // would swap the object the focused control is bound to.
-    await api("PUT", `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}`,
+    // The body is deliberately not swapped back into state.currentReport: replacing it
+    // mid-typing would change the object the focused control is bound to.
+    saved = await api("PUT", `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}`,
       state.currentReport);
     state.reportSave = "ok";
   } catch (e) {
     state.reportSave = "err";
     toast(e.message, true);
+    paintSaveState();
+    return;
   }
   paintSaveState();
+
+  // Status is the one thing the server decides, and editing a final report sends it back
+  // to draft. Without this the header keeps saying "final" over a document that is not,
+  // which is exactly the claim the status exists to make honestly.
+  if (saved && saved.status !== state.currentReport.status) {
+    state.currentReport.status = saved.status;
+    state.reportSeries[sel.system_id] = null;   // the rail badge is stale too
+    renderReportsMain();
+    await loadReports();
+    toast("Back to draft \u2014 finalize again when you are done");
+  }
 }
 
 function paintSaveState() {
@@ -3159,15 +3734,14 @@ function reportDetailHtml(rep) {
     </details></section>`;
 
   const draft = rep.status === "draft";
-  // Two revision paths, deliberately separate, because they mean different things: a
-  // record can be WRONG (a typo, a grade written down differently from how it was
-  // decided) without the system having changed, and the system can change without the
-  // old record being wrong. Correcting keeps the date — nothing was re-assessed.
-  const actions = draft
-    ? `<span class="savestate" id="repSave"></span>
-       <button class="btn primary" id="repFinalize" title="Freeze this report as a dated record">Finalize</button>`
-    : `<button class="btn ghost" id="repCorrect" title="Fix a mistake in this record, keeping its date">Correct</button>
-       <button class="btn ghost" id="repReopen" title="Assess this system again — a new draft dated today, findings carried forward">New assessment</button>`;
+  // One verb. There used to be three — save, correct, reopen — and between them they
+  // asked the reader to classify their own edit before making it, which nobody wants to
+  // do before fixing a typo. Editing is always allowed; editing a final report drops it
+  // back to draft, because a document that changed after sign-off is not signed off.
+  const actions = `<span class="savestate" id="repSave"></span>
+    ${draft
+      ? `<button class="btn primary" id="repFinalize" title="Sign this report off as a dated record">Finalize</button>`
+      : `<span class="badge soft">final</span>`}`;
 
   // A tab, not a third column. The hand-off was stealing 360px of every report's width
   // permanently to serve the last thing anyone does with one; as a tab it costs nothing
@@ -3190,14 +3764,14 @@ function reportDetailHtml(rep) {
     ${dateChips}
     ${tabs}
     ${state.reportTab === "handoff" ? handoffHtml() : `
-    ${draft ? "" : `<section class="readsec rep-final"><p>This report is final. <b>Correct</b> it if the record itself is wrong — the date stays, because nothing was re-assessed. Start a <b>new assessment</b> if the system has changed since; that opens a fresh draft dated today with these findings carried forward.</p></section>`}
+    ${draft ? "" : `<section class="readsec rep-final"><p>This report is final. Editing it is allowed and drops it back to draft, so finalize again when you are done. To assess the system again rather than fix this record, start a new report — it gets today's date and leaves this one standing.</p></section>`}
     <section class="readsec">
       <div class="ov-block"><p class="k">System</p>${rProse("system_description", rep.system_description, "prose")}</div>
-      ${(draft || rep.delta_summary) ? `<div class="ov-block"><p class="k">What changed since the last assessment</p>
-        ${rProse("delta_summary", rep.delta_summary, "prose")}</div>` : ""}
+      <div class="ov-block"><p class="k">What changed since the last assessment</p>
+        ${rProse("delta_summary", rep.delta_summary, "prose")}</div>
     </section>
     ${readsec("Findings", findingsHtml
-      + (draft ? '<button class="btn ghost" id="addFinding" style="margin-top:10px">Add a finding</button>' : ""),
+      + '<button class="btn ghost" id="addFinding" style="margin-top:10px">Add a finding</button>',
       `— ${findings.length}, worst first`)}
     <div class="rep-aside">
       ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
@@ -3455,8 +4029,6 @@ function wireReportDetail() {
 
   const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
   on("repFinalize", () => finalizeReport());
-  on("repReopen", () => reopenReport());
-  on("repCorrect", () => correctReport());
   main.querySelectorAll("[data-rtab]").forEach(b => b.onclick = () => {
     state.reportTab = b.dataset.rtab;
     renderReportsMain();
@@ -3464,20 +4036,6 @@ function wireReportDetail() {
   });
   on("addFinding", () => addFinding());
   paintSaveState();
-}
-
-// Unlock a final record for correction. No confirmation: it is reversible in one click
-// (Finalize again) and the file is in git either way.
-async function correctReport() {
-  const sel = state.reportSelected;
-  if (!sel) return;
-  try {
-    await api("POST",
-      `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}/correct`);
-  } catch (e) { toast(e.message, true); return; }
-  state.reportSeries[sel.system_id] = null;   // its status changed
-  await openReportSystem(sel.system_id, sel.date);
-  toast("Open for correction — finalize again when you are done");
 }
 
 // A finding skeleton. Every required field gets a value the schema accepts, so the
@@ -3488,7 +4046,7 @@ function addFinding() {
   rep.findings.push({
     id: "T-NEW", from_catalog: false, scenario: "",
     source: { who: sourceEnum()[0] || "external-attacker", motive: "", access: "" },
-    asset: "", attack_surface: surfaceEnum()[0] || "user-agent", vulnerability: "",
+    asset: "", attack_surface: surfaceEnum()[0] || "user-input", vulnerability: "",
     exploitation_complexity: "medium", harm: harmEnum()[0] || "data-exposed",
     risk: { likelihood: "medium", severity: "medium", reasoning: "" },
     delta: "", requirements: [], ignored_mitigations: [],
@@ -3503,8 +4061,8 @@ function addFinding() {
 async function finalizeReport() {
   const sel = state.reportSelected;
   if (!sel) return;
-  if (!confirm("Finalize this report? It becomes a dated record and stops being editable. "
-    + "Revising it later opens a new draft dated that day.")) return;
+  if (!confirm("Finalize this report? It becomes a dated record. You can still edit it, "
+    + "but editing drops it back to draft and it will need finalizing again.")) return;
   clearTimeout(reportSaveTimer);
   await saveReport();
   try {
@@ -3514,20 +4072,6 @@ async function finalizeReport() {
     toast("Report finalized");
   } catch (e) { toast(e.message, true); return; }
   await openReportSystem(sel.system_id, sel.date);
-}
-
-async function reopenReport() {
-  const sel = state.reportSelected;
-  if (!sel) return;
-  let fresh;
-  try {
-    fresh = await api("POST",
-      `/reports/${encodeURIComponent(sel.system_id)}/${encodeURIComponent(sel.date)}/reopen`);
-  } catch (e) { toast(e.message, true); return; }
-  state.reportSeries[sel.system_id] = null;     // a new date exists
-  await loadReports();
-  await openReportSystem(sel.system_id, fresh.date);
-  toast("Opened a new draft dated " + fresh.date);
 }
 
 // ------------------------------------------------------- style-guide screen -- //
@@ -3579,6 +4123,15 @@ function renderStyleRail() {
     });
     if (!matched.length) continue;                 // hide empty entity groups
     html += `<div class="sg-group">${esc(etype)}</div>`;
+    if (!styleFacetsNarrowToFields()) {
+      const recActive = state.styleSel && state.styleSel.entity === etype && !state.styleSel.field;
+      const authored = !!(ent.entity && (ent.entity.purpose || (ent.entity.instructions || []).length
+                          || (ent.entity.avoid || []).length));
+      html += `<div class="row sg-frow ${recActive ? "active" : ""}" data-entity="${esc(etype)}" data-field="">
+        <span class="fname">the record</span>
+        <span class="badge ${authored ? "soft" : "cov empty"}">${authored ? "authored" : "empty"}</span>
+      </div>`;
+    }
     for (const fname of matched) {
       shown++;
       const f = ent.fields[fname];
@@ -3599,6 +4152,13 @@ function renderStyleRail() {
   el.innerHTML = html || '<div class="empty" style="margin-top:40px">No matches.</div>';
   document.getElementById("count").textContent = shown + " / " + total;
   el.querySelectorAll(".sg-frow").forEach(r => r.onclick = () => selectStyleField(r.dataset.entity, r.dataset.field));
+}
+
+// The record has no completeness percentage and cannot be an orphan, so it drops out
+// when a facet that only fields can answer is active.
+function styleFacetsNarrowToFields() {
+  const f = state.styleFacets || {};
+  return !!((f.coverage && f.coverage.size) || (f.orphan && f.orphan.size));
 }
 
 // Style-guide facet panel — Entity / Coverage / Orphan, same builder as the other rails.
@@ -3669,23 +4229,31 @@ function renderStyleDetail() {
   const sf0 = styleField(entity, field) || {};
   const orphan = !!sf0.is_orphan;
   const d = state.styleDraft;
+  const record = isRecordBar(state.styleSel);
   m.innerHTML = `<div class="detail">
     <div class="dhead">
       <div class="dicon">S</div>
       <div class="dtitle">
-        <h2>${esc(field)}</h2>
-        <div class="did">${esc(entity)}${orphan ? " · orphan — schema removed this field" : ""}</div>
+        <h2>${record ? "the record" : esc(field)}</h2>
+        <div class="did">${esc(entity)}${
+          record ? " · the bar no single field can carry"
+                 : (orphan ? " · orphan — schema removed this field" : "")}</div>
       </div>
       <div class="hactions"><button class="btn primary" id="sgSaveBtn">Save</button></div>
     </div>
     <section class="field">
-      <h3 class="slabel">Purpose <span class="sub">— the one-line hint shown above the input</span></h3>
-      <textarea class="f" id="sg_purpose" rows="2" placeholder="what this field is for">${esc(d.purpose)}</textarea>
+      <h3 class="slabel">Purpose <span class="sub">— ${
+        record ? "what one record of this entity is"
+               : "the one-line hint shown above the input"}</span></h3>
+      <textarea class="f" id="sg_purpose" rows="2" placeholder="${
+        record ? "what one record of this entity is" : "what this field is for"}">${esc(d.purpose)}</textarea>
     </section>
-    ${slotListSection("content_requirements", "Content requirements", "shown as “Include” in the guidance panel")}
-    ${slotListSection("avoid", "Avoid", "shown as “Avoid” in the guidance panel")}
-    ${slotListSection("examples", "Examples", "the first powers “use example” on the Threats screen")}
-    ${slotListSection("instructions", "Instructions", "step-by-step authoring guidance")}
+    ${record ? "" : slotListSection("content_requirements", "Content requirements", "shown as “Include” in the guidance panel")}
+    ${slotListSection("instructions", "Instructions", record
+        ? "what to settle before writing any field" : "step-by-step authoring guidance")}
+    ${slotListSection("avoid", "Avoid", record
+        ? "failure modes of the record as a whole" : "shown as “Avoid” in the guidance panel")}
+    ${record ? "" : slotListSection("examples", "Examples", "the first powers “use example” on the Threats screen")}
   </div>`;
   wireStyleEditor();
 }
@@ -3734,9 +4302,27 @@ function renderStylePreview() {
     el.innerHTML = '<p class="ptitle">Author preview</p><div class="empty" style="margin-top:10vh">—</div>';
     return;
   }
-  const { field } = state.styleSel;
+  const { entity, field } = state.styleSel;
   const sf = styleDraftAsField();
   const n = filledSlotCount(state.styleDraft);
+  // The record bar is not attached to an input, so there is no field to simulate
+  // focusing. It is read once, before any field is written, and shown as such.
+  if (isRecordBar(state.styleSel)) {
+    const d = state.styleDraft;
+    const list = (items, label) => (items || []).filter(x => String(x).trim()).length
+      ? `<h3 class="slabel">${label}</h3><ul class="plain">${
+          items.filter(x => String(x).trim()).map(x => `<li>${esc(x)}</li>`).join("")}</ul>`
+      : "";
+    el.innerHTML = `<p class="ptitle">Author preview</p>
+      <p class="hint" style="margin:0 0 12px">What an author reads before creating a <b>${esc(entity)}</b>, and what a review checks the record against.</p>
+      <div class="sg-fieldwrap field">
+        ${d.purpose && d.purpose.trim() ? `<div class="prose">${esc(d.purpose)}</div>`
+                                        : '<div class="sg-hint" style="opacity:.55">No purpose yet.</div>'}
+        ${list(d.instructions, "Settle first")}
+        ${list(d.avoid, "Avoid")}
+      </div>`;
+    return;
+  }
   const hint = sgHintFrom(sf) || '<div class="sg-hint" style="opacity:.55">No purpose yet.</div>';
   const panel = sgPanelFrom(sf, null, { show: true });
   el.innerHTML = `<p class="ptitle">Author preview <span class="slotcount">${n} / ${STYLE_SLOTS.length} slots</span></p>
@@ -3754,15 +4340,20 @@ async function saveStyleField() {
   if (!state.styleSel) return;
   const { entity, field } = state.styleSel;
   const d = state.styleDraft;
-  const body = {
-    purpose: d.purpose,
-    content_requirements: d.content_requirements,
-    avoid: d.avoid,
-    examples: d.examples,
-    instructions: d.instructions,
-  };
+  const record = isRecordBar(state.styleSel);
+  const body = record
+    ? { purpose: d.purpose, instructions: d.instructions, avoid: d.avoid }
+    : {
+        purpose: d.purpose,
+        content_requirements: d.content_requirements,
+        avoid: d.avoid,
+        examples: d.examples,
+        instructions: d.instructions,
+      };
+  const url = "/style-guide/" + encodeURIComponent(entity)
+    + (record ? "" : "/" + encodeURIComponent(field));
   try {
-    await api("PATCH", "/style-guide/" + encodeURIComponent(entity) + "/" + encodeURIComponent(field), body);
+    await api("PATCH", url, body);
     state.style = await j("/style-guide");
     state.coverage = await j("/style-guide/coverage");
     renderStyleRail(); renderStyleFacets(); renderStyleDetail(); renderStylePreview();
@@ -3902,7 +4493,7 @@ function readMitigation(mt) {
   // Optional prose: rendered only when it has content; else recorded as a gap (with the
   // edit-form field to jump to when its chip is clicked).
   const optProse = (label, field, v, sub) => {
-    if (v && String(v).trim()) parts.push(readsec(label, `<div class="prose">${esc(v)}</div>`, sub));
+    if (v && String(v).trim()) parts.push(readsec(label, `<div class="prose">${md(v)}</div>`, sub));
     else omitted.push({ label, field });
   };
   // Optional block (list/cards): rendered only when non-empty; else recorded as a gap.
@@ -3913,40 +4504,64 @@ function readMitigation(mt) {
     else omitted.push({ label, field });
   };
 
+  // A decision is a value plus its reasoning: the value leads, in its own weight, and
+  // the note follows as prose. Written as one paragraph, the value that a reader came to
+  // filter on is buried in the middle of a sentence.
+  const optDecision = (label, field, d, sub) => {
+    if (d && d.value) {
+      parts.push(readsec(label,
+        `<p class="decision"><span class="dv">${esc(String(d.value).replace(/_/g, " "))}</span></p>`
+        + `<div class="prose">${md(d.note || "")}</div>`, sub));
+    } else omitted.push({ label, field });
+  };
+
   optProse("Purpose", "purpose", mt.purpose);
-  optProse("Scope", "scope", mt.scope, "— applicability rule + boundary");
+  optProse("Scope", "scope", mt.scope, "— when this control applies");
+  // Next to scope, because the two are one rule seen from both sides.
+  optProse("Out of scope", "out_of_scope", mt.out_of_scope, "— and what is handled elsewhere");
+  optDecision("Locus", "locus", mt.locus, "— which layer this belongs to");
   optProse("Control mechanism", "control_mechanism", mt.control_mechanism);
-  optProse("Failure behavior", "failure_behavior", mt.failure_behavior);
-  optProse("Risk of formal implementation", "formal_implementation_risk", mt.formal_implementation_risk);
+  optDecision("Failure behavior", "failure_behavior", mt.failure_behavior,
+    "— when the control itself fails");
+  optProse("Risk of formal implementation", "formal_implementation_risk", mt.formal_implementation_risk,
+    "— what gets done half-heartedly, and what gets underestimated");
   optProse("Review", "review", mt.review);
 
-  // Ownership — omit entirely when maintainer/locus are all blank; else show the filled rows.
-  const own = [["Maintainer", mt.maintainer], ["Locus", mt.locus]]
-    .filter(([, v]) => v && String(v).trim());
-  optBlock("Ownership", "maintainer", own.length,
-    `<ul class="plain">${own.map(([k, v]) => `<li><span class="meta">${esc(k)}</span>${esc(v)}</li>`).join("")}</ul>`,
-    "— maintainer / locus");
-
-  optProse("Telemetry", "telemetry", mt.telemetry);
+  // Telemetry is a table because it is a list of events with the same columns; as prose
+  // nobody checks their own event stream against it line by line.
+  const tel = mt.telemetry || {};
+  optBlock("Telemetry", "telemetry", (tel.events || []).length,
+    `<table class="md"><thead><tr><th>Event</th><th>What it establishes</th>
+       <th>Must carry</th></tr></thead><tbody>${(tel.events || []).map(e => `<tr>
+       <td><code>${esc(e.name)}</code></td><td>${esc(e.records)}</td>
+       <td>${(e.attributes || []).map(a => esc(a)).join(", ")}</td></tr>`).join("")}</tbody></table>`
+    + (tel.evidence ? `<div class="prose">${md(tel.evidence)}</div>` : ""),
+    "— what this control leaves behind");
 
   optBlock("Anti-patterns", "anti_patterns", (mt.anti_patterns || []).length,
     `<ul class="plain">${(mt.anti_patterns || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>`);
 
+  // Acceptance criteria are a table: the same three columns every time, read down rather
+  // than across, which is how somebody actually works through an acceptance pass.
   const vlen = (mt.validation || []).length;
   optBlock("Validation", "validation", vlen,
-    (mt.validation || []).map(v => `<div class="card">
-        <div class="chead"><span class="ctitle">${esc(v.criterion || "(criterion)")}</span>${
-          v.base === false ? '<span class="badge soft" style="margin-left:auto">extended</span>' : ""}</div>
-        ${v.test_scenario ? `<div class="cdesc"><b>Test:</b> ${esc(v.test_scenario)}</div>` : ""}
-        ${v.expected_result ? `<div class="cdesc"><b>Expected:</b> ${esc(v.expected_result)}</div>` : ""}
-      </div>`).join(""), null, vlen);
+    `<table class="md"><thead><tr><th>What is checked</th><th>How</th>
+       <th>Passes when</th></tr></thead><tbody>${(mt.validation || []).map(v => `<tr>
+       <td>${esc(v.criterion || "")}${v.base === false
+         ? ' <span class="badge soft" title="Applies to some contours, not to every adoption">situational</span>' : ""}</td>
+       <td>${esc(v.test_scenario || "")}</td>
+       <td>${esc(v.expected_result || "")}</td></tr>`).join("")}</tbody></table>`,
+    "— the bar for adopting it; situational rows apply to some contours only", vlen);
 
+  // Folded: the FAQ is for a reader who has already hit the confusion, and unfolded it
+  // sits between them and the fields they came for.
   const flen = (mt.faq || []).length;
   optBlock("FAQ", "faq", flen,
-    (mt.faq || []).map(q => `<div class="card">
+    `<details class="fold"><summary>${flen} question${flen === 1 ? "" : "s"}</summary>
+      <div class="fold-body">${(mt.faq || []).map(q => `<div class="card">
         <div class="chead"><span class="ctitle">${esc(q.question || "(question)")}</span></div>
         ${q.answer ? `<div class="cdesc">${esc(q.answer)}</div>` : ""}
-      </div>`).join(""), null, flen);
+      </div>`).join("")}</div></details>`, null, flen);
 
   // Implementations — ALWAYS shown; its empty state is intentional and discoverable.
   const impl = (mt.implementations || []).length
@@ -3962,9 +4577,22 @@ function readMitigation(mt) {
 
   // Addresses threats — ALWAYS shown; each card jumps to that threat.
   const addressing = threatsAddressing(mt.id);
+  // The id, the title and the grade were one line at three type sizes, and the rationale
+  // - the only thing that says why the link exists - was not shown at all. A link without
+  // its reasoning is just an arrow.
   const addressed = addressing.length
-    ? addressing.map(t => `<div class="card jrow" data-jthreat="${esc(t.id)}" title="Open ${esc(t.id)}"><div class="chead">
-        <span class="cid">${esc(t.id)}</span><span class="ctitle">${esc(t.title)}</span></div></div>`).join("")
+    ? addressing.map(t => {
+        const link = (t.mitigations || []).find(l => l.id === mt.id) || {};
+        return `<div class="card jrow" data-jthreat="${esc(t.id)}" title="Open ${esc(t.id)}">
+          <div class="linkhead">
+            <span class="cid">${esc(t.id)}</span>
+            ${link.strength ? `<span class="badge ${link.strength === "gating" ? "gating" : "soft"}">${esc(link.strength)}</span>` : ""}
+          </div>
+          <div class="linktitle">${esc(t.title)}</div>
+          ${link.rationale ? `<p class="linkwhy">${esc(link.rationale)}</p>` : ""}
+          ${link.exception ? `<p class="linkwhy"><b>Except:</b> ${esc(link.exception)}</p>` : ""}
+        </div>`;
+      }).join("")
     : '<p class="placeholder">No threats link this mitigation.</p>';
   parts.push(readsec(`Addresses threats (${addressing.length})`, addressed));
 
@@ -3978,8 +4606,9 @@ function readMitigation(mt) {
         <div class="did">${esc(mt.id)}</div>
         <div class="hbadges badges">
           ${mt.mitigation_class ? badge("type", mt.mitigation_class) : ""}
-          ${mt.status ? badge("soft", mt.status) : ""}
+          ${mt.maintainer ? `<span class="maintainer">kept by ${esc(mt.maintainer)}</span>` : ""}
         </div>
+        ${citationsHtml(mt.id, mt.positioning)}
       </div>
       ${mitHeadActions()}
     </div>
@@ -4497,7 +5126,7 @@ async function saveMitigation() {
   };
   const url = isNew ? "/mitigations" : "/mitigations/" + encodeURIComponent(state.mitSelected);
   if (isNew) body.id = state.mitSelected;
-  const r = await fetch(url, {
+  const r = await fetch(API + url, {
     method: isNew ? "POST" : "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -4532,6 +5161,8 @@ document.getElementById("search").oninput = e => {
   if (state.screen === "mitigations") { state.mitFilter = e.target.value; renderMitRail(); }
   else if (state.screen === "style") { state.styleFilter = e.target.value; renderStyleRail(); }
   else if (state.screen === "reports") { state.reportFilter = e.target.value; renderReportsRail(); }
+  // Coverage filters the entries in the main pane, not the four sources in the rail.
+  else if (state.screen === "coverage") { state.coverageFilter = e.target.value; renderCoverageMain(); }
   else { state.filter = e.target.value; renderList(); }
 };
 document.getElementById("newThreatBtn").onclick = () =>
@@ -4593,10 +5224,10 @@ function initPreviewResizer() {
 initRailToggle();
 initPreviewResizer();
 
-// Land wherever the hash points — the Overview when there is no hash. A pasted or
-// edited URL re-routes in place; the app's own navigation uses replaceState, so this
-// only fires for navigation that came from outside it.
-window.addEventListener("hashchange", applyRoute);
+// Land wherever the path points — the Overview when there is none. A pasted or edited
+// URL re-routes in place; the app's own navigation uses replaceState, so popstate only
+// fires for navigation that came from outside it.
+window.addEventListener("popstate", applyRoute);
 boot().then(applyRoute).catch(e =>
   document.getElementById("main").innerHTML = '<div class="empty">Load error: ' + esc(e.message) + '</div>');
 </script>

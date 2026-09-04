@@ -1,59 +1,49 @@
 id: T-CRED-THEFT
-title: Privilege abuse / credential theft via MCP
+title: A privileged action runs under the agent's identity, issued by someone who is not the agent
 harm: code-execution
-surface:
-- agent-environment
-- agent-agent
 source:
 - external-attacker
 - internal
 weaknesses:
 - component: identity-store
-  text: The agent or tool holds a privileged token with broad scope (a service account with excessive rights, OAuth on-behalf-of the user); token compromise grants access to resources within those rights without additional authentication.
+  text: The agent or a tool holds a standing credential with broad scope - a service account with excess rights, an OAuth grant on the user's behalf - so whoever obtains it acts with that whole scope and meets no further check.
   nature: targeted
 - component: tool
-  text: 'An MCP connection to a tool without authentication: any agent or service on the network invokes tools through it.'
+  surface:
+  - agent-message
+  text: The channel to a tool authenticates no caller, so any agent or service that can reach it on the network invokes the tool, and the tool runs under its own authority for whoever asked.
   nature: targeted
 - component: identity-store
-  text: A token with excessive rights is passed to the agent-tool boundary (including into a browser or insecure environment) and can be intercepted.
+  text: A credential with excess rights crosses into an environment the system does not control - a browser, a client machine, a log line - where whoever is there can read it.
   nature: targeted
-reachability: NOT applicable if tokens are narrowly scoped (least scope, separate accounts per operation) and unreachable from a compromisable point, or the tools carry no privileges beyond what the caller already has.
+reachability: 'The agent acts under no identity of its own: every call carries the requesting principal''s own credential and the tool honours nothing else, so there is no agent authority for anyone to borrow.'
 mitigations:
-- id: CTRL-AUDIT-LOGGING
-  strength: gating
-  rationale: 'Logging of all operations performed on behalf of the user
-
-
-    Auditing all credential operations enables detection of anomalous activity'
-- id: CTRL-MCP-REGISTRY
-  strength: gating
-  rationale: Registry of MCP servers with a mandatory authentication policy
-- id: CTRL-PRIVILEGE-CONTROL
-  strength: gating
-  rationale: 'Restricting service account permissions reduces risk in case of compromise
-
-
-    Restricting token scopes to the minimum
-
-
-    Least privilege limits the consequences of unauthorized access
-
-
-    The principle of least privilege limits the consequences of token compromise'
-- id: CTRL-TOKEN-PROTECTION
-  strength: gating
-  rationale: 'Secure storage of credentials prevents their theft from tools
-
-
-    Protecting delegated tokens from theft
-
-
-    Protecting tokens from leakage through encryption and secure storage'
 - id: CTRL-TRANSPORT-AUTH
   strength: gating
-  rationale: 'mTLS or API-key authentication of MCP connections prevents unauthorized calls
-
-
-    mTLS or API-key authentication protects the channel'
-references: []
-tags: []
+  rationale: 'Closes the unauthenticated-channel weakness: both ends of the connection to a tool prove who they are, so a caller the tool does not know gets no call through, whatever it can reach on the network.'
+- id: CTRL-TOKEN-PROTECTION
+  strength: gating
+  rationale: 'Closes the crossing weakness: the credential is held in protected storage, encrypted in transit and never written where an uncontrolled environment could read it. Its short lifetime also narrows the standing-credential weakness, though it does not remove it.'
+- id: CTRL-PRIVILEGE-CONTROL
+  strength: soft
+  rationale: 'Narrows what a borrowed identity can do, against the standing-credential weakness. It does not close the threat: the credential still exists and is still borrowable, and every right it does carry is still the impostor''s to use.'
+- id: CTRL-AUDIT-LOGGING
+  strength: soft
+  rationale: 'Records which credential acted, on what, and when, so an action taken under a borrowed identity can be traced to the moment it was borrowed. It does not close the threat: it leaves a record of what happened, which is what an investigation needs and not a barrier.'
+references:
+- title: Widespread Data Theft Targets Salesforce Instances via Salesloft Drift
+  url: https://cloud.google.com/blog/topics/threat-intelligence/data-theft-salesforce-instances-via-salesloft-drift
+  note: 'The standing-credential weakness as an incident: an attacker stole the Drift AI chat agent''s OAuth tokens and used them to bulk-export Cases, Accounts, Users and Opportunities from hundreds of Salesforce orgs, meeting no further check; the exports were then mined for AWS keys, Snowflake tokens and passwords. The response was revocation of every Drift token and rotation of all centrally managed OAuth keys.'
+- title: MCP Inspector proxy server vulnerabilities (CVE-2025-49596)
+  url: https://github.com/modelcontextprotocol/inspector/security/advisories/GHSA-7f8r-222p-6f5g
+  note: 'The unauthenticated-channel weakness as a disclosed CVE: no authentication between the Inspector client and its proxy, so any process or website that could reach the port launched MCP commands under the developer''s authority. Fixed in 0.14.1 by requiring a session token and validating Host and Origin.'
+- title: The Security Risks Hiding Behind Exposed MCP Servers
+  url: https://www.wiz.io/blog/the-risk-hiding-behind-exposed-mcp-servers
+  note: 'Measures the unauthenticated-channel weakness in production: of MCP servers exposed to the internet, about 70% listed their tools and about 42% executed them for anonymous callers, the dangerous cases being servers with backend credentials baked into the deployment - the tool runs under its own authority for whoever asked.'
+- title: Malicious repo configuration can trigger data leakage via environment configuration used before trust confirmation (CVE-2026-21852)
+  url: https://github.com/anthropics/claude-code/security/advisories/GHSA-jh7p-qr78-84p7
+  note: 'The crossing weakness as a disclosed CVE: a repository''s settings file set the API base URL, and Claude Code sent the user''s API key to that endpoint before showing the trust prompt - the credential crossed into an environment the attacker controlled. Fixed in 2.0.65 by deferring network calls until after trust is confirmed.'
+positioning: 'ASI03 (Identity and Privilege Abuse) covers two chains that break differently. This record is one of them: someone other than the agent acts with the agent''s authority, ruled out when the agent has no authority of its own to borrow. The other - the agent misusing authority it legitimately holds - is ruled out by whether its tools can do anything consequential at all, and is the tool-action record.'
+tags:
+- identity
+- credentials

@@ -1,6 +1,5 @@
 id: CTRL-HACT-CRITICAL
 name: HACT — Human Approval for Critical Tools
-status: draft
 mitigation_class: gating_control
 purpose: Enforces mandatory human approval for critical actions regardless of other settings — irreversible operations, access to secrets, production changes, destructive commands — as a last line of defense against automated malicious actions. The mechanism operates as a mandatory approval gate on invocations of critical tools and actions, which cannot be disabled or bypassed through configuration. This prevents catastrophic damage from a compromised or malfunctioning agent, ensures human oversight over the highest-risk operations, and guarantees the ability to intercept dangerous actions before execution.
 formal_implementation_risk: null

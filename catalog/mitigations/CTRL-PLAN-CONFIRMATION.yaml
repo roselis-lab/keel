@@ -1,6 +1,5 @@
 id: CTRL-PLAN-CONFIRMATION
 name: Plan Confirmation for Multi-step Actions
-status: draft
 mitigation_class: gating_control
 purpose: Enforces mandatory user confirmation of the plan for multi-step actions, showing a diff/preview of changes before execution begins and allowing cancellation at any stage, preventing unintended execution of malicious action sequences. The mechanism operates at the planning layer and requires explicit user approval before executing complex action chains. This raises user awareness of consequences, allows reasoning errors to be caught before irreversible actions, and provides human control over complex operations.
 formal_implementation_risk: null

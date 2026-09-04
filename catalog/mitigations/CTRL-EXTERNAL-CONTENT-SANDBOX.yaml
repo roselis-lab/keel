@@ -1,6 +1,5 @@
 id: CTRL-EXTERNAL-CONTENT-SANDBOX
 name: External Content Sandbox
-status: draft
 mitigation_class: gating_control
 purpose: Isolates the processing of external content — documents, HTML pages, RSS feeds, API responses — in a sandboxed environment before inclusion in the model context, preventing indirect prompt injection and code execution through malicious content. The mechanism deploys the external content processing pipeline in an isolated enclosure with restricted privileges and validates/sanitizes content before passing it onward. This blocks injection attacks through embedded scripts, prevents data exfiltration through malicious network requests, and ensures safe handling of untrusted content.
 formal_implementation_risk: null

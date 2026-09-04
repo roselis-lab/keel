@@ -1,6 +1,5 @@
 id: CTRL-EXTENSION-UPDATE-CONTROL
 name: IDE Extension Update Control
-status: draft
 mitigation_class: gating_control
 purpose: Manages the IDE extension update process through version pinning, digital signature verification, auditing of changes between versions, and mandatory verification before applying updates, preventing supply chain attacks through malicious updates. The mechanism is deployed at the level of the extension management system and checks each update request against security policies. This prevents automatic installation of compromised updates, enables review of security-relevant changes before deployment, and allows rollback to a known-good version when problems are detected.
 formal_implementation_risk: null

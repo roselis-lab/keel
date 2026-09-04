@@ -1,6 +1,5 @@
 id: CTRL-IRREVERSIBLE-ACTION-GUARD
 name: Double Confirmation for Irreversible Operations
-status: draft
 mitigation_class: gating_control
 purpose: Provides additional safeguards for irreversible operations — delete, drop, truncate, irreversible API calls — through a separate UI confirmation, logging with a correlation ID, and a grace period for cancellation, preventing catastrophic damage from mistakes or malicious actions. The mechanism operates as a mandatory checkpoint before the execution of classified irreversible operations. This guarantees explicit intent for destructive actions, provides an audit trail for forensic analysis, and gives a recovery window to detect and cancel erroneous actions.
 formal_implementation_risk: null

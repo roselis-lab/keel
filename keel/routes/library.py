@@ -8,15 +8,18 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import ValidationError
 
 from keel import githistory
-from keel.catalog import lint_threat
 from keel.config import settings
 from keel.schema_export import build_schemas
 from keel.schemas.mitigation import MitigationCreate, MitigationUpdate
 from keel.schemas.threat import Threat, ThreatCreate, ThreatUpdate
+from keel.store import get_store
 from keel.services import (
+    coverage_service,
     health_service,
     mitigation_service,
+    repair_service,
     report_service,
+    search_service,
     style_guide_service,
     threat_service,
 )
@@ -34,8 +37,11 @@ async def list_threats(brief: bool = True, include: list[str] | None = Query(def
 
 @router.post("/threats/validate")
 async def validate_threat(payload: dict = Body(...)):
-    """One validator, two channels: Pydantic gives blocking structure errors; lint_threat
-    gives non-blocking advice. The browser renders these into its red and amber channels."""
+    """One validator, two channels: pydantic gives blocking structure errors, the rule
+    registry gives non-blocking advice. The browser renders these into its red and amber
+    channels, and the advice is the same set a write or `keel validate` would report."""
+    from keel.rules import Catalog, check_entity
+
     try:
         threat = Threat(**payload)
     except ValidationError as exc:
@@ -44,42 +50,39 @@ async def validate_threat(payload: dict = Body(...)):
             for e in exc.errors()
         ]
         return {"ok": False, "errors": errors, "advice": []}
-    advice = [{"field": item["field"], "msg": item["msg"]} for item in lint_threat(threat)]
+
+    # Against the catalog as it stands, but with THIS record in place of the stored one,
+    # so the editor judges what is about to be saved rather than what is already there.
+    store = get_store()
+    cat = Catalog(threats={**store.threats, threat.id: threat.model_dump(mode="json")},
+                  mitigations=store.mitigations)
+    advice = [
+        {"field": f.field, "msg": f.message}
+        for f in check_entity("threat", threat.id, cat) if f.severity == "advice"
+    ]
     return {"ok": True, "errors": [], "advice": advice}
 
 
 @router.post("/threats", status_code=201)
 async def create_threat(data: ThreatCreate):
     """Create a threat. Duplicate id → 409; body validation is handled by ThreatCreate (422)."""
-    result = await threat_service.create_threat(data)
-    if not result.get("success"):
-        raise HTTPException(status_code=409, detail=result.get("error"))
-    return result
+    return await threat_service.create_threat(data)
 
 
 @router.get("/threats/{threat_id}")
 async def get_threat(threat_id: str):
-    result = await threat_service.get_threat(threat_id)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await threat_service.get_threat(threat_id)
 
 
 @router.patch("/threats/{threat_id}")
 async def update_threat(threat_id: str, data: ThreatUpdate):
-    result = await threat_service.update_threat(threat_id, data)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await threat_service.update_threat(threat_id, data)
 
 
 @router.delete("/threats/{threat_id}")
 async def delete_threat(threat_id: str):
     """Delete a threat (and its mitigation links). 404 if missing."""
-    result = await threat_service.delete_threat(threat_id, confirm=True)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await threat_service.delete_threat(threat_id, confirm=True)
 
 
 @router.put("/threats/{threat_id}/mitigations/{mitigation_id}")
@@ -90,18 +93,12 @@ async def link_mitigation(
     rationale: str = Body("", embed=True),
     exception: str | None = Body(None, embed=True),
 ):
-    result = await threat_service.add_mitigation(threat_id, mitigation_id, strength, rationale, exception)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await threat_service.add_mitigation(threat_id, mitigation_id, strength, rationale, exception)
 
 
 @router.delete("/threats/{threat_id}/mitigations/{mitigation_id}")
 async def unlink_mitigation(threat_id: str, mitigation_id: str):
-    result = await threat_service.remove_mitigation(threat_id, mitigation_id)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await threat_service.remove_mitigation(threat_id, mitigation_id)
 
 
 # --------------------------------------------------------------------------- #
@@ -115,35 +112,23 @@ async def list_mitigations(brief: bool = True, include: list[str] | None = Query
 @router.post("/mitigations", status_code=201)
 async def create_mitigation(data: MitigationCreate):
     """Create a mitigation. Duplicate id → 409; body validation via MitigationCreate (422)."""
-    result = await mitigation_service.create_mitigation(data)
-    if not result.get("success"):
-        raise HTTPException(status_code=409, detail=result.get("error"))
-    return result
+    return await mitigation_service.create_mitigation(data)
 
 
 @router.get("/mitigations/{mitigation_id}")
 async def get_mitigation(mitigation_id: str):
-    result = await mitigation_service.get_mitigation(mitigation_id)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await mitigation_service.get_mitigation(mitigation_id)
 
 
 @router.patch("/mitigations/{mitigation_id}")
 async def update_mitigation(mitigation_id: str, data: MitigationUpdate):
-    result = await mitigation_service.update_mitigation(mitigation_id, data)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await mitigation_service.update_mitigation(mitigation_id, data)
 
 
 @router.delete("/mitigations/{mitigation_id}")
 async def delete_mitigation(mitigation_id: str):
     """Delete a mitigation. The service also unlinks it from any threats. 404 if missing."""
-    result = await mitigation_service.delete_mitigation(mitigation_id, confirm=True)
-    if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
-    return result
+    return await mitigation_service.delete_mitigation(mitigation_id, confirm=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -162,6 +147,83 @@ async def health_warnings():
     return await health_service.get_catalog_warnings()
 
 
+@router.get("/rules")
+async def get_rules():
+    """Every rule the catalog is checked against: code, what it applies to, how serious
+    it is, and the label a screen groups it under.
+
+    Served rather than mirrored, because a screen with its own copy of the rule list
+    falls behind it silently - the dashboard used to carry two such copies."""
+    from keel.rules import catalogue
+
+    return {"rules": catalogue()}
+
+
+@router.get("/vocabulary")
+async def get_vocabulary():
+    """The four frozen vocabularies with their human names and one-line glosses.
+
+    The schemas enforce these as `Literal`s, which is what makes an unknown value
+    impossible; this is what the Literal cannot carry — what `downstream` actually
+    means. Shape: `{harm: {value: {name, desc}}, surface: ..., source: ..., components: ...}`."""
+    return get_store().vocabulary
+
+
+@router.get("/search")
+async def search(q: str = Query(..., min_length=2), kind: str | None = None, limit: int = 20):
+    """One query across threats, mitigations, coverage rows and assessments."""
+    return search_service.search(q, kind=kind, limit=limit)
+
+
+# --------------------------------------------------------------------------- #
+# Coverage — what the tracked sources say, and what Keel says back
+# --------------------------------------------------------------------------- #
+@router.get("/coverage")
+async def coverage_matrix():
+    """The whole matrix: every entry of every tracked release, with its state.
+
+    Note this is not `/style-guide/coverage`, which measures how much of the style guide
+    has been authored. This one measures Keel against other people's lists."""
+    return coverage_service.matrix()
+
+
+@router.get("/coverage/citations")
+async def coverage_citations():
+    """Reverse index: Keel id -> the source entries that name it. Derived, never stored —
+    the files are written source-first so that a gap has a row to be empty in."""
+    return coverage_service.by_entity()
+
+
+@router.get("/coverage/gaps")
+async def coverage_gaps():
+    """Every tracked entry nothing answers yet — the authoring queue."""
+    rows = coverage_service.gaps()
+    return {"gaps": rows, "count": len(rows)}
+
+
+# --------------------------------------------------------------------------- #
+# Repair — raw text for a file the store refused to load
+# --------------------------------------------------------------------------- #
+@router.get("/catalog/file")
+async def read_catalog_file(path: str = Query(..., description="e.g. threats/T-X.yaml")):
+    """Raw YAML for one catalog file, with whatever is wrong with it.
+
+    A record that fails its schema is not in the store, so the structured editor has
+    nothing to open. Reporting a defect the reader cannot then act on is the wrong way
+    round, so the app hands back the text itself."""
+    return await repair_service.read_file(path)
+
+
+@router.put("/catalog/file")
+async def write_catalog_file(payload: dict = Body(...)):
+    """Validate then write. A save that would not load is refused with the field and the
+    reason, so this door cannot put the catalog into the state it exists to repair."""
+    path, text = payload.get("path"), payload.get("text")
+    if not isinstance(path, str) or not isinstance(text, str):
+        raise HTTPException(status_code=422, detail="expected {path, text}")
+    return await repair_service.write_file(path, text)
+
+
 # --------------------------------------------------------------------------- #
 # Style guide
 # --------------------------------------------------------------------------- #
@@ -173,6 +235,20 @@ async def get_style_guide():
 @router.get("/style-guide/coverage")
 async def style_guide_coverage():
     return (await style_guide_service.get_coverage()).model_dump()
+
+
+# Declared before the two-segment route so `/style-guide/coverage` keeps winning and a
+# one-segment PATCH is not read as a field name.
+@router.patch("/style-guide/{entity_type}")
+async def update_style_entity(entity_type: str, patch: dict = Body(...)):
+    """The bar for the record as a whole, the part no single field's bar can carry."""
+    try:
+        row = await style_guide_service.update_entity(entity_type, patch, updated_by="ui")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return row.model_dump() if row else {}
 
 
 @router.patch("/style-guide/{entity_type}/{field_name}")
@@ -232,9 +308,9 @@ async def entry_diff(entity: str, id: str, sha: str):
 
 
 # --------------------------------------------------------------------------- #
-# Reports. The skill writes the first pass to disk; the specialist corrects it here
-# while it is a draft. A final report is frozen — revising it means reopening it as a
-# new dated draft, so a correction lands beside the record instead of erasing it.
+# Reports. The skill writes the first pass; the specialist edits it here and finalises
+# when satisfied. Editing a final report drops it back to draft — a document that
+# changed after sign-off is not signed off any more.
 # --------------------------------------------------------------------------- #
 @router.get("/reports")
 async def list_reports():
@@ -263,76 +339,34 @@ async def report_series(system_id: str):
 
 @router.get("/reports/{system_id}/{date}")
 async def get_report(system_id: str, date: str):
-    """One report. 404 when it is missing or cannot be parsed."""
-    result = report_service.get_report(system_id, date)
-    if not result["success"]:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return result["report"]
+    """One report. 404 when it is missing, 422 when it cannot be parsed."""
+    return report_service.get_report(system_id, date)["report"]
 
 
 @router.put("/reports/{system_id}/{date}")
 async def save_report(system_id: str, date: str, body: dict):
-    """Replace a draft with its corrected version. 409 when the report is already final,
-    422 when the body does not validate."""
-    result = report_service.save_report(system_id, date, body)
-    if result["success"]:
-        return result["report"]
-    if "errors" in result:
-        raise HTTPException(status_code=422, detail=result)
-    if "final" in result["error"]:
-        raise HTTPException(status_code=409, detail=result["error"])
-    raise HTTPException(status_code=404, detail=result["error"])
+    """Write a report. A final report goes back to draft; 422 when the body does not
+    validate or names catalog entries that do not exist."""
+    return report_service.save_report(system_id, date, body)["report"]
 
 
 @router.post("/reports/{system_id}/{date}/finalize")
 async def finalize_report(system_id: str, date: str):
     """Freeze a draft into a dated record. Finalizing twice is a no-op, not an error."""
-    result = report_service.finalize_report(system_id, date)
-    if not result["success"]:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return result["report"]
-
-
-@router.post("/reports/{system_id}/{date}/correct")
-async def correct_report(system_id: str, date: str):
-    """Unlock a final report for correction, keeping its date. Correcting the record is
-    not re-assessing the system, so nothing moves."""
-    result = report_service.correct_report(system_id, date)
-    if not result["success"]:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return result["report"]
-
-
-@router.post("/reports/{system_id}/{date}/reopen")
-async def reopen_report(system_id: str, date: str):
-    """Start a NEW assessment from this one: a fresh draft dated today, findings carried
-    forward. 409 when today already has one."""
-    result = report_service.reopen_report(system_id, date)
-    if result["success"]:
-        return result["report"]
-    if "already exists" in result["error"]:
-        raise HTTPException(status_code=409, detail=result["error"])
-    raise HTTPException(status_code=404, detail=result["error"])
+    return report_service.finalize_report(system_id, date)["report"]
 
 
 @router.post("/reports")
 async def create_report(body: dict):
     """An empty draft for a system with no prior assessment. 409 if that file exists."""
-    result = report_service.create_report(
+    return report_service.create_report(
         system_id=(body.get("system_id") or "").strip(),
         system_name=(body.get("system_name") or "").strip(),
         system_description=(body.get("system_description") or "").strip(),
         # The assessor is whoever this checkout belongs to; the UI does not ask.
         assessor=(body.get("assessor") or "").strip() or githistory.identity(),
         date=(body.get("date") or "").strip() or None,
-    )
-    if result["success"]:
-        return result["report"]
-    if "errors" in result:
-        raise HTTPException(status_code=422, detail=result)
-    if "already has" in result["error"]:
-        raise HTTPException(status_code=409, detail=result["error"])
-    raise HTTPException(status_code=400, detail=result["error"])
+    )["report"]
 
 
 # --------------------------------------------------------------------------- #

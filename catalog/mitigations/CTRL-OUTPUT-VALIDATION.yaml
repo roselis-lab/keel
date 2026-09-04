@@ -1,7 +1,6 @@
 id: CTRL-OUTPUT-VALIDATION
 name: Model Output Validation
-status: draft
-mitigation_class: detector
+mitigation_class: gating_control
 purpose: Validates model output against the expected format, content policies, and security requirements before delivery or use, ensuring detection of malformed, malicious, or policy-violating outputs. The mechanism operates as a post-generation validation layer and checks every output against defined schemas and policies. This blocks outputs that could cause system failures, detects attempts to bypass content restrictions, and provides quality control over model responses.
 formal_implementation_risk: null
 review: null

@@ -1,6 +1,5 @@
 id: CTRL-MCP-REGISTRY
 name: MCP Server Registry with Verification
-status: draft
 mitigation_class: gating_control
 purpose: Centrally manages a registry of MCP servers with mandatory verification of signatures, capabilities, and security posture before registration, preventing connections to malicious or untrusted MCP servers. The mechanism operates at the MCP client configuration level and checks every server registration request against policy. This blocks connections to rogue MCP servers, provides visibility into the MCP ecosystem, and ensures that agents connect only to vetted infrastructure.
 formal_implementation_risk: null

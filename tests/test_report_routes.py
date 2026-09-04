@@ -30,14 +30,14 @@ def _write_report(reports_dir, system_id, date, extra=None):
 def test_route_list_reports(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
-    r = TestClient(app).get("/reports")
+    r = TestClient(app).get("/api/reports")
     assert r.status_code == 200
     assert r.json()["reports"][0]["system_id"] == "checkout-agent"
 
 
 def test_route_list_reports_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    r = TestClient(app).get("/reports")
+    r = TestClient(app).get("/api/reports")
     assert r.status_code == 200
     assert r.json()["reports"] == []
 
@@ -46,7 +46,7 @@ def test_route_report_series(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-05-10")
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
-    r = TestClient(app).get("/reports/checkout-agent")
+    r = TestClient(app).get("/api/reports/checkout-agent")
     assert r.status_code == 200
     assert [x["date"] for x in r.json()["series"]] == ["2026-08-26", "2026-05-10"]
 
@@ -54,7 +54,7 @@ def test_route_report_series(tmp_path, monkeypatch):
 def test_route_report_series_unknown_system_returns_empty_not_404(tmp_path, monkeypatch):
     """A system with no reports yet is not an error."""
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    r = TestClient(app).get("/reports/no-such-system")
+    r = TestClient(app).get("/api/reports/no-such-system")
     assert r.status_code == 200
     assert r.json()["series"] == []
 
@@ -62,24 +62,27 @@ def test_route_report_series_unknown_system_returns_empty_not_404(tmp_path, monk
 def test_route_get_report_ok(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
-    r = TestClient(app).get("/reports/checkout-agent/2026-08-26")
+    r = TestClient(app).get("/api/reports/checkout-agent/2026-08-26")
     assert r.status_code == 200
     assert r.json()["system_name"] == "Checkout Agent"
 
 
 def test_route_get_report_missing_is_404(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    r = TestClient(app).get("/reports/no-such-system/2026-08-26")
+    r = TestClient(app).get("/api/reports/no-such-system/2026-08-26")
     assert r.status_code == 404
 
 
-def test_route_get_report_malformed_is_404_not_500(tmp_path, monkeypatch):
+def test_route_get_report_malformed_is_422_not_500(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     d = tmp_path / "broken-system"
     d.mkdir()
     (d / "2026-08-01.yaml").write_text("not: [valid, yaml, :::", encoding="utf-8")
-    r = TestClient(app).get("/reports/broken-system/2026-08-01")
-    assert r.status_code == 404
+    r = TestClient(app).get("/api/reports/broken-system/2026-08-01")
+    # 422, not 404: the report is there, it just does not parse. Saying "missing" would
+    # send the reader looking for a file that is sitting on disk.
+    assert r.status_code == 422
+    assert r.json()["code"] == "invalid"
 
 
 def test_route_put_report_saves_a_draft(tmp_path, monkeypatch):
@@ -88,33 +91,34 @@ def test_route_put_report_saves_a_draft(tmp_path, monkeypatch):
     client = TestClient(app)
 
     r = client.put(
-        "/reports/checkout-agent/2026-08-26",
+        "/api/reports/checkout-agent/2026-08-26",
         json=dict(VALID_REPORT, system_description="Now also issues refunds."),
     )
 
     assert r.status_code == 200
-    assert client.get("/reports/checkout-agent/2026-08-26").json()[
+    assert client.get("/api/reports/checkout-agent/2026-08-26").json()[
         "system_description"
     ] == "Now also issues refunds."
 
 
-def test_route_put_report_on_a_final_report_is_409(tmp_path, monkeypatch):
+def test_route_put_on_a_final_report_edits_it_and_returns_it_to_draft(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-    r = TestClient(app).put("/reports/checkout-agent/2026-08-26", json=VALID_REPORT)
-    assert r.status_code == 409
+    r = TestClient(app).put("/api/reports/checkout-agent/2026-08-26", json=VALID_REPORT)
+    assert r.status_code == 200
+    assert r.json()["status"] == "draft"
 
 
 def test_route_put_report_invalid_body_is_422(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
-    r = TestClient(app).put("/reports/checkout-agent/2026-08-26", json={"system_id": "x"})
+    r = TestClient(app).put("/api/reports/checkout-agent/2026-08-26", json={"system_id": "x"})
     assert r.status_code == 422
 
 
 def test_route_put_report_missing_is_404(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    r = TestClient(app).put("/reports/ghost/2026-08-26", json=VALID_REPORT)
+    r = TestClient(app).put("/api/reports/ghost/2026-08-26", json=VALID_REPORT)
     assert r.status_code == 404
 
 
@@ -123,20 +127,11 @@ def test_route_finalize_then_put_is_refused(tmp_path, monkeypatch):
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
     client = TestClient(app)
 
-    assert client.post("/reports/checkout-agent/2026-08-26/finalize").json()["status"] == "final"
-    assert client.put("/reports/checkout-agent/2026-08-26", json=VALID_REPORT).status_code == 409
-
-
-def test_route_reopen_creates_a_new_draft(tmp_path, monkeypatch):
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-    client = TestClient(app)
-
-    r = client.post("/reports/checkout-agent/2026-08-26/reopen")
-
-    assert r.status_code == 200
-    assert r.json()["status"] == "draft"
-    assert len(client.get("/reports/checkout-agent").json()["series"]) == 2
+    assert client.post("/api/reports/checkout-agent/2026-08-26/finalize").json()["status"] == "final"
+    # Editing a final report is allowed; it simply stops being final.
+    edited = client.put("/api/reports/checkout-agent/2026-08-26", json=VALID_REPORT)
+    assert edited.status_code == 200
+    assert edited.json()["status"] == "draft"
 
 
 def test_route_insights_is_not_swallowed_by_the_system_id_route(tmp_path, monkeypatch):
@@ -144,21 +139,10 @@ def test_route_insights_is_not_swallowed_by_the_system_id_route(tmp_path, monkey
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
     _write_report(tmp_path, "checkout-agent", "2026-08-26")
 
-    body = TestClient(app).get("/reports/insights").json()
+    body = TestClient(app).get("/api/reports/insights").json()
 
     assert "series" not in body
     assert body["systems"] == 1 and body["assessments"] == 1
-
-
-def test_route_correct_then_put_succeeds(tmp_path, monkeypatch):
-    """The two revision paths differ: correct keeps the date, reopen makes a new one."""
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-    client = TestClient(app)
-
-    assert client.post("/reports/checkout-agent/2026-08-26/correct").json()["status"] == "draft"
-    assert client.put("/reports/checkout-agent/2026-08-26", json=VALID_REPORT).status_code == 200
-    assert len(client.get("/reports/checkout-agent").json()["series"]) == 1
 
 
 def test_route_create_report(tmp_path, monkeypatch):
@@ -167,25 +151,19 @@ def test_route_create_report(tmp_path, monkeypatch):
     body = {"system_id": "support-bot", "system_name": "Support Bot",
             "system_description": "Answers help-centre questions.", "date": "2026-09-01"}
 
-    r = client.post("/reports", json=body)
+    r = client.post("/api/reports", json=body)
 
     assert r.status_code == 200
     assert r.json()["status"] == "draft"
-    assert client.post("/reports", json=body).status_code == 409
+    assert client.post("/api/reports", json=body).status_code == 409
 
 
-def test_route_create_report_bad_id_is_400(tmp_path, monkeypatch):
+def test_route_create_report_bad_id_is_422(tmp_path, monkeypatch):
     monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    r = TestClient(app).post("/reports", json={
+    r = TestClient(app).post("/api/reports", json={
         "system_id": "Not A Slug", "system_name": "n", "system_description": "d", "date": "2026-09-01",
     })
-    assert r.status_code == 400
-
-
-def test_route_reopen_twice_in_a_day_is_409(tmp_path, monkeypatch):
-    monkeypatch.setattr(keel.config.settings, "reports_dir", str(tmp_path))
-    _write_report(tmp_path, "checkout-agent", "2026-08-26", {"status": "final"})
-    client = TestClient(app)
-
-    assert client.post("/reports/checkout-agent/2026-08-26/reopen").status_code == 200
-    assert client.post("/reports/checkout-agent/2026-08-26/reopen").status_code == 409
+    assert r.status_code == 422
+    body = r.json()
+    assert body["field"] == "system_id"
+    assert "lowercase" in body["hint"]

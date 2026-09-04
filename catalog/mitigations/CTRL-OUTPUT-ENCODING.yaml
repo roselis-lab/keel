@@ -1,6 +1,5 @@
 id: CTRL-OUTPUT-ENCODING
 name: HTML/JS/URL Escaping Before Render
-status: draft
 mitigation_class: gating_control
 purpose: Applies proper output encoding — HTML entity encoding, JavaScript escaping, URL encoding — before rendering or passing model output, preventing XSS and injection attacks via unescaped content. The mechanism operates at the output layer and ensures content is safely encoded for the target context. This neutralizes malicious content in model output, protects users from script injection, and ensures safe handling of dynamic content.
 formal_implementation_risk: null

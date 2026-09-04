@@ -1,13 +1,40 @@
 id: CTRL-RISK-BASED-APPROVAL
 name: Risk-Tiered Approval
-status: draft
 mitigation_class: gating_control
 purpose: Classifies operations by risk level and applies differentiated confirmation requirements — from automatic execution for low-risk to mandatory reinforced confirmation for high-risk operations — optimizing the balance between security and productivity. The mechanism operates at the action routing level and directs operations into the appropriate confirmation process based on a risk assessment. This concentrates human attention on genuinely risky operations, reduces confirmation fatigue by minimizing interruptions for routine work, and provides an adequate level of oversight for each risk.
-formal_implementation_risk: null
+formal_implementation_risk: The gate decides from the text of the call rather than from the effect it will have. An operation that only becomes high-tier once it is carried out - a wildcard that expands, a path that resolves outside the working area, a cascade the provider performs on its own side - passes a check that was looking at a string, and the gate is demonstrably present for exactly the calls that never needed it.
 review: null
 maintainer: null
-locus: null
-scope: null
+locus:
+  value: split
+  note: 'The mechanism is an interception point on the path a call takes to the outside, so wherever several agents share one runtime a single enforcement covers all of them, and the classification of what is high-tier is worth maintaining once rather than per team. A team with one agent and a handful of tools gains little from that and can hold the same stop in its own code. The handoff is where a call leaves application code for the shared execution path: the shared side holds the stop and the record of what was decided, the application side holds the knowledge of which of its own operations cannot be undone.'
+scope: 'Applies to a call the agent can issue when **all three** hold:
+
+
+  - **It has an effect.** The call changes state or acts on the outside world - a write, a delete, a release of a resource, a message or payment sent.
+
+  - **The effect outlives the session.** Something outside the session depends on that state, or the recipient is outside the system''s control.
+
+  - **It cannot be put back.** Either the operation has no inverse, or the inverse depends on state that the same call can remove.
+
+
+  Strictness follows a deterministic property of what the call touches, not a choice:
+
+
+  | State the call affects | The gate |
+
+  |---|---|
+
+  | Serves production traffic, or holds records the business is obliged to keep | every such call, decided individually |
+
+  | Shared but rebuilt as a matter of course - a cache, a search index, a derived table | only a call that removes or replaces the store as a whole, rather than records within it |'
+out_of_scope: '**Reads.** The control decides from the effect a call has, and a read has none. That is not the same as a read being safe: one that carries regulated data out of the system is a threat of its own with a control of its own, and a reader looking for it here will not find it.
+
+
+  **An effect that is reversible in principle but expensive in practice** - a migration that takes a day to rebuild. Cost is not a property the gate can read off a call, so including it would push the gate back to stopping everything. That belongs with whatever governs when changes are scheduled.
+
+
+  **An high-tier effect the agent did not issue** - a cascade the provider performs on its own side after a call that was itself permitted. The gate is structurally the wrong answer here rather than merely absent, because it never sees that operation. What fits is a boundary that keeps recovery state out of the reach of any single call.'
 control_mechanism: 'Risk classification matrix (medium): A classification matrix defines the risk level for each combination of action type x resource type x context. For example: reading public data = LOW, writing configuration = MEDIUM, deleting production = HIGH, accessing secrets = CRITICAL. Classification is automated through a policy engine.
 
 
@@ -15,8 +42,69 @@ control_mechanism: 'Risk classification matrix (medium): A classification matrix
 
 
   Progressive friction for anomalies (medium): When unusual patterns are detected — bulk operations, after-hours activity, first-time actions — the system applies progressive friction: additional confirmations, mandatory waiting periods, elevated approval requirements.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
-faq: []
+failure_behavior:
+  value: fail_closed
+  note: 'Counted as failure: the mediator unavailable, its classification data unloadable or stale past its freshness bound, the decision channel unable to reach a principal, or a resolved operation that cannot be classified at all. In every one of those the call does not proceed. The guarantee this control sells is that an high-tier effect never lands unattended, and a version that continues when it cannot tell would sell the opposite.
+
+
+    What moves the cost of stopping is the contour, not the control''s kind. Where the agent runs unattended batch work, stopping is a queue; where it stands between a person and a live operation, stopping is an outage. Neither turns the gate open - the second means the decision channel needs a standby.
+
+
+    Failure has to be noticed, because a gate that stops everything and a gate that is not running look identical from the agent''s side. The mediator emits liveness on its own schedule rather than only when a call arrives, so silence reads as failure instead of a quiet period.'
+telemetry:
+  events:
+  - name: action.classified
+    records: What the resolved call was judged to be. This is the judgment the whole control rests on, so it is recorded whether or not the call was stopped.
+    attributes:
+    - agent identity
+    - resolved operation and target, as sent to the provider
+    - 'classification: low-tier, high-tier or unknown'
+    - version of the classification data the answer came from
+  - name: action.blocked
+    records: A refusal. The count of these is what says the control is doing anything at all.
+    attributes:
+    - agent identity
+    - resolved operation and target
+    - which of the three scope tests it met
+    - whether a decision was requested or the call was refused outright
+  - name: action.authorized
+    records: An high-tier call that proceeded, and on whose decision.
+    attributes:
+    - the deciding principal, which is never the agent
+    - what that principal was shown
+    - the resolved operation they decided on
+    - elapsed time between the request and the decision
+  - name: action.classification_unavailable
+    records: The control could not judge and therefore stopped. Separates a deliberate refusal from a broken classifier.
+    attributes:
+    - resolved operation
+    - 'what was missing: the data, the channel, or the provider''s cascade information'
+  evidence: 'Held outside the runtime that emits it, append-only, and kept at least as long as the window in which an high-tier effect would come to light. The agent''s own transcript does not qualify: the case that matters is one where the transcript kept the result of a command and not the command.'
+anti_patterns:
+- 'The gate is applied to the call as requested rather than as resolved, so the destructive form that only appears at execution is never the form that was judged. Signal: the recorded classification names an argument that differs from what the provider received, or carries no resolved form at all.'
+- 'Every call is sent to a person, so the person stops reading. Signal: recorded decision times cluster below the time it takes to read the request, and the approval rate is indistinguishable from one.'
+- 'The agent keeps its own credentials for the target and the mediator is advisory. Signal: the target''s own access log contains calls authenticated as the agent with no matching decision record.'
+- 'Unknown is treated as low-tier so that rollout does not break anything. Signal: the classification data has no unknown bucket, or the blocked count is zero across a period in which new tools were registered.'
+validation:
+- criterion: A call classified high-tier does not reach the target without a recorded decision from a principal other than the agent.
+  base: true
+- criterion: 'The classification is taken on the resolved operation: a call whose destructive scope appears only after expansion is judged by the expanded form.'
+  base: true
+- criterion: An operation the classification has never seen is refused rather than permitted.
+  base: true
+- criterion: The agent cannot reach the target except through the mediator.
+  base: true
+- criterion: Refusals are counted, and the count is non-zero over any period containing an high-tier attempt.
+  base: true
+- criterion: A decision that is never answered ends as a refusal within a stated bound, and that bound is shorter than the interval at which the underlying task would be retried.
+  base: false
+- criterion: Decision latency is measured, and a cluster of decisions faster than a human could read the request is treated as a failure of the control rather than as throughput.
+  base: false
+faq:
+- question: How is this different from putting a person on agent actions in general?
+  answer: Both put a person on the path. This one puts them only on calls that cannot be undone, and decides which those are from the resolved call rather than from the tool's name. Gating everything is the version people switch off.
+- question: The model can usually tell a destructive call from a safe one. Why not let it classify?
+  answer: Then the guarantee becomes that the model was right, which is the thing the control exists to stop depending on. A model-supplied hint may order the queue; it cannot be the classification.
+- question: Is an allowlist of safe commands the same thing?
+  answer: It answers the inverse question, and an unknown operation lands on the permitted side unless the default is deny. The distinction here is low-tier against not, and not-yet-classified has to fall on the same side as high-tier.
+positioning: 'ASI02 and LLM06 both put the control question at the level of what an agent is permitted to do at all. This entry sits one step later, at the moment a permitted call is about to take effect: the case it exists for is a call the agent was entitled to make and should not have made this time. What the agent may hold and reach in the first place is a different control, and a reader arriving from either entry in search of that will not find it here.'

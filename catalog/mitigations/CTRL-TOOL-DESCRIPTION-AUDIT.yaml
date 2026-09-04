@@ -1,6 +1,5 @@
 id: CTRL-TOOL-DESCRIPTION-AUDIT
 name: Audit of Tool Descriptions at Registration
-status: draft
 mitigation_class: gating_control
 purpose: Performs static analysis of tool descriptions at registration in the registry for the presence of instructions to the model, hidden prompts, and obfuscated commands, ensuring that only tools with clean descriptions reach production. The mechanism operates as a registration gate and inspects every tool registration request. This prevents tool poisoning through malicious descriptions, detects obfuscated instructions, and provides quality control of tool metadata.
 formal_implementation_risk: null

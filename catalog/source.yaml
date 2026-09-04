@@ -5,4 +5,6 @@ source:
   hallucination:     {name: Hallucination,     desc: "The model itself errs / fabricates — no attacker."}
   error:             {name: Implementation error, desc: "An implementation or configuration defect."}
   accident:          {name: Accidental,        desc: "An accidental user action."}
-  training-data:     {name: Training data,     desc: "Toxic / biased patterns carried from training data."}
+# `training-data` used to be listed here and was the odd one out: it answers "through
+# what", not "who". It is a surface now. Patterns carried from training data are a
+# hallucination, an error or an external-attacker arriving through that surface.

@@ -1,17 +1,36 @@
+entity:
+  purpose: 'One weakness is one architectural condition, on one component, reached one way. Feeds mitigation selection: a control attaches to a weakness and is graded by whether it closes it, so a weakness holding two conditions can be closed by nothing - whichever control you name leaves the other half open.'
+  instructions:
+  - Before writing the text, name the one condition and the one place. If the sentence needs an 'or' between two different routes - into the context or out to an external system; a poisoned document or a poisoned tool - stop and write two weaknesses. An 'or' between examples of the same route (shell, SQL, a config template) is fine; the test is whether one control would close both sides.
+  avoid:
+  - Two routes in one weakness. 'A tool can exfiltrate data into free-form text that enters the context, or into an external system beyond the perimeter' is closed by context filtering on one side and egress control on the other; as one weakness it is closed by neither. Caught on T-DATA-LEAK, T-TOOL-ABUSE and T-TOXIC.
+  - A possibility in place of a condition. 'A token can be intercepted' says what might happen; the condition is 'the token crosses into an environment the system does not control'. Caught on T-CRED-THEFT.
 fields:
   component:
     purpose: Which owned system part the weakness sits on.
     content_requirements:
     - One value from catalog/components.yaml — a process or data store you own.
     avoid:
-    - An external entity or a boundary — those are the threat's source and surface, not a component.
+    - An external entity — that is the threat's source, not a component.
+    - A boundary or a channel — that is this weakness's surface.
+  surface:
+    purpose: The channel whose content this component treats as trustworthy.
+    content_requirements:
+    - One value from catalog/surface.yaml. Component and surface together name the place a control has to sit.
+    - Left empty when nothing crosses into the component for this weakness to be live. That covers a weakness about the component's own authority - a token scoped wider than the request that uses it - and one about something the component cannot represent, such as a runtime that has no way to tell a call that destroys state from one that reads it.
+    avoid:
+    - A pair of talkers (user to agent, agent to agent). That list never closes and does not say where a control goes.
+    - The technique that rides the channel — obfuscated instructions in a retrieved page are `retrieved-content`, and the obfuscation belongs in the acceptance criteria of the control that has to survive it.
+    examples:
+    - retrieved-content — a page pulled in by search is read as instruction.
+    - model-output — a downstream component runs what the model produced because the model produced it.
   text:
     purpose: The architectural condition that makes the threat possible — the thing you would fix.
     content_requirements:
     - One recognizable pattern — cause + where + defect.
     - Architectural, implementation, or operational — a property of the system, present whether or not anyone exploits it.
     avoid:
-    - A technique (prompt injection, jailbreak) — that is the mechanism, it belongs in source/references.
+    - A technique (prompt injection, jailbreak) — that is the mechanism; the channel it rides is `surface`, and evidence for it belongs in references.
     - A consequence (data leak, RCE) — that is harm.
     - Model behaviour as the flaw (the model "shouldn't" follow that) — model behaviour is never a weakness; assume the output can be made malicious.
     examples:

@@ -1,89 +1,69 @@
 id: T-CODEGEN
-title: Malicious code and command generation
+title: Text the agent produced is picked up and run as code by something downstream
 harm: code-execution
-surface:
-- agent-environment
-- user-agent
 source:
 - external-attacker
 - hallucination
 weaknesses:
 - component: downstream
-  text: The agent's output reaches an executing sink (CI/CD, eval/exec, database) and runs without sanitization/review; vulnerable code arises via injection into the input or the model reproducing insecure patterns.
+  surface:
+  - model-output
+  text: The agent's output reaches an executing sink - a CI pipeline, an eval or exec call, a database - and runs with no review or sanitization between the text and the execution, so insecure code the model wrote or was steered into writing runs as written.
   nature: targeted
 - component: downstream
-  text: The agent's output is rendered as HTML/Markdown in the user UI without escaping — the generated markup executes in the browser (XSS).
+  surface:
+  - model-output
+  text: The agent's output is rendered as HTML or Markdown in a user interface without escaping, so markup the model produced executes in the reader's browser.
   nature: targeted
-- component: tool
-  text: Code is assembled from free-form text that arrived in a tool's output (indirect injection) and goes on to execution/render.
+- component: model
+  surface:
+  - tool-output
+  text: The model is steered by free-form text it read from a tool into emitting code or markup of someone else's choosing, which then travels to the sink or the renderer like any other output.
   nature: targeted
-- component: tool
-  text: Output is passed to a tool that accepts and executes arbitrary input (shell/eval), with no "text" vs "command" separation.
-  nature: targeted
-reachability: NOT applicable if the agent's output is text for a human only — not executed and not rendered as active content — and there is no tool that executes arbitrary input.
+reachability: The agent's output is text for a human only - nothing downstream executes it and nothing renders it as active content.
 mitigations:
-- id: CTRL-AI-CODE-REVIEW
-  strength: gating
-  rationale: 'Security review of AI-generated code produced under the influence of external content
-
-
-    Elevated security review for AI-generated code
-
-
-    Code review focused on secrets
-
-
-    Security engineer review of configurations'
-- id: CTRL-CODE-SANDBOX
-  strength: gating
-  rationale: 'Code execution in an isolated environment
-
-
-    Isolated execution of generated code prevents damage to the host system'
-- id: CTRL-CONTENT-STRIPPING
-  strength: soft
-  rationale: Indirect injection via external/free-form content is the vector for this threat; stripping hidden instructions reduces the likelihood (soft).
-- id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  strength: gating
-  rationale: Indirect injection via external content is the vector for this threat; isolating external content limits its impact.
-- id: CTRL-INPUT-FILTERING
-  strength: soft
-  rationale: Filtering tool output before adding it to context prevents malicious instructions from influencing code generation
-- id: CTRL-OUTPUT-ENCODING
-  strength: gating
-  rationale: 'Output encoding prevents XSS when rendering HTML/Markdown
-
-
-    Output encoding prevents XSS when rendering HTML/Markdown containing malicious data from tools'
-- id: CTRL-OUTPUT-VALIDATION
-  strength: gating
-  rationale: 'Output validation before rendering blocks malicious content from tool output
-
-
-    Scanning output for secrets
-
-
-    Validation of configurations against security best practices
-
-
-    Output validation before rendering blocks malicious content
-
-
-    Checking generated code for safety before execution'
-- id: CTRL-PROMPT-HARDENING
-  strength: soft
-  rationale: Injection is the vector for this threat; structural prompt isolation makes overriding instructions harder (soft).
 - id: CTRL-SECURITY-GATES
   strength: gating
-  rationale: 'SAST/DAST checks in CI detect injection vulnerabilities in generated code
-
-
-    SAST/DAST checks in CI
-
-
-    Secret scanning in CI
-
-
-    IaC scanning in CI'
-references: []
-tags: []
+  rationale: 'Closes the executing-sink weakness for the CI path: SAST, secret scanning and IaC checks run on every change and a failing check blocks the merge, so generated code does not reach the pipeline that runs it unexamined.'
+- id: CTRL-CODE-SANDBOX
+  strength: gating
+  rationale: 'Closes the executing-sink weakness for the eval and exec path: generated code runs with no host, network or secret access, so whatever it does, it does to the sandbox.'
+- id: CTRL-OUTPUT-ENCODING
+  strength: gating
+  rationale: 'Closes the rendering weakness: output is entity-encoded and escaped before it is rendered or passed on, so markup the model produced is displayed as text rather than executed by the browser.'
+- id: CTRL-AI-CODE-REVIEW
+  strength: soft
+  rationale: 'Puts a reviewer on generated diffs above an AI-content threshold, against the executing-sink weakness. It does not close the threat: review is judgement, it is sampled, and the code it passes is still run as written.'
+- id: CTRL-OUTPUT-VALIDATION
+  strength: soft
+  rationale: 'Scans output for secrets and checks configuration against policy before it reaches a sink, against the executing-sink weakness. It does not close the threat: it catches what its rules describe, and insecure code that matches no rule passes.'
+- id: CTRL-CONTENT-STRIPPING
+  strength: soft
+  rationale: 'Removes hidden instructions from external content before the model reads it, against the steering weakness. It does not close the threat: a plain-text instruction the model follows was never hidden.'
+- id: CTRL-INPUT-FILTERING
+  strength: soft
+  rationale: 'Pattern-matches tool output for injection shapes before it enters the context, against the steering weakness. It does not close the threat: it is a match over an open-ended space.'
+- id: CTRL-PROMPT-HARDENING
+  strength: soft
+  rationale: 'Separates instruction from data so the model is less inclined to act on read content, against the steering weakness. It does not close the threat: it leans on model behaviour.'
+- id: CTRL-EXTERNAL-CONTENT-SANDBOX
+  strength: soft
+  rationale: 'Processes external content in isolation before it enters the context, against the steering weakness. It does not close the threat here: the content still reaches the model, and what the model then emits still travels to the sink.'
+references:
+- title: 'When Prompts Go Rogue: Analyzing a Prompt Injection Code Execution in Vanna.AI (CVE-2024-5565)'
+  url: https://jfrog.com/blog/prompt-injection-attack-code-execution-in-vanna-ai-cve-2024-5565/
+  note: 'The executing-sink weakness by the eval path: Vanna ran model-generated Plotly code through exec() with no sandbox, so a payload smuggled into the question reached the host. The vendor shipped a hardening guide and left the exec() in place.'
+- title: 'DeepSeek AI: From Prompt Injection To Account Takeover'
+  url: https://embracethered.com/blog/posts/2024/deepseek-ai-prompt-injection-to-xss-and-account-takeover/
+  note: 'The rendering weakness: chat.deepseek.com inserted model output into the DOM unescaped, so an iframe the model emitted ran in the reader''s browser and read the session token from localStorage. Fixed within a day of the report.'
+- title: 'New Vulnerability in GitHub Copilot and Cursor: How Hackers Can Weaponize Code Agents'
+  url: https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents
+  note: 'The steering weakness: instructions hidden with zero-width and bidirectional Unicode in a rules file made Cursor add a script tag from an attacker''s domain to generated HTML and say nothing about it. Both vendors answered that reviewing output is the user''s job - which is the record''s point.'
+- title: Asleep at the Keyboard? Assessing the Security of GitHub Copilot's Code Contributions
+  url: https://arxiv.org/abs/2108.09293
+  note: 'Measures the model''s own error as a source: of 1,689 Copilot-generated programs across 89 scenarios, about 40% were vulnerable (IEEE S&P 2022). The insecure code exists before any sink runs it, which is why a gate between text and execution carries the load.'
+positioning: 'ASI05 (Unexpected Code Execution) spans two path shapes: text the agent produced being run by something downstream, which is this record, and the agent itself calling a tool that executes - a shell, an interpreter - which is the tool-action record, because it is ruled out by what the tools can do rather than by what consumes the output.'
+tags:
+- codegen
+- xss
+- ci

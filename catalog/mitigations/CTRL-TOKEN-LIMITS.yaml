@@ -1,6 +1,5 @@
 id: CTRL-TOKEN-LIMITS
 name: Token Limits on Request and Response
-status: draft
 mitigation_class: gating_control
 purpose: Limits the number of tokens in model requests and responses through maximum input and output token limits with mandatory user notification on truncation, preventing resource exhaustion and cost overruns from excessively large requests. The mechanism operates at the API gateway and model invocation layers. This protects against DoS via oversized prompts, controls infrastructure costs, and ensures predictable resource consumption.
 formal_implementation_risk: null

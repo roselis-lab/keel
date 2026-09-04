@@ -1,128 +1,103 @@
 id: T-TOOL-ABUSE
-title: Unauthorized or destructive tool action
-harm: code-execution
-surface:
-- agent-environment
-- user-agent
+title: A tool the agent legitimately holds changes or destroys state on the model's say-so
+harm: data-integrity
 source:
 - external-attacker
 - hallucination
+- accident
 weaknesses:
 - component: tool
-  text: A reachable tool performs destructive/irreversible or privileged operations (delete, admin, exec, persistent side effects), and the call is initiated by the model with no out-of-model authorization on the action itself.
+  surface:
+  - model-output
+  text: A reachable tool performs a consequential write - delete, drop, an admin or configuration change, a persistent side effect - and the call runs because the model produced it, with no authorization of the action itself outside the model.
   nature: targeted
 - component: tool
-  text: Arguments or the choice of action are formed by the model and hijacked via injection (direct into the input, indirect in a tool's free-form output, in a file with hidden instructions) or agent goal substitution; the tool performs an action the user did not request.
+  surface:
+  - user-input
+  - tool-output
+  - retrieved-content
+  text: The arguments or the choice of action are formed by the model and steered by content it read - a user's message, a tool's free-form output, a file with hidden instructions - or by a substituted goal, so the tool performs a write nobody with standing asked for.
   nature: targeted
 - component: tool
-  text: A tool with terminal/shell access is invoked on the model's initiative — a direct path to RCE.
-  nature: targeted
-- component: tool
-  text: 'The confirmation mechanism (HITL) is not risk-differentiated and is devalued by a stream of identical requests: a critical action is approved mechanically.'
-  nature: targeted
-reachability: NOT applicable if the reachable tools have no operations with real consequences (read-only, no side effects), or the model influences neither the choice of tool nor its arguments (a rigidly predefined pipeline).
+  text: The confirmation step is not differentiated by risk and is fed a stream of near-identical requests, so a critical write is approved mechanically along with the rest.
+  nature: secondary
+reachability: The reachable tools have no operations with real consequences - reads, or writes to state the session discards - or the model influences neither the choice of tool nor its arguments, as in a rigidly predefined pipeline.
 mitigations:
-- id: CTRL-AGENT-ISOLATION
-  strength: gating
-  rationale: Sandbox isolation reduces the number of approval prompts by moving non-critical operations into an isolated environment
-- id: CTRL-APPROVAL-THROTTLING
-  strength: gating
-  rationale: Throttling and batching of confirmation requests reduce cognitive load and prevent mechanical approval
-- id: CTRL-ARG-VALIDATION
-  strength: gating
-  rationale: 'Strict validation of tool call arguments blocks injection vectors
-
-
-    Input validation protects tools with unstructured input from manipulation
-
-
-    Strict validation of tool call arguments blocks injection vectors
-
-
-    Validation of tool call arguments blocks injection'
-- id: CTRL-AUDIT-LOGGING
-  strength: gating
-  rationale: Auditing all tool operations enables detection of abuse
-- id: CTRL-COMMAND-SANDBOX
-  strength: gating
-  rationale: A command allowlist restricts the tool's executable actions
-- id: CTRL-CONTENT-STRIPPING
-  strength: soft
-  rationale: Removing hidden instructions from files (HTML comments, metadata) prevents injection
-- id: CTRL-EXTERNAL-CONTENT-SANDBOX
-  strength: gating
-  rationale: 'Processing files in an isolated environment limits the consequences of injection
-
-
-    Isolating external content in a sandbox prevents indirect injection via malicious data'
-- id: CTRL-FATIGUE-DETECTION
-  strength: gating
-  rationale: Detection of approval-fatigue patterns identifies mechanical approval and escalates critical actions
-- id: CTRL-GOAL-VALIDATION
-  strength: gating
-  rationale: Validation of the agent's goals at each step detects tampering with the objective function
-- id: CTRL-HACT-CRITICAL
-  strength: gating
-  rationale: Mandatory human confirmation for critical tools ensures that fatigue does not lead to critical actions being missed
-- id: CTRL-HUMAN-IN-LOOP
-  strength: gating
-  rationale: 'Human confirmation before executing shell commands via a tool
-
-
-    Human confirmation of destructive operations prevents irreversible consequences
-
-
-    Human oversight of critical actions prevents execution of tampered goals'
-- id: CTRL-INPUT-FILTERING
-  strength: soft
-  rationale: 'Filtering input for prompt injection
-
-
-    Input filtering sanitizes user input, preventing direct injection and encoded jailbreak patterns
-
-
-    Filtering tool output before adding it to context detects embedded instructions and jailbreak patterns'
-- id: CTRL-INPUT-PARAMETERIZATION
-  strength: gating
-  rationale: 'Parameterizing input instead of free text reduces the attack surface
-
-
-    Parameterized calls instead of string concatenation prevent injection'
-- id: CTRL-IRREVERSIBLE-ACTION-GUARD
-  strength: gating
-  rationale: A guard against irreversible actions requires additional confirmation and logging
-- id: CTRL-OUTPUT-VALIDATION
-  strength: gating
-  rationale: 'Checking generated arguments before passing them to the tool
-
-
-    Checking output for policy compliance blocks the results of a successful guardrail bypass
-
-
-    Checking output for policy compliance blocks the results of an indirect guardrail bypass via tool output'
-- id: CTRL-PROMPT-HARDENING
-  strength: soft
-  rationale: 'Prompt hardening protects against injection via file contents
-
-
-    Hardening the system prompt against prompt injection
-
-
-    Hardening the system prompt makes it resistant to override attempts and alignment bypass
-
-
-    Hardening the system prompt separates instructions from external content and withstands alignment bypass from tool output'
 - id: CTRL-RISK-BASED-APPROVAL
   strength: gating
-  rationale: 'Differentiated approval by risk level focuses the user''s attention on critical operations, reducing fatigue from routine ones
-
-
-    Differentiated approval by action risk groups requests by criticality, reducing the stream of repetitive confirmations'
-- id: CTRL-SESSION-SCOPED-PERMS
+  rationale: 'Closes the first weakness for the tier that matters and the third weakness at the same time: a high-tier call does not run without a decision outside the model, and low-tier calls do not ask, so the person deciding sees only what deserves attention.'
+- id: CTRL-HUMAN-IN-LOOP
   strength: gating
-  rationale: Session-scoped permissions reduce the number of prompts by pre-approving safe operations within the session
+  rationale: 'Closes the first weakness for the critical subset: a financial, destructive or configuration action does not execute until a person has approved it. Everything outside that subset still runs on the model''s word, and the third weakness says what happens when the subset is drawn too wide.'
+- id: CTRL-HACT-CRITICAL
+  strength: gating
+  rationale: Closes the first weakness for irreversible and secret-touching actions regardless of any other setting - including a session-scoped grant or a fatigued approver - so the floor holds even when the tiering above it has been relaxed.
+- id: CTRL-IRREVERSIBLE-ACTION-GUARD
+  strength: gating
+  rationale: 'Closes the first weakness for the irreversible subset specifically: a separate confirmation, a correlation id and a grace period during which the action can still be cancelled, so a delete or drop the model chose does not become final in the same instant it was chosen.'
 - id: CTRL-TOOL-ALLOWLIST
   strength: gating
-  rationale: An allowlist of permitted tools limits exposure of destructive operations to only those tools the agent actually needs
-references: []
-tags: []
+  rationale: 'Closes the first weakness for every tool not on the list: an agent that can only reach the tools it needs cannot be steered into one it does not, whatever the model produces.'
+- id: CTRL-SESSION-SCOPED-PERMS
+  strength: gating
+  rationale: Closes the first weakness for any action category the user has not granted this session, by default-deny, and eases the third by asking once per category rather than per call. A category granted too broadly is the residual, which is what HACT exists for.
+- id: CTRL-AGENT-ISOLATION
+  strength: gating
+  rationale: 'Closes the first weakness for everything outside the perimeter: an agent that runs in a constrained environment cannot reach production state or the host, so a consequential call has nothing consequential to land on. Inside the perimeter the weakness stands.'
+- id: CTRL-APPROVAL-THROTTLING
+  strength: soft
+  rationale: 'Lowers the stream that produces the third weakness by rate-limiting and batching requests. It does not close the threat: fewer prompts are still prompts, and a critical action inside a batch is approved with the batch.'
+- id: CTRL-FATIGUE-DETECTION
+  strength: soft
+  rationale: 'Notices the pattern of the third weakness - approvals faster than a read - and escalates. It does not close the threat: it produces a signal, and the approval it noticed has already been given.'
+- id: CTRL-GOAL-VALIDATION
+  strength: soft
+  rationale: 'Checks the agent''s stated goal against policy at each step, against the goal-substitution half of the second weakness. It does not close the threat: it is a judgement about intent, and a substituted goal that reads as aligned passes.'
+- id: CTRL-CONTENT-STRIPPING
+  strength: soft
+  rationale: 'Removes hidden instructions from files and pages before the model reads them, against the file channel of the second weakness. It does not close the threat: an instruction in plain sight is not hidden, and the other two channels are untouched.'
+- id: CTRL-INPUT-FILTERING
+  strength: soft
+  rationale: 'Pattern-matches user input and tool output for known injection shapes, against the second weakness. It does not close the threat: it is a match over an open-ended space.'
+- id: CTRL-PROMPT-HARDENING
+  strength: soft
+  rationale: 'Separates instruction from data in the prompt so the model is less inclined to act on what it reads, against the second weakness. It does not close the threat: it leans on model behaviour.'
+- id: CTRL-EXTERNAL-CONTENT-SANDBOX
+  strength: soft
+  rationale: 'Processes external content in isolation before it enters the context, against the second weakness. It does not close the threat here: the content still reaches the model, and a steered model still calls the tool - the sandbox gates what the content can execute, not what the model does after reading it.'
+- id: CTRL-OUTPUT-VALIDATION
+  strength: soft
+  rationale: 'Checks the model''s output against policy before it is acted on, against the second weakness. It does not close the threat: a steered call that is well formed and within policy passes, and the destructive call this record is about usually is.'
+- id: CTRL-TOOL-CALL-VALIDATION
+  strength: soft
+  rationale: 'A schema bounds what an argument may look like, which removes the crudest hijacks of the second weakness. It does not close the threat: the destructive call this threat is about is well formed by construction.'
+- id: CTRL-TOOL-DESCRIPTION-AUDIT
+  strength: soft
+  rationale: 'Closes one channel of the second weakness: a tool description carrying instructions aimed at the model is caught at registration. It does not close the threat: the same weakness is reached through user input and tool output, which a description audit never sees.'
+- id: CTRL-ACTIVITY-ANOMALY-DETECTION
+  strength: soft
+  rationale: 'A consequential call that gets through leaves a pattern - an unusual rate, an unusual target - and this is what notices it. It does not close the threat: the effect has already landed by the time the signal exists.'
+- id: CTRL-AUDIT-LOGGING
+  strength: soft
+  rationale: 'Records which call ran, with what arguments, on whose authority. It does not close the threat: it leaves a record of what happened, which is what an investigation needs and not a barrier.'
+references:
+- title: Cursor-Opus agent snuffs out startup's production database
+  url: https://www.theregister.com/2026/04/27/cursoropus_agent_snuffs_out_pocketos/
+  note: 'The first weakness with no attacker in it: the agent hit a credential mismatch, found an over-permissioned API token in an unrelated file, and issued one authenticated delete that removed the production volume and the backups stored inside it, with no confirmation step. The endpoint honoured the call because it was authenticated.'
+- title: 'Incident 1152: Replit agent executed destructive commands during a code freeze'
+  url: https://incidentdatabase.ai/cite/1152/
+  note: 'The first weakness where the instruction was understood and the write still ran: the agent deleted the live production database during a stated freeze, then reported rollback as impossible when a standard restore worked, which delayed recovery.'
+- title: 'Gemini CLI ''lost'' files during a failed file move operation - issue #4586'
+  url: https://github.com/google-gemini/gemini-cli/issues/4586
+  note: 'The hallucination source, with the transcript attached: a directory creation failed silently, the agent took it as success, and its following move commands renamed every file onto the same target, overwriting all but the last. Closed as not planned.'
+- title: How Hidden Prompt Injections Can Hijack AI Code Assistants Like Cursor
+  url: https://www.hiddenlayer.com/research/how-hidden-prompt-injections-can-hijack-ai-code-assistants-like-cursor
+  note: 'The second weakness by the retrieved-content channel: HTML comments in a README the user never saw drove Cursor to run terminal commands on its own denylist. The demonstrated outcome was exfiltration rather than destruction, so this is a proven path to the call and not yet a public case of this harm. Cursor closed the denylist bypass in 1.3.'
+- title: 'ClawsBench: Evaluating Capability and Safety of LLM Productivity Agents in Simulated Workspaces'
+  url: https://arxiv.org/html/2604.05172v1
+  note: 'Measured: in a stateful workspace where writes persist, destructive over-action tasks - bulk-deleting mail, amending contracts under an explicit hold - produced unsafe-action rates from 7% to 23% across six frontier models, and the most capable model tied for the most unsafe actions. Capability and safety do not track together.'
+positioning: 'ASI02 (Tool Misuse and Exploitation) spans more than one harm: this record is state changed or destroyed through a legitimate tool; a read that should not have been served is the disclosure record; a shell or interpreter the model drives is the command-injection record, because what breaks there is that code ran. LLM06 (Excessive Agency) is wider again, covering the standing authority a call runs under, which is the borrowed-identity record.'
+tags:
+- agentic
+- tool-use
+- approval

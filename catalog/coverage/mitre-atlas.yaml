@@ -1,0 +1,861 @@
+source:
+  id: mitre-atlas
+  title: MITRE ATLAS
+  version: 5.6.0
+  url: https://atlas.mitre.org/
+  checked: '2026-08-29'
+  entry_count: 101
+  note: 'The long tail, and the only source here that is exhaustive by design. 16 tactics over these techniques, imported from the project''s own published dataset rather than retyped. Sub-techniques are deliberately not rows: they refine a parent rather than name a different thing, and a matrix nobody can read is not evidence of anything.'
+entries:
+- ref: AML.T0000
+  title: Search Open Technical Databases
+  group: Reconnaissance
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0001
+  title: Search Open AI Vulnerability Analysis
+  group: Reconnaissance
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0002
+  title: Acquire Public AI Artifacts
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0003
+  title: Search Victim-Owned Websites
+  group: Reconnaissance
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0004
+  title: Search Application Repositories
+  group: Reconnaissance
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations: []
+- ref: AML.T0005
+  title: Create Proxy AI Model
+  group: AI Attack Staging
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0006
+  title: Active Scanning
+  group: Reconnaissance
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+  - CTRL-RATE-LIMITING
+- ref: AML.T0007
+  title: Discover AI Artifacts
+  group: Discovery
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-ACCESS-CONTROL
+  - CTRL-DATA-ACCESS-CONTROL
+- ref: AML.T0008
+  title: Acquire Infrastructure
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0010
+  title: AI Supply Chain Compromise
+  group: Initial Access
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-INTEGRITY-VERIFICATION
+  - CTRL-VERSION-PINNING
+  - CTRL-DATA-VALIDATION
+- ref: AML.T0011
+  title: User Execution
+  group: Execution
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-INSTALL-COMMAND-BLOCK
+  - CTRL-PACKAGE-VALIDATION
+  - CTRL-INTEGRITY-VERIFICATION
+- ref: AML.T0012
+  title: Valid Accounts
+  group: Initial Access, Privilege Escalation
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+  - CTRL-PRIVILEGE-CONTROL
+  - CTRL-TRANSPORT-AUTH
+- ref: AML.T0013
+  title: Discover AI Model Ontology
+  group: Discovery
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+  - CTRL-RATE-LIMITING
+- ref: AML.T0014
+  title: Discover AI Model Family
+  group: Discovery
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+  - CTRL-RATE-LIMITING
+- ref: AML.T0015
+  title: Evade AI Model
+  group: Initial Access, Defense Evasion, Impact
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-POLICY
+- ref: AML.T0016
+  title: Obtain Capabilities
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0017
+  title: Develop Capabilities
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0018
+  title: Manipulate AI Model
+  group: Persistence, AI Attack Staging
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-INTEGRITY-VERIFICATION
+  - CTRL-VERSION-PINNING
+- ref: AML.T0019
+  title: Publish Poisoned Datasets
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0020
+  title: Poison Training Data
+  group: Resource Development, Persistence
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on the training pipeline as a component: T-SOURCE-POISON holds the runtime analogue and its positioning says poisoning the weights lands elsewhere. Either that component enters the model or the boundary becomes a recorded scope decision.'
+- ref: AML.T0021
+  title: Establish Accounts
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0024
+  title: Exfiltration via AI Inference API
+  group: Exfiltration
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a record with the model itself as the asset: extraction by querying, membership inference and inversion are a weakness on the model component that nothing holds. Rate limiting would attach soft once it exists.'
+- ref: AML.T0025
+  title: Exfiltration via Cyber Means
+  group: Exfiltration
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DLP
+  - CTRL-URL-ALLOWLIST
+  - CTRL-DATA-EGRESS-MONITORING
+- ref: AML.T0029
+  title: Denial of AI Service
+  group: Impact
+  state: covered
+  threats:
+  - T-DOS
+  mitigations: []
+- ref: AML.T0031
+  title: Erode AI Model Integrity
+  group: Impact
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations: []
+- ref: AML.T0034
+  title: Cost Harvesting
+  group: Impact
+  state: covered
+  threats:
+  - T-DOS
+  mitigations:
+  - CTRL-RATE-LIMITING
+  - CTRL-TOKEN-LIMITS
+  - CTRL-RESOURCE-QUOTAS
+- ref: AML.T0035
+  title: AI Artifact Collection
+  group: Collection
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-ACCESS-CONTROL
+- ref: AML.T0036
+  title: Data from Information Repositories
+  group: Collection
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-CONTEXT-FILTERING
+- ref: AML.T0037
+  title: Data from Local System
+  group: Collection
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-ACCESS-CONTROL
+  - CTRL-DATA-ACCESS-CONTROL
+- ref: AML.T0040
+  title: AI Model Inference API Access
+  group: AI Model Access
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-ACCESS-CONTROL
+  - CTRL-RATE-LIMITING
+- ref: AML.T0041
+  title: Physical Environment Access
+  group: AI Model Access
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: The subject is the physical world a perception model observes, not a software component of an agent system. Keel's components are all software, so there is nowhere in this model to place a control.
+- ref: AML.T0042
+  title: Verify Attack
+  group: AI Attack Staging
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0043
+  title: Craft Adversarial Data
+  group: AI Attack Staging
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0044
+  title: Full AI Model Access
+  group: AI Model Access
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0046
+  title: Spamming AI System with Chaff Data
+  group: Impact
+  state: covered
+  threats:
+  - T-DOS
+  mitigations:
+  - CTRL-RATE-LIMITING
+  - CTRL-TOKEN-LIMITS
+- ref: AML.T0047
+  title: AI-Enabled Product or Service
+  group: AI Model Access
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-DOS
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-RATE-LIMITING
+- ref: AML.T0048
+  title: External Harms
+  group: Impact
+  state: covered
+  threats:
+  - T-TOXIC
+  - T-HALLUCINATION
+  - T-DATA-LEAK
+  mitigations: []
+- ref: AML.T0049
+  title: Exploit Public-Facing Application
+  group: Initial Access
+  state: covered
+  threats:
+  - T-CMD-INJECT
+  - T-SSRF
+  - T-CODEGEN
+  mitigations: []
+- ref: AML.T0050
+  title: Command and Scripting Interpreter
+  group: Execution
+  state: covered
+  threats:
+  - T-CMD-INJECT
+  - T-CODEGEN
+  mitigations:
+  - CTRL-COMMAND-SANDBOX
+  - CTRL-CODE-SANDBOX
+- ref: AML.T0051
+  title: LLM Prompt Injection
+  group: Execution
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-TOOL-ABUSE
+  - T-CODEGEN
+  mitigations:
+  - CTRL-PROMPT-HARDENING
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0052
+  title: Phishing
+  group: Initial Access, Lateral Movement
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-CONTENT-POLICY
+- ref: AML.T0053
+  title: AI Agent Tool Invocation
+  group: Execution, Privilege Escalation
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-RISK-BASED-APPROVAL
+  - CTRL-TOOL-ALLOWLIST
+- ref: AML.T0054
+  title: LLM Jailbreak
+  group: Privilege Escalation, Defense Evasion
+  state: covered
+  threats:
+  - T-TOXIC
+  mitigations:
+  - CTRL-PROMPT-HARDENING
+  - CTRL-INPUT-FILTERING
+  - CTRL-OUTPUT-VALIDATION
+- ref: AML.T0055
+  title: Unsecured Credentials
+  group: Credential Access
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+- ref: AML.T0056
+  title: Extract LLM System Prompt
+  group: Exfiltration
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0057
+  title: LLM Data Leakage
+  group: Exfiltration
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-CROSS-TENANT
+  mitigations: []
+- ref: AML.T0058
+  title: Publish Poisoned Models
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0059
+  title: Erode Dataset Integrity
+  group: Impact
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-DATA-VALIDATION
+  - CTRL-RAG-INTEGRITY
+- ref: AML.T0060
+  title: Publish Hallucinated Entities
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0061
+  title: LLM Prompt Self-Replication
+  group: Persistence
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-MEMORY-SANITIZATION
+  - CTRL-INPUT-FILTERING
+- ref: AML.T0062
+  title: Discover LLM Hallucinations
+  group: Discovery
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-RATE-LIMITING
+  - CTRL-PACKAGE-VALIDATION
+- ref: AML.T0063
+  title: Discover AI Model Outputs
+  group: Discovery
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0064
+  title: Gather RAG-Indexed Targets
+  group: Reconnaissance
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-METADATA-FILTERING
+  - CTRL-RATE-LIMITING
+- ref: AML.T0065
+  title: LLM Prompt Crafting
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0066
+  title: Retrieval Content Crafting
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0067
+  title: LLM Trusted Output Components Manipulation
+  group: Defense Evasion
+  state: covered
+  threats:
+  - T-HALLUCINATION
+  mitigations:
+  - CTRL-SOURCE-REFERENCES
+  - CTRL-OUTPUT-VALIDATION
+- ref: AML.T0068
+  title: LLM Prompt Obfuscation
+  group: Defense Evasion
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0069
+  title: Discover LLM System Information
+  group: Discovery
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0070
+  title: RAG Poisoning
+  group: Persistence
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-DATA-VALIDATION
+  - CTRL-RAG-INTEGRITY
+- ref: AML.T0071
+  title: False RAG Entry Injection
+  group: Defense Evasion
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-PROMPT-HARDENING
+  - CTRL-DATA-VALIDATION
+- ref: AML.T0072
+  title: Reverse Shell
+  group: Command and Control
+  state: covered
+  threats:
+  - T-CMD-INJECT
+  mitigations:
+  - CTRL-COMMAND-SANDBOX
+  - CTRL-CODE-SANDBOX
+- ref: AML.T0073
+  title: Impersonation
+  group: Defense Evasion
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-AGENT-AUTHENTICATION
+  - CTRL-TRANSPORT-AUTH
+- ref: AML.T0074
+  title: Masquerading
+  group: Defense Evasion
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-PACKAGE-VALIDATION
+  - CTRL-INTEGRITY-VERIFICATION
+  - CTRL-TOOL-VERIFICATION
+- ref: AML.T0075
+  title: Cloud Service Discovery
+  group: Discovery
+  state: covered
+  threats:
+  - T-SSRF
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-SSRF-PREVENTION
+  - CTRL-PRIVILEGE-CONTROL
+- ref: AML.T0076
+  title: Corrupt AI Model
+  group: Defense Evasion
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-INTEGRITY-VERIFICATION
+  - CTRL-VERSION-PINNING
+- ref: AML.T0077
+  title: LLM Response Rendering
+  group: Exfiltration
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-CODEGEN
+  mitigations:
+  - CTRL-URL-ALLOWLIST
+  - CTRL-OUTPUT-ENCODING
+- ref: AML.T0078
+  title: Drive-by Compromise
+  group: Initial Access
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-EXTERNAL-CONTENT-SANDBOX
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0079
+  title: Stage Capabilities
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0080
+  title: AI Agent Context Poisoning
+  group: Persistence
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-MEMORY-SANITIZATION
+  - CTRL-MEMORY-VERSIONING
+- ref: AML.T0081
+  title: Modify AI Agent Configuration
+  group: Persistence, Defense Evasion
+  state: gap
+  threats: []
+  mitigations: []
+  note: Waiting on the agent's own configuration - rules files, tool declarations, system prompt on disk - as a tamperable asset. Nothing names it as a component that persists between runs and can be rewritten.
+- ref: AML.T0082
+  title: RAG Credential Harvesting
+  group: Credential Access
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-CONTEXT-FILTERING
+- ref: AML.T0083
+  title: Credentials from AI Agent Configuration
+  group: Credential Access
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+- ref: AML.T0084
+  title: Discover AI Agent Configuration
+  group: Discovery
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0085
+  title: Data from AI Services
+  group: Collection
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-ACCESS-CONTROL
+- ref: AML.T0086
+  title: Exfiltration via AI Agent Tool Invocation
+  group: Exfiltration
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DLP
+  - CTRL-URL-ALLOWLIST
+- ref: AML.T0087
+  title: Gather Victim Identity Information
+  group: Reconnaissance
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0088
+  title: Generate Deepfakes
+  group: AI Attack Staging
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0089
+  title: Process Discovery
+  group: Discovery
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Post-exploitation: what an attacker enumerates on the host once code is already running. The weaknesses stop at getting execution; what follows is ordinary host security, and whether Keel reaches there is a scope decision nobody has taken.'
+- ref: AML.T0090
+  title: OS Credential Dumping
+  group: Credential Access
+  state: gap
+  threats: []
+  mitigations: []
+  note: Credentials the OS holds for unrelated software, not ones this system issued - T-CRED-THEFT's weaknesses are about the agent's own standing credential and where it crosses to.
+- ref: AML.T0091
+  title: Use Alternate Authentication Material
+  group: Lateral Movement
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+  - CTRL-PRIVILEGE-CONTROL
+- ref: AML.T0092
+  title: Manipulate User LLM Chat History
+  group: Defense Evasion
+  state: gap
+  threats: []
+  mitigations: []
+  note: The steering weaknesses assume content arriving from outside - retrieval, a tool, a user turn. This is rewriting the model's own recorded prior turns, which nothing names.
+- ref: AML.T0093
+  title: Prompt Infiltration via Public-Facing Application
+  group: Initial Access, Persistence
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-TOOL-ABUSE
+  - T-CODEGEN
+  mitigations:
+  - CTRL-PROMPT-HARDENING
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0094
+  title: Delay Execution of LLM Instructions
+  group: Defense Evasion
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-STRIPPING
+  - CTRL-PROMPT-HARDENING
+- ref: AML.T0095
+  title: Search Open Websites/Domains
+  group: Reconnaissance
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0096
+  title: AI Service API
+  group: Command and Control
+  state: gap
+  threats: []
+  mitigations: []
+  note: Nothing treats ordinary traffic to the agent's own inference or tool API as a channel that could carry a command-and-control path back out.
+- ref: AML.T0097
+  title: Virtualization/Sandbox Evasion
+  group: Defense Evasion
+  state: gap
+  threats: []
+  mitigations: []
+  note: The sandboxes here isolate execution. This technique targets an AI-based analyzer a payload fingerprints and evades - a control shape the catalog does not have.
+- ref: AML.T0098
+  title: AI Agent Tool Credential Harvesting
+  group: Credential Access
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-TOKEN-PROTECTION
+- ref: AML.T0099
+  title: AI Agent Tool Data Poisoning
+  group: Persistence
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-MCP-REGISTRY
+  - CTRL-TOOL-REGISTRY-INTEGRITY
+  - CTRL-TRANSPORT-AUTH
+- ref: AML.T0100
+  title: AI Agent Clickbait
+  group: Execution
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-EXTERNAL-CONTENT-SANDBOX
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0101
+  title: Data Destruction via AI Agent Tool Invocation
+  group: Impact
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-RISK-BASED-APPROVAL
+  - CTRL-HUMAN-IN-LOOP
+  - CTRL-IRREVERSIBLE-ACTION-GUARD
+- ref: AML.T0102
+  title: Generate Malicious Commands
+  group: AI Attack Staging
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0103
+  title: Deploy AI Agent
+  group: Execution
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-AGENT-REGISTRY
+  - CTRL-AGENT-AUTHENTICATION
+- ref: AML.T0104
+  title: Publish Poisoned AI Agent Tool
+  group: Resource Development
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0105
+  title: Escape to Host
+  group: Privilege Escalation
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-CODE-SANDBOX
+  - CTRL-AGENT-ISOLATION
+  - CTRL-EXTENSION-SANDBOX
+- ref: AML.T0106
+  title: Exploitation for Credential Access
+  group: Credential Access
+  state: gap
+  threats: []
+  mitigations: []
+  note: Generic software-vulnerability exploitation. Keel's weaknesses are architectural conditions, not memory-safety or logic bugs in code, so there is no shape to file it under.
+- ref: AML.T0107
+  title: Exploitation for Defense Evasion
+  group: Defense Evasion
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Same absence as exploitation for credential access: a software vulnerability that defeats a defence is not a weakness shape this catalog models.'
+- ref: AML.T0108
+  title: AI Agent
+  group: Command and Control
+  state: gap
+  threats: []
+  mitigations: []
+  note: A compromised agent serving as the attacker's ongoing command-and-control node. T-SOURCE-POISON's peer-agent weakness covers one bad answer, not a persistent channel.
+- ref: AML.T0109
+  title: AI Supply Chain Rug Pull
+  group: Defense Evasion
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-VERSION-PINNING
+  - CTRL-EXTENSION-UPDATE-CONTROL
+  - CTRL-TOOL-VERIFICATION
+- ref: AML.T0110
+  title: AI Agent Tool Poisoning
+  group: Persistence
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-MCP-REGISTRY
+  - CTRL-TOOL-REGISTRY-INTEGRITY
+  - CTRL-TOOL-VERIFICATION
+- ref: AML.T0111
+  title: AI Supply Chain Reputation Inflation
+  group: Defense Evasion
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-PACKAGE-VALIDATION
+  - CTRL-SUPPLY-CHAIN-SCANNING
+- ref: AML.T0112
+  title: Machine Compromise
+  group: Impact
+  state: covered
+  threats:
+  - T-CMD-INJECT
+  - T-CODEGEN
+  - T-SUPPLY-DEPS
+  mitigations: []

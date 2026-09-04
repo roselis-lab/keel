@@ -1,7 +1,6 @@
 id: CTRL-CONTEXT-FILTERING
 name: Context sanitization
-status: draft
-mitigation_class: process
+mitigation_class: gating_control
 purpose: Cleanses the model's context of confidential data, personal data, secrets, and sensitive information before it is sent to the model or the user, preventing unintentional disclosure of secrets through output, logging, or context contamination between sessions. The mechanism works as a sanitization layer between the data sources and context assembly, applying pattern matching, ML classification, and policy rules to identify and mask sensitive content. This prevents leakage of credentials through model output, protects personal data from exposure in multi-tenant environments, and ensures context isolation between users and projects.
 formal_implementation_risk: null
 review: null

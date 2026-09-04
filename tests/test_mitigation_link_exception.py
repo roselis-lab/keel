@@ -54,26 +54,26 @@ def test_route_link_mitigation_with_exception_round_trips(tmp_path):
     set_store(_temp_store(tmp_path))
     try:
         client = TestClient(app)
-        assert client.post("/threats", json=THREAT).status_code in (200, 201)
-        assert client.post("/mitigations", json=MITIGATION).status_code in (200, 201)
+        assert client.post("/api/threats", json=THREAT).status_code in (200, 201)
+        assert client.post("/api/mitigations", json=MITIGATION).status_code in (200, 201)
 
         r = client.put(
-            f"/threats/{THREAT['id']}/mitigations/{MITIGATION['id']}",
+            f"/api/threats/{THREAT['id']}/mitigations/{MITIGATION['id']}",
             json={"strength": "gating", "rationale": "blocks it", "exception": "narrow architectural case"},
         )
         assert r.status_code == 200, r.text
 
-        got = client.get(f"/threats/{THREAT['id']}").json()
+        got = client.get(f"/api/threats/{THREAT['id']}").json()
         link = got["mitigations"][0]
         assert link["exception"] == "narrow architectural case"
 
         # Updating without exception clears it (upsert semantics match strength/rationale).
         r2 = client.put(
-            f"/threats/{THREAT['id']}/mitigations/{MITIGATION['id']}",
+            f"/api/threats/{THREAT['id']}/mitigations/{MITIGATION['id']}",
             json={"strength": "gating", "rationale": "blocks it"},
         )
         assert r2.status_code == 200, r2.text
-        got2 = client.get(f"/threats/{THREAT['id']}").json()
+        got2 = client.get(f"/api/threats/{THREAT['id']}").json()
         assert got2["mitigations"][0].get("exception") is None
     finally:
         set_store(None)

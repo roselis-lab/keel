@@ -13,6 +13,7 @@ fields:
     - For a soft link, say plainly that it does not close the threat.
     avoid:
     - A soft control's rationale claiming it prevents or closes the threat.
+    - A rationale written about a control other than the one linked. 'Mandatory access control segregates data between tenants' on a card that is per-operation authorization; 'a registry with a mandatory authentication policy' on a card that verifies servers before registration and says nothing about authentication. Read the linked card's purpose before writing, and if the control you meant is a different card, link that one. Caught on T-DATA-LEAK (CTRL-ACCESS-CONTROL) and T-CRED-THEFT (CTRL-MCP-REGISTRY).
   exception:
     purpose: A rare, narrow carve-out where this specific mitigation doesn't apply to this specific threat, even though the threat itself stays live. Optional — most links won't need one.
     content_requirements:

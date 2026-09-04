@@ -1,6 +1,5 @@
 id: CTRL-CONTENT-STRIPPING
 name: Removal of hidden instructions
-status: draft
 mitigation_class: process
 purpose: Removes hidden instructions, invisible content, and potentially malicious metadata from external content - HTML documents, files, API responses - before it is passed to the model, preventing indirect prompt injection through embedded commands. The mechanism works as a preprocessing layer at the data-ingestion boundary, parsing the input content with a syntactic parser and extracting only the visible semantic information without markup, comments, metadata, and other hidden elements. This blocks attacks where an attacker embeds instructions in HTML comments, zero-width characters, image metadata, or other hidden channels that the user does not see but the model processes.
 formal_implementation_risk: null

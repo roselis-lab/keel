@@ -1,6 +1,5 @@
 id: CTRL-INPUT-FILTERING
 name: Input Filtering Against Prompt Injection
-status: draft
 mitigation_class: process
 purpose: Validates and sanitizes all user and external input before processing by the model, applying detection of prompt injection patterns, jailbreak attempts, and sanitization of dangerous content to prevent manipulation of the model through specially crafted inputs. The mechanism operates as an input pre-processing layer that analyzes incoming data for malicious patterns and blocks or transforms suspicious content. This prevents direct prompt injection attacks, detects obvious jailbreak attempts, and reduces the attack surface for model-based systems.
 formal_implementation_risk: null

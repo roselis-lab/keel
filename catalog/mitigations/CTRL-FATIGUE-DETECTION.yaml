@@ -1,6 +1,5 @@
 id: CTRL-FATIGUE-DETECTION
 name: Approval Fatigue Pattern Detection
-status: draft
 mitigation_class: detector
 purpose: Monitors patterns in the user's responses to confirmation prompts to identify signs of approval fatigue — mechanical approval without consideration — and initiates protective responses when anomalies are detected. The mechanism analyzes the timing, frequency, and consistency of approval decisions for deviations from a specific user's normal behavior. This detects attackers exploiting fatigue, identifies compromised accounts through unusual approval patterns, and enables intervention before mass approval leads to a security incident.
 formal_implementation_risk: null

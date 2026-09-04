@@ -1,6 +1,5 @@
 id: CTRL-AGENT-ISOLATION
 name: Agent sandbox
-status: draft
 mitigation_class: gating_control
 purpose: Isolates the agent's execution environment within a constrained perimeter with controlled access rights to resources, using containerization or system isolation mechanisms to prevent it from escaping beyond the permitted boundaries. The mechanism is deployed around the agent process and intercepts attempts to access the file system, network, and other resources at the OS kernel or runtime level, blocking unauthorized operations. This prevents compromise of the host system when an agent is breached, limits the blast radius of an attack, and prevents a compromised agent from gaining access to other agents' data or system resources.
 formal_implementation_risk: null
