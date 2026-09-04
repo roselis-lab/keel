@@ -21,11 +21,6 @@ from keel.schemas.mitigation import MitigationCreate
 from keel.schemas.threat import Threat
 from keel.store import resolve_catalog_dir
 
-# Technique words that must never be a threat/weakness identity (they are mechanisms →
-# they belong in `source` / `references`). Kept LLM-specific so established threat names
-# like "command injection" are not flagged.
-_TECHNIQUE_WORDS = ("prompt injection", "jailbreak")
-
 # Derived, not retyped. The list lived here, in `store.MITIGATION_ORDER` and in the model
 # itself, so adding a field meant remembering three places and finding out on the third.
 _MITIGATION_KEYS = set(MitigationCreate.model_fields)

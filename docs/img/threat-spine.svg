@@ -1,68 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" width="960" height="430" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="How a threat is assembled: a source arrives over a surface at a weakness on a component, the threat rests on the weakness and leads to a harm, reachability rules it out and mitigations address it">
   <defs>
-    <marker id="arw" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M0,0 L7,3 L0,6" fill="none" stroke="#97a0b5" stroke-width="1.6"/>
+    <marker id="ts-arw" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L6.5,3 L0,6" fill="none" stroke="#7d8590" stroke-width="1.6"/>
     </marker>
-    <filter id="sh" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#17203a" flood-opacity="0.18"/>
-    </filter>
   </defs>
 
-  <rect x="8" y="8" width="944" height="364" rx="18" fill="#ffffff" stroke="#dfe3ec"/>
-  <text x="40" y="46" fill="#97a0b5" font-size="12" font-weight="700" letter-spacing="1.6">HOW A THREAT IS ASSEMBLED</text>
+  <text x="20" y="26" fill="#7d8590" font-size="12" font-weight="700" letter-spacing="1.5">HOW A THREAT IS ASSEMBLED</text>
 
-  <!-- Band 1: the attack path -->
-  <!-- A: Source / Surface -->
-  <rect x="40" y="78" width="176" height="76" rx="12" fill="#f6f8fc" stroke="#d7dce8"/>
-  <text x="128" y="112" text-anchor="middle" fill="#232d4a" font-size="16" font-weight="700">Source · Surface</text>
-  <text x="128" y="132" text-anchor="middle" fill="#6b7690" font-size="11">who drives it · which boundary</text>
+  <!-- Band 1: the chain -->
 
-  <!-- B: Weakness -->
-  <rect x="264" y="78" width="176" height="76" rx="12" fill="#38415f"/>
-  <text x="352" y="112" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="700">Weakness</text>
-  <text x="352" y="132" text-anchor="middle" fill="#d7dce8" font-size="11">at a component · nature</text>
+  <!-- Source -->
+  <rect x="20" y="76" width="150" height="86" rx="12" fill="#eef1f7" stroke="#c9d1dc"/>
+  <text x="95" y="112" text-anchor="middle" fill="#1f2937" font-size="16" font-weight="700">source</text>
+  <text x="95" y="132" text-anchor="middle" fill="#5b6675" font-size="11">who or what drives it</text>
+  <text x="95" y="149" text-anchor="middle" fill="#5b6675" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">5 values</text>
 
-  <!-- C: Threat -->
-  <rect x="488" y="74" width="176" height="84" rx="12" fill="#d6294e" filter="url(#sh)"/>
-  <text x="576" y="110" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="800">Threat</text>
-  <text x="576" y="132" text-anchor="middle" fill="#f6c9d3" font-size="11">what can go wrong</text>
+  <!-- Weakness (holds component + surface) -->
+  <rect x="228" y="62" width="290" height="114" rx="12" fill="#3f4a63"/>
+  <text x="373" y="93" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="700">weakness</text>
+  <text x="373" y="112" text-anchor="middle" fill="#c8cfdd" font-size="11">the architectural condition: cause + where + defect</text>
+  <rect x="248" y="124" width="120" height="32" rx="8" fill="#54607d"/>
+  <text x="308" y="145" text-anchor="middle" fill="#ffffff" font-size="12" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">component</text>
+  <rect x="380" y="124" width="120" height="32" rx="8" fill="#54607d"/>
+  <text x="440" y="145" text-anchor="middle" fill="#ffffff" font-size="12" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">surface[]</text>
 
-  <!-- D: Harm -->
-  <rect x="712" y="78" width="176" height="76" rx="12" fill="#fdeef1" stroke="#f6c9d3"/>
-  <text x="800" y="112" text-anchor="middle" fill="#b81f42" font-size="16" font-weight="700">Harm</text>
-  <text x="800" y="132" text-anchor="middle" fill="#d6294e" font-size="11">the consequence</text>
+  <!-- Threat -->
+  <rect x="574" y="72" width="164" height="94" rx="12" fill="#d6294e"/>
+  <text x="656" y="110" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="800">threat</text>
+  <text x="656" y="132" text-anchor="middle" fill="#f8d3db" font-size="11">one record,</text>
+  <text x="656" y="147" text-anchor="middle" fill="#f8d3db" font-size="11">one harm</text>
 
-  <!-- arrows band 1 -->
-  <line x1="216" y1="116" x2="262" y2="116" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#arw)"/>
-  <text x="239" y="106" text-anchor="middle" fill="#97a0b5" font-size="10">reaches</text>
-  <line x1="440" y1="116" x2="486" y2="116" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#arw)"/>
-  <text x="463" y="106" text-anchor="middle" fill="#97a0b5" font-size="10">rests on</text>
-  <line x1="664" y1="116" x2="710" y2="116" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#arw)"/>
-  <text x="687" y="106" text-anchor="middle" fill="#97a0b5" font-size="10">leads to</text>
+  <!-- Harm -->
+  <rect x="794" y="76" width="146" height="86" rx="12" fill="#fdeef1" stroke="#f2bfcb"/>
+  <text x="867" y="112" text-anchor="middle" fill="#a81d3e" font-size="16" font-weight="700">harm</text>
+  <text x="867" y="132" text-anchor="middle" fill="#a3536b" font-size="11">what breaks</text>
+  <text x="867" y="149" text-anchor="middle" fill="#a3536b" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">6 values</text>
 
-  <!-- Band 2: the defense / qualifiers -->
-  <!-- connectors from Threat -->
-  <path d="M540,158 C520,205 470,214 468,250" fill="none" stroke="#e0a021" stroke-width="1.5" stroke-dasharray="4 4"/>
-  <path d="M612,158 C660,205 690,214 706,250" fill="none" stroke="#97a0b5" stroke-width="1.5" marker-end="url(#arw)"/>
-  <text x="470" y="205" text-anchor="middle" fill="#b9820f" font-size="10">live only if…</text>
-  <text x="676" y="205" text-anchor="middle" fill="#97a0b5" font-size="10">addressed by</text>
+  <!-- arrows, band 1 -->
+  <line x1="170" y1="119" x2="226" y2="119" stroke="#7d8590" stroke-width="1.6" marker-end="url(#ts-arw)"/>
+  <text x="198" y="108" text-anchor="middle" fill="#7d8590" font-size="10">arrives at</text>
+  <line x1="518" y1="119" x2="572" y2="119" stroke="#7d8590" stroke-width="1.6" marker-end="url(#ts-arw)"/>
+  <text x="545" y="108" text-anchor="middle" fill="#7d8590" font-size="10">rests on</text>
+  <line x1="738" y1="119" x2="792" y2="119" stroke="#7d8590" stroke-width="1.6" marker-end="url(#ts-arw)"/>
+  <text x="765" y="108" text-anchor="middle" fill="#7d8590" font-size="10">leads to</text>
 
-  <!-- Reachability gate -->
-  <rect x="248" y="250" width="240" height="58" rx="12" fill="#ffffff" stroke="#e0a021" stroke-dasharray="5 4"/>
-  <text x="368" y="278" text-anchor="middle" fill="#b9820f" font-size="15" font-weight="700">Reachability</text>
-  <text x="368" y="296" text-anchor="middle" fill="#6b7690" font-size="11">rule out when the path isn't live</text>
+  <!-- Band 2: the gate and the defence -->
+  <path d="M604,166 C570,214 452,214 420,248" fill="none" stroke="#e0a021" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="470" y="206" text-anchor="middle" fill="#8a6212" font-size="10">live here only if...</text>
+  <path d="M706,166 C716,214 700,214 700,246" fill="none" stroke="#7d8590" stroke-width="1.5" marker-end="url(#ts-arw)"/>
+  <text x="758" y="206" text-anchor="middle" fill="#7d8590" font-size="10">addressed by</text>
 
-  <!-- Mitigation -->
-  <rect x="540" y="250" width="150" height="58" rx="12" fill="#eaf4ee" stroke="#bfe0cc"/>
-  <text x="615" y="278" text-anchor="middle" fill="#1f9d57" font-size="15" font-weight="700">Mitigation</text>
-  <text x="615" y="296" text-anchor="middle" fill="#4a5570" font-size="11">gating | soft</text>
+  <rect x="252" y="248" width="270" height="72" rx="12" fill="#fff8e8" stroke="#e0a021" stroke-dasharray="5 4"/>
+  <text x="387" y="277" text-anchor="middle" fill="#8a6212" font-size="15" font-weight="700">reachability</text>
+  <text x="387" y="297" text-anchor="middle" fill="#8a6212" font-size="11">the condition under which this is</text>
+  <text x="387" y="311" text-anchor="middle" fill="#8a6212" font-size="11">not a live path in your system</text>
 
-  <!-- Implementation -->
-  <rect x="726" y="250" width="162" height="58" rx="12" fill="#f6f8fc" stroke="#d7dce8"/>
-  <text x="807" y="278" text-anchor="middle" fill="#232d4a" font-size="15" font-weight="700">Implementation</text>
-  <text x="807" y="296" text-anchor="middle" fill="#6b7690" font-size="11">how it's realized here</text>
+  <rect x="618" y="248" width="164" height="72" rx="12" fill="#e7f4ec" stroke="#b3dcc4"/>
+  <text x="700" y="277" text-anchor="middle" fill="#186c40" font-size="15" font-weight="700">mitigation</text>
+  <text x="700" y="296" text-anchor="middle" fill="#3d7256" font-size="11">the shared card:</text>
+  <text x="700" y="310" text-anchor="middle" fill="#3d7256" font-size="11">what it is, how to accept it</text>
 
-  <line x1="690" y1="279" x2="724" y2="279" stroke="#97a0b5" stroke-width="1.6" marker-end="url(#arw)"/>
+  <rect x="822" y="248" width="118" height="72" rx="12" fill="#eef1f7" stroke="#c9d1dc"/>
+  <text x="881" y="277" text-anchor="middle" fill="#1f2937" font-size="14" font-weight="700">implementation</text>
+  <text x="881" y="296" text-anchor="middle" fill="#5b6675" font-size="11">how you built it,</text>
+  <text x="881" y="310" text-anchor="middle" fill="#5b6675" font-size="11">on its own clock</text>
 
-  <text x="40" y="352" fill="#97a0b5" font-size="11">A technique like prompt injection is a <tspan font-style="italic">mechanism</tspan> — it lives in <tspan font-family="ui-monospace, monospace" fill="#6b7690">source</tspan> / <tspan font-family="ui-monospace, monospace" fill="#6b7690">references</tspan>, never as a threat.</text>
+  <line x1="782" y1="284" x2="820" y2="284" stroke="#7d8590" stroke-width="1.6" marker-end="url(#ts-arw)"/>
+
+  <!-- footnotes -->
+  <text x="20" y="366" fill="#5b6675" font-size="11.5"><tspan font-family="ui-monospace, SFMono-Regular, Consolas, monospace">component</tspan> and <tspan font-family="ui-monospace, SFMono-Regular, Consolas, monospace">surface</tspan> sit on the weakness, not on the threat: a threat is a chain and crosses more than one boundary,</text>
+  <text x="20" y="384" fill="#5b6675" font-size="11.5">so a list at the top could not say which weakness sits where. Together they name the place a control has to sit.</text>
+  <text x="20" y="410" fill="#7d8590" font-size="11.5">A technique such as prompt injection is a mechanism, not a threat. It is a weakness's <tspan font-family="ui-monospace, SFMono-Regular, Consolas, monospace">surface</tspan> and the threat's <tspan font-family="ui-monospace, SFMono-Regular, Consolas, monospace">source</tspan>.</text>
 </svg>

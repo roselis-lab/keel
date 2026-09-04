@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="960" height="500" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="One catalog record judged against two architectures: reachability rules the threat out for a report drafter and leaves it live for a release agent">
+  <defs>
+    <marker id="rg-arw" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L6.5,3 L0,6" fill="none" stroke="#7d8590" stroke-width="1.6"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="26" fill="#7d8590" font-size="12" font-weight="700" letter-spacing="1.5">ONE RECORD, TWO ARCHITECTURES</text>
+
+  <!-- The record -->
+  <rect x="20" y="44" width="920" height="140" rx="12" fill="#fdeef1" stroke="#f2bfcb"/>
+  <text x="42" y="74" fill="#a81d3e" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">T-TOOL-ABUSE</text>
+  <text x="42" y="98" fill="#8f1b36" font-size="15.5" font-weight="700">A tool the agent legitimately holds changes or destroys state on the model's say-so</text>
+  <text x="42" y="126" fill="#a3536b" font-size="11" font-weight="700" letter-spacing="0.8" font-family="ui-monospace, SFMono-Regular, Consolas, monospace">reachability</text>
+  <text x="42" y="148" fill="#7a3049" font-size="13">The reachable tools have no operations with real consequences - reads, or writes to state the session discards -</text>
+  <text x="42" y="168" fill="#7a3049" font-size="13">or the model influences neither the choice of tool nor its arguments, as in a rigidly predefined pipeline.</text>
+
+  <!-- fan-out -->
+  <path d="M480,184 C480,206 250,200 250,224" fill="none" stroke="#7d8590" stroke-width="1.5" marker-end="url(#rg-arw)"/>
+  <path d="M480,184 C480,206 710,200 710,224" fill="none" stroke="#7d8590" stroke-width="1.5" marker-end="url(#rg-arw)"/>
+  <text x="20" y="212" fill="#7d8590" font-size="11">judged on the un-mitigated architecture</text>
+
+  <!-- System A -->
+  <rect x="20" y="226" width="450" height="182" rx="12" fill="#eef1f7" stroke="#c9d1dc"/>
+  <text x="42" y="256" fill="#1f2937" font-size="15" font-weight="700">A support assistant that drafts replies</text>
+  <text x="42" y="286" fill="#5b6675" font-size="12.5">- Tools: search the knowledge base, fetch a ticket.</text>
+  <text x="42" y="310" fill="#5b6675" font-size="12.5">- The only thing it writes is the draft, held in the session.</text>
+  <text x="42" y="334" fill="#5b6675" font-size="12.5">- A person reads the draft and sends it themselves.</text>
+  <text x="42" y="358" fill="#5b6675" font-size="12.5">- Nothing it can reach survives the request.</text>
+  <line x1="42" y1="374" x2="448" y2="374" stroke="#c9d1dc"/>
+  <text x="42" y="396" fill="#5b6675" font-size="13"><tspan font-weight="700">Ruled out.</tspan> The carve-out holds, so this threat is not a live path here.</text>
+
+  <!-- System B -->
+  <rect x="490" y="226" width="450" height="182" rx="12" fill="#fff8e8" stroke="#e0a021"/>
+  <text x="512" y="256" fill="#7a5410" font-size="15" font-weight="700">A release agent that ships changes</text>
+  <text x="512" y="286" fill="#8a6212" font-size="12.5">- Tools: run a migration, roll a deploy, drop a namespace.</text>
+  <text x="512" y="310" fill="#8a6212" font-size="12.5">- The model picks the tool and fills in its arguments.</text>
+  <text x="512" y="334" fill="#8a6212" font-size="12.5">- The effects outlive the session; some cannot be put back.</text>
+  <text x="512" y="358" fill="#8a6212" font-size="12.5">- One approval prompt, the same for every call.</text>
+  <line x1="512" y1="374" x2="918" y2="374" stroke="#e0a021" stroke-opacity="0.5"/>
+  <text x="512" y="396" fill="#7a5410" font-size="13"><tspan font-weight="700">Live.</tspan> All three weaknesses hold, including the undifferentiated prompt.</text>
+
+  <!-- outcomes -->
+  <path d="M245,408 L245,432" fill="none" stroke="#7d8590" stroke-width="1.5" marker-end="url(#rg-arw)"/>
+  <path d="M715,408 L715,432" fill="none" stroke="#7d8590" stroke-width="1.5" marker-end="url(#rg-arw)"/>
+
+  <rect x="20" y="436" width="450" height="50" rx="10" fill="none" stroke="#c9d1dc" stroke-dasharray="5 4"/>
+  <text x="245" y="467" text-anchor="middle" fill="#5b6675" font-size="13">Recorded as discarded, with the reason. No controls pulled.</text>
+
+  <rect x="490" y="436" width="450" height="50" rx="10" fill="#e7f4ec" stroke="#b3dcc4"/>
+  <text x="715" y="467" text-anchor="middle" fill="#186c40" font-size="13">Pulls its 7 gating and 12 soft controls, each asked: in place here?</text>
+</svg>
