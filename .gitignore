@@ -19,3 +19,8 @@ build/
 
 # Assessment runs are local: real system names and findings, never committed.
 reports/
+
+# generated demo artefacts
+docs/demo/.deck-preview.html
+docs/demo/clips/*.mp4
+docs/demo/keel-demo.pptx
