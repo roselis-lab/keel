@@ -6,10 +6,10 @@ requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 dependencies = [
-    "fastapi>=0.150.0",
+    "fastapi>=0.162.0",
     "uvicorn[standard]>=0.52.4",
     "pydantic>=2.14.1",
-    "pydantic-settings>=2.16.0",
+    "pydantic-settings>=2.16.1",
     "pyyaml>=6.0",
     "mcp>=2.3.0",
 ]
@@ -17,9 +17,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
-    "pytest-asyncio>=0.23.0",
+    "pytest-asyncio>=1.4.1",
     "httpx>=0.26.0",
-    "ruff>=0.17.1",
+    "ruff>=0.17.3",
 ]
 
 [project.scripts]
