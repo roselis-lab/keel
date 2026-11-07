@@ -12,14 +12,14 @@ Three more gaps sit next to it:
 - Grades drift between reports. Without anchors one assessor's `high` is another's `medium`, and "unlikely" gets written where the truth is "not checked".
 - A requirement is a card id. The product team gets a control name with no statement of what must hold, where, or how anyone will know it is done.
 
-And a refuted finding has nowhere to live, so the next run raises it again.
+And a discard only lived inside one report: nothing stopped the next run from raising again what an earlier one had ruled out, which is the point of recording why a threat does not apply.
 
 ## Decisions
 
 ### Surface ledger
 
 - The report gets `surfaces`: every entry point, tool, data path, and the files read to establish them, each with where it is and the evidence it was seen in.
-- Every row ends with an outcome: the findings, discards, refutations or paused branches that cross it, or a note saying why nothing reaches harm through it.
+- Every row ends with an outcome: the findings, discards or paused branches that cross it, or a note saying why nothing reaches harm through it.
 - Finalizing waits for a ledger, and for every row to be walked. Save refuses an outcome that names a branch the report does not have.
 
 The catalog proves every class was considered; the ledger proves every surface was walked. A report needs both.
@@ -28,8 +28,9 @@ The catalog proves every class was considered; the ledger proves every surface w
 
 - Every finding graded `high` on severity gets a `review` from someone who did not raise it: a fresh subagent with its own brief, or the specialist.
 - The reviewer gets the finding, its evidence and the code, not the assessor's trail. It re-reads every cited line, tries to break each link of the chain with a fact, and lists surfaces the ledger missed.
-- `stands` and `weakened` are recorded on the finding. A refuted finding moves to `refuted` with the reason and stays in the report.
-- A later save whose finding matches a refuted fingerprint in an earlier report of the same system gets advice: name the new fact, or drop it.
+- `stands` and `weakened` are recorded on the finding. A refuted finding is ruled out: it joins `discarded` with `by: review` and the link that broke. There is one list of what was ruled out, and two reasons a thing gets on it.
+- A later save whose finding matches anything an earlier report of the same system ruled out, by reachability or in review, gets advice: name the new fact, or drop it.
+- Only `high` is required, because a refutation costs a fresh agent per finding and a wrong `high` costs the most: it is what turns into work for a product team. The skill allows a review on any finding.
 
 ### Grading anchors
 
@@ -40,7 +41,11 @@ The catalog proves every class was considered; the ledger proves every surface w
 
 ### Requirements a team can build
 
-A requirement that ships carries `invariant` (what must always hold), `enforce_at` (the narrowest place it is enforced, the last point the system still trusts) and `done_check` (how to tell it is done, best a test that fails today). Finalizing waits for all three; the hand-off text includes them.
+A catalog card already says what a control holds (`purpose`), where (`locus`) and how it is accepted (`validation`). Most cards have these unwritten, which is catalog work, not report work. A requirement can carry the same three for this system: `invariant`, `enforce_at`, `done_check`. For a catalog control they are optional, and save advises when the card has no `validation`. An ask with no card has nothing else to stand on, so finalizing waits for all three. The hand-off text includes them.
+
+### Legacy threats
+
+A threat that existed before the integration and that the integration did not change is marked `origin: legacy`. It stays in the report with its grade and measures, because the problem is real whoever introduced it; it is only not counted against the integration. The methodology says so in its delta step, and its self-check refuses a threat dropped for having no delta.
 
 ### Smaller pieces
 
@@ -52,10 +57,11 @@ A requirement that ships carries `invariant` (what must always hold), `enforce_a
 
 The library skill had grown to one file of about 2,700 words, half of it field reference needed only at the last step. It is now a ten-step file with three references opened at the step that needs them: report fields, grading anchors, and the reviewer's brief. Every sentence of the old file is present in the new set; a script checked that before the new material was added.
 
+The methodology skill keeps its steps in one file, because every run needs every step. Its description now lists only when to use it, and its corrections section, which mostly repeated the steps, is folded into the steps it corrects.
+
 ## Out of this change
 
 - Static publishing of reports and the catalog for teams that keep Keel in their own Git. That is the documentation and adoption change.
-- Splitting the methodology skill. It is calibrated against its own scenarios, and its structure changes only with a fresh run of them.
 
 ## How we will know it worked
 

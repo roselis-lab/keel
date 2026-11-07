@@ -41,9 +41,16 @@ AskKind = Literal["fact", "access"]
 # to establish the others.
 SurfaceKind = Literal["entry", "tool", "data", "file"]
 # A reviewer who tried to break a finding and could not ("stands"), or broke one link
-# only partly ("weakened"). A finding the reviewer broke is not a finding: it goes to
-# `Report.refuted`.
+# only partly ("weakened"). A finding the reviewer broke is not a finding: it is ruled
+# out, in `Report.discarded` with `by: review`.
 ReviewVerdict = Literal["stands", "weakened"]
+# What ruled a candidate out: its catalog reachability condition holding here, or a
+# reviewer breaking a link of its chain after it was graded.
+DiscardedBy = Literal["reachability", "review"]
+# Where the threat stands against the state before the integration. "legacy" existed
+# before and the integration did not change it: still graded and still given measures,
+# only not counted against the integration.
+Origin = Literal["new", "changed", "legacy"]
 
 
 class Evidence(BaseModel):
@@ -191,9 +198,9 @@ class Requirement(BaseModel):
         description="Ships in the hand-off to the product team. None means 'not decided "
         "yet' and resolves to the obvious default: anything already covered is left out.",
     )
-    # A card id says which control; these three say what this system must hold once it
-    # is built, where, and how anyone will know. A shipped requirement without them is a
-    # recommendation nobody can accept, so finalizing waits for them.
+    # A catalog card already carries these in general terms (purpose, locus,
+    # validation). Here they say it for THIS system. An ask with no card has nothing
+    # else to stand on, so finalizing waits for all three on such an ask.
     invariant: str | None = Field(None, description="What must always hold once it is built, about this system")
     enforce_at: str | None = Field(
         None, description="The narrowest place it is enforced: the last point the system still trusts before the harm"
@@ -236,41 +243,35 @@ class IgnoredMitigation(BaseModel):
 
 
 class Discarded(BaseModel):
-    """A threat candidate ruled out during analysis.
+    """A threat candidate ruled out, and why, so the next assessment does not re-derive it.
 
     Deliberately NOT the full `Finding` chain — a discard is an id and why, nothing more.
-    The why is the threat's `reachability` condition holding in this system, established
-    from facts. A small consequence is not a discard: that threat is live and graded low.
+    Two things rule a candidate out. By `reachability`: the threat's catalog condition
+    holds in this system, established from facts. By `review`: someone who did not raise
+    a graded finding broke a link of its chain, and the reason says which link and with
+    what fact. A small consequence is not a discard: that threat is live and graded low.
     A branch still waiting on a fact is not a discard either: it is `Paused`.
+
+    A later assessment of the same system that raises it again is told so on save, and
+    names the new fact that brings it back.
     """
 
     model_config = ConfigDict(extra="forbid")
     id: str
+    by: DiscardedBy = "reachability"
+    root_cause: str | None = Field(None, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")
     reason: str = Field(
-        ..., description="How the threat's reachability condition holds here, with the fact that shows it"
+        ..., description="By reachability: how the condition holds here, with the fact. By "
+        "review: which link of the chain does not hold, with the fact"
     )
     evidence: list[int] = Field(default_factory=list, description="Ids of the evidence entries the reason rests on")
-
-
-class Refuted(BaseModel):
-    """A finding a reviewer broke, kept so the next assessment does not raise it again.
-
-    Re-raising it later is allowed, but only with the new fact that changes it: the
-    fingerprint (system, id, root cause) is how a later save recognises it.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-    id: str
-    root_cause: str | None = Field(None, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")
-    reason: str = Field(..., min_length=1, description="Which link of the chain does not hold, with the fact")
-    evidence: list[int] = Field(default_factory=list)
 
 
 class SurfaceEntry(BaseModel):
     """One row of the surface ledger: a place something reaches this system.
 
     The catalog proves every threat class was considered; the ledger proves every surface
-    was walked. A row ends with the findings, discards, refutations or paused branches
+    was walked. A row ends with the findings, discards or paused branches
     that cross it, or with a note saying why nothing reaches harm through it.
     """
 
@@ -281,7 +282,7 @@ class SurfaceEntry(BaseModel):
     where: str = Field(..., min_length=1, description="The endpoint, tool name, path or flow")
     evidence: list[int] = Field(default_factory=list, description="Where it was seen")
     outcome: list[str] = Field(
-        default_factory=list, description="Ids of the findings, discards, refuted or paused branches that cross it"
+        default_factory=list, description="Ids of the findings, discards or paused branches that cross it"
     )
     note: str | None = Field(None, description="With an empty outcome: why nothing reaches harm through it")
     found_by: Literal["assessor", "review"] = "assessor"
@@ -354,6 +355,10 @@ class Finding(BaseModel):
         "beside `risk` for the design as it will run",
     )
     delta: str
+    origin: Origin | None = Field(
+        None, description="new, changed by the integration, or legacy: existed before and "
+        "unchanged, still graded and given measures, not counted against the integration",
+    )
     deployment: Deployment | None = Field(
         None, description="What is switched on today. The grade describes the design as it will run"
     )
@@ -393,9 +398,6 @@ class Report(BaseModel):
         default_factory=list, description="Branches waiting on an open question: no grade, no discard"
     )
     discarded: list[Discarded] = Field(default_factory=list)
-    refuted: list[Refuted] = Field(
-        default_factory=list, description="Findings a reviewer broke; not raised again without a new fact"
-    )
     surfaces: list[SurfaceEntry] = Field(
         default_factory=list, description="The surface ledger: every place something reaches this system"
     )

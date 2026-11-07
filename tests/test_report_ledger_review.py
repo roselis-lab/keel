@@ -18,9 +18,10 @@ from tests.test_report_evidence import _finding, _messages, _report
 
 @pytest.fixture
 def archive(catalog_dir, tmp_path, monkeypatch):
-    d = catalog_dir(threats=[
-        {"id": "T-A", "harm": "data-exposed", "source": ["external-attacker", "internal"]},
-    ])
+    d = catalog_dir(
+        threats=[{"id": "T-A", "harm": "data-exposed", "source": ["external-attacker", "internal"]}],
+        mitigations=[{"id": "CTRL-X", "validation": []}],
+    )
     set_store(Store(d))
     reports = tmp_path / "reports"
     (reports / "demo").mkdir(parents=True)
@@ -110,28 +111,35 @@ def test_a_medium_needs_no_review(archive):
     assert report_service.finalize_report("demo", "2026-11-06")["report"]["status"] == "final"
 
 
-def test_refuted_is_a_verdict_only_the_refuted_list_holds(archive):
+def test_refuted_is_not_a_review_verdict_it_is_a_discard(archive):
     with pytest.raises(Invalid):
         _put(archive, "2026-11-06", _ok(findings=[_finding(review={**REVIEW, "verdict": "refuted"})]))
 
 
-def test_a_refuted_finding_is_not_also_graded(archive):
-    refuted = [{"id": "T-A", "reason": "the gateway rejects amounts the order does not hold [1]",
-                "evidence": [1]}]
+def test_a_finding_refuted_in_review_is_not_also_graded(archive):
+    refuted = [{"id": "T-A", "by": "review",
+                "reason": "the gateway rejects amounts the order does not hold [1]", "evidence": [1]}]
     with pytest.raises(Invalid) as exc:
-        _put(archive, "2026-11-06", _ok(refuted=refuted))
-    assert "refuted" in _messages(exc)
+        _put(archive, "2026-11-06", _ok(discarded=refuted))
+    assert "refuted in review" in _messages(exc)
 
 
 def test_a_finding_refuted_earlier_comes_back_with_advice(archive):
-    earlier = _ok(date="2026-10-01", findings=[], refuted=[
-        {"id": "T-A", "root_cause": "model-sets-refund-amount",
+    earlier = _ok(date="2026-10-01", findings=[], discarded=[
+        {"id": "T-A", "by": "review", "root_cause": "model-sets-refund-amount",
          "reason": "the gateway caps the amount at the order total.", "evidence": [1]}])
-    earlier["surfaces"] = [{**LEDGER[0], "outcome": ["T-A"]}]
     _put(archive, "2026-10-01", earlier)
     again = _ok(findings=[_finding(review=REVIEW, root_cause="model-sets-refund-amount")])
     advice = " | ".join(_put(archive, "2026-11-06", again)["advice"])
-    assert "refuted on 2026-10-01" in advice
+    assert "refuted in review on 2026-10-01" in advice
+
+
+def test_a_threat_discarded_earlier_by_reachability_comes_back_with_advice(archive):
+    earlier = _ok(date="2026-10-01", findings=[], discarded=[
+        {"id": "T-A", "reason": "the bot had no refund tool then.", "evidence": [1]}])
+    _put(archive, "2026-10-01", earlier)
+    advice = " | ".join(_put(archive, "2026-11-06", _ok())["advice"])
+    assert "ruled out by reachability on 2026-10-01" in advice
 
 
 # --- one defect, one finding ---------------------------------------------------- #
@@ -151,9 +159,26 @@ def test_one_threat_with_two_root_causes_is_two_findings(archive):
 
 # --- requirements a team can build ---------------------------------------------- #
 
-def test_a_shipped_requirement_without_invariant_place_and_check_blocks_finalize(archive):
+def test_an_ask_with_no_card_and_no_invariant_place_and_check_blocks_finalize(archive):
     msg = _finalize_errors(archive, _ok(findings=[_finding(review=REVIEW, requirements=[SHIPS])]))
     assert "invariant" in msg and "enforce_at" in msg and "done_check" in msg
+
+
+def test_a_catalog_requirement_leans_on_its_card(archive):
+    card = {"mitigation_id": "CTRL-X", "coverage_status": "needs_implementation"}
+    _put(archive, "2026-11-06", _ok(findings=[_finding(review=REVIEW, requirements=[card])]))
+    assert report_service.finalize_report("demo", "2026-11-06")["report"]["status"] == "final"
+
+
+def test_a_card_with_no_validation_gets_advice(archive):
+    card = {"mitigation_id": "CTRL-X", "coverage_status": "needs_implementation"}
+    advice = " | ".join(_put(archive, "2026-11-06", _ok(findings=[_finding(review=REVIEW, requirements=[card])]))["advice"])
+    assert "CTRL-X has no validation" in advice
+
+
+def test_a_legacy_threat_is_kept_and_graded(archive):
+    f = _finding(review=REVIEW, origin="legacy", delta="existed before the bot, unchanged")
+    assert _put(archive, "2026-11-06", _ok(findings=[f]))["report"]["findings"][0]["origin"] == "legacy"
 
 
 def test_a_requirement_left_out_of_the_hand_off_needs_none_of_it(archive):

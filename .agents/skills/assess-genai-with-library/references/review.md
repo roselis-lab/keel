@@ -21,4 +21,4 @@ A verdict without the fact behind it is not a verdict. If breaking a link needs 
 
 ## What the assessor does with it
 
-`stands` and `weakened` go into the finding's `review` (`by`, `verdict`, `note`), and a weakened finding is regraded. `refuted` moves the finding to `refuted` with the reviewer's reason and evidence. New surfaces go into the ledger with `found_by: review` and through steps 4 to 7. The specialist can be the reviewer instead of a subagent; then `by` names them.
+`stands` and `weakened` go into the finding's `review` (`by`, `verdict`, `note`), and a weakened finding is regraded. `refuted` moves the finding to `discarded` with `by: review`, the reviewer's reason and evidence. New surfaces go into the ledger with `found_by: review` and through steps 4 to 7. The specialist can be the reviewer instead of a subagent; then `by` names them.
