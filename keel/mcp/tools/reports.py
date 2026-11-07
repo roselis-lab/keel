@@ -91,15 +91,15 @@ async def save_report(system_id: str, date: str, report: dict[str, Any]) -> dict
     Every evidence, question and threat id the report names must be in it, and an
     evidence link must be https, on a host in evidence_hosts, pinned to its commit and
     anchored at the lines; otherwise the save is refused. Each surface ledger outcome
-    must name a finding, discard, refutation or paused branch of the report, and one
+    must name a finding, discard or paused branch of the report, and one
     fingerprint (system, threat id, root cause) is one finding.
 
     `open` lists what the assessment has not established yet: unanswered questions,
     branches waiting on them, graded findings with no evidence, high findings nobody
-    tried to refute, shipped requirements without invariant, enforce_at and done_check,
-    and a missing or unwalked surface ledger. While it is non-empty
-    the assessment is not done: get the answers (from whoever started you, if you run
-    as a subagent) and continue; do not hand back a link as if it were finished."""
+    tried to refute, shipped asks with no catalog card and no invariant, enforce_at and
+    done_check, and a missing or unwalked surface ledger. While it is non-empty the
+    assessment is not done: get the answers (from whoever started you, if you run as a
+    subagent) and continue; do not hand back a link as if it were finished."""
     result = report_service.save_report(system_id, date, report)
     if not result["success"]:
         return {"success": False, "error": result["error"],

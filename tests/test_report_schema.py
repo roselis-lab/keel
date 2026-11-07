@@ -59,7 +59,8 @@ def test_discarded_has_no_chain_fields():
     """A discard is an id + why, and the evidence the why rests on. NOT the full chain."""
     d = Discarded(id="T-XSS", reason="output is plain JSON, no render path", evidence=[2])
     assert d.model_dump() == {
-        "id": "T-XSS", "reason": "output is plain JSON, no render path", "evidence": [2],
+        "id": "T-XSS", "by": "reachability", "root_cause": None,
+        "reason": "output is plain JSON, no render path", "evidence": [2],
     }
     with pytest.raises(ValidationError):
         Discarded(id="T-XSS", reason="...", asset="should not be accepted")

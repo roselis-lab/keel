@@ -421,8 +421,6 @@ def structure_errors(report: Report) -> list[str]:
             )
     for i, d in enumerate(report.discarded):
         check_refs(d.evidence, f"discarded[{i}]")
-    for i, r in enumerate(report.refuted):
-        check_refs(r.evidence, f"refuted[{i}]")
 
     # One fingerprint, one finding: two cards for the same defect of the same threat in
     # one report are a duplicate, whatever their wording.
@@ -431,24 +429,21 @@ def structure_errors(report: Report) -> list[str]:
         errors.append(f"findings: {dup} appears more than once; one defect is one finding")
 
     finding_ids = {f.id for f in report.findings}
-    for i, r in enumerate(report.refuted):
-        if r.id in finding_ids and fingerprint(report.system_id, r.id, r.root_cause) in prints:
-            errors.append(f"refuted[{i}]: {r.id} is also a finding; a refuted finding is not graded")
+    for i, d in enumerate(report.discarded):
+        if d.by == "review" and d.id in finding_ids and fingerprint(report.system_id, d.id, d.root_cause) in prints:
+            errors.append(f"discarded[{i}]: {d.id} was refuted in review and is also graded; it is one of the two")
 
     s_ids = [s.id for s in report.surfaces]
     for dup in sorted({i for i in s_ids if s_ids.count(i) > 1}):
         errors.append(f"surfaces: id {dup} is used more than once")
-    branch_ids = (
-        finding_ids | {d.id for d in report.discarded} | {r.id for r in report.refuted}
-        | {p.id for p in report.paused}
-    )
+    branch_ids = finding_ids | {d.id for d in report.discarded} | {p.id for p in report.paused}
     for i, s in enumerate(report.surfaces):
         check_refs(s.evidence, f"surfaces[{i}]")
         for oid in s.outcome:
             if oid not in branch_ids:
                 errors.append(
-                    f"surfaces[{i}] ({s.id}): outcome {oid} is not a finding, discard, "
-                    "refutation or paused branch of this report"
+                    f"surfaces[{i}] ({s.id}): outcome {oid} is not a finding, discard "
+                    "or paused branch of this report"
                 )
 
     decided = {f.id for f in report.findings} | {d.id for d in report.discarded}
@@ -489,7 +484,9 @@ def open_items(report: Report) -> list[str]:
                 "tried to refute it"
             )
         for ri, r in enumerate(f.requirements):
-            if not r.included or r.coverage_status == "already_covered":
+            # A catalog card carries purpose, locus and validation; an ask with no card
+            # has only what is written here.
+            if not r.included or r.coverage_status == "already_covered" or r.mitigation_id:
                 continue
             missing = [k for k in ("invariant", "enforce_at", "done_check") if not (getattr(r, k) or "").strip()]
             if missing:
@@ -505,30 +502,56 @@ def open_items(report: Report) -> list[str]:
     return out
 
 
-def refuted_before(report: Report) -> list[str]:
-    """Advice: a finding an earlier assessment of this system refuted, raised again.
+def ruled_out_before(report: Report) -> list[str]:
+    """Advice: a finding that an earlier assessment of this system ruled out, raised again.
 
-    Allowed, because a new fact can change it, but the new fact has to be named. Without
-    this, a refutation quietly expires the next time someone runs the assessment.
+    Allowed, because the system or a fact can change, but the change has to be named.
+    Without this, a discard quietly expires the next time someone runs the assessment,
+    and the reasoning that ruled it out is re-derived or lost. A discard with a root cause
+    matches on the fingerprint; one without matches on the threat id.
     """
     earlier = [
         r for r in _load_system_reports(_reports_dir() / report.system_id)
         if r.date < report.date
     ]
-    seen: dict[str, tuple[str, str]] = {}
+    seen: dict[str, tuple[str, str, str]] = {}
     for r in sorted(earlier, key=lambda r: r.date):
-        for x in r.refuted:
-            fp = fingerprint(r.system_id, x.id, x.root_cause)
-            if fp:
-                seen[fp] = (r.date, x.reason)
+        for d in r.discarded:
+            key = fingerprint(r.system_id, d.id, d.root_cause) or d.id
+            seen[key] = (r.date, d.by, d.reason)
     out: list[str] = []
     for i, f in enumerate(report.findings):
-        hit = seen.get(fingerprint(report.system_id, f.id, f.root_cause) or "")
+        hit = seen.get(fingerprint(report.system_id, f.id, f.root_cause) or "") or seen.get(f.id)
         if hit:
+            how = "refuted in review" if hit[1] == "review" else "ruled out by reachability"
             out.append(
-                f"findings[{i}] ({f.id}) was refuted on {hit[0]}: {hit[1]} Say in delta "
+                f"findings[{i}] ({f.id}) was {how} on {hit[0]}: {hit[2]} Say in delta "
                 "which new fact brings it back"
             )
+    return out
+
+
+def cards_without_checks(report: Report) -> list[str]:
+    """Advice: a shipped catalog requirement whose card says nothing about how to accept it.
+
+    The card is where purpose, locus and validation live, so filling it serves every
+    system that ships the control. Until then the assessment can say it for this system
+    in `done_check`.
+    """
+    from keel.store import get_store
+
+    store = get_store()
+    out: list[str] = []
+    for i, f in enumerate(report.findings):
+        for r in f.requirements:
+            if not r.mitigation_id or not r.included or r.coverage_status == "already_covered":
+                continue
+            card = store.mitigations.get(r.mitigation_id) or {}
+            if not card.get("validation") and not (r.done_check or "").strip():
+                out.append(
+                    f"findings[{i}] ({f.id}): {r.mitigation_id} has no validation on its card; "
+                    "write done_check for this system, and the card is worth filling"
+                )
     return out
 
 
@@ -656,7 +679,8 @@ def save_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, An
         "reverted_to_draft": was_final,
         # Not done while this is non-empty: the assessor does not leave these for later.
         "open": open_items(report),
-        "advice": missing_prerequisites(report) + catalog_mismatches(report) + refuted_before(report),
+        "advice": missing_prerequisites(report) + catalog_mismatches(report)
+        + ruled_out_before(report) + cards_without_checks(report),
     }
 
 

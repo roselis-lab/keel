@@ -3677,6 +3677,8 @@ function reportFindingHtml(f, fi) {
     // One cause, one fix: the cause is shown, and so are the other findings it closes.
     + (f.root_cause ? `<span class="badge type" title="root cause">cause: ${esc(f.root_cause)}</span>` : "")
     + (sameCause.length ? `<span class="badge soft">same cause as ${esc(sameCause.join(", "))}</span>` : "")
+    // Legacy: it was there before the integration and is still graded, not dropped.
+    + (f.origin ? `<span class="badge ${f.origin === "legacy" ? "type" : "soft"}" title="against the state before the integration">${esc(f.origin)}</span>` : "")
     // A finding whose path was run, not only read, says so.
     + (reproduced ? `<span class="badge soft">reproduced</span>` : "");
   // The proof is in the addendum; the card carries one marker per entry, pointing there.
@@ -3750,15 +3752,6 @@ function ledgerHtml(rep) {
       ${(s.evidence || []).map(id => evidenceChip(id)).join(" ")}
       <div class="req-note">${out ? out : ""}${(s.note || "").trim() ? ` ${esc(s.note)}` : ""}${walked ? "" : '<span class="oq-none">not walked</span>'}</div></div>`;
   }).join("");
-}
-
-function refutedHtml(rep) {
-  const rows = rep.refuted || [];
-  if (!rows.length) return '<p class="placeholder">Nothing refuted.</p>';
-  return rows.map(r => `<div class="req-ignored">
-      <button type="button" class="reflink" data-jump-threat="${esc(r.id)}">${esc(r.id)}</button>
-      ${r.root_cause ? `<span class="badge type">cause: ${esc(r.root_cause)}</span>` : ""} — ${esc(r.reason)}
-      ${(r.evidence || []).map(id => evidenceChip(id)).join(" ")}</div>`).join("");
 }
 
 // One marker per evidence entry, pointing at the addendum below the findings. The
@@ -3841,7 +3834,9 @@ function reportDetailHtml(rep) {
   // A ruled-out candidate names a catalog threat, so it links like anything else does.
   const discarded = (rep.discarded || []).length
     ? rep.discarded.map(d => `<div class="req-ignored">
-        <button type="button" class="reflink" data-jump-threat="${esc(d.id)}">${esc(d.id)}</button> — ${esc(d.reason)}
+        <button type="button" class="reflink" data-jump-threat="${esc(d.id)}">${esc(d.id)}</button>
+        ${d.by === "review" ? '<span class="badge soft">refuted in review</span>' : ""}
+        ${d.root_cause ? `<span class="badge type">cause: ${esc(d.root_cause)}</span>` : ""} — ${esc(d.reason)}
         ${(d.evidence || []).map(id => evidenceChip(id)).join(" ")}</div>`).join("")
     : '<p class="placeholder">Nothing ruled out.</p>';
 
@@ -3929,7 +3924,6 @@ function reportDetailHtml(rep) {
     <div class="rep-aside">
       ${fold("surfaces", "Surfaces walked", `${(rep.surfaces || []).length}${unwalked ? `, ${unwalked} not walked` : ""}`, ledgerHtml(rep))}
       ${fold("discarded", "Ruled out", (rep.discarded || []).length, discarded)}
-      ${fold("refuted", "Refuted", (rep.refuted || []).length, refutedHtml(rep))}
       ${fold("meta", "How this assessment ran", metaCount, runMeta)}
     </div>`}
   </div>`;
