@@ -8,6 +8,7 @@
 | Correct and finalize a report, edit the catalog through forms | The local UI: `keel up` |
 | Review a catalog change | A pull request on your Git host, with CI running `keel validate` |
 | Show the catalog or a report to people who do not run Keel | The read-only site: `keel site`, published with GitHub Pages or GitLab Pages |
+| Put a report in Confluence and its fixes in Jira | `keel publish`, run by the assessor with their own token |
 | Script against the catalog | The REST API behind the local UI, or the MCP tools |
 
 ## Commands
@@ -23,6 +24,8 @@ Run each with `uv run` in front, or directly once Keel's environment is active.
 | `keel site --out DIR` | Builds the read-only HTML site of the catalog into `DIR` (default `public`). Options: `--reports DIR` adds final reports, `--include-drafts` adds drafts too, `--title` names the site. See [Publish the read-only site](adopt.md#publish-the-read-only-site). |
 | `keel schema` | Regenerates the JSON Schema files under `schema/`. |
 | `keel schema --check` | Fails when those files are stale. CI runs it. |
+| `keel export REPORT --out DIR` | Writes a report as a Confluence page, one picture per finding and one Jira ticket text per fix. Sends nothing. |
+| `keel publish REPORT` | Pushes the page and the tickets with your own token: `--confluence-space KEY [--parent ID]`, `--jira-project KEY [--security-level NAME] [--issue-type Task]`, `--dry-run`, `--allow-draft`. See [Confluence and Jira](confluence-and-jira.md). |
 | `keel style-guide export` | Prints the whole style guide as YAML. |
 | `keel style-guide import FILE [--replace]` | Loads a style guide from YAML, merging by default. |
 | `keel` | Runs the MCP server over stdio. Agents start this themselves. |

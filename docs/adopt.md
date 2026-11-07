@@ -11,8 +11,9 @@ One internal copy of Keel on your Git host, used three ways:
 | Assessors | Run assessments, correct and finalize reports | Their coding agent, and the local UI on their own machine |
 | Catalog reviewers | Approve changes to threats and controls | Pull requests (merge requests on GitLab) and CI |
 | Everyone else: risk owners, product teams, auditors | Read the catalog and the signed-off reports | A read-only site published with GitHub Pages or GitLab Pages |
+| Product teams that live in Atlassian | Read the report and build the fixes | A Confluence page and one Jira ticket per fix, pushed by the assessor with `keel publish` ([Confluence and Jira](confluence-and-jira.md)) |
 
-Nothing in this needs a server you run. The catalog and the reports are files in Git, review happens on the Git host, and the shared view is static pages.
+Nothing in this needs a server you run. The catalog and the reports are files in Git, review happens on the Git host, and the shared view is static pages or a page and tickets pushed from the assessor's machine.
 
 ## Bring Keel into your Git
 

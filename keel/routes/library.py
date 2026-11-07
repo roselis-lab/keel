@@ -343,6 +343,27 @@ async def get_report(system_id: str, date: str):
     return report_service.get_report(system_id, date)["report"]
 
 
+@router.get("/reports/{system_id}/{date}/chain/{finding_id}.png")
+async def finding_picture(system_id: str, date: str, finding_id: str):
+    """The finding's chain as a picture: who, the way in, the weak spot, the damage, and
+    where the fix cuts it. The same picture goes to Confluence and Jira on publish."""
+    from fastapi import Response
+
+    from keel.atlassian import render
+    from keel.atlassian.picture import chain_png
+    from keel.schemas.report import Report
+    from keel.vocabulary import load_vocabularies
+
+    report = Report(**report_service.get_report(system_id, date)["report"])
+    finding = next((f for f in report.findings if f.id == finding_id), None)
+    if finding is None:
+        raise HTTPException(status_code=404, detail=f"No finding {finding_id} in this report")
+    store = get_store()
+    png = chain_png(report, finding, load_vocabularies(store.dir),
+                    render.fix_on_picture(finding, store.mitigations))
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "no-cache"})
+
+
 @router.put("/reports/{system_id}/{date}")
 async def save_report(system_id: str, date: str, body: dict):
     """Write a report. A final report goes back to draft; 422 when the body does not

@@ -861,6 +861,7 @@
      and neither of them reads as the thing to look at. */
   .sev.quiet.sev-high { background: var(--crimson-50); color: var(--crimson-700);
     border-color: var(--crimson-200); font-weight: var(--fw-semibold); }
+  .fpic { display: block; width: 100%; max-width: 760px; height: auto; margin: 12px 0 4px; border: 1px solid var(--line, #e3e6ea); border-radius: 6px; background: #fff; }
   .fscenario { margin: 10px 0 0; font-size: var(--fs-14); line-height: var(--lh-prose); color: var(--navy-800); max-width: var(--measure); }
   /* Why the grade is what it is. This is the first question a reader asks of a graded
      finding, so it sits directly under the scenario on its own surface — it used to be
@@ -3719,6 +3720,7 @@ function reportFindingHtml(f, fi) {
       </span>
     </div>
     ${rProse(`findings.${fi}.scenario`, f.scenario, "fscenario")}
+    ${findingPicture(f)}
     <div class="fwhy"><span class="k">Why these grades</span>${rProse(`findings.${fi}.risk.reasoning`,
       f.risk.reasoning, "", "A full sentence — this label is not carried into the hand-off")}</div>
     ${chain ? `<dl class="fchain">${chain}</dl>` : ""}
@@ -3727,6 +3729,19 @@ function reportFindingHtml(f, fi) {
     <div class="fev"><span class="k">Evidence</span>${evChips || '<span class="rep-empty">none: this grade rests on nothing checked</span>'}</div>
     ${(reqs || ignored) ? `<div class="freqs"><span class="freqs-k">Requirements</span>${reqs}${ignored}</div>` : ""}
   </div>`;
+}
+
+// One picture per finding, drawn by the server from the saved report: the chain and
+// where the fix cuts it. The same file goes to Confluence and Jira on publish. The query
+// changes when the finding does, so a saved edit is not hidden by the browser cache.
+function findingPicture(f) {
+  const rep = state.currentReport || {};
+  if (!rep.system_id || !rep.date) return "";
+  let h = 0;
+  for (const ch of JSON.stringify(f)) h = (h * 31 + ch.charCodeAt(0)) | 0;
+  const src = `/api/reports/${encodeURIComponent(rep.system_id)}/${encodeURIComponent(rep.date)}`
+    + `/chain/${encodeURIComponent(f.id)}.png?v=${(h >>> 0).toString(36)}`;
+  return `<img class="fpic" src="${esc(src)}" alt="How ${esc(f.id)} reaches harm" loading="lazy">`;
 }
 
 // What a shipped requirement must say so a team can build and accept it. Shown when

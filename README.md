@@ -84,6 +84,8 @@ uv run keel site --out public --reports reports    # plus the signed-off reports
 
 The output is a folder of static pages with no scripts. Ready-made pipelines: [GitHub Pages](examples/pages/github-pages.yml) and [GitLab Pages](examples/pages/gitlab-ci.yml). A Pages site can be public on the internet depending on your plan, so check [who can see it](docs/adopt.md#who-can-see-the-site) before publishing reports.
 
+To put a signed-off report where developers already work, `keel publish` turns it into a Confluence page and one Jira ticket per thing to build, with a picture of each risk, using your own token: [Confluence and Jira](docs/confluence-and-jira.md).
+
 The local UI (`uv run keel up`, at `http://127.0.0.1:8420/`) is for the people who author: correcting reports and editing the catalog through forms. It listens on your own machine only and has no login, so it is not the thing to share.
 
 ## What is in the catalog
@@ -106,6 +108,7 @@ What is not done yet, stated rather than hidden:
 - [Getting started](docs/getting-started.md): from clone to your first report.
 - [Reading a report](docs/reading-a-report.md): what each part means and who it is for.
 - [Adopt Keel in your company](docs/adopt.md): internal Git, CI, catalog review, where reports live, publishing, upstream updates.
+- [Confluence and Jira](docs/confluence-and-jira.md): a report as a page for readers and one ticket per fix, from your own machine.
 
 **Reference**
 
