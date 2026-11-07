@@ -1,6 +1,7 @@
 source:
   id: mitre-atlas
   title: MITRE ATLAS
+  kind: best_practice
   version: 5.6.0
   url: https://atlas.mitre.org/
   checked: '2026-08-29'

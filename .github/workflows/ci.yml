@@ -36,3 +36,29 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+  web:
+    # The reading app is committed as a build so `keel up` needs no Node. This fails
+    # when web/ changed and keel/static/app was not rebuilt with it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install (frozen)
+        run: npm ci
+        working-directory: web
+
+      - name: Type-check and build
+        run: npm run build
+        working-directory: web
+
+      - name: Check the committed build is fresh
+        run: |
+          git add -N keel/static/app
+          git diff --exit-code --stat keel/static/app

@@ -2691,6 +2691,8 @@ function switchScreen(name) {
 // ===================================================================== //
 const ROUTE_SCREENS = ["overview", "threats", "mitigations", "style", "coverage", "reports"];
 let applyingRoute = false;   // suppresses writeRoute while a route is being restored
+// The editor lives under /edit; the reading app owns the bare paths.
+const EDIT_BASE = location.pathname.startsWith("/edit") ? "/edit" : "";
 
 function writeRoute() {
   if (applyingRoute) return;
@@ -2703,7 +2705,7 @@ function writeRoute() {
   else if (s === "reports" && state.reportSelected) {
     parts.push(state.reportSelected.system_id, state.reportSelected.date);
   }
-  const path = "/" + parts.map(encodeURIComponent).join("/");
+  const path = EDIT_BASE + "/" + parts.map(encodeURIComponent).join("/");
   // replaceState, not a push: walking the Back button through every row you clicked in
   // a rail is not what anyone means by "back".
   if (location.pathname !== path) history.replaceState(null, "", path);
@@ -2712,7 +2714,7 @@ function writeRoute() {
 // Restore whatever the path names. A stale link (an entry since renamed or deleted)
 // falls back to the bare screen rather than erroring — the URL outlives the data.
 async function applyRoute() {
-  const [screen, a, b] = location.pathname
+  const [screen, a, b] = location.pathname.slice(EDIT_BASE.length)
     .split("/").filter(Boolean).map(decodeURIComponent);
   applyingRoute = true;
   try {

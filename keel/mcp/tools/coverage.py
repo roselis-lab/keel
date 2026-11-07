@@ -36,6 +36,7 @@ async def get_coverage(source_id: str | None = None, state: str | None = None) -
         row = {
             "id": s["source"]["id"],
             "title": s["source"]["title"],
+            "kind": s["source"]["kind"],
             "version": s["source"]["version"],
             "url": s["source"]["url"],
             "counts": s["counts"],

@@ -26,6 +26,12 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 CoverageState = Literal["covered", "out_of_scope", "gap"]
 
+# What a source is, because "are we compliant" is asked of law and certifiable standards,
+# not of a threat list. A threat list (OWASP, ATLAS, SAIF) is best practice: being far from
+# it is a finding, not a breach. Mixing them on one page let a buyer read "7 of 10 not met"
+# against OWASP as a regulatory verdict.
+SourceKind = Literal["regulation", "standard", "best_practice"]
+
 
 class CoverageSource(BaseModel):
     """The tracked release itself. Pinned, because "we cover OWASP" is not a claim you
@@ -34,6 +40,13 @@ class CoverageSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(..., description="Slug, matching the filename (e.g. 'owasp-llm')")
     title: str
+    kind: SourceKind = Field(
+        ...,
+        description="regulation: a law or binding rule (the EU AI Act). standard: a "
+        "certifiable standard (ISO/IEC 42001). best_practice: a threat list or framework "
+        "with no force of its own (OWASP, MITRE ATLAS, SAIF). Required, so a new source is "
+        "never filed as best practice by default",
+    )
     version: str = Field(..., description="The published release this file describes")
     released: str | None = Field(None, description="Release date, ISO, when the source states one")
     url: HttpUrl

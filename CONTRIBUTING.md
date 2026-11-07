@@ -20,7 +20,7 @@ A threat must be **harm-centric**: it anchors to one `harm` (the consequence cla
 
 ## The coverage matrix
 
-`catalog/coverage/*.yaml` records, for every source Keel tracks, each entry of a pinned release and one of three states: `covered` (naming the Keel ids that answer it), `out_of_scope` (with the reasoning), or `gap`. Four sources are tracked: the OWASP Top 10 for LLM Applications, the OWASP Top 10 for Agentic Applications, MITRE ATLAS, and Google's SAIF risk map.
+`catalog/coverage/*.yaml` records, for every source Keel tracks, each entry of a pinned release and one of three states: `covered` (naming the Keel ids that answer it), `out_of_scope` (with the reasoning), or `gap`. Four sources are tracked: the OWASP Top 10 for LLM Applications, the OWASP Top 10 for Agentic Applications, MITRE ATLAS, and Google's SAIF risk map. Each source says what it is in `source.kind`: `regulation` (a law, such as the EU AI Act), `standard` (a certifiable standard, such as ISO/IEC 42001) or `best_practice` (a threat list with no force of its own). All four tracked today are best practice. The Compliance page reads regulations and standards apart from best practice, so a gap against OWASP is never shown as a breach of law.
 
 Write these source-first. Every entry of the release gets a row whether or not Keel answers it, because that is the only way a gap is visible at all — a matrix built from Keel's side outwards can never show what is missing. A card's "who else names this" view is derived from the same rows, so never copy a framework mapping onto a card: `references` on a card is for evidence (an incident, a paper, a CVE), and the mapping lives here.
 

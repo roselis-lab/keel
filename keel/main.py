@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from keel.config import settings
@@ -93,8 +94,16 @@ async def health_check():
     }
 
 
-# Minimal browse-and-edit UI: one static file, no assets, no build step.
-_INDEX = Path(__file__).parent / "static" / "index.html"
+# Two front ends. The reading app (web/, React) is built into static/app and committed,
+# so `keel up` needs no Node. The library editor is the older single file, kept under
+# /edit until its forms move into the app.
+_STATIC = Path(__file__).parent / "static"
+_APP = _STATIC / "app"
+_EDITOR = _STATIC / "index.html"
+
+# Before the catch-all: routes match in declaration order. Hashed file names, so they
+# can be cached for good; a missing file is a 404, never the app's HTML.
+app.mount("/assets", StaticFiles(directory=_APP / "assets", check_dir=False), name="assets")
 
 
 @app.get("/{full_path:path}", include_in_schema=False)
@@ -112,4 +121,7 @@ async def app_shell(full_path: str):
     """
     if full_path == "api" or full_path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not Found")
-    return FileResponse(_INDEX)
+    if full_path == "edit" or full_path.startswith("edit/"):
+        return FileResponse(_EDITOR)
+    # no-cache: a deploy must not leave a browser on an index that names old assets.
+    return FileResponse(_APP / "index.html", headers={"Cache-Control": "no-cache"})

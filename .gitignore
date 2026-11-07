@@ -27,3 +27,6 @@ reports/
 docs/demo/.deck-preview.html
 docs/demo/clips/*.mp4
 docs/demo/keel-demo.pptx
+
+# the reading app: sources in web/, the build is committed under keel/static/app
+web/node_modules/

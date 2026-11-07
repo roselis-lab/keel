@@ -1,6 +1,7 @@
 source:
   id: owasp-llm
   title: OWASP Top 10 for LLM Applications
+  kind: best_practice
   version: '2025'
   released: '2024-11-18'
   url: https://genai.owasp.org/llm-top-10/

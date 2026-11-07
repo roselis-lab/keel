@@ -8,6 +8,10 @@ Read the README.md file within this skill, and explore the other available files
 If creating visual artifacts (slides, mocks, throwaway prototypes, etc), copy assets out and create static HTML files for the user to view. If working on production code, you can copy assets and read the rules here to become an expert in designing with this brand.
 If the user invokes this skill without any other guidance, ask them what they want to build or design, ask some questions, and act as an expert designer who outputs HTML artifacts _or_ production code, depending on the need.
 
+## Two front ends now
+
+The reading pages (Overview, Reports, Compliance, Threats, Controls, Coverage) are a React app in `web/`, styled "Signal in Graphite": its rules are in `web/DESIGN.md`, and for those pages they replace this kit. Everything below describes the library editor, the single file `keel/static/index.html`, which is now served under `/edit` until its forms move into the app.
+
 ## Quick orientation
 
 Keel is a framework for building and running your own living GenAI/LLM threat model. Its one UI product is a six-screen authoring app (Overview, Threats, Mitigations, Style guide, Coverage, Reports) served as a single static HTML file.

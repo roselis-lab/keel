@@ -1,6 +1,7 @@
 source:
   id: google-saif
   title: Google Secure AI Framework - risk map
+  kind: best_practice
   version: saif-data @ 2026-08-29
   url: https://saif.google/secure-ai-framework/risks
   checked: '2026-08-29'

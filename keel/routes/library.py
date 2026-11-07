@@ -14,6 +14,7 @@ from keel.schemas.mitigation import MitigationCreate, MitigationUpdate
 from keel.schemas.threat import Threat, ThreatCreate, ThreatUpdate
 from keel.store import get_store
 from keel.services import (
+    compliance_service,
     coverage_service,
     health_service,
     mitigation_service,
@@ -199,6 +200,18 @@ async def coverage_gaps():
     """Every tracked entry nothing answers yet — the authoring queue."""
     rows = coverage_service.gaps()
     return {"gaps": rows, "count": len(rows)}
+
+
+@router.get("/compliance")
+async def compliance_all():
+    """Every system's latest report against every tracked framework, as tallies."""
+    return compliance_service.all_compliance()
+
+
+@router.get("/compliance/{system_id}")
+async def compliance_system(system_id: str):
+    """One system, entry by entry, with the report's own reason for each standing."""
+    return compliance_service.system_compliance(system_id)
 
 
 # --------------------------------------------------------------------------- #

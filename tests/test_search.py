@@ -32,7 +32,7 @@ def library(catalog_dir, tmp_path, monkeypatch):
     )
     (d / "coverage").mkdir(exist_ok=True)
     (d / "coverage" / "demo.yaml").write_text(yaml.safe_dump({
-        "source": {"id": "demo", "title": "Demo", "version": "1", "checked": "2026-08-30",
+        "source": {"id": "demo", "title": "Demo", "kind": "best_practice", "version": "1", "checked": "2026-08-30",
                    "url": "https://example.com/l", "entry_count": 2},
         "entries": [
             {"ref": "D1", "title": "Tool Misuse and Exploitation", "state": "gap"},

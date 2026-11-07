@@ -27,6 +27,7 @@ from keel.store import Store, set_store
 SOURCE = {
     "id": "demo-source",
     "title": "Demo Source",
+    "kind": "best_practice",
     "version": "2026",
     "url": "https://example.com/list",
     "checked": "2026-08-29",
@@ -220,3 +221,18 @@ def test_a_gap_may_say_what_it_is_waiting_on(coverage):
     d = coverage([{"ref": "X1", "title": "One", "state": "gap",
                    "note": "Waiting on the retrieval half being modelled."}])
     assert validate_catalog(d) == []
+
+
+def test_a_source_must_say_what_kind_it_is():
+    """A regulation filed without a kind would land among the threat lists and never show
+    on Compliance. There is no default, so the omission is refused rather than guessed."""
+    from pydantic import ValidationError
+
+    from keel.schemas.coverage import CoverageSource
+
+    base = {k: v for k, v in SOURCE.items() if k != "kind"}
+    with pytest.raises(ValidationError):
+        CoverageSource(**base)
+    with pytest.raises(ValidationError):
+        CoverageSource(**base, kind="law")
+    assert CoverageSource(**base, kind="regulation").kind == "regulation"

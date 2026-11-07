@@ -17,6 +17,35 @@ def test_root_serves_the_app():
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert "<title>Keel" in r.text
+    assert 'id="root"' in r.text
+    # A deploy must not leave a browser holding an index that names old assets.
+    assert r.headers["cache-control"] == "no-cache"
+
+
+def test_the_built_assets_the_index_names_are_served():
+    """The app is committed as a build. An index that names a file the build did not
+    write is a blank page, so every script and stylesheet it names has to load."""
+    import re
+
+    html = client.get("/").text
+    names = re.findall(r'(?:src|href)="(/assets/[^"]+)"', html)
+    assert names, "the index names no assets"
+    for name in names:
+        assert client.get(name).status_code == 200, name
+
+
+def test_a_missing_asset_is_404_not_the_app():
+    r = client.get("/assets/nothing-here.js")
+    assert r.status_code == 404
+    assert "text/html" not in r.headers.get("content-type", "")
+
+
+def test_the_library_editor_lives_under_edit():
+    for path in ("/edit", "/edit/threats", "/edit/mitigations/CTRL-ANY"):
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert "data-field=" in r.text, path
+        assert 'id="root"' not in r.text, path
 
 
 def test_a_view_path_serves_the_app_so_a_deep_link_opens_cold():
@@ -56,7 +85,7 @@ def test_every_sub_entity_field_has_an_editor_control():
     control with `data-field`, so the two can be compared instead of trusted."""
     from keel.schemas.threat import Reference, Weakness
 
-    html = client.get("/").text
+    html = client.get("/edit").text
     for model in (Weakness, Reference):
         for name in model.model_fields:
             assert f'data-field="{name}"' in html, f"{model.__name__}.{name} has no editor"
