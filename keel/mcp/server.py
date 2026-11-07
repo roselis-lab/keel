@@ -127,6 +127,7 @@ def run_http() -> None:
 def main():
     """Entry point. `up` and `down` start and stop the UI in the background,
     `validate` checks the catalog YAML, `site` builds the read-only HTML copy for Pages,
+    `recheck` says whether the lines a report quotes are still where it saw them,
     `schema` regenerates the JSON Schema files,
     `style-guide export|import` moves the whole guide in bulk, `--http` selects
     Streamable HTTP, and no args runs the stdio MCP server."""
@@ -140,6 +141,11 @@ def main():
         from keel.site import main as site_main
 
         site_main(args[1:])
+        return
+    if args and args[0] == "recheck":
+        from keel.recheck import main as recheck_main
+
+        recheck_main(args[1:])
         return
     if args and args[0] == "schema":
         from keel.schema_export import DEFAULT_SCHEMA_DIR, schemas_are_fresh, write_schemas

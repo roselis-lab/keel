@@ -66,6 +66,15 @@ class Evidence(BaseModel):
     commit: str | None = Field(
         None, pattern=r"^[0-9a-f]{7,40}$", description="kind=read: the commit the lines are read at"
     )
+    # A system often spans several repositories, and a path alone does not say which
+    # one it is in; the next assessor would have to search for it. A short name, not
+    # an address: it is model output, so it stays a plain token that carries nothing.
+    repo: str | None = Field(
+        None, pattern=r"^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+        description="kind=read: which repository `path` is in, when the system spans more "
+        "than one. A short stable name, e.g. 'payments-api' or 'org/payments-api'; empty "
+        "for a single-repository system. `keel recheck --repo NAME=PATH` maps it to a checkout",
+    )
     path: str | None = Field(None, description="kind=read: the file, relative to the repository root")
     lines: str | None = Field(
         None, pattern=r"^[1-9][0-9]*(-[1-9][0-9]*)?$", description="kind=read: '42' or '42-57'"
