@@ -435,3 +435,10 @@ textarea.fi { resize: vertical; min-height: 44px; }
   .step { grid-template-columns: 1fr; } .step .nx { text-align: left; }
   .savebar { margin: 0 -16px -80px; padding: 0 16px; }
 }
+
+/* Phone: the library's filter chips are one row that scrolls sideways, so the list starts on the first screen. */
+@media (max-width: 640px) {
+  .filters.one-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .filters.one-row::-webkit-scrollbar { display: none; }
+  .filters.one-row button { flex: none; }
+}

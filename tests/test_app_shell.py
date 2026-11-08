@@ -65,6 +65,22 @@ def test_old_editor_links_to_threats_and_controls_land_in_the_app_editor():
         assert r.headers["location"] == to, path
 
 
+def test_no_link_in_the_app_leads_to_the_old_editor_but_reports():
+    """The owner pressed a library button in the new app and landed on the old screen.
+    Report editing is the one part not moved yet, so it is the only way back there, and
+    its label says so."""
+    import re
+    from pathlib import Path
+
+    src = Path(__file__).parents[1] / "web/src"
+    hits = []
+    for f in src.rglob("*.tsx"):
+        for m in re.finditer(r'(?:href|to)=["{`]+(/edit[^"`}]*)', f.read_text(encoding="utf-8")):
+            hits.append((f.name, m.group(1)))
+    assert hits, "the reports link should still be found"
+    assert {h for _, h in hits} == {"/edit/reports"}, hits
+
+
 def test_the_app_has_editor_routes():
     for path in ("/threats/new", "/threats/T-CMD-INJECT/edit", "/controls/new", "/controls/CTRL-ANY/edit"):
         r = client.get(path)

@@ -157,7 +157,7 @@ export function ThreatsPage() {
           <button aria-pressed={sort === "found"} onClick={() => put("sort", "found")}>Found most</button>
         </div>
       </div>
-      <div className="filters" role="group" aria-label="Filter by harm">
+      <div className="filters one-row" role="group" aria-label="Filter by harm">
         <button aria-pressed={!harm} onClick={() => put("harm", null)}>All · {all.length}</button>
         {harms.map((h) => <button key={h} aria-pressed={harm === h} onClick={() => put("harm", harm === h ? null : h)}>{harmLabel(h)} · {all.filter((t) => t.harm === h).length}</button>)}
       </div>
@@ -253,7 +253,7 @@ export function ControlsPage() {
       <div className="listbar">
         <Search value={text} onChange={(v) => put("q", v || null)} label="Search controls by name or purpose" count={rows.length} total={all.length} />
       </div>
-      <div className="filters" role="group" aria-label="Filter">
+      <div className="filters one-row" role="group" aria-label="Filter">
         <button aria-pressed={!kind && !gap} onClick={() => put("kind", null, ["gap"])}>All · {all.length}</button>
         {kinds.map((k) => <button key={k} aria-pressed={kind === k} onClick={() => put("kind", kind === k ? null : k)}>{CLASS[k] || k} · {all.filter((m) => m.mitigation_class === k).length}</button>)}
         {noChecks > 0 && <button aria-pressed={gap} onClick={() => put("gap", gap ? null : "checks")}>No checks yet · {noChecks}</button>}

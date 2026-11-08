@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useBlocker, useNavigate, useParams, type Blocker } from "react-router";
 import { forget, MITIGATIONS, send, THREATS, useApi, type FieldError, type SendError } from "../lib/api";
 import type { Mitigation, Threat } from "../lib/types";
 import { cap, CLASS, firstSentence, harmLabel } from "../lib/text";
@@ -115,8 +115,15 @@ function Pick({ id, options, onPick, ph, exclude }: { id: string; options: { id:
 
 /* ---------- saving: one bar at the foot, always in the same place ---------- */
 
-function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, error }: { dirty: boolean; busy: boolean; problems: number; onSave: () => void; onCancel: () => void; onDelete?: () => void; what: string; error?: string | null }) {
+function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, error, leaving }: { dirty: boolean; busy: boolean; problems: number; onSave: () => void; onCancel: () => void; onDelete?: () => void; what: string; error?: string | null; leaving: Blocker }) {
   const [sure, setSure] = useState(false);
+  if (leaving.state === "blocked") return <div className="savebar" role="region" aria-label="Save">
+    <div className="savebar-in">
+      <span className="sb-state bad" role="alert">Leave without saving? Your changes to this {what} will be lost.</span>
+      <button type="button" className="btn" onClick={() => leaving.proceed()}>Leave</button>
+      <button type="button" className="btn solid" autoFocus onClick={() => leaving.reset()}>Stay</button>
+    </div>
+  </div>;
   return <div className="savebar" role="region" aria-label="Save">
     <div className="savebar-in">
       <span className={`sb-state${error ? " bad" : ""}`} role="status">{error ? error : busy ? "Saving…" : problems ? `${problems} to fix before it saves` : dirty ? "Unsaved changes" : "No changes"}</span>
@@ -129,13 +136,19 @@ function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, erro
   </div>;
 }
 
+/** Unsaved changes stop every way out: closing the tab, and any link in the app (top
+ * menu, breadcrumb, Discard), which then asks in the save bar. `release` lets a finished
+ * save or delete through. */
 function useLeaveGuard(dirty: boolean) {
+  const free = useRef(false);
   useEffect(() => {
     if (!dirty) return;
     const h = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     addEventListener("beforeunload", h);
     return () => removeEventListener("beforeunload", h);
   }, [dirty]);
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && !free.current && currentLocation.pathname !== nextLocation.pathname);
+  return { blocker, release: () => { free.current = true; } };
 }
 
 /** The validator's wording names the allowed tokens; on a form the options are right there. */
@@ -185,7 +198,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
   const [touched, setTouched] = useState<string[]>([]);
   const [tried, setTried] = useState(false);
   const dirty = JSON.stringify(d) !== JSON.stringify(start);
-  useLeaveGuard(dirty && !busy);
+  const guard = useLeaveGuard(dirty);
   const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); setTouched((t) => (t.includes(p) ? t : [...t, p])); };
   // A field says what is wrong once it has been touched, or after a save was tried:
   // a new record should not open as a page of red.
@@ -218,6 +231,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
       const body = cleanThreat(d);
       const saved = await send<Threat>(isNew ? "POST" : "PATCH", isNew ? "/threats" : `/threats/${init!.id}`, isNew ? { id: d.id, ...body } : changed(body, cleanThreat(start)));
       forget("/threats"); forget("/reports");
+      guard.release();
       nav(`/threats/${saved.id || d.id}`, { state: { saved: true } });
     } catch (e) {
       const se = e as SendError;
@@ -226,7 +240,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
   }
   async function del() {
     setBusy(true);
-    try { await send("DELETE", `/threats/${init!.id}`); forget("/threats"); forget("/mitigations"); nav("/threats", { state: { saved: "deleted" } }); }
+    try { await send("DELETE", `/threats/${init!.id}`); forget("/threats"); forget("/mitigations"); guard.release(); nav("/threats", { state: { saved: "deleted" } }); }
     catch (e) { setErr((e as Error).message); setBusy(false); }
   }
 
@@ -248,19 +262,6 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
         <section><h2>Does not apply when</h2>
           <Field c={c} path="reachability" label="The condition that rules it out" entity="threat" name="reachability"><Area c={c} path="reachability" rows={3} ph="The model cannot influence the arguments…" /></Field>
         </section>
-        <section><h2>Weak spots · {(d.weaknesses || []).length}</h2>
-          <Repeat c={c} path="weaknesses" add="Add a weak spot" blank={() => ({ component: "", surface: [], text: "", nature: "targeted" })}
-            head={(w, i) => <>Weak spot {i + 1}{w.component ? ` · ${vocab.components?.[w.component]?.name || w.component}` : ""}</>}>
-            {(p) => <>
-              <div className="frow">
-                <Field c={c} path={`${p}.component`} label="In which part" entity="weakness" name="component"><Select c={c} path={`${p}.component`} blank="Choose a part" opts={v("components").map(([k, n]) => [k, n])} /></Field>
-                <Field c={c} path={`${p}.nature`} label="Role" entity="weakness" name="nature"><Seg c={c} path={`${p}.nature`} opts={enumOf(schema, "weaknesses", "nature").map((k) => [k, k === "targeted" ? "Targeted" : "Secondary"])} /></Field>
-              </div>
-              <Field c={c} path={`${p}.surface`} label="Reached through" entity="weakness" name="surface" optional><Checks c={c} path={`${p}.surface`} opts={v("surface")} /></Field>
-              <Field c={c} path={`${p}.text`} label="The condition" entity="weakness" name="text"><Area c={c} path={`${p}.text`} ph="Cause + where + defect" /></Field>
-            </>}
-          </Repeat>
-        </section>
         <section><h2>What stops or reduces it · {linked.size}</h2>
           <p className="sub">Each link says why this control answers this threat. Stops it: blocks the path when it holds. Reduces it: only makes it less likely or easier to catch.</p>
           <div className="frep">
@@ -273,6 +274,19 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
             </div>)}
             <Pick id="ctrl-pick" options={ctrlOpts} exclude={linked} ph="+ Link a control: type its name" onPick={(mid) => set("mitigations", [...(d.mitigations || []), { id: mid, strength: "gating", rationale: "", exception: null }])} />
           </div>
+        </section>
+        <section><h2>Weak spots · {(d.weaknesses || []).length}</h2>
+          <Repeat c={c} path="weaknesses" add="Add a weak spot" blank={() => ({ component: "", surface: [], text: "", nature: "targeted" })}
+            head={(w, i) => <>Weak spot {i + 1}{w.component ? ` · ${vocab.components?.[w.component]?.name || w.component}` : ""}</>}>
+            {(p) => <>
+              <div className="frow">
+                <Field c={c} path={`${p}.component`} label="In which part" entity="weakness" name="component"><Select c={c} path={`${p}.component`} blank="Choose a part" opts={v("components").map(([k, n]) => [k, n])} /></Field>
+                <Field c={c} path={`${p}.nature`} label="Role" entity="weakness" name="nature"><Seg c={c} path={`${p}.nature`} opts={enumOf(schema, "weaknesses", "nature").map((k) => [k, k === "targeted" ? "Targeted" : "Secondary"])} /></Field>
+              </div>
+              <Field c={c} path={`${p}.surface`} label="Reached through" entity="weakness" name="surface" optional><Checks c={c} path={`${p}.surface`} opts={v("surface")} /></Field>
+              <Field c={c} path={`${p}.text`} label="The condition" entity="weakness" name="text"><Area c={c} path={`${p}.text`} ph="Cause + where + defect" /></Field>
+            </>}
+          </Repeat>
         </section>
         <section><h2>Seen in the wild · {(d.references || []).length}</h2>
           <Repeat c={c} path="references" add="Add a source" blank={() => ({ title: "", url: "", note: "" })} head={(r, i) => r.title || `Source ${i + 1}`}>
@@ -288,7 +302,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
           <Field c={c} path="tags" label="Tags" entity="threat" name="tags" optional><Text c={c} path="tagsText" ph="comma, separated" /></Field>
         </section>
       </form>
-      <SaveBar dirty={dirty} busy={busy} problems={problems} error={err} what="threat" onSave={save}
+      <SaveBar dirty={dirty} busy={busy} problems={problems} error={err} what="threat" onSave={save} leaving={guard.blocker}
         onCancel={() => nav(isNew ? "/threats" : `/threats/${init!.id}`)} onDelete={isNew ? undefined : del} />
     </Shell>
   );
@@ -348,7 +362,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const dirty = JSON.stringify(d) !== JSON.stringify(start);
-  useLeaveGuard(dirty && !busy);
+  const guard = useLeaveGuard(dirty);
   const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); setErrs((e) => { const n = { ...e }; delete n[p]; return n; }); };
   const c: Ctx = { d, set, errs, advice: {}, guide };
   const cls = enumOf(schema, "mitigation_class").map((k) => [k, CLASS[k] ? `${CLASS[k]} · ${k.replace(/_/g, " ")}` : k] as [string, string]);
@@ -361,6 +375,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
       const body = cleanControl(d, keys);
       const saved = await send<Mitigation>(isNew ? "POST" : "PATCH", isNew ? "/mitigations" : `/mitigations/${init!.id}`, isNew ? { id: d.id, ...body } : changed(body, cleanControl(start, keys)));
       forget("/mitigations"); forget("/threats");
+      guard.release();
       nav(`/controls/${saved.id || d.id}`, { state: { saved: true } });
     } catch (e) {
       const se = e as SendError;
@@ -369,7 +384,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
   }
   async function del() {
     setBusy(true);
-    try { await send("DELETE", `/mitigations/${init!.id}`); forget("/mitigations"); forget("/threats"); nav("/controls", { state: { saved: "deleted" } }); }
+    try { await send("DELETE", `/mitigations/${init!.id}`); forget("/mitigations"); forget("/threats"); guard.release(); nav("/controls", { state: { saved: "deleted" } }); }
     catch (e) { setErr((e as Error).message); setBusy(false); }
   }
 
@@ -467,7 +482,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
         </section>
         {!isNew && <ClosesEditor ctrl={init!} threats={threats} />}
       </form>
-      <SaveBar dirty={dirty} busy={busy} problems={0} error={err} what="control" onSave={save}
+      <SaveBar dirty={dirty} busy={busy} problems={0} error={err} what="control" onSave={save} leaving={guard.blocker}
         onCancel={() => nav(isNew ? "/controls" : `/controls/${init!.id}`)} onDelete={isNew ? undefined : del} />
     </Shell>
   );
