@@ -86,7 +86,7 @@ function Repeat({ c, path, blank, add, head, children }: { c: Ctx; path: string;
   const items: Draft[] = get(c.d, path) || [];
   return <div className="frep">
     {items.map((it, i) => <div className="fcard" key={i}>
-      <div className="fcard-h"><span>{head(it, i)}</span><button type="button" className="fx" aria-label="Remove" title="Remove" onClick={() => c.set(path, items.filter((_, j) => j !== i))}>×</button></div>
+      <div className="fcard-h"><span>{head(it, i)}</span><button type="button" className="fdel" aria-label="Remove" title="Remove" onClick={() => c.set(path, items.filter((_, j) => j !== i))}>×</button></div>
       {children(`${path}.${i}`, i)}
     </div>)}
     <button type="button" className="btn" onClick={() => c.set(path, [...items, blank()])}>+ {add}</button>
@@ -97,7 +97,7 @@ function Repeat({ c, path, blank, add, head, children }: { c: Ctx; path: string;
 function Lines({ c, path, add, ph }: { c: Ctx; path: string; add: string; ph?: string }) {
   const items: string[] = get(c.d, path) || [];
   return <div className="frep">
-    {items.map((_, i) => <div className="fline" key={i}><Area c={c} path={`${path}.${i}`} rows={2} ph={ph} /><button type="button" className="fx" aria-label="Remove" title="Remove" onClick={() => c.set(path, items.filter((_, j) => j !== i))}>×</button></div>)}
+    {items.map((_, i) => <div className="fline" key={i}><Area c={c} path={`${path}.${i}`} rows={2} ph={ph} /><button type="button" className="fdel" aria-label="Remove" title="Remove" onClick={() => c.set(path, items.filter((_, j) => j !== i))}>×</button></div>)}
     <button type="button" className="btn" onClick={() => c.set(path, [...items, ""])}>+ {add}</button>
   </div>;
 }
@@ -266,7 +266,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
           <div className="frep">
             {(d.mitigations || []).map((m: Draft, i: number) => <div className="fcard" key={m.id}>
               <div className="fcard-h"><span><Link to={`/controls/${m.id}`} target="_blank">{ctrlById[m.id]?.name || m.id}</Link> <span className="id">{m.id}</span></span>
-                <button type="button" className="fx" aria-label="Unlink" title="Unlink" onClick={() => set("mitigations", d.mitigations.filter((_: Draft, j: number) => j !== i))}>×</button></div>
+                <button type="button" className="fdel" aria-label="Unlink" title="Unlink" onClick={() => set("mitigations", d.mitigations.filter((_: Draft, j: number) => j !== i))}>×</button></div>
               <Field c={c} path={`mitigations.${i}.strength`} label="Role" entity="mitigation_link" name="strength"><Seg c={c} path={`mitigations.${i}.strength`} opts={[["gating", "Stops it"], ["soft", "Reduces it"]]} /></Field>
               <Field c={c} path={`mitigations.${i}.rationale`} label="Why it answers this threat" entity="mitigation_link" name="rationale"><Area c={c} path={`mitigations.${i}.rationale`} rows={2} /></Field>
               <Field c={c} path={`mitigations.${i}.exception`} label="Exception" entity="mitigation_link" name="exception" optional><Area c={c} path={`mitigations.${i}.exception`} rows={2} ph="A narrow case where this control does not apply to this threat" /></Field>
@@ -496,10 +496,10 @@ function ClosesEditor({ ctrl, threats }: { ctrl: Mitigation; threats: Threat[] }
     <table className="tbl"><tbody>{closes.map(({ t, l }) => <tr key={t.id}>
       <td><Link className="rlink" to={`/threats/${t.id}`}>{t.title}</Link><div className="t3 small">{l.strength === "gating" ? "Stops it" : "Reduces it"} · {harmLabel(t.harm)}</div></td>
       <td className="t2 small">{l.rationale}</td>
-      <td className="n"><Link className="small" to={`/threats/${t.id}/edit`}>Edit link</Link> <button type="button" className="fx" aria-label={`Unlink ${t.title}`} title="Unlink" onClick={() => unlink(t.id)}>×</button></td>
+      <td className="n"><Link className="small" to={`/threats/${t.id}/edit`}>Edit link</Link> <button type="button" className="fdel" aria-label={`Unlink ${t.title}`} title="Unlink" onClick={() => unlink(t.id)}>×</button></td>
     </tr>)}</tbody></table>
     {pending ? <div className="fcard" style={{ marginTop: 12 }}>
-      <div className="fcard-h"><span>{list.find((t) => t.id === pending.tid)?.title}</span><button type="button" className="fx" aria-label="Cancel" onClick={() => setPending(null)}>×</button></div>
+      <div className="fcard-h"><span>{list.find((t) => t.id === pending.tid)?.title}</span><button type="button" className="fdel" aria-label="Cancel" onClick={() => setPending(null)}>×</button></div>
       <div className="fld"><span className="fl">Role</span><div className="toggle fseg">{([["gating", "Stops it"], ["soft", "Reduces it"]] as const).map(([k, l]) => <button type="button" key={k} aria-pressed={pending.strength === k} onClick={() => setPending({ ...pending, strength: k })}>{l}</button>)}</div></div>
       <div className="fld"><label className="fl" htmlFor="new-rat">Why it answers this threat</label><textarea id="new-rat" className="fi" rows={2} value={pending.rationale} onChange={(e) => setPending({ ...pending, rationale: e.target.value })} /></div>
       <button type="button" className="btn solid" disabled={!pending.rationale.trim()} onClick={link}>Link</button>

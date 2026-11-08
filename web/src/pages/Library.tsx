@@ -169,7 +169,7 @@ export function ThreatsPage() {
             <td><Link className="rlink" to={`/threats/${t.id}`} onClick={(e) => e.stopPropagation()}>{t.title}</Link></td>
             <td className="fit m">{harmLabel(t.harm)}</td>
             <td className="fit n m" title={`${g} stop it, ${s} reduce it`}><span className="wide-only">{g} · {s}</span><span className="narrow-only">{g} stop, {s} reduce</span></td>
-            <td className={`fit wrap m${fi.length ? "" : " none"}`}>{fi.length ? <><span className="narrow-only">Found in </span>{fi.map(({ r }) => r.system_name).join(", ")}</> : <span className="t3 wide-only">—</span>}</td>
+            <td className={`fit lets-wrap m${fi.length ? "" : " none"}`}>{fi.length ? <><span className="narrow-only">Found in </span>{fi.map(({ r }) => r.system_name).join(", ")}</> : <span className="t3 wide-only">—</span>}</td>
           </tr>;
         })}
       </tbody></table>}
