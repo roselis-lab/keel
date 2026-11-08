@@ -1,11 +1,12 @@
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -122,6 +123,26 @@ async def app_shell(full_path: str):
     if full_path == "api" or full_path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not Found")
     if full_path == "edit" or full_path.startswith("edit/"):
+        moved = _moved_to_app(full_path)
+        if moved:
+            return RedirectResponse(moved, status_code=308)
         return FileResponse(_EDITOR)
     # no-cache: a deploy must not leave a browser on an index that names old assets.
     return FileResponse(_APP / "index.html", headers={"Cache-Control": "no-cache"})
+
+
+def _moved_to_app(full_path: str) -> str | None:
+    """Threats and controls are edited in the app now. An old editor link to either lands
+    on the same record in the app's editor, so no path leads back to the old screen for
+    them. Reports and the style guide are still edited in the old file."""
+    parts = full_path.split("/")[1:]
+    if not parts or parts[0] not in ("threats", "mitigations", "controls"):
+        return None
+    base = "/threats" if parts[0] == "threats" else "/controls"
+    item = parts[1] if len(parts) > 1 and parts[1] else None
+    if item and not _ID.fullmatch(item):
+        return base
+    return f"{base}/{item}/edit" if item else base
+
+
+_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,80}")

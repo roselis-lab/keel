@@ -29,9 +29,25 @@ export function forget(prefix: string) {
 }
 
 export async function post<T>(path: string, body?: unknown): Promise<T> {
-  const r = await fetch("/api" + path, { method: "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  return send<T>("POST", path, body);
+}
+
+/** One field the server refused, with its path ("weaknesses.0.text") and why. */
+export interface FieldError { field: string; msg: string }
+export type SendError = ApiError & { fields: FieldError[]; hint?: string };
+
+export async function send<T>(method: "POST" | "PATCH" | "PUT" | "DELETE", path: string, body?: unknown): Promise<T> {
+  const r = await fetch("/api" + path, { method, headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new ApiError(r.status, data?.detail?.message || data?.detail || r.statusText);
+  if (!r.ok) {
+    const d = data?.detail;
+    // FastAPI's 422 is a list of {loc, msg}; Keel's own errors are {error, field, hint}.
+    const fields: FieldError[] = Array.isArray(d)
+      ? d.map((e: { loc?: (string | number)[]; msg?: string }) => ({ field: (e.loc || []).filter((x) => x !== "body").join("."), msg: e.msg || "" }))
+      : data?.field ? [{ field: String(data.field), msg: data.error || "" }] : [];
+    const msg = Array.isArray(d) ? `${fields.length} ${fields.length === 1 ? "field needs" : "fields need"} fixing` : d?.message || d || data?.error || r.statusText;
+    throw Object.assign(new ApiError(r.status, String(msg)), { fields, hint: data?.hint });
+  }
   return data as T;
 }
 

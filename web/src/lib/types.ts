@@ -83,6 +83,7 @@ export interface Mitigation {
   anti_patterns?: string[];
   validation?: { criterion: string; base?: boolean }[];
   faq?: { question: string; answer: string }[];
+  requires?: string[];
   cited_by?: { source_id: string; source_title: string; ref: string; title: string }[];
 }
 

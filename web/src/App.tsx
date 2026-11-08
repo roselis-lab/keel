@@ -4,6 +4,7 @@ import { LatestReport, ReportPage } from "./pages/Report";
 import { FindingPage } from "./pages/Finding";
 import { ControlPage, ControlsPage, ThreatPage, ThreatsPage } from "./pages/Library";
 import { ComplianceAll, ComplianceSystem } from "./pages/Compliance";
+import { ControlEditor, ThreatEditor } from "./pages/Editor";
 import { Shell } from "./components/ui";
 
 // Old links keep working: the library editor called controls "mitigations".
@@ -21,9 +22,13 @@ export function App() {
       <Route path="/compliance" element={<ComplianceAll />} />
       <Route path="/compliance/:system" element={<ComplianceSystem />} />
       <Route path="/threats" element={<ThreatsPage />} />
+      <Route path="/threats/new" element={<ThreatEditor />} />
       <Route path="/threats/:id" element={<ThreatPage />} />
+      <Route path="/threats/:id/edit" element={<ThreatEditor />} />
       <Route path="/controls" element={<ControlsPage />} />
+      <Route path="/controls/new" element={<ControlEditor />} />
       <Route path="/controls/:id" element={<ControlPage />} />
+      <Route path="/controls/:id/edit" element={<ControlEditor />} />
       <Route path="/mitigations" element={<Navigate replace to="/controls" />} />
       <Route path="/mitigations/:id" element={<ToControl />} />
       <Route path="/coverage" element={<CoveragePage />} />

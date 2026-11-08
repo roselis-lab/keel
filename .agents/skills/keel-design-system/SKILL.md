@@ -10,7 +10,7 @@ If the user invokes this skill without any other guidance, ask them what they wa
 
 ## Two front ends now
 
-The reading pages (Overview, Reports, Compliance, Threats, Controls, Coverage) are a React app in `web/`, styled "Signal in Graphite": its rules are in `web/DESIGN.md`, and for those pages they replace this kit. Everything below describes the library editor, the single file `keel/static/index.html`, which is now served under `/edit` until its forms move into the app.
+The reading pages (Overview, Reports, Compliance, Threats, Controls, Coverage) are a React app in `web/`, styled "Signal in Graphite": its rules are in `web/DESIGN.md`, and for those pages they replace this kit. Threats and controls are now edited in the app too (`/threats/:id/edit`, `/controls/:id/edit`; old `/edit/threats…` links redirect there). Everything below describes the single file `keel/static/index.html`, which is still served under `/edit` for reports and the style guide until those forms move into the app.
 
 ## Quick orientation
 
