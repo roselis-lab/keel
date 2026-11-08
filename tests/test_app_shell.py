@@ -139,6 +139,7 @@ def test_every_schema_field_has_a_control_in_the_app_editor():
 
     src = (Path(__file__).parents[1] / "web/src/pages/Editor.tsx").read_text(encoding="utf-8")
     paths = set(re.findall(r'path=(?:"([^"]+)"|\{`([^`]+)`\})', src))
+    paths |= set(re.findall(r'set\((?:"([^"]+)"|`([^`]+)`)', src))
     names = {seg for pair in paths for p in pair if p for seg in re.split(r"[.]", p)}
     # Chosen with a picker rather than typed, so there is no field to bind.
     picked = {("MitigationLink", "id")}
@@ -149,7 +150,8 @@ def test_every_schema_field_has_a_control_in_the_app_editor():
         for name in model.model_fields:
             if (model.__name__, name) in picked:
                 continue
-            bound = name in names or f'set("{name}"' in src
+            # Locus and failure behaviour share one helper: decision("locus", ...).
+            bound = name in names or f'decision("{name}"' in src
             assert bound, f"{model.__name__}.{name} has no control in the app editor"
 
 
