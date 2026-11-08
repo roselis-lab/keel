@@ -148,7 +148,7 @@ export function ThreatsPage() {
     <Shell title="Threats">
       <Saved />
       <Head title="Threats" meta={[`${all.length} threats every system is checked against`, <Link key="c" to="/controls">{mitigations.length} controls answer them</Link>]}
-        lede={<p className="lede quiet">Each is one sentence saying what goes wrong. Open one for when it does not apply, the weak spots that let it happen, and the controls that stop it.</p>}
+        lede={<p className="lede quiet list-lede">Each is one sentence saying what goes wrong. Open one for when it does not apply, the weak spots that let it happen, and the controls that stop it.</p>}
         actions={<Link className="btn" to="/threats/new"><PlusIcon />New threat</Link>} />
       <div className="listbar">
         <Search value={text} onChange={(v) => put("q", v || null)} label="Search threats, weak spots, controls" count={rows.length} total={all.length} />
@@ -211,7 +211,7 @@ export function ThreatPage() {
       {fi.length > 0 && <section id="found"><h2>Found in</h2><table className="tbl"><tbody>{fi.map(({ r, f }) =>
         <tr key={r.system_id}><td><Link className="rlink" to={`/reports/${r.system_id}/${r.date}/${t.id}`}>{r.system_name}</Link> <span className="num t2">{r.date}</span></td><td><Grade f={f} /></td></tr>)}</tbody></table></section>}
       <section id="stops"><h2>What stops it · {gating.length}</h2><p className="sub">Controls that block the path when they hold.</p>
-        {gating.length ? gating.map(ctl) : <p className="t2">No control stops it yet. <Link to={`/threats/${t.id}/edit`}>Link one</Link>.</p>}</section>
+        {gating.length ? gating.map(ctl) : <p className="t2">No control stops it yet. <Link to={`/threats/${t.id}/edit#links`}>Link one</Link>.</p>}</section>
       {soft.length > 0 && <section id="reduces"><h2>What reduces or detects it · {soft.length}</h2>{soft.map(ctl)}</section>}
       <section id="weak"><h2>Weak spots · {t.weaknesses.length}</h2><p className="sub">The conditions in a system that let it happen, by the part they sit in.</p>
         {Object.entries(byComp).map(([c, ws]) => <div key={c}><h4>{cap(c.replace("-", " "))} · {ws.length}</h4>
@@ -248,7 +248,7 @@ export function ControlsPage() {
     <Shell title="Controls">
       <Saved />
       <Head title="Controls" meta={[`${all.length} controls, each with how to tell it works`, <Link key="t" to="/threats">{q.data[1].threats.length} threats they answer</Link>]}
-        lede={<p className="lede quiet">What a system can put in place. Each page says which threats it closes, when it applies, how it fails and the checks that prove it holds.</p>}
+        lede={<p className="lede quiet list-lede">What a system can put in place. Each page says which threats it closes, when it applies, how it fails and the checks that prove it holds.</p>}
         actions={<Link className="btn" to="/controls/new"><PlusIcon />New control</Link>} />
       <div className="listbar">
         <Search value={text} onChange={(v) => put("q", v || null)} label="Search controls by name or purpose" count={rows.length} total={all.length} />
@@ -309,7 +309,7 @@ export function ControlPage() {
       <section id="closes"><h2>Closes · {closes.length}</h2>
         {closes.length ? <table className="tbl"><tbody>{closes.map(({ t, l }) =>
           <tr key={t.id}><td style={{ width: "45%" }}><Link className="rlink" to={`/threats/${t.id}`}>{t.title}</Link><div className="t3 small">{l.strength === "gating" ? "Stops it" : "Reduces it"} · {harmLabel(t.harm)}</div></td><td className="t2" style={{ fontSize: 14 }}>{l.rationale}</td></tr>)}</tbody></table>
-          : <p className="t2">No threat links to it yet. <Link to={`/controls/${m.id}/edit`}>Link one</Link>.</p>}</section>
+          : <p className="t2">No threat links to it yet. <Link to={`/controls/${m.id}/edit#closes`}>Link one</Link>.</p>}</section>
       {m.scope || m.out_of_scope ? <div className="cols2" id="applies">
         <div className="panel"><h3>Applies when</h3>{m.scope ? <Md text={m.scope} /> : <p className="t3">Not written yet.</p>}</div>
         <div className="panel"><h3>Does not cover</h3>{m.out_of_scope ? <Md text={m.out_of_scope} /> : <p className="t3">Not written yet.</p>}</div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useBlocker, useNavigate, useParams, type Blocker } from "react-router";
+import { Link, useBlocker, useLocation, useNavigate, useParams, type Blocker } from "react-router";
 import { forget, MITIGATIONS, send, THREATS, useApi, type FieldError, type SendError } from "../lib/api";
 import type { Mitigation, Threat } from "../lib/types";
 import { cap, CLASS, firstSentence, harmLabel } from "../lib/text";
@@ -139,6 +139,12 @@ function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, erro
 /** Unsaved changes stop every way out: closing the tab, and any link in the app (top
  * menu, breadcrumb, Discard), which then asks in the save bar. `release` lets a finished
  * save or delete through. */
+/** A link that names a section (#links, #closes) opens the editor scrolled to it. */
+function useOpenAt() {
+  const { hash } = useLocation();
+  useEffect(() => { if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" }); }, [hash]);
+}
+
 function useLeaveGuard(dirty: boolean) {
   const free = useRef(false);
   useEffect(() => {
@@ -199,6 +205,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
   const [tried, setTried] = useState(false);
   const dirty = JSON.stringify(d) !== JSON.stringify(start);
   const guard = useLeaveGuard(dirty);
+  useOpenAt();
   const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); setTouched((t) => (t.includes(p) ? t : [...t, p])); };
   // A field says what is wrong once it has been touched, or after a save was tried:
   // a new record should not open as a page of red.
@@ -262,7 +269,7 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
         <section><h2>Does not apply when</h2>
           <Field c={c} path="reachability" label="The condition that rules it out" entity="threat" name="reachability"><Area c={c} path="reachability" rows={3} ph="The model cannot influence the arguments…" /></Field>
         </section>
-        <section><h2>What stops or reduces it · {linked.size}</h2>
+        <section id="links"><h2>What stops or reduces it · {linked.size}</h2>
           <p className="sub">Each link says why this control answers this threat. Stops it: blocks the path when it holds. Reduces it: only makes it less likely or easier to catch.</p>
           <div className="frep">
             {(d.mitigations || []).map((m: Draft, i: number) => <div className="fcard" key={m.id}>
@@ -363,6 +370,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
   const [err, setErr] = useState<string | null>(null);
   const dirty = JSON.stringify(d) !== JSON.stringify(start);
   const guard = useLeaveGuard(dirty);
+  useOpenAt();
   const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); setErrs((e) => { const n = { ...e }; delete n[p]; return n; }); };
   const c: Ctx = { d, set, errs, advice: {}, guide };
   const cls = enumOf(schema, "mitigation_class").map((k) => [k, CLASS[k] ? `${CLASS[k]} · ${k.replace(/_/g, " ")}` : k] as [string, string]);
@@ -401,6 +409,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
       <Head title={title} meta={isNew ? ["Written to catalog/mitigations/ when you save"] : [<span className="id" key="id">{init!.id}</span>, `catalog/mitigations/${init!.id}.yaml`]} />
       {err && <div className="call warn" role="alert"><b>Not saved</b>{err}</div>}
       <form className="form" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        {!isNew && <ClosesEditor ctrl={init!} threats={threats} />}
         <section><h2>What it is</h2>
           {isNew && <Field c={c} path="id" label="Id"><Text c={c} path="id" mono ph="CTRL-SHORT-NAME" /><p className="fh">Capital letters, digits and hyphens, starting with CTRL-. It is also the file name and cannot change later.</p></Field>}
           <Field c={c} path="name" label="Name" entity="mitigation" name="name"><Text c={c} path="name" /></Field>
@@ -480,7 +489,6 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
           </div>
           <Field c={c} path="positioning" label="How it sits against tracked sources" entity="mitigation" name="positioning" optional><Area c={c} path="positioning" rows={3} /></Field>
         </section>
-        {!isNew && <ClosesEditor ctrl={init!} threats={threats} />}
       </form>
       <SaveBar dirty={dirty} busy={busy} problems={0} error={err} what="control" onSave={save} leaving={guard.blocker}
         onCancel={() => nav(isNew ? "/controls" : `/controls/${init!.id}`)} onDelete={isNew ? undefined : del} />
@@ -493,6 +501,7 @@ function ClosesEditor({ ctrl, threats }: { ctrl: Mitigation; threats: Threat[] }
   const [list, setList] = useState(threats);
   const [pending, setPending] = useState<{ tid: string; strength: string; rationale: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [drop, setDrop] = useState<string | null>(null);
   const closes = list.flatMap((t) => t.mitigations.filter((l) => l.id === ctrl.id).map((l) => ({ t, l })));
   const linked = new Set(closes.map(({ t }) => t.id));
   const opts = [...list].sort((a, b) => a.title.localeCompare(b.title)).map((t) => ({ id: t.id, label: `${t.title} · ${t.id}` }));
@@ -503,15 +512,17 @@ function ClosesEditor({ ctrl, threats }: { ctrl: Mitigation; threats: Threat[] }
     catch (e) { setErr((e as Error).message); }
   }
   async function unlink(tid: string) {
-    try { await send("DELETE", `/threats/${tid}/mitigations/${ctrl.id}`); await reload(); } catch (e) { setErr((e as Error).message); }
+    try { await send("DELETE", `/threats/${tid}/mitigations/${ctrl.id}`); setDrop(null); await reload(); } catch (e) { setErr((e as Error).message); }
   }
-  return <section><h2>Closes · {closes.length}</h2>
+  return <section id="closes"><h2>Closes · {closes.length}</h2>
     <p className="sub">Links are stored on each threat and saved the moment you add or remove one.</p>
     {err && <p className="ferr" role="alert">{err}</p>}
     <table className="tbl"><tbody>{closes.map(({ t, l }) => <tr key={t.id}>
       <td><Link className="rlink" to={`/threats/${t.id}`}>{t.title}</Link><div className="t3 small">{l.strength === "gating" ? "Stops it" : "Reduces it"} · {harmLabel(t.harm)}</div></td>
       <td className="t2 small">{l.rationale}</td>
-      <td className="n"><Link className="small" to={`/threats/${t.id}/edit`}>Edit link</Link> <button type="button" className="fdel" aria-label={`Unlink ${t.title}`} title="Unlink" onClick={() => unlink(t.id)}>×</button></td>
+      <td className="n">{drop === t.id
+        ? <span className="small">Unlink now? <button type="button" className="linkbtn" onClick={() => unlink(t.id)}>Unlink</button> · <button type="button" className="linkbtn" onClick={() => setDrop(null)}>Keep</button></span>
+        : <><Link className="small" to={`/threats/${t.id}/edit#links`}>Edit link</Link> <button type="button" className="fdel" aria-label={`Unlink ${t.title}`} title="Unlink" onClick={() => setDrop(t.id)}>×</button></>}</td>
     </tr>)}</tbody></table>
     {pending ? <div className="fcard" style={{ marginTop: 12 }}>
       <div className="fcard-h"><span>{list.find((t) => t.id === pending.tid)?.title}</span><button type="button" className="fdel" aria-label="Cancel" onClick={() => setPending(null)}>×</button></div>

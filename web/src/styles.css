@@ -441,4 +441,7 @@ textarea.fi { resize: vertical; min-height: 44px; }
   .filters.one-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
   .filters.one-row::-webkit-scrollbar { display: none; }
   .filters.one-row button { flex: none; }
+  .lede.list-lede { display: none; }
+  .listbar { flex-wrap: nowrap; }
+  .listbar .search { flex: 1; min-width: 0; }
 }
