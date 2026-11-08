@@ -5,6 +5,7 @@ import { KIND, KINDS, cap, clip, firstSentence, plural } from "../lib/text";
 import { findingTitle, prepare } from "../lib/report";
 import { Head, Legend, Loading, Problem, Sev, Shell, Stack, Toggle } from "../components/ui";
 import { byId } from "./Report";
+import { PlusIcon } from "./Library";
 import { useState } from "react";
 
 function useEstate() {
@@ -58,7 +59,7 @@ export function OverviewPage() {
             <tr key={id}><td><Link className="rlink" to={`/controls/${id}`}>{mits[id]?.name || id}</Link><div className="t3 small">{[...new Set(a.systems)].join(", ")}</div></td><td className="n" style={{ width: 100 }}>{plural(a.n, "risk")}</td></tr>)}
         </tbody></table></section>
       </div>
-      <p className="t3 small" style={{ marginTop: 32 }}>Add or fix threats and controls in the library: <Link to="/threats/new">new threat</Link>, <Link to="/controls/new">new control</Link>, or open one and choose Edit.</p>
+      <p className="t3 small" style={{ marginTop: 32 }}>Add or fix threats and controls in the library: <Link to="/threats/new">new threat</Link>, <Link to="/controls/new">new control</Link>, or open one and choose Edit. How each field should be written is in the <Link to="/style-guide">style guide</Link>.</p>
     </Shell>
   );
 }
@@ -71,7 +72,7 @@ export function ReportsPage() {
   return (
     <Shell title="Reports">
       <Head title="Reports" lede={<p className="lede quiet">One report per assessed system: the risks found, what to fix first, and what was ruled out. Open one to read it or share it with the team that owns the system.</p>}
-        actions={<a className="btn" href="/edit/reports">Start a report (older editor)</a>} />
+        actions={<Link className="btn" to="/reports/new"><PlusIcon />Start a report</Link>} />
       {e.reps.length === 0 ? <div className="empty"><b>No reports yet</b>Run an assessment with the Keel skill and its report shows up here.</div> :
         <table className="tbl"><thead><tr><th>System</th><th>Risks</th><th className="n" style={{ width: 130 }}>Fix first</th><th style={{ width: 140 }}>Latest report</th></tr></thead><tbody>
           {e.reps.map(({ r, P }) => <tr key={r.system_id} className="rowlink" onClick={() => nav(`/reports/${r.system_id}/${r.date}`)}>

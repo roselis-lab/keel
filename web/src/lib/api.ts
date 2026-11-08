@@ -41,9 +41,11 @@ export async function send<T>(method: "POST" | "PATCH" | "PUT" | "DELETE", path:
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
     const d = data?.detail;
-    // FastAPI's 422 is a list of {loc, msg}; Keel's own errors are {error, field, hint}.
+    // FastAPI's 422 is a list of {loc, msg}; Keel's own errors are {error, field, hint},
+    // with every problem in `details` when there is more than one.
     const fields: FieldError[] = Array.isArray(d)
       ? d.map((e: { loc?: (string | number)[]; msg?: string }) => ({ field: (e.loc || []).filter((x) => x !== "body").join("."), msg: e.msg || "" }))
+      : Array.isArray(data?.details) ? data.details.map((e: { field?: string | null; message?: string }) => ({ field: e.field || "", msg: e.message || "" }))
       : data?.field ? [{ field: String(data.field), msg: data.error || "" }] : [];
     const msg = Array.isArray(d) ? `${fields.length} ${fields.length === 1 ? "field needs" : "fields need"} fixing` : d?.message || d || data?.error || r.statusText;
     throw Object.assign(new ApiError(r.status, String(msg)), { fields, hint: data?.hint });

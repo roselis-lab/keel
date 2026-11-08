@@ -110,6 +110,31 @@ async def list_mitigations(brief: bool = True, include: list[str] | None = Query
     return await mitigation_service.list_mitigations(brief=brief, include=include)
 
 
+@router.post("/mitigations/validate")
+async def validate_mitigation(payload: dict = Body(...)):
+    """The control editor's check as you type: the same two channels as a threat's,
+    red from the schema a save would apply, amber from the rule registry."""
+    from keel.rules import Catalog, check_entity
+
+    try:
+        ctrl = MitigationCreate(**payload)
+    except ValidationError as exc:
+        errors = [
+            {"field": ".".join(str(x) for x in e["loc"]), "msg": e["msg"]}
+            for e in exc.errors()
+        ]
+        return {"ok": False, "errors": errors, "advice": []}
+
+    store = get_store()
+    cat = Catalog(threats=store.threats,
+                  mitigations={**store.mitigations, ctrl.id: ctrl.model_dump(mode="json")})
+    advice = [
+        {"field": f.field, "msg": f.message}
+        for f in check_entity("mitigation", ctrl.id, cat) if f.severity == "advice"
+    ]
+    return {"ok": True, "errors": [], "advice": advice}
+
+
 @router.post("/mitigations", status_code=201)
 async def create_mitigation(data: MitigationCreate):
     """Create a mitigation. Duplicate id → 409; body validation via MitigationCreate (422)."""
@@ -398,6 +423,14 @@ async def save_report(system_id: str, date: str, body: dict):
     """Write a report. A final report goes back to draft; 422 when the body does not
     validate or names catalog entries that do not exist."""
     return report_service.save_report(system_id, date, body)["report"]
+
+
+@router.post("/reports/{system_id}/{date}/validate")
+async def validate_report(system_id: str, date: str, body: dict):
+    """What a save of this body would refuse, without writing it: field errors from the
+    schema, then whole-report errors (a missing catalog entry, an evidence id that is
+    not there). Advice never blocks a save."""
+    return report_service.check_report(system_id, date, body)
 
 
 @router.post("/reports/{system_id}/{date}/finalize")

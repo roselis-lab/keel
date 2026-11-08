@@ -11,10 +11,11 @@ import { Head, Loading, Problem, Shell } from "../components/ui";
    only immediate writes are links made from a control to a threat, because a link is
    stored on the threat and the control's own Save cannot carry it. */
 
-type Vocab = Record<string, Record<string, { name: string; desc: string }>>;
-type Guide = { entities: Record<string, { fields: Record<string, { purpose?: string; content_requirements?: string[]; avoid?: string[] }> }> };
+export type Vocab = Record<string, Record<string, { name: string; desc: string }>>;
+export type GuideBar = { purpose?: string | null; content_requirements?: string[] | null; instructions?: string[] | null; avoid?: string[] | null; examples?: string[] | null };
+export type Guide = { entities: Record<string, { entity?: GuideBar | null; fields: Record<string, GuideBar & { is_orphan?: boolean }> }> };
 type Schema = { properties: Record<string, unknown>; $defs?: Record<string, { properties: Record<string, unknown> }> };
-type Draft = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+export type Draft = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /** The allowed values of a field, read from the JSON schema so the form never drifts from it. */
 function enumOf(s: Schema | undefined, ...path: string[]): string[] {
@@ -31,8 +32,8 @@ function enumOf(s: Schema | undefined, ...path: string[]): string[] {
   return node?.enum || [];
 }
 
-const get = (o: Draft, path: string) => path.split(".").reduce<any>((a, k) => (a == null ? a : a[k]), o); // eslint-disable-line @typescript-eslint/no-explicit-any
-function setIn(o: Draft, path: string, v: unknown): Draft {
+export const get = (o: Draft, path: string) => path.split(".").reduce<any>((a, k) => (a == null ? a : a[k]), o); // eslint-disable-line @typescript-eslint/no-explicit-any
+export function setIn(o: Draft, path: string, v: unknown): Draft {
   const [k, ...rest] = path.split(".");
   const key: string | number = Array.isArray(o) ? Number(k) : k;
   const copy: any = Array.isArray(o) ? [...o] : { ...o }; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -42,9 +43,9 @@ function setIn(o: Draft, path: string, v: unknown): Draft {
 
 /* ---------- field shell: label, one-line why, the input, then its errors and advice ---------- */
 
-interface Ctx { d: Draft; set: (p: string, v: unknown) => void; errs: Record<string, string[]>; advice: Record<string, string[]>; guide?: Guide }
+export interface Ctx { d: Draft; set: (p: string, v: unknown) => void; errs: Record<string, string[]>; advice: Record<string, string[]>; guide?: Guide; preview?: boolean }
 
-function Field({ c, path, label, entity, name, children, optional }: { c: Ctx; path: string; label: string; entity?: string; name?: string; children: ReactNode; optional?: boolean }) {
+export function Field({ c, path, label, entity, name, children, optional }: { c: Ctx; path: string; label: string; entity?: string; name?: string; children: ReactNode; optional?: boolean }) {
   const g = entity && name ? c.guide?.entities?.[entity]?.fields?.[name] : undefined;
   const errs = c.errs[path] || [], adv = c.advice[path] || [];
   const more = [...(g?.content_requirements || []), ...(g?.avoid || []).map((a) => "Avoid: " + a)];
@@ -55,34 +56,35 @@ function Field({ c, path, label, entity, name, children, optional }: { c: Ctx; p
       {children}
       {errs.map((e, i) => <p key={i} className="ferr" role="alert">{e}</p>)}
       {adv.map((e, i) => <p key={i} className="fadv">{e}</p>)}
-      {more.length > 0 && <details className="fmore"><summary>How to write it</summary><ul>{more.map((m, i) => <li key={i}>{m}</li>)}</ul></details>}
+      {g && <details className="fmore" open={c.preview || undefined}><summary>How to write it</summary>{more.length > 0 && <ul>{more.map((m, i) => <li key={i}>{m}</li>)}</ul>}
+        {!c.preview && <p className="small"><Link to={`/style-guide/${entity}/${name}`}>Edit this guidance</Link></p>}</details>}
     </div>
   );
 }
 
-const Text = ({ c, path, ph, mono }: { c: Ctx; path: string; ph?: string; mono?: boolean }) =>
+export const Text = ({ c, path, ph, mono }: { c: Ctx; path: string; ph?: string; mono?: boolean }) =>
   <input id={`f-${path}`} className={`fi${mono ? " mono" : ""}`} value={get(c.d, path) ?? ""} placeholder={ph} onChange={(e) => c.set(path, e.target.value)} />;
-const Area = ({ c, path, ph, rows = 3 }: { c: Ctx; path: string; ph?: string; rows?: number }) =>
+export const Area = ({ c, path, ph, rows = 3 }: { c: Ctx; path: string; ph?: string; rows?: number }) =>
   <textarea id={`f-${path}`} className="fi" rows={rows} value={get(c.d, path) ?? ""} placeholder={ph} onChange={(e) => c.set(path, e.target.value)} />;
-function Select({ c, path, opts, blank }: { c: Ctx; path: string; opts: [string, string][]; blank?: string }) {
+export function Select({ c, path, opts, blank }: { c: Ctx; path: string; opts: [string, string][]; blank?: string }) {
   return <select id={`f-${path}`} className="fi" value={get(c.d, path) ?? ""} onChange={(e) => c.set(path, e.target.value)}>
     {blank !== undefined && <option value="">{blank}</option>}
     {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
   </select>;
 }
-function Checks({ c, path, opts }: { c: Ctx; path: string; opts: [string, string, string?][] }) {
+export function Checks({ c, path, opts }: { c: Ctx; path: string; opts: [string, string, string?][] }) {
   const on = new Set<string>(get(c.d, path) || []);
   return <div className="fchecks" role="group">{opts.map(([v, l, t]) =>
     <label key={v} title={t}><input type="checkbox" checked={on.has(v)} onChange={() => { const n = new Set(on); n.has(v) ? n.delete(v) : n.add(v); c.set(path, opts.map(([x]) => x).filter((x) => n.has(x))); }} />{l}</label>)}</div>;
 }
 /** Choose one of two or three, every option visible: one click, nothing hidden in a menu. */
-function Seg({ c, path, opts }: { c: Ctx; path: string; opts: [string, string][] }) {
+export function Seg({ c, path, opts }: { c: Ctx; path: string; opts: [string, string][] }) {
   const v = get(c.d, path);
   return <div className="toggle fseg" role="radiogroup">{opts.map(([k, l]) => <button type="button" role="radio" key={k} aria-checked={v === k} aria-pressed={v === k} onClick={() => c.set(path, k)}>{l}</button>)}</div>;
 }
 
 /** A list of cards, each one item. Add at the foot, remove with the cross on the card. */
-function Repeat({ c, path, blank, add, head, children }: { c: Ctx; path: string; blank: () => Draft; add: string; head: (it: Draft, i: number) => ReactNode; children: (p: string, i: number) => ReactNode }) {
+export function Repeat({ c, path, blank, add, head, children }: { c: Ctx; path: string; blank: () => Draft; add: string; head: (it: Draft, i: number) => ReactNode; children: (p: string, i: number) => ReactNode }) {
   const items: Draft[] = get(c.d, path) || [];
   return <div className="frep">
     {items.map((it, i) => <div className="fcard" key={i}>
@@ -94,7 +96,7 @@ function Repeat({ c, path, blank, add, head, children }: { c: Ctx; path: string;
 }
 
 /** A plain list of one-line strings (anti-patterns). */
-function Lines({ c, path, add, ph }: { c: Ctx; path: string; add: string; ph?: string }) {
+export function Lines({ c, path, add, ph }: { c: Ctx; path: string; add: string; ph?: string }) {
   const items: string[] = get(c.d, path) || [];
   return <div className="frep">
     {items.map((_, i) => <div className="fline" key={i}><Area c={c} path={`${path}.${i}`} rows={2} ph={ph} /><button type="button" className="fdel" aria-label="Remove" title="Remove" onClick={() => c.set(path, items.filter((_, j) => j !== i))}>×</button></div>)}
@@ -103,7 +105,7 @@ function Lines({ c, path, add, ph }: { c: Ctx; path: string; add: string; ph?: s
 }
 
 /** Pick a record by typing part of its name or id; the browser's own list does the filtering. */
-function Pick({ id, options, onPick, ph, exclude }: { id: string; options: { id: string; label: string }[]; onPick: (id: string) => void; ph: string; exclude?: Set<string> }) {
+export function Pick({ id, options, onPick, ph, exclude }: { id: string; options: { id: string; label: string }[]; onPick: (id: string) => void; ph: string; exclude?: Set<string> }) {
   const [v, setV] = useState("");
   const list = options.filter((o) => !exclude?.has(o.id));
   const go = (s: string) => { const hit = list.find((o) => o.label === s || o.id === s); if (hit) { onPick(hit.id); setV(""); } else setV(s); };
@@ -115,7 +117,7 @@ function Pick({ id, options, onPick, ph, exclude }: { id: string; options: { id:
 
 /* ---------- saving: one bar at the foot, always in the same place ---------- */
 
-function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, error, leaving }: { dirty: boolean; busy: boolean; problems: number; onSave: () => void; onCancel: () => void; onDelete?: () => void; what: string; error?: string | null; leaving: Blocker }) {
+export function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, error, leaving, verb = "Save" }: { dirty: boolean; busy: boolean; problems: number; onSave: () => void; onCancel: () => void; onDelete?: () => void; what: string; error?: string | null; leaving: Blocker; verb?: string }) {
   const [sure, setSure] = useState(false);
   if (leaving.state === "blocked") return <div className="savebar" role="region" aria-label="Save">
     <div className="savebar-in">
@@ -131,7 +133,7 @@ function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, erro
         ? <span className="sb-sure">Delete this {what} for good? <button type="button" className="btn danger" onClick={onDelete}>Delete</button> <button type="button" className="btn" onClick={() => setSure(false)}>Keep</button></span>
         : <button type="button" className="sb-del" onClick={() => setSure(true)}>Delete {what}</button>)}
       <button type="button" className="btn" onClick={onCancel}>{dirty ? "Discard" : "Close"}</button>
-      <button type="button" className="btn solid" disabled={busy || !dirty} onClick={onSave}>Save</button>
+      <button type="button" className="btn solid" disabled={busy || !dirty} onClick={onSave}>{verb}</button>
     </div>
   </div>;
 }
@@ -140,12 +142,12 @@ function SaveBar({ dirty, busy, problems, onSave, onCancel, onDelete, what, erro
  * menu, breadcrumb, Discard), which then asks in the save bar. `release` lets a finished
  * save or delete through. */
 /** A link that names a section (#links, #closes) opens the editor scrolled to it. */
-function useOpenAt() {
+export function useOpenAt() {
   const { hash } = useLocation();
   useEffect(() => { if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" }); }, [hash]);
 }
 
-function useLeaveGuard(dirty: boolean) {
+export function useLeaveGuard(dirty: boolean) {
   const free = useRef(false);
   useEffect(() => {
     if (!dirty) return;
@@ -161,13 +163,40 @@ function useLeaveGuard(dirty: boolean) {
 function plainMsg(m: string) {
   if (/^Input should be '/.test(m)) return "Choose one of the options.";
   if (m === "Field required") return "Required.";
+  // A blank text is sent as null, so an emptied required field comes back as "not a string".
+  if (m === "Input should be a valid string") return "Required.";
   if (/^String should have at least 1 character/.test(m)) return "Required.";
   if (/^List should have at least 1 item/.test(m)) return "Add at least one.";
   if (/^Input should be a valid URL/.test(m)) return "A full link, starting with https://.";
   return m.replace(/^Value error, /, "");
 }
-const byPath = (xs: FieldError[]) => xs.reduce<Record<string, string[]>>((a, e) => { (a[e.field || "_"] ||= []).push(plainMsg(e.msg)); return a; }, {});
+export const byPath = (xs: FieldError[]) => xs.reduce<Record<string, string[]>>((a, e) => { (a[e.field || "_"] ||= []).push(plainMsg(e.msg)); return a; }, {});
 const blankStr = (v: unknown) => (typeof v === "string" && !v.trim() ? null : v);
+
+/** The server's own validator, so the form says what a save would say, as you type. A
+    field says what is wrong once it has been touched, or after a save was tried: a new
+    record should not open as a page of red. Errors without a field ("_") are about the
+    record as a whole and always show. `alias` maps a form-only path to the one the
+    server names ("tagsText" is sent as "tags"). */
+export function useCheck(path: string, body: () => unknown, d: Draft, alias: Record<string, string> = {}) {
+  const [errs, setErrs] = useState<Record<string, string[]>>({});
+  const [advice, setAdvice] = useState<Record<string, string[]>>({});
+  const [touched, setTouched] = useState<string[]>([]);
+  const [tried, setTried] = useState(false);
+  const timer = useRef<number>(0);
+  useEffect(() => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      send<{ errors: FieldError[]; advice: FieldError[] }>("POST", path, body())
+        .then((r) => { setErrs(byPath(r.errors)); setAdvice(byPath(r.advice)); }).catch(() => {});
+    }, 450);
+    return () => window.clearTimeout(timer.current);
+  }, [d]); // eslint-disable-line react-hooks/exhaustive-deps
+  const near = (a: string, b: string) => a === b || a.startsWith(b + ".") || b.startsWith(a + ".");
+  const shown = Object.fromEntries(Object.entries(errs).filter(([p]) => p === "_" || tried || touched.some((t) => near(p, alias[t] || t))));
+  const touch = (p: string) => setTouched((t) => (t.includes(p) ? t : [...t, p]));
+  return { errs, setErrs, advice, shown, touch, setTried, problems: Object.values(errs).flat().length };
+}
 
 /* ---------- threat ---------- */
 
@@ -197,41 +226,23 @@ function ThreatForm({ init, ctrls, vocab, guide, schema }: { init: Threat | null
   const start = useMemo<Draft>(() => init ? { ...init, tagsText: ((init as Draft).tags || []).join(", ") }
     : { id: "T-", title: "", harm: "", source: [], weaknesses: [{ component: "", surface: [], text: "", nature: "targeted" }], reachability: "", mitigations: [], references: [], positioning: "", tagsText: "" }, [init]);
   const [d, setD] = useState<Draft>(start);
-  const [errs, setErrs] = useState<Record<string, string[]>>({});
-  const [advice, setAdvice] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [touched, setTouched] = useState<string[]>([]);
-  const [tried, setTried] = useState(false);
   const dirty = JSON.stringify(d) !== JSON.stringify(start);
   const guard = useLeaveGuard(dirty);
   useOpenAt();
-  const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); setTouched((t) => (t.includes(p) ? t : [...t, p])); };
-  // A field says what is wrong once it has been touched, or after a save was tried:
-  // a new record should not open as a page of red.
-  const near = (a: string, b: string) => a === b || a.startsWith(b + ".") || b.startsWith(a + ".");
-  const shown = Object.fromEntries(Object.entries(errs).filter(([p]) => tried || touched.some((t) => near(p, t === "tagsText" ? "tags" : t))));
-  const c: Ctx = { d, set, errs: shown, advice, guide };
-
-  // The server's own validator, so the form says what a save would say, as you type.
-  const timer = useRef<number>(0);
-  useEffect(() => {
-    window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => {
-      send<{ ok: boolean; errors: FieldError[]; advice: FieldError[] }>("POST", "/threats/validate", { id: d.id, ...cleanThreat(d) })
-        .then((r) => { setErrs(byPath(r.errors)); setAdvice(byPath(r.advice)); }).catch(() => {});
-    }, 450);
-    return () => window.clearTimeout(timer.current);
-  }, [d]); // eslint-disable-line react-hooks/exhaustive-deps
+  const chk = useCheck("/threats/validate", () => ({ id: d.id, ...cleanThreat(d) }), d, { tagsText: "tags" });
+  const { setErrs, advice, problems } = chk;
+  const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); chk.touch(p); };
+  const c: Ctx = { d, set, errs: chk.shown, advice, guide };
 
   const v = (k: string) => Object.entries(vocab[k] || {}).map(([val, x]) => [val, x.name, x.desc] as [string, string, string]);
   const ctrlById = Object.fromEntries(ctrls.map((m) => [m.id, m]));
   const ctrlOpts = [...ctrls].sort((a, b) => a.name.localeCompare(b.name)).map((m) => ({ id: m.id, label: `${m.name} · ${m.id}` }));
   const linked = new Set<string>((d.mitigations || []).map((m: Draft) => m.id));
-  const problems = Object.values(errs).flat().length;
 
   async function save() {
-    setTried(true);
+    chk.setTried(true);
     if (problems) { setTimeout(() => document.querySelector(".fld.bad")?.scrollIntoView({ block: "center" }), 0); return; }
     setBusy(true); setErr(null);
     try {
@@ -365,19 +376,23 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
     return d;
   }, [init]); // eslint-disable-line react-hooks/exhaustive-deps
   const [d, setD] = useState<Draft>(start);
-  const [errs, setErrs] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const dirty = JSON.stringify(d) !== JSON.stringify(start);
   const guard = useLeaveGuard(dirty);
   useOpenAt();
-  const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); setErrs((e) => { const n = { ...e }; delete n[p]; return n; }); };
-  const c: Ctx = { d, set, errs, advice: {}, guide };
+  // The same check as a threat's: red from the schema a save applies, as you type.
+  const chk = useCheck("/mitigations/validate", () => ({ id: d.id, ...cleanControl(d, keys) }), d);
+  const { setErrs, problems } = chk;
+  const set = (p: string, v: unknown) => { setD((x) => setIn(x, p, v)); setErr(null); chk.touch(p); };
+  const c: Ctx = { d, set, errs: chk.shown, advice: chk.advice, guide };
   const cls = enumOf(schema, "mitigation_class").map((k) => [k, CLASS[k] ? `${CLASS[k]} · ${k.replace(/_/g, " ")}` : k] as [string, string]);
   const otherCtrls = ctrls.filter((m) => m.id !== init?.id).sort((a, b) => a.name.localeCompare(b.name)).map((m) => ({ id: m.id, label: `${m.name} · ${m.id}` }));
   const nameOf = Object.fromEntries(ctrls.map((m) => [m.id, m.name]));
 
   async function save() {
+    chk.setTried(true);
+    if (problems) { setTimeout(() => document.querySelector(".fld.bad")?.scrollIntoView({ block: "center" }), 0); return; }
     setBusy(true); setErr(null);
     try {
       const body = cleanControl(d, keys);
@@ -490,7 +505,7 @@ function ControlForm({ init, ctrls, threats, guide, schema }: { init: Mitigation
           <Field c={c} path="positioning" label="How it sits against tracked sources" entity="mitigation" name="positioning" optional><Area c={c} path="positioning" rows={3} /></Field>
         </section>
       </form>
-      <SaveBar dirty={dirty} busy={busy} problems={0} error={err} what="control" onSave={save} leaving={guard.blocker}
+      <SaveBar dirty={dirty} busy={busy} problems={problems} error={err} what="control" onSave={save} leaving={guard.blocker}
         onCancel={() => nav(isNew ? "/controls" : `/controls/${init!.id}`)} onDelete={isNew ? undefined : del} />
     </Shell>
   );

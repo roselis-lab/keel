@@ -96,8 +96,8 @@ async def health_check():
 
 
 # Two front ends. The reading app (web/, React) is built into static/app and committed,
-# so `keel up` needs no Node. The library editor is the older single file, kept under
-# /edit until its forms move into the app.
+# so `keel up` needs no Node. The older single-file editor is still served under /edit
+# for its overview; every screen whose forms moved into the app redirects there.
 _STATIC = Path(__file__).parent / "static"
 _APP = _STATIC / "app"
 _EDITOR = _STATIC / "index.html"
@@ -132,10 +132,20 @@ async def app_shell(full_path: str):
 
 
 def _moved_to_app(full_path: str) -> str | None:
-    """Threats and controls are edited in the app now. An old editor link to either lands
-    on the same record in the app's editor, so no path leads back to the old screen for
-    them. Reports and the style guide are still edited in the old file."""
+    """Threats, controls, reports and the style guide are edited in the app now. An old
+    editor link to any of them lands on the same record in the app's editor, so no path
+    leads back to the old screen for them."""
     parts = full_path.split("/")[1:]
+    if parts and parts[0] == "reports":
+        sysid, date = (parts[1:3] + ["", ""])[:2]
+        if sysid and date and _ID.fullmatch(sysid) and _DATE.fullmatch(date):
+            return f"/reports/{sysid}/{date}/edit"
+        return "/reports"
+    if parts and parts[0] in ("style", "style-guide"):
+        named = [p for p in parts[1:3] if p]
+        if named and all(_ID.fullmatch(p) for p in named):
+            return "/style-guide/" + "/".join(named)
+        return "/style-guide"
     if not parts or parts[0] not in ("threats", "mitigations", "controls"):
         return None
     base = "/threats" if parts[0] == "threats" else "/controls"
@@ -146,3 +156,4 @@ def _moved_to_app(full_path: str) -> str | None:
 
 
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,80}")
+_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")

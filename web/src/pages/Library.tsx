@@ -53,11 +53,11 @@ function Search({ value, onChange, label, count, total }: { value: string; onCha
 }
 
 /** Saved or deleted a moment ago in the editor: say so once, without moving anything. */
-function Saved() {
+export function Saved() {
   const s = (useLocation().state as { saved?: boolean | string } | null)?.saved;
   const [on, setOn] = useState(!!s);
   useEffect(() => { if (!s) return; setOn(true); const t = setTimeout(() => setOn(false), 3500); return () => clearTimeout(t); }, [s]);
-  return on ? <p className="toast" role="status">{s === "deleted" ? "Deleted from the catalog." : "Saved to the catalog."}</p> : null;
+  return on ? <p className="toast" role="status">{s === "deleted" ? "Deleted from the catalog." : typeof s === "string" ? s : "Saved to the catalog."}</p> : null;
 }
 
 /* ---------- the list beside a record ---------- */
@@ -118,8 +118,8 @@ const Toc = ({ items }: { items: [string, string][] }) =>
   <nav className="toc" aria-label="On this page">{items.map(([h, l]) => <a key={h} href={`#${h}`}>{l}</a>)}</nav>;
 const when = (ok: unknown, item: [string, string]): [string, string][] => (ok ? [item] : []);
 
-const EditIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 2.5 13.5 4.5 5.5 12.5 2.5 13.5 3.5 10.5z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>;
-const PlusIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" /></svg>;
+export const EditIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 2.5 13.5 4.5 5.5 12.5 2.5 13.5 3.5 10.5z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>;
+export const PlusIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" /></svg>;
 
 /** The list's filter and search, kept in the address. */
 function useListParams() {
@@ -147,7 +147,7 @@ export function ThreatsPage() {
   return (
     <Shell title="Threats">
       <Saved />
-      <Head title="Threats" meta={[`${all.length} threats every system is checked against`, <Link key="c" to="/controls">{mitigations.length} controls answer them</Link>]}
+      <Head title="Threats" meta={[`${all.length} threats every system is checked against`, <Link key="c" to="/controls">{mitigations.length} controls answer them</Link>, <Link key="g" to="/style-guide">How each field is written</Link>]}
         lede={<p className="lede quiet list-lede">Each is one sentence saying what goes wrong. Open one for when it does not apply, the weak spots that let it happen, and the controls that stop it.</p>}
         actions={<Link className="btn" to="/threats/new"><PlusIcon />New threat</Link>} />
       <div className="listbar">
@@ -190,7 +190,7 @@ export function ThreatPage() {
   const gating = t.mitigations.filter((m) => m.strength === "gating"), soft = t.mitigations.filter((m) => m.strength !== "gating");
   const fi = foundIn(reports, t.id);
   const ctl = (m: Threat["mitigations"][number]) => <div className="ctl" key={m.id}>
-    <div><Link className="rlink" to={`/controls/${m.id}`} state={{ from: { to: `/threats/${t.id}`, title: t.title } }}>{mits[m.id]?.name || m.id}</Link><div className="t3 small">{CLASS[mits[m.id]?.mitigation_class] || ""}</div></div><p>{m.rationale}</p></div>;
+    <div><Link className="rlink" to={`/controls/${m.id}?from=${t.id}`}>{mits[m.id]?.name || m.id}</Link><div className="t3 small">{CLASS[mits[m.id]?.mitigation_class] || ""}</div></div><p>{m.rationale}</p></div>;
   const frameworks = new Set((t.cited_by || []).map((c) => c.source_id)).size;
   const toc: [string, string][] = [
     ...when(t.reachability, ["rule-out", "Does not apply when"]),
@@ -247,7 +247,7 @@ export function ControlsPage() {
   return (
     <Shell title="Controls">
       <Saved />
-      <Head title="Controls" meta={[`${all.length} controls, each with how to tell it works`, <Link key="t" to="/threats">{q.data[1].threats.length} threats they answer</Link>]}
+      <Head title="Controls" meta={[`${all.length} controls, each with how to tell it works`, <Link key="t" to="/threats">{q.data[1].threats.length} threats they answer</Link>, <Link key="g" to="/style-guide">How each field is written</Link>]}
         lede={<p className="lede quiet list-lede">What a system can put in place. Each page says which threats it closes, when it applies, how it fails and the checks that prove it holds.</p>}
         actions={<Link className="btn" to="/controls/new"><PlusIcon />New control</Link>} />
       <div className="listbar">
@@ -275,10 +275,13 @@ export function ControlPage() {
   const { id } = useParams();
   const q = useApi<[Mitigation, { threats: Threat[] }, { mitigations: Mitigation[] }]>(`/mitigations/${id}`, THREATS, MITIGATIONS);
   const reports = useLatestReports();
-  const from = (useLocation().state as { from?: { to: string; title: string } } | null)?.from;
+  // Where the reader came from is in the address (?from=T-ID), so the way back survives a
+  // reload, a new tab and a shared link.
+  const fromId = useSearchParams()[0].get("from");
   if (q.loading) return <Shell title="Control"><Loading /></Shell>;
   if (q.error) return <Shell title="Control"><Problem error={q.error} what="control" /></Shell>;
   const [m, t, all] = q.data;
+  const from = t.threats.find((x) => x.id === fromId);
   const closes = t.threats.flatMap((x) => x.mitigations.filter((l) => l.id === m.id).map((l) => ({ t: x, l })));
   const asked = reports.flatMap((r) => r.findings.flatMap((f) => f.requirements.filter((q) => q.mitigation_id === m.id).map((q) => ({ r, f, q }))));
   const sorted = [...all.mitigations].sort((a, b) => a.name.localeCompare(b.name));
@@ -300,7 +303,7 @@ export function ControlPage() {
     <Shell title={m.name} rail={<LibRail kind="controls" current={m.id} threats={t.threats} controls={all.mitigations} />} side={<Toc items={toc} />}>
       <Saved />
       <nav className="crumbs" aria-label="Breadcrumb">
-        {from && <><Link to={from.to} className="from">← {clip(from.title, 60)}</Link><span className="sep" /></>}
+        {from && <><Link to={`/threats/${from.id}`} className="from">← {clip(from.title, 60)}</Link><span className="sep" /></>}
         <Link to="/controls">Controls</Link><span>/</span><span className="id" aria-current="page">{m.id}</span>
       </nav>
       <Head title={m.name} meta={[CLASS[m.mitigation_class] || m.mitigation_class, m.failure_behavior ? failText(m.failure_behavior.value) : null, plural(closes.length, "threat") + " it closes"]}

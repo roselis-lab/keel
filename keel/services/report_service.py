@@ -615,6 +615,30 @@ def missing_prerequisites(report: Report) -> list[str]:
     return out
 
 
+def check_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, Any]:
+    """What save_report would refuse for this body, without writing anything, so the
+    editor can say it as you type. `errors` with a field are the schema's; the ones
+    without are about the report as a whole. `advice` never blocks a save."""
+    try:
+        report = Report(**data)
+    except ValidationError as exc:
+        errors = [
+            {"field": ".".join(str(x) for x in e["loc"]), "msg": e["msg"]}
+            for e in exc.errors()
+        ]
+        return {"ok": False, "errors": errors, "advice": []}
+    whole = catalog_reference_errors(report) + structure_errors(report)
+    if report.system_id != system_id or report.date != date:
+        whole.insert(0, "system_id and date cannot be changed by a save")
+    advice = (missing_prerequisites(report) + catalog_mismatches(report)
+              + ruled_out_before(report) + cards_without_checks(report))
+    return {
+        "ok": not whole,
+        "errors": [{"field": "", "msg": m} for m in whole],
+        "advice": [{"field": "", "msg": m} for m in advice],
+    }
+
+
 def save_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, Any]:
     """Write a report. Editing is always allowed; a final report goes back to draft.
 
