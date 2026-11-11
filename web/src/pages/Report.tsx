@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router";
-import { MITIGATIONS, THREATS, useApi } from "../lib/api";
+import { forget, MITIGATIONS, send, THREATS, useApi, type SendError } from "../lib/api";
 import type { Finding, Mitigation, Report as R, SystemRow, Threat } from "../lib/types";
 import { assessorName, findingTitle, prepare, type Fix, type Prepared } from "../lib/report";
 import { cap, clip, firstSentence, harmLabel, plural, STATUS, WHO } from "../lib/text";
 import { Grade, Head, Loading, Problem, Shape, Shell } from "../components/ui";
 import { ShareButton } from "../components/Share";
 import { SystemDiagram } from "../components/SystemDiagram";
+import { EditIcon, Saved } from "./Library";
 
 type Lib = { threats: Record<string, Threat>; mits: Record<string, Mitigation> };
 export const byId = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x]));
@@ -21,14 +22,20 @@ export function LatestReport() {
   return d ? <Navigate replace to={`/reports/${system}/${d}`} /> : <Shell title="Report"><div className="empty"><b>No report for this system yet</b>Run an assessment and it appears here.</div></Shell>;
 }
 
+/** Finalizing changes the report under the page, so the page loads it again after. */
 export function ReportPage() {
+  const [n, setN] = useState(0);
+  return <ReportLoad key={n} reload={() => { forget("/reports"); setN((x) => x + 1); }} />;
+}
+
+function ReportLoad({ reload }: { reload: () => void }) {
   const { system, date } = useParams();
   const q = useApi<[R, { threats: Threat[] }, { mitigations: Mitigation[] }, { reports: SystemRow[] }]>(`/reports/${system}/${date}`, THREATS, MITIGATIONS, "/reports");
   if (q.loading) return <Shell title="Report"><Loading /></Shell>;
   if (q.error) return <Shell title="Report"><Problem error={q.error} what="report" /></Shell>;
   const [r, t, m, systems] = q.data;
   const lib = { threats: byId(t.threats), mits: byId(m.mitigations) };
-  return <ReportView r={r} lib={lib} systems={systems.reports} />;
+  return <ReportView r={r} lib={lib} systems={systems.reports} reload={reload} />;
 }
 
 function FixRow({ x, r, lib, n }: { x: Fix; r: R; lib: Lib; n?: number }) {
@@ -92,7 +99,31 @@ function Fold({ id, title, count, sub, children }: { id: string; title: string; 
   );
 }
 
-export function ReportView({ r, lib, systems }: { r: R; lib: Lib; systems: SystemRow[] }) {
+/** Sign the report off. It asks first in place, and a refusal lists what is not
+    established yet, as the server words it. */
+function Finalize({ r, reload }: { r: R; reload: () => void }) {
+  const [sure, setSure] = useState(false);
+  const [why, setWhy] = useState<{ msg: string; items: string[] } | null>(null);
+  async function go() {
+    try { await send("POST", `/reports/${r.system_id}/${r.date}/finalize`); reload(); }
+    catch (e) { const se = e as SendError; setWhy({ msg: se.message, items: (se.fields || []).map((f) => f.msg) }); setSure(false); }
+  }
+  const n = why?.items.length || 0;
+  const li = (m: string, i: number) => <li key={i}>{m}</li>;
+  return <>
+    {sure
+      ? <span className="small">Sign this report off? Editing it later makes it a draft again. <button type="button" className="btn solid" onClick={go}>Finalize</button> <button type="button" className="btn" onClick={() => setSure(false)}>Not yet</button></span>
+      : <button type="button" className="btn" onClick={() => { setWhy(null); setSure(true); }}>Finalize</button>}
+    {why && <div className="call warn" role="alert" style={{ flexBasis: "100%" }}>
+      <b>Not finalized{n ? `: ${n} ${n === 1 ? "thing is" : "things are"} not established yet` : `: ${why.msg}`}</b>
+      {n > 0 && <ul className="plain">{why.items.slice(0, 3).map(li)}</ul>}
+      {n > 3 && <details><summary>Show all {n}</summary><ul className="plain">{why.items.slice(3).map(li)}</ul></details>}
+      <p className="small" style={{ marginTop: 8 }}>A fix's “must hold”, “enforce at” and “done when” are in <Link to={`/reports/${r.system_id}/${r.date}/edit`}>the report editor</Link>. Evidence, a second reviewer's try at a high risk and the list of ways in come from running the assessment again.</p>
+    </div>}
+  </>;
+}
+
+export function ReportView({ r, lib, systems, reload }: { r: R; lib: Lib; systems: SystemRow[]; reload?: () => void }) {
   const P = prepare(r, lib.mits);
   const hi = P.count("high");
   const oq = (r.open_questions || []).filter((q) => !q.answer);
@@ -113,12 +144,14 @@ export function ReportView({ r, lib, systems }: { r: R; lib: Lib; systems: Syste
   const sf = r.surfaces || [];
   return (
     <Shell title={r.system_name} rail={rail} side={side}>
+      <Saved />
       <Link className="back-s" to="/reports">← All systems</Link>
       <Head title={r.system_name}
         meta={[<span className={`status ${r.status}`}>{cap(r.status)}</span>, <span className="num">Assessed {r.date}</span>, `by ${assessorName(r.assessor)}`,
           P.minutes ? <span className="num">{P.minutes} min run</span> : null, r.delta_summary ? "Re-assessment" : "First assessment"]}
         lede={lede}
-        actions={<><ShareButton r={r} fixes={P.open.length} /><Link className="btn" to={`/compliance/${r.system_id}`} data-no-export>Compliance</Link></>} />
+        actions={<><ShareButton r={r} fixes={P.open.length} /><Link className="btn" to={`/compliance/${r.system_id}`} data-no-export>Compliance</Link>
+          {reload && <span data-no-export style={{ display: "contents" }}><Link className="btn" to={`/reports/${r.system_id}/${r.date}/edit`}><EditIcon />Edit report</Link>{r.status === "draft" && <Finalize r={r} reload={reload} />}</span>}</>} />
 
       {oq.length > 0 && <div className="qbox" id="questions">
         <h2>{plural(oq.length, "question")} before this report is final</h2>

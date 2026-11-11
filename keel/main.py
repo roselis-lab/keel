@@ -1,11 +1,12 @@
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -95,8 +96,8 @@ async def health_check():
 
 
 # Two front ends. The reading app (web/, React) is built into static/app and committed,
-# so `keel up` needs no Node. The library editor is the older single file, kept under
-# /edit until its forms move into the app.
+# so `keel up` needs no Node. The older single-file editor is still served under /edit
+# for its overview; every screen whose forms moved into the app redirects there.
 _STATIC = Path(__file__).parent / "static"
 _APP = _STATIC / "app"
 _EDITOR = _STATIC / "index.html"
@@ -122,6 +123,37 @@ async def app_shell(full_path: str):
     if full_path == "api" or full_path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not Found")
     if full_path == "edit" or full_path.startswith("edit/"):
+        moved = _moved_to_app(full_path)
+        if moved:
+            return RedirectResponse(moved, status_code=308)
         return FileResponse(_EDITOR)
     # no-cache: a deploy must not leave a browser on an index that names old assets.
     return FileResponse(_APP / "index.html", headers={"Cache-Control": "no-cache"})
+
+
+def _moved_to_app(full_path: str) -> str | None:
+    """Threats, controls, reports and the style guide are edited in the app now. An old
+    editor link to any of them lands on the same record in the app's editor, so no path
+    leads back to the old screen for them."""
+    parts = full_path.split("/")[1:]
+    if parts and parts[0] == "reports":
+        sysid, date = (parts[1:3] + ["", ""])[:2]
+        if sysid and date and _ID.fullmatch(sysid) and _DATE.fullmatch(date):
+            return f"/reports/{sysid}/{date}/edit"
+        return "/reports"
+    if parts and parts[0] in ("style", "style-guide"):
+        named = [p for p in parts[1:3] if p]
+        if named and all(_ID.fullmatch(p) for p in named):
+            return "/style-guide/" + "/".join(named)
+        return "/style-guide"
+    if not parts or parts[0] not in ("threats", "mitigations", "controls"):
+        return None
+    base = "/threats" if parts[0] == "threats" else "/controls"
+    item = parts[1] if len(parts) > 1 and parts[1] else None
+    if item and not _ID.fullmatch(item):
+        return base
+    return f"{base}/{item}/edit" if item else base
+
+
+_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,80}")
+_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
