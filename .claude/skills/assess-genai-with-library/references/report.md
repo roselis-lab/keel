@@ -8,6 +8,8 @@ The tools check what a plain file write cannot: that the report parses, that its
 
 `assessor` comes from `git config user.name` and `user.email`, written as `Name <email>`, the person accountable for the judgments, never the agent. `date` is today. `system_id` and `system_description` come from the identification step.
 
+`extensions` holds data an installed extension keeps, under its name. Leave it as you found it when you save.
+
 ## Findings
 
 Per finding: `id` (the catalog threat id, or a new `T-*` id you coin for something the catalog lacks), `from_catalog`, `scenario`, `source` (`who` / `motive` / `access`), `asset`, `attack_surface`, `vulnerability`, `exploitation_complexity`, `harm`, `risk` (`likelihood` / `severity` / `reasoning`), `risk_today`, `delta`, `origin`, `deployment`, `root_cause`, `evidence`, `review`, `requirements`, `ignored_mitigations`.

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from keel import extensions
 from keel.config import settings
 from keel.errors import KeelError
 
@@ -105,6 +106,9 @@ _EDITOR = _STATIC / "index.html"
 # Before the catch-all: routes match in declaration order. Hashed file names, so they
 # can be cached for good; a missing file is a 404, never the app's HTML.
 app.mount("/assets", StaticFiles(directory=_APP / "assets", check_dir=False), name="assets")
+
+# An installed extension's pages and API, also before the catch-all (keel/extensions.py).
+extensions.include_routers(app)
 
 
 @app.get("/{full_path:path}", include_in_schema=False)
