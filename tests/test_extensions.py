@@ -120,6 +120,18 @@ async def test_a_report_with_a_section_round_trips_through_mcp_without_the_exten
     assert on_disk["delta_summary"] == "Refunds were added."
 
 
+async def test_update_report_changes_a_section_key_by_key(reports, install):
+    """Sending one key of a section keeps its other keys and other extensions' sections."""
+    path = reports(extensions={"example": SECTION, "other": {"x": 1}})
+    updated = await dispatch_tool("update_report", {
+        "system_id": "checkout-agent", "date": "2026-08-26",
+        "changes": {"extensions": {"example": {"nested": {"parts": []}, "kept": None, "new": 2}}},
+    })
+    assert updated["success"] is True
+    assert _on_disk(path)["extensions"] == {"example": {"nested": {"parts": []}, "new": 2},
+                                            "other": {"x": 1}}
+
+
 def test_a_report_without_a_section_is_saved_without_one(reports, install):
     """Turning extensions on must not rewrite every report in the archive."""
     path = reports()

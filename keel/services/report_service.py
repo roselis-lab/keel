@@ -743,6 +743,9 @@ def update_report(system_id: str, date: str, changes: dict[str, Any] | None = No
     """
     data = get_report(system_id, date)["report"]
     for key, value in (changes or {}).items():
+        if key == "extensions":
+            data[key] = _merged_extensions(data.get(key) or {}, value)
+            continue
         if key not in LIST_SECTIONS:
             data[key] = value
             continue
@@ -766,6 +769,26 @@ def update_report(system_id: str, date: str, changes: dict[str, Any] | None = No
                           hint="get_report shows the ids that are there")
         data[key] = [item for item in data[key] if item["id"] not in set(gone)]
     return save_report(system_id, date, data)
+
+
+def _merged_extensions(have: dict[str, Any], change: Any) -> dict[str, Any]:
+    """An extension's section changes key by key, like the rest of a partial update: a key
+    sent replaces that key, a key sent as null is dropped, and the keys not sent stay. So
+    changing one part of a section never wipes the rest of it, or another extension's."""
+    if not isinstance(change, dict) or not all(isinstance(s, dict) for s in change.values()):
+        raise Invalid("extensions must map an extension name to the keys of its section that change",
+                      hint='send {"<name>": {"<key>": <value>}}; a key set to null is dropped')
+    out = {name: dict(section) for name, section in have.items()}
+    for name, section in change.items():
+        merged = out.setdefault(name, {})
+        for k, v in section.items():
+            if v is None:
+                merged.pop(k, None)
+            else:
+                merged[k] = v
+        if not merged:
+            del out[name]
+    return out
 
 
 def finalize_report(system_id: str, date: str) -> dict[str, Any]:

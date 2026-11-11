@@ -92,7 +92,7 @@ Both listen on loopback only. `keel --http` will not bind to any other address u
 
 A Python package can add to Keel without Keel knowing it: it declares an entry point in the group `keel.extensions`, and Keel loads it at start. It can check and draw its own data on a report page, serve its own pages and API, add MCP tools and add `keel` commands. The hooks are listed in `keel/extensions.py`. One that fails to load is logged and left out.
 
-A report keeps an extension's data under `extensions.<name>`. Keel stores that section as it is through every save (MCP, the report editor) and does not show it on the read-only site. A report with a section opens and saves on a Keel without that extension; the section is then not checked.
+A report keeps an extension's data under `extensions.<name>`. Keel stores that section as it is through every save (MCP, the report editor) and does not show it on the read-only site. A report with a section opens and saves on a Keel without that extension; the section is then not checked. `update_report` changes a section key by key: a key sent replaces that key, a key sent as null is dropped, the rest stays.
 
 ## Roadmap
 
