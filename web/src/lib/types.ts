@@ -52,6 +52,8 @@ export interface Report {
   open_questions?: OpenQuestion[];
   evidence?: Evidence[];
   meta: { started_at?: string | null; finished_at?: string | null; questions: { question: string; answer: string; impact: string }[]; volunteered: string[] };
+  /** Data an installed extension keeps under its name. Keel stores it and does not show it. */
+  extensions?: Record<string, Record<string, unknown>>;
 }
 export interface SystemRow { system_id: string; system_name: string; latest_date: string; status: string; report_count: number; has_delta: boolean }
 

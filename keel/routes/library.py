@@ -407,15 +407,20 @@ def report_diagram(system_id: str, date: str, shape: str = Query("wide", pattern
     """The system as Archify draws it: its parts, its trust boundary and the part each
     risk sits on, as one HTML figure for the page. Drawn from the report on request, so
     it follows every edit. `html` is null when this machine cannot draw it, and `reason`
-    says why. A plain `def`: drawing runs Node, which must not hold up the event loop."""
-    from keel import diagram
+    says why. An installed extension may draw it instead, with a one-line `note` for the
+    reader. A plain `def`: drawing runs Node, which must not hold up the event loop."""
+    from keel import diagram, extensions
     from keel.schemas.report import Report
 
     report = Report(**report_service.get_report(system_id, date)["report"])
+    threats = get_store().threats
     try:
-        return {"html": diagram.draw(report, get_store().threats, shape), "reason": None}
+        drawn = extensions.draw_diagram(report, threats, shape)
+        if drawn is not None:
+            return {"html": drawn[0], "reason": None, "note": drawn[1]}
+        return {"html": diagram.draw(report, threats, shape), "reason": None, "note": None}
     except diagram.Unavailable as e:
-        return {"html": None, "reason": str(e)}
+        return {"html": None, "reason": str(e), "note": None}
 
 
 @router.put("/reports/{system_id}/{date}")

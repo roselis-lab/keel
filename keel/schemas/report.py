@@ -11,7 +11,7 @@ Enum fields reuse the catalog's own vocabularies (`Harm`, `Surface`, `Source`) r
 than defining parallel ones, so a report's risk signals line up with the model they
 came from.
 """
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -420,4 +420,12 @@ class Report(BaseModel):
     # attribute and would not accept it as a field.
     meta: RunMeta = Field(
         default_factory=RunMeta, description="How the assessment ran — see RunMeta"
+    )
+    # Free-form on purpose: an extension owns the shape of its own section and checks it
+    # itself (keel/extensions.py). A report written with an extension must still open on
+    # a Keel without it, so nothing here may refuse what is inside.
+    extensions: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Data kept by an installed extension, under the extension's name. "
+        "Keel stores it and does not read it.",
     )

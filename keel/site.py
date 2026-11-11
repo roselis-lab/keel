@@ -573,6 +573,8 @@ class Builder:
         known_report = {
             "system_id", "system_name", "system_description", "date", "assessor", "status",
             "delta_summary", "findings", "discarded", "meta",
+            # An extension's own data: Keel stores it and does not show it.
+            "extensions",
         }
         extra = {k: v for k, v in data.items() if k not in known_report and v not in (None, [], {})}
         meta = data.get("meta") or {}

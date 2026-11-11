@@ -29,6 +29,7 @@ Run each with `uv run` in front, or directly once Keel's environment is active.
 | `keel publish REPORT` | Pushes the page and the tickets with your own token: `--confluence-space KEY [--parent ID]`, `--jira-project KEY [--security-level NAME] [--issue-type Task]`, `--dry-run`, `--allow-draft`. See [Confluence and Jira](confluence-and-jira.md). |
 | `keel style-guide export` | Prints the whole style guide as YAML. |
 | `keel style-guide import FILE [--replace]` | Loads a style guide from YAML, merging by default. |
+| `keel reports migrate --extension NAME` | Moves every field the report schema does not know, on a report, a finding or a requirement, into that extension's section of the report (`extensions.NAME`), so the report opens again. `--diagrams DIR` also takes `DIR/<system>/<date>.yaml` as the report's `system_diagram` there. `--dry-run` writes nothing. Prints a line per report it changes or cannot change; running it twice changes nothing. See [Extensions](#extensions). |
 | `keel` | Runs the MCP server over stdio. Agents start this themselves. |
 | `keel --http` | Runs the MCP server over Streamable HTTP on port 8001, loopback only. |
 | `docker compose up` | The local UI in a container at `http://localhost:8000/`. Add `--profile mcp` for the HTTP MCP server on `:8001`. |
@@ -86,6 +87,12 @@ The API writes your catalog and has no login, so being local is its whole access
 The MCP tools and the REST writes share one service layer, so every edit lands in `catalog/*.yaml` the same way. The two run as separate processes, and each reloads the catalog when the files change underneath it, so an entry written through one shows up in the other, as does a hand edit or a `git pull`.
 
 Both listen on loopback only. `keel --http` will not bind to any other address unless `MCP_HTTP_ALLOW_REMOTE` is set.
+
+### Extensions
+
+A Python package can add to Keel without Keel knowing it: it declares an entry point in the group `keel.extensions`, and Keel loads it at start. It can check and draw its own data on a report page, serve its own pages and API, add MCP tools and add `keel` commands. The hooks are listed in `keel/extensions.py`. One that fails to load is logged and left out.
+
+A report keeps an extension's data under `extensions.<name>`. Keel stores that section as it is through every save (MCP, the report editor) and does not show it on the read-only site. A report with a section opens and saves on a Keel without that extension; the section is then not checked. `update_report` changes a section key by key: a key sent replaces that key, a key sent as null is dropped, the rest stays.
 
 ## Roadmap
 

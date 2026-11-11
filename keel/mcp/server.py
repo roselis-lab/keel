@@ -16,10 +16,16 @@ import mcp.server.stdio
 import mcp.types as types
 from mcp.server.lowlevel import Server
 
+from keel import extensions
 from keel.config import settings
 from keel.lib.style_guide import SERVER_INSTRUCTIONS
+from keel.mcp import registry
 from keel.mcp.registry import get_tool_list
 from keel.mcp.tools import dispatch_tool
+
+# Keel's own tools are registered by the import above; an installed extension adds its
+# own after them, through the same registry.
+extensions.register_mcp(registry)
 
 
 @asynccontextmanager
@@ -130,8 +136,10 @@ def main():
     `recheck` says whether the lines a report quotes are still where it saw them,
     `export` and `publish` turn a report into a Confluence page and Jira tickets,
     `schema` regenerates the JSON Schema files,
-    `style-guide export|import` moves the whole guide in bulk, `--http` selects
-    Streamable HTTP, and no args runs the stdio MCP server."""
+    `style-guide export|import` moves the whole guide in bulk,
+    `reports migrate` moves fields Keel does not know into an extension's section,
+    `--http` selects Streamable HTTP, and no args runs the stdio MCP server. An installed
+    extension's commands run by their name; Keel's own names stay Keel's."""
     args = sys.argv[1:]
     if args and args[0] in ("up", "down"):
         from keel.up import main as up_main
@@ -191,6 +199,15 @@ def main():
             return
         print("usage: keel style-guide export | import <file.yaml> [--replace]", file=sys.stderr)
         raise SystemExit(2)
+
+    if args and args[0] == "reports":
+        from keel.migrate import main as reports_main
+
+        raise SystemExit(reports_main(args[1:]))
+    if args and args[0] not in extensions.KEEL_COMMANDS:
+        run = extensions.commands().get(args[0])
+        if run is not None:
+            raise SystemExit(run(args[1:]))
 
     if args and args[0] == "validate":
         from keel.catalog import catalog_warnings, validate_catalog
