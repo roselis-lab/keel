@@ -32,6 +32,9 @@ CoverageState = Literal["covered", "out_of_scope", "gap"]
 # against OWASP as a regulatory verdict.
 SourceKind = Literal["regulation", "standard", "best_practice"]
 
+# MITRE ATLAS's technique maturity, verbatim from its dataset (format 5.0.0 onwards).
+Maturity = Literal["Feasible", "Demonstrated", "Realized"]
+
 
 class CoverageSource(BaseModel):
     """The tracked release itself. Pinned, because "we cover OWASP" is not a claim you
@@ -70,6 +73,15 @@ class CoverageEntry(BaseModel):
         None,
         description="The source's own grouping, where it has one (an ATLAS tactic). A flat "
         "list of eighty-odd rows is not readable; grouped, it is",
+    )
+    maturity: Maturity | None = Field(
+        None,
+        description="The source's own evidence level for the entry, copied from its "
+        "dataset and never assigned by hand. Only MITRE ATLAS publishes one: Feasible "
+        "(shown to work in research), Demonstrated (shown in a red team exercise or "
+        "demonstration on a realistic system), Realized (used by a threat actor in a "
+        "real-world incident). It lets a reader tell what has been seen in production "
+        "from what has only been shown in a lab",
     )
     state: CoverageState
     threats: list[str] = Field(default_factory=list)
