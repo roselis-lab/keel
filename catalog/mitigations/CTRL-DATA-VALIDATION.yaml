@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Input sanitization pipeline (low): All incoming data passes through a sanitization pipeline that removes or escapes potentially dangerous content: HTML/JS tags, SQL metacharacters, shell special characters, control characters. Sanitization is adaptive to context - data for SQL uses parameter escaping, for HTML entity encoding, for shell argument quoting. This prevents injection attacks but may alter legitimate data in edge cases.
+control_mechanism: 'Input sanitization pipeline: All incoming data passes through a sanitization pipeline that removes or escapes potentially dangerous content: HTML/JS tags, SQL metacharacters, shell special characters, control characters. Sanitization is adaptive to context - data for SQL uses parameter escaping, for HTML entity encoding, for shell argument quoting. This prevents injection attacks but may alter legitimate data in edge cases.
 
 
-  Strict schema enforcement (low): For structured data (JSON, XML, API payloads), strict schema validation is applied before processing. The schema defines expected fields, types, value ranges, required properties. Data that does not conform to the schema is rejected with an informative error. This ensures early detection of malformed or malicious data and protects against schema confusion attacks.
+  Strict schema enforcement: For structured data (JSON, XML, API payloads), strict schema validation is applied before processing. The schema defines expected fields, types, value ranges, required properties. Data that does not conform to the schema is rejected with an informative error. This ensures early detection of malformed or malicious data and protects against schema confusion attacks.
 
 
-  Document validation for RAG (medium): For RAG systems, documents are checked for injection patterns, malicious content, and data integrity before indexing. Checks include: virus scanning for binary files, instruction pattern detection for text documents, metadata validation, source verification. This prevents poisoning of the knowledge base through malicious documents.'
+  Document validation for RAG: For RAG systems, documents are checked for injection patterns, malicious content, and data integrity before indexing. Checks include: virus scanning for binary files, instruction pattern detection for text documents, metadata validation, source verification. This prevents poisoning of the knowledge base through malicious documents.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

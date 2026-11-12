@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Per-user rate limiting (low): Per-user or per-session limits on API calls: X requests per minute/hour/day. Limits are configured based on subscription tier, usage patterns, security level. Exceeded limits return a 429 status with a retry-after header.
+control_mechanism: 'Per-user rate limiting: Per-user or per-session limits on API calls: X requests per minute/hour/day. Limits are configured based on subscription tier, usage patterns, security level. Exceeded limits return a 429 status with a retry-after header.
 
 
-  Global resource quotas (low): Global quotas on total API usage: maximum concurrent requests, daily token consumption limits, monthly cost caps. Global limits protect infrastructure from aggregate load even when individual users are within their limits.
+  Global resource quotas: Global quotas on total API usage: maximum concurrent requests, daily token consumption limits, monthly cost caps. Global limits protect infrastructure from aggregate load even when individual users are within their limits.
 
 
-  Adaptive throttling (medium): Rate limits adapt dynamically based on system load, time of day, user behavior patterns. Under high load, limits are tightened. An anomalous spike in requests triggers temporary stricter limits pending investigation.'
+  Adaptive throttling: Rate limits adapt dynamically based on system load, time of day, user behavior patterns. Under high load, limits are tightened. An anomalous spike in requests triggers temporary stricter limits pending investigation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

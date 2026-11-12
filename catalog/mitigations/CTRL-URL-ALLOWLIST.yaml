@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'DNS resolution with IP check (medium): The system performs DNS resolution of the target domain and checks that the resolved IP does not belong to private ranges or blocked networks. After a successful check, establishment of the HTTP connection is permitted. The method detects SSRF via DNS rebinding and spoofing.
+control_mechanism: 'DNS resolution with IP check: The system performs DNS resolution of the target domain and checks that the resolved IP does not belong to private ranges or blocked networks. After a successful check, establishment of the HTTP connection is permitted. The method detects SSRF via DNS rebinding and spoofing.
 
 
-  URL pattern matching (low): A whitelist of permitted URL patterns is implemented with support for wildcard syntax. The scheme (https only), host, port, and path are checked. Requests to URLs with credentials, nonstandard ports, or arbitrary query parameters are blocked.
+  URL pattern matching: A whitelist of permitted URL patterns is implemented with support for wildcard syntax. The scheme (https only), host, port, and path are checked. Requests to URLs with credentials, nonstandard ports, or arbitrary query parameters are blocked.
 
 
-  Isolated proxy server (high): All HTTP requests from tools are routed through a corporate proxy with preconfigured filtering rules. The proxy performs URL inspection, private range blocking, and logging of all requests. The agent has no direct network access.'
+  Isolated proxy server: All HTTP requests from tools are routed through a corporate proxy with preconfigured filtering rules. The proxy performs URL inspection, private range blocking, and logging of all requests. The agent has no direct network access.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

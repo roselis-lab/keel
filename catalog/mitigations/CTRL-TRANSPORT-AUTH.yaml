@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'mTLS authentication (high): Mutual TLS, where both parties present certificates. The agent verifies the server''s certificate; the server verifies the client''s certificate. The certificate chain, revocation status, and endpoint binding are checked during the handshake.
+control_mechanism: 'mTLS authentication: Mutual TLS, where both parties present certificates. The agent verifies the server''s certificate; the server verifies the client''s certificate. The certificate chain, revocation status, and endpoint binding are checked during the handshake.
 
 
-  API key with signing (medium): API-key-based authentication where requests are signed with a cryptographic signature. The server verifies the signature and the validity of the key. Simpler than mTLS, but requires secure storage of keys.
+  API key with signing: API-key-based authentication where requests are signed with a cryptographic signature. The server verifies the signature and the validity of the key. Simpler than mTLS, but requires secure storage of keys.
 
 
-  Certificate pinning (medium): Each MCP server has a pinned certificate or key. The agent accepts connections only from pinned identities. Protects against a compromised certificate authority or misissuance of a certificate.'
+  Certificate pinning: Each MCP server has a pinned certificate or key. The agent accepts connections only from pinned identities. Protects against a compromised certificate authority or misissuance of a certificate.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

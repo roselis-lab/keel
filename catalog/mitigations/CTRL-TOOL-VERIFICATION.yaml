@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Attestation generation (high): At tool registration, an attestation is generated: a signature from a trusted key, a hash of the implementation, and scan results. Attestations are checked before loading the tool at runtime.
+control_mechanism: 'Attestation generation: At tool registration, an attestation is generated: a signature from a trusted key, a hash of the implementation, and scan results. Attestations are checked before loading the tool at runtime.
 
 
-  Verification before use (low): Before each use, the hash of the tool implementation is compared against the stored attestation. A mismatch indicates tampering and triggers a security alert.
+  Verification before use: Before each use, the hash of the tool implementation is compared against the stored attestation. A mismatch indicates tampering and triggers a security alert.
 
 
-  Periodic re-verification (medium): Periodic re-verification of already loaded tools to detect tampering at runtime or corruption of files on disk.'
+  Periodic re-verification: Periodic re-verification of already loaded tools to detect tampering at runtime or corruption of files on disk.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

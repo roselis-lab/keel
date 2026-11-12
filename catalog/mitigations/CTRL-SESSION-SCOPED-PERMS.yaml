@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Session permission cache (medium): Permissions approved by the user are cached for the duration of the session with a time-to-live. After the initial approval, action categories are executed without repeated confirmations. Once the time-to-live expires, re-approval is required. This balances security with usability.
+control_mechanism: 'Session permission cache: Permissions approved by the user are cached for the duration of the session with a time-to-live. After the initial approval, action categories are executed without repeated confirmations. Once the time-to-live expires, re-approval is required. This balances security with usability.
 
 
-  Scoped tokens after approval (medium): After the initial approval, the system generates temporary scoped tokens that authorize specific operations. The token expires together with the session. This provides cryptographic enforcement of permissions.
+  Scoped tokens after approval: After the initial approval, the system generates temporary scoped tokens that authorize specific operations. The token expires together with the session. This provides cryptographic enforcement of permissions.
 
 
-  Permission bundles (low): The user selects from predefined permission bundles (for example, "read-only workspace", "full edit access") instead of granular confirmations for each action. Bundles encapsulate common permission patterns.'
+  Permission bundles: The user selects from predefined permission bundles (for example, "read-only workspace", "full edit access") instead of granular confirmations for each action. Bundles encapsulate common permission patterns.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

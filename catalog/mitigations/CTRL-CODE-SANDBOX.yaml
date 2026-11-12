@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Isolated interpreter (medium): Code is executed in an interpreter with dangerous functions disabled: no file system access (isolated or in-memory only), no network calls, no subprocess spawning, no reflection into private APIs. In Python this is achieved through restricted globals, AST filtering, or specialized sandbox libraries. The approach gives minimal overhead and fast startup, but it limits functionality and may have escape vectors through an insufficiently strict sandbox.
+control_mechanism: 'Isolated interpreter: Code is executed in an interpreter with dangerous functions disabled: no file system access (isolated or in-memory only), no network calls, no subprocess spawning, no reflection into private APIs. In Python this is achieved through restricted globals, AST filtering, or specialized sandbox libraries. The approach gives minimal overhead and fast startup, but it limits functionality and may have escape vectors through an insufficiently strict sandbox.
 
 
-  WebAssembly isolation (high): Code is compiled into WebAssembly and executed in a WASM runtime, where isolation is guaranteed at the specification level - the code has no access to the host except for explicitly exported functions. This gives strong isolation with portability across platforms, but it requires transpiling the code into WASM and imposes restrictions on the libraries that can be used.
+  WebAssembly isolation: Code is compiled into WebAssembly and executed in a WASM runtime, where isolation is guaranteed at the specification level - the code has no access to the host except for explicitly exported functions. This gives strong isolation with portability across platforms, but it requires transpiling the code into WASM and imposes restrictions on the libraries that can be used.
 
 
-  Ephemeral containers (high): Generated code is executed in a single-use container with a read-only file system, no network access, and minimal capabilities. After execution the container is destroyed. This gives maximum isolation at the OS level, but it carries startup overhead and requires infrastructure to orchestrate ephemeral containers.'
+  Ephemeral containers: Generated code is executed in a single-use container with a read-only file system, no network access, and minimal capabilities. After execution the container is destroyed. This gives maximum isolation at the OS level, but it carries startup overhead and requires infrastructure to orchestrate ephemeral containers.'
 failure_behavior:
   value: fail_closed
   note: 'When the sandbox cannot start, its profile fails to load or its isolation layer is unavailable, the code does not run. The value flips to fail_open where the runtime falls back to executing on the host when the sandbox is missing; a refusal recorded for every such start, rather than a silent fallback, is how the difference is noticed.'

@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Instruction detection (medium): Detection of imperatives and instructions in descriptions through regular expressions and machine learning. Detected patterns are flagged for manual review. Automation provides scalable screening.
+control_mechanism: 'Instruction detection: Detection of imperatives and instructions in descriptions through regular expressions and machine learning. Detected patterns are flagged for manual review. Automation provides scalable screening.
 
 
-  Unicode analysis (low): Analysis of invisible characters, zero-width spaces, and homoglyphs that may conceal malicious content. Unicode normalization and inspection.
+  Unicode analysis: Analysis of invisible characters, zero-width spaces, and homoglyphs that may conceal malicious content. Unicode normalization and inspection.
 
 
-  Schema validation (low): Validation of the manifest against a schema with policy checks. Invalid manifests are rejected with actionable feedback.'
+  Schema validation: Validation of the manifest against a schema with policy checks. Invalid manifests are rejected with actionable feedback.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

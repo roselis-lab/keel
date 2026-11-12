@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'HTML entity encoding (low): HTML output passes through an entity encoder that converts special characters (<, >, &, \", '') into HTML entities. This prevents the browser from interpreting the output as HTML/JS. Encoding is applied consistently to all user-facing HTML output.
+control_mechanism: 'HTML entity encoding: HTML output passes through an entity encoder that converts special characters (<, >, &, \", '') into HTML entities. This prevents the browser from interpreting the output as HTML/JS. Encoding is applied consistently to all user-facing HTML output.
 
 
-  JavaScript context escaping (low): Content embedded in JavaScript contexts is properly escaped to prevent XSS via JS injection. String escaping, JSON serialization, and safe templating engines are used for JS contexts.
+  JavaScript context escaping: Content embedded in JavaScript contexts is properly escaped to prevent XSS via JS injection. String escaping, JSON serialization, and safe templating engines are used for JS contexts.
 
 
-  URL parameter encoding (low): URL parameters and path segments are properly encoded before inclusion in a URL. URL encoding prevents injection via URL manipulation and ensures safe URL construction.'
+  URL parameter encoding: URL parameters and path segments are properly encoded before inclusion in a URL. URL encoding prevents injection via URL manipulation and ensures safe URL construction.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

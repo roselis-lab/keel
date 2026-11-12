@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Prepared statements and ORM (low): All database queries use prepared statements or ORM query builders that automatically parameterize inputs. External data is passed as query parameters, not interpolated into the SQL string. This eliminates the SQL injection attack vector entirely when the ORM/query builder APIs are used correctly.
+control_mechanism: 'Prepared statements and ORM: All database queries use prepared statements or ORM query builders that automatically parameterize inputs. External data is passed as query parameters, not interpolated into the SQL string. This eliminates the SQL injection attack vector entirely when the ORM/query builder APIs are used correctly.
 
 
-  Subprocess APIs with list arguments (low): Shell commands are executed through subprocess APIs that accept arguments as a list/array instead of a single string. execve-style calls that parse arguments from a string are prohibited. This prevents shell metacharacter interpretation and command injection through argument values.
+  Subprocess APIs with list arguments: Shell commands are executed through subprocess APIs that accept arguments as a list/array instead of a single string. execve-style calls that parse arguments from a string are prohibited. This prevents shell metacharacter interpretation and command injection through argument values.
 
 
-  URL builder with automatic encoding (low): URLs and API paths are formed through builders that automatically encode parameters: URLSearchParams for query strings, path.join for paths, encodeURIComponent for segments. Manual string concatenation for URL construction is prohibited. This prevents injection through URL manipulation.'
+  URL builder with automatic encoding: URLs and API paths are formed through builders that automatically encode parameters: URLSearchParams for query strings, path.join for paths, encodeURIComponent for segments. Manual string concatenation for URL construction is prohibited. This prevents injection through URL manipulation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

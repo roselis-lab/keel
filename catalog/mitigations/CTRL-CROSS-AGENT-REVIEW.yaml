@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Supervisor agent for review (high): A dedicated reviewer agent with the role of auditor or supervisor checks all critical actions of other agents before their commit or propagation. The reviewer has access to the same data as the executor plus audit logs and policy rules, but it does not participate in generating the decision. When anomalies are detected - policy violations, unusual patterns, potential harm - the reviewer blocks the action or flags it for human review. This gives independent oversight but adds latency and requires a dedicated agent.
+control_mechanism: 'Supervisor agent for review: A dedicated reviewer agent with the role of auditor or supervisor checks all critical actions of other agents before their commit or propagation. The reviewer has access to the same data as the executor plus audit logs and policy rules, but it does not participate in generating the decision. When anomalies are detected - policy violations, unusual patterns, potential harm - the reviewer blocks the action or flags it for human review. This gives independent oversight but adds latency and requires a dedicated agent.
 
 
-  Consensus protocol for critical decisions (high): Critical decisions require agreement of M out of N agents (for example, 2 of 3), by analogy with multi-sig wallets. Each agent independently analyzes the decision and votes for or against. The decision is made only when the agreement threshold is reached. This protects against compromise or malfunction of one agent but significantly increases latency and cost for each decision.
+  Consensus protocol for critical decisions: Critical decisions require agreement of M out of N agents (for example, 2 of 3), by analogy with multi-sig wallets. Each agent independently analyzes the decision and votes for or against. The decision is made only when the agreement threshold is reached. This protects against compromise or malfunction of one agent but significantly increases latency and cost for each decision.
 
 
-  Continuous monitoring agent (medium): Instead of pre-approval, continuous monitoring is used: actions are logged and analyzed by a separate monitor agent for anomalies post-factum. When suspicious activity is detected, the monitor can roll back changes, notify operators, or put the system into safe mode. This is not a blocking control but makes it possible to react quickly to detected problems.'
+  Continuous monitoring agent: Instead of pre-approval, continuous monitoring is used: actions are logged and analyzed by a separate monitor agent for anomalies post-factum. When suspicious activity is detected, the monitor can roll back changes, notify operators, or put the system into safe mode. This is not a blocking control but makes it possible to react quickly to detected problems.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

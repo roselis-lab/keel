@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Automatic removal of personal data (medium): Automatic detection and masking of personal data (names, email addresses, phone numbers, addresses, card numbers, SSN/SNILS) through regular-expression patterns or NER models before the data is included in the context. Detected entities are replaced with tokens of the form [EMAIL_REDACTED] or anonymized values. This prevents leakage of personal data, but it may lose context important for the task.
+control_mechanism: 'Automatic removal of personal data: Automatic detection and masking of personal data (names, email addresses, phone numbers, addresses, card numbers, SSN/SNILS) through regular-expression patterns or NER models before the data is included in the context. Detected entities are replaced with tokens of the form [EMAIL_REDACTED] or anonymized values. This prevents leakage of personal data, but it may lose context important for the task.
 
 
-  Smart context window limiting (medium): Limiting the size of the context window through smart truncation or summarization of older parts of the conversation history. Priority for retention is given to system instructions and recent context, while older content is summarized or removed. This prevents contamination of the context with irrelevant data and reduces the risk of exposing sensitive information from older messages.
+  Smart context window limiting: Limiting the size of the context window through smart truncation or summarization of older parts of the conversation history. Priority for retention is given to system instructions and recent context, while older content is summarized or removed. This prevents contamination of the context with irrelevant data and reduces the risk of exposing sensitive information from older messages.
 
 
-  Context isolation between sessions (low): Context is isolated between projects, tenants, or users through explicit context boundaries. Each request is processed in an isolated context scope without access to data from other sessions. Context is reset between independent tasks. This prevents cross-contamination of sensitive data in multi-tenant systems.'
+  Context isolation between sessions: Context is isolated between projects, tenants, or users through explicit context boundaries. Each request is processed in an isolated context scope without access to data from other sessions. Context is reset between independent tasks. This prevents cross-contamination of sensitive data in multi-tenant systems.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []
