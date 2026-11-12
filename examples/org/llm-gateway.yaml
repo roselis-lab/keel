@@ -1,0 +1,38 @@
+# A made-up example of an organisation facts file (schema: keel/schemas/org.py,
+# JSON Schema: schema/org_facts.schema.json). Copy it to org/<name>.yaml, or to the
+# folder ORG_DIR names, and replace everything in it. Nothing here describes a real
+# organisation, person or system.
+title: Acme LLM gateway
+kind: platform
+about: >-
+  The internal proxy every Acme service uses to call a model provider. Services send
+  it a prompt and a data class; it picks the provider and logs the call.
+facts:
+  - id: provider-allowlist
+    statement: >-
+      The gateway sends prompts only to the two providers on its allowlist, both under
+      a no-training, 30-day-retention contract. A service cannot name another endpoint.
+    confirmed_by: Dana Example <dana@acme.example>, platform lead
+    confirmed_on: 2026-09-14
+    documents:
+      - https://wiki.acme.example/platform/llm-gateway/providers
+    evidence:
+      - id: 1
+        kind: read
+        repo: acme/llm-gateway
+        commit: 3f9c2ab
+        path: gateway/providers.py
+        lines: 12-14
+        quote: |-
+          ALLOWED_PROVIDERS = {"provider-a", "provider-b"}
+          if request.provider not in ALLOWED_PROVIDERS:
+              raise Forbidden("provider not on the allowlist")
+    systems: [support-bot, contract-search]
+  - id: restricted-stays-internal
+    statement: >-
+      A call tagged with the data class "restricted" is routed to the self-hosted model
+      only and never leaves the network.
+    confirmed_by: Sam Example, security architect
+    confirmed_on: 2026-10-02
+    documents:
+      - Acme data classification policy, version 4, section 3

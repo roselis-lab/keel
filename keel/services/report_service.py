@@ -38,6 +38,7 @@ from pydantic import ValidationError
 
 from keel.errors import Conflict, Invalid, NotFound, invalid_from_pydantic
 from keel.schemas.report import Report
+from keel.services import org_service
 from keel.store import dump_yaml
 
 # A system id is a folder name and a date is a file name, both taken from the URL.
@@ -640,7 +641,8 @@ def check_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, A
     if report.system_id != system_id or report.date != date:
         whole.insert(0, "system_id and date cannot be changed by a save")
     advice = (missing_prerequisites(report) + catalog_mismatches(report)
-              + ruled_out_before(report) + cards_without_checks(report))
+              + ruled_out_before(report) + cards_without_checks(report)
+              + org_service.unknown_refs(report))
     return {
         "ok": not whole,
         "errors": [{"field": "", "msg": m} for m in whole],
@@ -680,7 +682,8 @@ def save_report(system_id: str, date: str, data: dict[str, Any]) -> dict[str, An
         # Not done while this is non-empty: the assessor does not leave these for later.
         "open": open_items(report),
         "advice": missing_prerequisites(report) + catalog_mismatches(report)
-        + ruled_out_before(report) + cards_without_checks(report),
+        + ruled_out_before(report) + cards_without_checks(report)
+        + org_service.unknown_refs(report),
     }
 
 

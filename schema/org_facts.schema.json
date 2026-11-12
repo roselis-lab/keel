@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "One checked claim, kept out of the prose and referenced from it.\n\nThe text of a finding stays readable: a claim carries one marker, `[3]`, or an\nembedded link to `#ev-3`, and the pointer itself lives here. A pointer is to the\nexact place, pinned to a commit: a file or a branch moves, and evidence that moved\nno longer proves anything. The quote is required so the entry still says something\nto a reader who cannot open the source.",
+      "properties": {
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "kind=command or test: exactly what was run",
+          "title": "Command"
+        },
+        "commit": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{7,40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "kind=read: the commit the lines are read at",
+          "title": "Commit"
+        },
+        "id": {
+          "description": "Referenced from prose as [id] or #ev-id",
+          "minimum": 1,
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "read",
+            "command",
+            "test"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "lines": {
+          "anyOf": [
+            {
+              "pattern": "^[1-9][0-9]*(-[1-9][0-9]*)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "kind=read: '42' or '42-57'",
+          "title": "Lines"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "kind=read: the file, relative to the repository root",
+          "title": "Path"
+        },
+        "quote": {
+          "description": "Verbatim: the lines read, or the output of the command or test",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "repo": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "kind=read: which repository `path` is in, when the system spans more than one. A short stable name, e.g. 'payments-api' or 'org/payments-api'; empty for a single-repository system. `keel recheck --repo NAME=PATH` maps it to a checkout",
+          "title": "Repo"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional permalink to the same lines. Must be https, on a host in the organisation's evidence_hosts, and contain the commit: anything else is refused on save",
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "quote"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "OrgFact": {
+      "additionalProperties": false,
+      "description": "One statement, who stood behind it, and what it rests on.",
+      "properties": {
+        "confirmed_by": {
+          "description": "The person who confirmed it: 'Name <email>' or a role",
+          "minLength": 1,
+          "title": "Confirmed By",
+          "type": "string"
+        },
+        "confirmed_on": {
+          "description": "YYYY-MM-DD, the day it was confirmed",
+          "format": "date",
+          "title": "Confirmed On",
+          "type": "string"
+        },
+        "documents": {
+          "description": "Links to the documents it rests on (an architecture page, a policy), or their names when there is no link",
+          "items": {
+            "type": "string"
+          },
+          "title": "Documents",
+          "type": "array"
+        },
+        "evidence": {
+          "description": "Code it rests on, in the same shape as report evidence, so `keel recheck org/<file>.yaml --repo PATH` says whether the lines are still there",
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "description": "Cited as org:<file>#<id>; stable once cited",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "statement": {
+          "description": "The fact, in one or two sentences",
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "systems": {
+          "description": "Optional: ids of the assessed systems that rely on it",
+          "items": {
+            "type": "string"
+          },
+          "title": "Systems",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "confirmed_by",
+        "confirmed_on"
+      ],
+      "title": "OrgFact",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One platform or one policy, and the facts about it.",
+  "properties": {
+    "about": {
+      "description": "What this platform or policy is, so an assessor can tell whether it applies",
+      "minLength": 1,
+      "title": "About",
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/OrgFact"
+      },
+      "minItems": 1,
+      "title": "Facts",
+      "type": "array"
+    },
+    "kind": {
+      "enum": [
+        "platform",
+        "policy"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "kind",
+    "about",
+    "facts"
+  ],
+  "title": "OrgFile",
+  "type": "object"
+}

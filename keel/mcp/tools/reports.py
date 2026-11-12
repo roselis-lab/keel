@@ -13,7 +13,7 @@ judgment about their own work, made in the UI.
 from typing import Any
 
 from keel.mcp.registry import register_tool
-from keel.services import report_service
+from keel.services import org_service, report_service
 
 _RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 _WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
@@ -23,15 +23,16 @@ _WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": Tru
 async def list_reports(system_id: str | None = None) -> dict:
     """Lists assessed systems, or one system's assessment dates.
 
-    Without system_id: one entry per system — id, name, latest date, how many reports,
-    current status. With system_id: that system's dates, newest first.
+    Without system_id: one entry per system (id, name, latest date, report count,
+    status), and `org_facts`: what the organisation keeps between assessments, shared
+    platforms and data policies, each with who confirmed it and when. With system_id:
+    its dates, newest first.
 
-    Call this at the start of an assessment. A system that has been assessed before has
-    a previous report to work from, and re-deriving findings that were already settled
-    wastes the specialist's time and loses the reasoning behind the old grades."""
+    Call this first: an earlier report and a stored fact are questions not to ask
+    again. Cite a fact by its `ref`."""
     if system_id:
         return {"series": report_service.get_report_series(system_id)}
-    return {"reports": report_service.list_reports()}
+    return {"reports": report_service.list_reports(), "org_facts": org_service.list_facts()}
 
 
 @register_tool(annotations=_RO)

@@ -60,6 +60,8 @@ The proof goes in the report's `evidence` list, not into the prose. Each entry: 
 
 In the prose, a claim carries one marker, `[3]`, and the finding lists the ids it rests on in `evidence`. Keep the sentence readable: one marker per claim, no paths or quotes inline. A finding with no evidence cannot be finalized. A grade-deciding claim you could not check is an open question, not an unmarked sentence.
 
+A stored organisation fact the specialist confirmed in this run (skill step 2) is cited like evidence: write its `ref`, `org:<file>#<fact-id>`, next to the claim, and if it rests on code, copy that code entry into `evidence` as a `read` of your own, checked now. A `ref` that names no stored fact is said back on save. **If a threat is ruled out because of a stored fact, the `discarded` reason names that fact by its `ref`**: a discard that rests on an organisation's word has to say whose word, so that the day the fact stops holding, the discards it carried can be found.
+
 ## `meta`, how the run went
 
 This block does not describe the system; it exists so the assessor itself can be improved, and it is the only feedback anyone will get. Fill it honestly, including the parts that make you look bad, a flattering `meta` is worthless.

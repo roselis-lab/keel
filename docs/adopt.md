@@ -89,6 +89,34 @@ Either way the assessor commits the report after finalizing it, and Git history 
 
 If reports live in your copy, never send a pull request upstream from your `main`: it would carry them. Contribution branches start from `upstream/main` (see the end of this page).
 
+## What the organisation keeps between assessments
+
+Some answers hold for more than one system: what the shared LLM gateway does with a prompt, which data class counts as personal, where restricted data may go. Without a place for them, every assessment asks the same people the same questions. Keep them in `org/`, one YAML file per platform or policy, next to `reports/` (or wherever `ORG_DIR` points). Like `reports/`, upstream ignores `org/`, so pick the same place for it as for your reports.
+
+Each fact says what is true, who confirmed it and on what day, what it rests on (a link to a document, or code pinned the way report evidence is), and optionally which systems rely on it. [`examples/org/llm-gateway.yaml`](../examples/org/llm-gateway.yaml) is a made-up file to copy; `schema/org_facts.schema.json` gives an editor autocomplete.
+
+```yaml
+title: Acme LLM gateway
+kind: platform            # or policy
+about: The internal proxy every Acme service uses to call a model provider.
+facts:
+  - id: restricted-stays-internal
+    statement: A call tagged "restricted" goes to the self-hosted model only.
+    confirmed_by: Sam Example, security architect
+    confirmed_on: 2026-10-02
+    documents: [Acme data classification policy, version 4, section 3]
+    systems: [support-bot]          # optional
+```
+
+How an assessment uses them:
+
+- At the start it reads every fact (`list_reports` returns them as `org_facts`) and asks the specialist once about the ones that apply: confirmed by whom on what date, still true?
+- It cites a confirmed fact as `org:<file>#<fact-id>`, the way it cites code. A threat ruled out because of a fact names the fact in its reason, so when the fact stops holding you can find what it ruled out. Saving a report that cites a fact no file holds says so.
+- At the end it proposes new or changed facts as edits to these files. A person makes the edit and commits it. The agent does not write here.
+- `keel recheck org/<name>.yaml --repo <checkout>` says whether the code a fact rests on is still in place, as it does for a report.
+
+A fact is not a control marked done and Keel does not grade on it by itself. How a control is built in your organisation still belongs on the control card, in `implementations`.
+
 ## Publish the read-only site
 
 `keel site` builds a folder of plain HTML pages: an overview, every threat and control, the coverage table and, if you ask for them, the reports.

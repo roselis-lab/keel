@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     # repo's own reports/, sibling to catalog/.
     reports_dir: str = ""
 
+    # Optional override for the organisation facts directory (env var: ORG_DIR): one
+    # YAML file per shared platform or data policy, read by every assessment. Empty =
+    # the repo's own org/, sibling to reports/. Private like reports: never committed
+    # upstream.
+    org_dir: str = ""
+
     # MCP
     mcp_server_name: str = "keel"
     mcp_server_version: str = "0.1.0"

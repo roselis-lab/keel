@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from keel.schemas.mitigation import Implementation, MitigationCreate
+from keel.schemas.org import OrgFile
 from keel.schemas.threat import MitigationLink, ThreatCreate, Weakness
 
 DEFAULT_SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schema"
@@ -21,6 +22,7 @@ def build_schemas() -> dict[str, dict[str, Any]]:
         "weakness": Weakness.model_json_schema(),
         "mitigation_link": MitigationLink.model_json_schema(),
         "implementation": Implementation.model_json_schema(),
+        "org_facts": OrgFile.model_json_schema(),
     }
 
 

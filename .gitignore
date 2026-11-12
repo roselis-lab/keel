@@ -22,6 +22,9 @@ build/
 
 # Assessment runs are local: real system names and findings, never committed.
 reports/
+# The same for what an organisation keeps between assessments (keel/schemas/org.py).
+# The format and a made-up example are in examples/org/.
+/org/
 
 # generated demo artefacts
 docs/demo/.deck-preview.html

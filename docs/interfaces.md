@@ -22,7 +22,7 @@ Run each with `uv run` in front, or directly once Keel's environment is active.
 | `keel up` | Starts the local UI and REST API in the background at `http://127.0.0.1:8420/`, or says where it is already running. Safe to run at the start of every session. `UI_PORT` changes the port. |
 | `keel down` | Stops it. |
 | `keel site --out DIR` | Builds the read-only HTML site of the catalog into `DIR` (default `public`). Options: `--reports DIR` adds final reports, `--include-drafts` adds drafts too, `--title` names the site. See [Publish the read-only site](adopt.md#publish-the-read-only-site). |
-| `keel recheck REPORT --repo PATH` | For every line a report quotes, says whether it is still in place, moved (with the new lines) or gone, reading each file at the checkout's HEAD. `--repo NAME=PATH`, repeated, for evidence that names its repository. Lists `command` and `test` evidence without running it. A reassessment starts from what it lists as moved or gone. |
+| `keel recheck REPORT --repo PATH` | For every line a report quotes, says whether it is still in place, moved (with the new lines) or gone, reading each file at the checkout's HEAD. `--repo NAME=PATH`, repeated, for evidence that names its repository. Lists `command` and `test` evidence without running it. A reassessment starts from what it lists as moved or gone. It reads an organisation facts file (`org/<name>.yaml`) the same way. |
 | `keel schema` | Regenerates the JSON Schema files under `schema/`. |
 | `keel schema --check` | Fails when those files are stale. CI runs it. |
 | `keel export REPORT --out DIR` | Writes a report as a Confluence page, one picture per finding and one Jira ticket text per fix. Sends nothing. |
@@ -96,4 +96,4 @@ A report keeps an extension's data under `extensions.<name>`. Keel stores that s
 
 ## Roadmap
 
-Per-system state, to mark a threat not applicable for a given deployment or to accept a risk, so known noise can be suppressed without deleting shared knowledge. Until then, that context lives in each report's ruled-out list, or in your copy of the catalog.
+Per-system state, to mark a threat not applicable for a given deployment or to accept a risk, so known noise can be suppressed without deleting shared knowledge. Until then, that context lives in each report's ruled-out list, in the organisation facts of `org/` when it holds for several systems ([Adopt](adopt.md#what-the-organisation-keeps-between-assessments)), or in your copy of the catalog.

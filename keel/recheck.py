@@ -31,6 +31,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
+from keel.schemas.org import OrgFile
 from keel.schemas.report import Evidence, Report
 
 IN_PLACE, MOVED, GONE, NOT_CHECKED, BY_HAND = "in place", "moved", "gone", "not checked", "run by hand"
@@ -100,7 +101,7 @@ def check(ev: Evidence, repos: dict[str | None, Path]) -> dict:
     return {**row, "status": GONE, "note": "the quoted lines are not in the file"}
 
 
-def recheck(report: Report, repos: dict[str | None, Path]) -> list[dict]:
+def recheck(report: Report | OrgFile, repos: dict[str | None, Path]) -> list[dict]:
     return [check(ev, repos) for ev in report.evidence]
 
 
@@ -134,7 +135,8 @@ def parser() -> argparse.ArgumentParser:
         description="Say, for every line a report quotes, whether it is still where the "
         "report saw it. Reads each file at the checkout's HEAD; runs no command from the report.",
     )
-    p.add_argument("report", help="the report file, e.g. reports/<system-id>/<date>.yaml")
+    p.add_argument("report", help="the report file, e.g. reports/<system-id>/<date>.yaml, "
+                   "or an org facts file, e.g. org/<name>.yaml")
     p.add_argument(
         "--repo", action="append", default=[], metavar="[NAME=]PATH",
         help="a checkout of the assessed code. PATH for evidence with no `repo`; "
@@ -147,9 +149,12 @@ def main(argv: list[str]) -> None:
     args = parser().parse_args(argv)
     path = Path(args.report)
     try:
-        report = Report(**(yaml.safe_load(path.read_text(encoding="utf-8")) or {}))
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        # An org facts file (keel/schemas/org.py) pins its code the same way a report
+        # does; it is told apart by its `facts`, which a report does not have.
+        report = OrgFile(**data) if isinstance(data, dict) and "facts" in data else Report(**data)
     except (OSError, yaml.YAMLError, ValidationError, TypeError) as e:
-        raise SystemExit(f"{path}: not a readable report ({type(e).__name__}).") from None
+        raise SystemExit(f"{path}: not a readable report or org facts file ({type(e).__name__}).") from None
     rows = recheck(report, _parse_repos(args.repo))
     print(f"{path}: {len(rows)} evidence entries, checked at HEAD")
     for row in rows:

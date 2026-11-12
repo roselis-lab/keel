@@ -16,7 +16,7 @@ def test_threat_schema_has_frozen_vocab_enums():
 def test_build_schemas_covers_all_entities():
     schemas = build_schemas()
     assert set(schemas) == {
-        "threat", "mitigation", "weakness", "mitigation_link", "implementation",
+        "threat", "mitigation", "weakness", "mitigation_link", "implementation", "org_facts",
     }
 
 
