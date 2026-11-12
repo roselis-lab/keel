@@ -34,7 +34,7 @@ export interface Finding {
   requirements: Requirement[];
   ignored_mitigations?: { mitigation_id: string; reason: string }[];
 }
-export interface Evidence { id: number; kind: "read" | "command" | "test"; quote: string; commit?: string; path?: string; lines?: string; url?: string; command?: string }
+export interface Evidence { id: number; kind: "read" | "command" | "test"; quote: string; commit?: string; repo?: string; path?: string; lines?: string; url?: string; command?: string }
 export interface OpenQuestion { id: string; question: string; asks_for: string; looked_in: string; needed_for: string; how_to_check: string; answer?: string | null }
 export interface Surface { id: string; kind: "entry" | "tool" | "data" | "file"; name: string; where: string; outcome: string[]; note?: string | null; found_by?: string }
 export interface Report {
