@@ -1,21 +1,86 @@
 id: CTRL-COMMAND-SANDBOX
 name: Command allowlist
 mitigation_class: gating_control
-purpose: Restricts the execution of shell commands to a strictly defined allowlist of permitted operations, blocking any attempt to run unauthorized commands, including destructive operations, system utilities, and arbitrary code execution through shell interfaces. The mechanism works as a wrapper or middleware around the shell execution layer, checking each command against the allowlist before execution and blocking everything that does not match the permitted set. This prevents RCE attacks through injection vectors, limits the blast radius of compromised components, and provides a deterministic attack surface for shell operations.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents a command-execution tool from running anything outside the small set of commands its job needs,
+  so a model steered or mistaken into a destructive utility, a download-and-run or arbitrary code cannot
+  execute it through that tool.
+formal_implementation_risk: >-
+  The allowlist checks the first word of a command string and then hands the whole string to a shell, so
+  separators, substitutions and redirects run whatever follows. Signal: an allowed command followed by a
+  separator and a second command runs both.
+review: >-
+  Review when a command is added to the list, when an allowed command's version adds flags that execute
+  other programs, when the tool's job changes, or when the tool starts being used by an agent that needs to
+  build or test code. Keep a periodic safety-net review alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'Shell wrapper with allowlist: All shell calls pass through a centralized wrapper that checks the base command (the first token) against an allowlist of permitted utilities. For each command in the allowlist, permissible flags and argument patterns are defined. Commands outside the list are rejected with the attempt logged. The wrapper can be implemented as a shell function, a sudoers policy, or a dedicated command proxy service.
+locus:
+  value: product
+  note: >-
+    The list and the argument patterns are specific to the tool's job, so they belong to whoever builds the
+    tool. A shared runtime can supply the structured-execution primitive (no shell, argument vector,
+    unprivileged user), which is worth building once; the list itself is not.
+scope: |-
+  Command-execution tools whose job is served by a bounded set of commands with bounded arguments: a tool that reads logs, reports repository status, restarts a named service, runs a fixed deployment script.
 
-
-  Restricted shell (rbash): Restricted bash (rbash) or zsh restricted mode is used, which forbids cd, changing PATH, output redirection, job control, and the use of absolute paths to scripts. In combination with a restricted PATH, this provides confinement to a preinstalled set of commands. However, restricted shells have known escape vectors through permitted scripts or editors.
-
-
-  Containerized command execution: Each command is executed in a separate container or sandbox with a pre-configured set of utilities. The Docker image or sandbox profile contains only the permitted binaries and libraries, without shell interpreters, compilers, or system administration utilities. This gives the strongest isolation, but it requires infrastructure for orchestration.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
+  Whether the card applies is set by whether the commands the agent needs can be enumerated:
+  - they can: a list of commands with a pattern for each argument;
+  - they cannot - the agent must run the project's own build, test or install commands: an allowlist is the wrong control. A build tool, a test runner or a package manager executes code the repository defines, so allowing it allows arbitrary code under a respectable name. Use isolated execution of generated code, with credentials kept out of the agent's reach, instead.
+out_of_scope: >-
+  Agents that need arbitrary build commands, as scope says, are isolated execution, not this card. Model
+  arguments interpolated into SQL, templates or other interpreters inside a tool are input
+  parameterization. Which tools the agent can reach at all is the tool allowlist.
+control_mechanism: >-
+  Enforced in the tool handler - the component that turns a tool call into a process - not in the model
+  and not by a wrapper that inspects a command string. The handler accepts a structured call (a command
+  identifier and its arguments), maps the identifier to a fixed executable path, validates each argument
+  against that command's pattern, and starts the process directly with an argument vector, with no shell in
+  between, so separators, pipes, substitutions and redirects have no meaning. Flags through which an
+  allowed command runs other programs (an exec option, a configurable helper command, a script argument)
+  are refused by the pattern, or the command is left off the list. The process runs as an unprivileged user
+  with a fixed PATH and working directory.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    List missing or unreadable, a call that does not parse into the structured form, an argument that
+    matches no pattern: nothing runs. The value flips to fail_open where the handler falls back to running
+    the raw string when parsing fails; a refusal recorded for every unparsed call is how that is noticed.
+telemetry:
+  events:
+  - name: command.executed
+    records: Which listed command ran with which arguments.
+    attributes:
+    - command identifier and executable path
+    - argument vector
+    - session and agent
+  - name: command.refused
+    records: A command or argument outside the list.
+    attributes:
+    - requested command and arguments
+    - failing rule
+  evidence: Held in the runtime's log store outside the host the commands run on.
+anti_patterns:
+- 'First-word check, then a shell (the formal variant). Signal: the handler''s code passes a string to a shell.'
+- 'The list includes interpreters or build tools (a language runtime, a package manager, make). Signal: an allowed package-manager script entry runs a command from the repository.'
+- 'A denylist of dangerous commands presented as an allowlist. Signal: a command nobody thought of runs.'
+- 'An allowed command keeps a flag that runs other programs. Signal: a search command with an exec option runs an arbitrary binary.'
+validation:
+- criterion: Only listed commands run.
+  test_scenario: Ask the tool to run a command not on the list, and a listed command followed by a separator and a second command.
+  expected_result: Both are refused; nothing beyond the listed command runs.
+  base: true
+- criterion: Arguments cannot turn an allowed command into another program.
+  test_scenario: For each listed command, try its known exec-style flags and helper-command options.
+  expected_result: Each is refused by the pattern.
+  base: true
+- criterion: No shell is involved.
+  test_scenario: Pass an argument containing a command substitution to a listed command.
+  expected_result: The argument reaches the command as literal text, or is refused.
+  base: true
+- criterion: The card is not applied to an agent that runs project builds.
+  test_scenario: Check whether the list includes a build tool, test runner or package manager.
+  expected_result: It does not; such agents are covered by isolated execution instead.
+  base: true
 faq: []
+requires: []
+implementations: []

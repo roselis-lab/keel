@@ -1,23 +1,69 @@
 id: CTRL-CODE-SANDBOX
 name: Isolated execution of generated code
 mitigation_class: gating_control
-purpose: Isolates the execution of code generated or modified by the model in a constrained environment with no access to the network, the host file system, secrets, or other resources beyond those explicitly permitted, preventing compromise of the main system when malicious or vulnerable code is executed. The mechanism deploys the code in a sandbox - a container, virtual machine, or isolated interpreter - and intercepts all attempts to access resources at the runtime or operating-system level. This blocks attacks through code injection, prevents escape from isolation into the host system, and limits the blast radius of vulnerabilities in the generated code.
+purpose: >-
+  Prevents code the model wrote, or was steered into writing, from reaching anything beyond what its task
+  was given when it runs: the host, other workloads, the network, credentials. Without it, generated code
+  runs with the authority of whatever executes it.
 formal_implementation_risk: 'The code runs in a container that shares the host kernel on a host that itself holds tokens, cloud credentials or other workloads'' data, so a single container-runtime or kernel escape turns the sandbox into a doorway rather than a boundary. Signal: the node that runs generated code can read a credential or a neighbouring build''s files from outside the container.'
-review: null
+review: >-
+  Review when a new path starts executing generated code (a new tool, a test runner, a CI job on agent
+  changes), when the isolation layer or its profile changes, when the executing host starts holding
+  credentials or another workload, or when code in the sandbox gains network access. Keep a periodic
+  safety-net review alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'Isolated interpreter: Code is executed in an interpreter with dangerous functions disabled: no file system access (isolated or in-memory only), no network calls, no subprocess spawning, no reflection into private APIs. In Python this is achieved through restricted globals, AST filtering, or specialized sandbox libraries. The approach gives minimal overhead and fast startup, but it limits functionality and may have escape vectors through an insufficiently strict sandbox.
+locus:
+  value: split
+  note: >-
+    The sandbox itself is infrastructure: a platform or provider builds the isolation once and every tool
+    uses it. Routing each execution path through it is product work for whoever owns the tool or runtime,
+    because only they know where their code ends up being run. A team with one interpreter tool can use a
+    hosted sandbox and holds only the routing half.
+scope: |-
+  Every path where code produced or modified by a model is executed: a code-interpreter tool, an eval or exec inside a tool, an agent running scripts or tests it wrote, a CI job running an agent's changes.
 
-
-  WebAssembly isolation: Code is compiled into WebAssembly and executed in a WASM runtime, where isolation is guaranteed at the specification level - the code has no access to the host except for explicitly exported functions. This gives strong isolation with portability across platforms, but it requires transpiling the code into WASM and imposes restrictions on the libraries that can be used.
-
-
-  Ephemeral containers: Generated code is executed in a single-use container with a read-only file system, no network access, and minimal capabilities. After execution the container is destroyed. This gives maximum isolation at the OS level, but it carries startup overhead and requires infrastructure to orchestrate ephemeral containers.'
+  The isolation layer is set by who can influence the code and what the executing host holds:
+  - the code can be influenced by untrusted input (anything the model read from outside), or the host holds credentials or other workloads' data: a boundary stronger than a shared kernel - a micro-VM or a user-space kernel - created per run and destroyed after;
+  - the code comes only from the operator's own inputs on a single-purpose host with no secrets: an unprivileged container with no network is enough;
+  - the code needs no operating-system facilities at all: a WebAssembly runtime with no host functions imported is enough; a restricted interpreter of a general-purpose language is not a boundary against hostile code;
+  - the code needs the network (installing packages): egress only through the destination allowlist.
+out_of_scope: >-
+  Code that leaves the sandbox as an artifact and is run elsewhere - merged into the repository, deployed,
+  picked up by a later pipeline - is build-state isolation and code review. Markup rendered in a browser is
+  output encoding. Shell commands an agent issues on a person's own machine are the command allowlist, or
+  this card applied to that machine's agent. Whether the code is correct is not a sandbox question.
+control_mechanism: >-
+  Enforced at the platform layer - the execution environment the runtime launches for the code - not in
+  the prompt that generates it and not by scanning the code first. The runtime hands the code to an
+  environment created for this run, with the isolation layer scope sets; no host mounts beyond a scratch
+  directory and the inputs passed explicitly; no credentials in the environment or the file system; no
+  network, or egress only through the destination allowlist; no reachable container-runtime socket, SSH
+  agent or cloud metadata endpoint; CPU, memory and time limits. The environment is destroyed after the run.
+  Results come back as data the caller reads; nothing written inside is executed later by a more privileged
+  process unless it passes the same gate.
 failure_behavior:
   value: fail_closed
   note: 'When the sandbox cannot start, its profile fails to load or its isolation layer is unavailable, the code does not run. The value flips to fail_open where the runtime falls back to executing on the host when the sandbox is missing; a refusal recorded for every such start, rather than a silent fallback, is how the difference is noticed.'
-telemetry: null
+telemetry:
+  events:
+  - name: sandbox.run
+    records: Which code ran where, under which isolation.
+    attributes:
+    - calling tool and session
+    - isolation layer and profile version
+    - image or runtime digest
+    - network policy applied
+  - name: sandbox.violation
+    records: A blocked system call, connection or mount access from inside.
+    attributes:
+    - run id
+    - what was attempted
+  - name: sandbox.refused
+    records: The sandbox could not start, so the code did not run.
+    attributes:
+    - calling tool
+    - reason
+  evidence: Held by the platform outside the sandbox and the calling runtime, kept for the investigation window of the host it protects.
 anti_patterns:
 - 'A shared-kernel container on a host that holds secrets. Signal: from the node, outside the container, a credential or another workload''s data is readable.'
 - 'Isolation covers execution during the session, while what the code writes is run later outside it. Signal: files or cache entries written inside the sandbox are executed by a test run or pipeline that holds credentials.'
@@ -40,3 +86,5 @@ validation:
   expected_result: None of them answers.
   base: true
 faq: []
+requires: []
+implementations: []

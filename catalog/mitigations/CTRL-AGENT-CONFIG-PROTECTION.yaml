@@ -1,0 +1,79 @@
+id: CTRL-AGENT-CONFIG-PROTECTION
+name: Agent cannot change its own permissions
+mitigation_class: gating_control
+purpose: >-
+  Prevents an agent from turning off the controls that gate it - an auto-approve switch, a tool allowlist,
+  a tool-server declaration - by editing the file that holds them, whether it was steered into the edit or
+  made it by mistake.
+formal_implementation_risk: >-
+  The runtime refuses writes to its settings file through the file tool, but the shell tool can write it,
+  or the same setting can also be read from a second file the agent can edit. Signal: after the agent
+  writes the setting through the shell or the second file, the running session stops asking.
+review: >-
+  Review when the runtime reads configuration from a new location, when a setting that affects approvals or
+  tools is added, when a new tool can write files, or when configuration starts reloading while a session
+  runs. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: product
+  note: >-
+    The runtime decides where its own configuration comes from and when it is read, so the runtime vendor
+    holds the guarantee once for every user. Managed policy on devices can add a layer the user's own files
+    cannot override.
+scope: |-
+  Every agent runtime whose permissions, tool list, tool-server declarations or approval settings are read from files or settings the agent's own tools could reach.
+
+  The variant is set by where that configuration lives:
+  - inside the workspace the agent edits: those entries are not honoured for permissions at all, or are read only once at session start and never from a write made in the session;
+  - in user-level settings outside the workspace: the agent's tools cannot write there;
+  - in managed policy: neither the user's files nor the workspace can loosen it.
+out_of_scope: >-
+  Which entries a freshly opened workspace may declare is workspace trust. Review of changes to shared
+  agent configuration in a repository is owner review of configuration changes. Instruction text the model
+  reads is not permission configuration.
+control_mechanism: >-
+  Enforced in the agent runtime's configuration loader and in its file and shell tools. The loader reads
+  permission-bearing configuration once at session start and does not apply changes during the session;
+  a change takes effect only in a new session, after a person opens it. Paths that hold permission-bearing
+  configuration are refused as write targets for every tool the agent has - the file tool, the shell, code
+  it runs - by resolving the target path and by running the agent's processes without write access to them
+  (a separate user, a read-only mount). A refused write is reported to the person.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    A configuration file changed during the session is ignored until restart; one that cannot be parsed at
+    start means the session starts with the stricter defaults. Either is reported at the next prompt so the
+    person sees it.
+telemetry:
+  events:
+  - name: config.write_refused
+    records: The agent tried to write permission-bearing configuration.
+    attributes:
+    - tool used
+    - target path
+    - session
+  - name: config.change_ignored
+    records: A change to configuration during the session that was not applied.
+    attributes:
+    - path and digest
+  evidence: Held on the device or forwarded to the organisation's log store; not in the workspace.
+anti_patterns:
+- 'Only the file tool is restricted (the formal variant). Signal: the shell can write the settings path.'
+- 'Configuration reloads while the session runs. Signal: a setting edited mid-session changes prompting in the same session.'
+- 'A second, overlooked source of the same setting. Signal: an environment variable or a workspace file read by the runtime can turn approvals off.'
+validation:
+- criterion: No tool can write permission-bearing configuration.
+  test_scenario: Ask the agent to enable auto-approval through the file tool, then through the shell, then through a script it writes and runs.
+  expected_result: All three writes are refused.
+  base: true
+- criterion: A running session ignores changes to its configuration.
+  test_scenario: From outside the agent, change the settings file during a session to allow a tool, then have the agent call it.
+  expected_result: The call is still prompted for or refused until a new session starts.
+  base: true
+- criterion: Every source of the setting is covered.
+  test_scenario: List every file and variable the runtime reads approval and tool settings from, and try each.
+  expected_result: None of them is writable by the agent or honoured mid-session.
+  base: true
+faq: []
+requires: []
+implementations: []

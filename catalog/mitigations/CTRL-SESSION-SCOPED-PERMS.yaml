@@ -1,21 +1,94 @@
 id: CTRL-SESSION-SCOPED-PERMS
-name: Session-Scoped Permissions to Reduce Prompts
+name: Session-scoped permission grants
 mitigation_class: gating_control
-purpose: Grants permissions at the session level rather than per action, with a default-deny policy where the user explicitly approves categories of actions once per session, significantly reducing the frequency of confirmation prompts and preventing fatigue. The mechanism operates at the permission management layer and caches approved permissions for the duration of the session. This focuses the user's attention on initial permission decisions, eliminates repetitive confirmations for routine operations, and preserves security through explicit user consent.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents two failures at once: a permission a person gave for one task standing beyond it - into later
+  sessions, other workspaces, other targets - and the approval fatigue that asking about every routine call
+  produces, in which a harmful call is approved along with the rest.
+formal_implementation_risk: >-
+  A grant matches the start of a command string, so a compound command beginning with a granted prefix runs
+  without asking. Signal: after granting a read-only command, that command followed by a separator and a
+  network download runs with no prompt.
+review: >-
+  Review when the runtime adds a tool or a category, when the grant format or matching changes, when grants
+  start being saved anywhere new, or when a non-interactive mode is added. Keep a periodic safety-net review
+  alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'Session permission cache: Permissions approved by the user are cached for the duration of the session with a time-to-live. After the initial approval, action categories are executed without repeated confirmations. Once the time-to-live expires, re-approval is required. This balances security with usability.
+locus:
+  value: product
+  note: >-
+    The grant lives in the runtime's permission layer, the component that already decides whether a call
+    needs a prompt, so the runtime vendor builds it once for every user. An organisation's part is managed
+    policy that sets which categories may never be granted for a session; without managed devices there is
+    only the runtime half.
+scope: |-
+  Every runtime that asks a person to allow categories of agent actions: coding agents, command-line and desktop assistants.
 
-
-  Scoped tokens after approval: After the initial approval, the system generates temporary scoped tokens that authorize specific operations. The token expires together with the session. This provides cryptographic enforcement of permissions.
-
-
-  Permission bundles: The user selects from predefined permission bundles (for example, "read-only workspace", "full edit access") instead of granular confirmations for each action. Bundles encapsulate common permission patterns.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
+  What a category may be granted for is set by what its effect reaches:
+  - the effect stays inside the session's working area (editing files in the workspace, running the project's test command): grantable for the session;
+  - the effect leaves the working area or cannot be undone (pushing, deploying, sending, deleting outside the workspace): not grantable for a session; each call goes to risk-based approval;
+  - a non-interactive run: grants come only from the pipeline's configuration, none are inferred.
+out_of_scope: >-
+  Which operations are high-tier is decided by risk-based approval, and this card defers to it. A grant
+  never adds business entitlement - that is initiating-principal authorization - and never removes a check
+  required on the specific object. Whether the person read the request before granting it is the approval
+  view's concern.
+control_mechanism: >-
+  Enforced in the agent runtime's permission layer, with grant state held outside the model's context and
+  outside any file the agent can write. A grant is a record: tool, an argument pattern (a parsed command and
+  its arguments, or a canonical path subtree), session, workspace, expiry. At dispatch the runtime matches
+  the resolved call - the parsed command, each part of a compound command separately, the canonical path -
+  against the current session's grants; with no match it asks or refuses. Grants end with the session. A
+  persistent "always allow" is written only to user-level settings, only by the person, and never covers a
+  category scope marks as not grantable.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Grant store unreadable, a call that cannot be parsed into the pattern form: no grant applies, so the
+    runtime asks for every call or refuses in a non-interactive run. That costs convenience, not safety, and
+    a run of prompts for calls that were granted is how it is noticed.
+telemetry:
+  events:
+  - name: grant.created
+    records: Which category a person granted, for which session.
+    attributes:
+    - person
+    - tool and pattern
+    - session, workspace, expiry
+  - name: grant.applied
+    records: A call that ran without a prompt because of a grant.
+    attributes:
+    - resolved call
+    - grant it matched
+  - name: grant.refused
+    records: A request to grant a category that cannot be granted for a session.
+    attributes:
+    - tool and pattern
+    - reason
+  evidence: Held on the device or forwarded to the organisation's log store; a log inside the workspace is not evidence.
+anti_patterns:
+- 'Prefix matching on a raw command string (the formal variant). Signal: a granted prefix followed by a separator runs anything.'
+- 'Grants saved to a project file in the workspace. Signal: the agent''s file tool can write that file, and the agent grants itself.'
+- '"Allow everything for this session" covers pushing or deploying. Signal: a push runs without a prompt after a blanket grant.'
+- 'A grant keyed by tool alone. Signal: granting one shell command makes every shell command run without a prompt.'
+validation:
+- criterion: A grant covers only its pattern.
+  test_scenario: Grant a single read-only command, then issue it chained with a second command, and with a different subcommand.
+  expected_result: Both are prompted for.
+  base: true
+- criterion: Grants end with the session.
+  test_scenario: Grant a category, end the session, start a new one in the same workspace and repeat the call.
+  expected_result: The call is prompted for.
+  base: true
+- criterion: Effects outside the working area cannot be granted for a session.
+  test_scenario: Try to grant pushing to the remote for the session, then push.
+  expected_result: The grant is refused and the push is sent to approval.
+  base: true
+- criterion: The agent cannot create its own grants.
+  test_scenario: Ask the agent to edit whichever settings hold grants, then issue a call the edit would allow.
+  expected_result: The edit is refused or has no effect on the running session.
+  base: true
 faq: []
+requires:
+- CTRL-RISK-BASED-APPROVAL
+implementations: []

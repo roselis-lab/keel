@@ -1,21 +1,97 @@
 id: CTRL-URL-ALLOWLIST
-name: URL Allowlist and Private Range Blocking
+name: Destination allowlist for tool egress
 mitigation_class: gating_control
-purpose: The control restricts the set of URLs that agent tools may send network requests to. At the configuration stage, an allowlist of permitted domains and URL patterns is defined, and all requests to private IP addresses (127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), cloud provider metadata services (169.254.169.254), and internal organizational resources are blocked. Before executing each HTTP request, the system checks the target URL for conformance to the allowlist and absence from the blocked ranges, blocking non-conforming requests. This prevents SSRF attacks in which an attacker, through user input, causes a tool to reach internal resources, cloud instance metadata, or services not directly accessible from outside.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents a tool with network access from connecting to a destination nobody approved for that tool,
+  whether the destination is inside the network (a server-side request forgery) or outside it (data written
+  into a request to a host someone else reads). Without it, the model's arguments decide where the tool's
+  network position and whatever is in the context can reach.
+formal_implementation_risk: >-
+  The allowlist is checked on the address string in the tool's code, while the HTTP client follows
+  redirects without re-checking, or another process on the same host - a shell tool, a package manager -
+  goes out directly. Signal: from the tool's host, a connection to an unlisted host succeeds.
+review: >-
+  Review when a tool gains network access, when an integration adds a destination, when a listed domain
+  starts hosting content anyone can publish, when the egress path changes (a new proxy, a new network
+  segment, a tool moved to a host with direct egress), or when a tool starts following redirects. Keep a
+  periodic safety-net review alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'DNS resolution with IP check: The system performs DNS resolution of the target domain and checks that the resolved IP does not belong to private ranges or blocked networks. After a successful check, establishment of the HTTP connection is permitted. The method detects SSRF via DNS rebinding and spoofing.
+locus:
+  value: split
+  note: >-
+    The enforcement is infrastructure - an egress proxy or network policy - and one serves every tool on the
+    platform. The list is product: each tool's author knows which destinations the tool's job needs. A team
+    without a shared egress layer can enforce the same list in a forward proxy of its own; a check inside the
+    tool's code alone does not hold the guarantee.
+scope: |-
+  Every tool or runtime path that opens a network connection to a destination the model's output or content in the context can influence: fetch and browse tools, API connectors, webhooks, package fetchers, tool servers that make requests of their own.
 
+  Whether the card applies is set by whether the tool's job has a bounded set of destinations:
+  - bounded (an integration with known APIs): a per-tool list of hosts and schemes, enforced at network egress;
+  - open (general web browsing or search over arbitrary sites): no list is possible and this card does not apply; the floor against internal destinations is SSRF prevention, and what leaves inside requests is data loss prevention.
 
-  URL pattern matching: A whitelist of permitted URL patterns is implemented with support for wildcard syntax. The scheme (https only), host, port, and path are checked. Requests to URLs with credentials, nonstandard ports, or arbitrary query parameters are blocked.
-
-
-  Isolated proxy server: All HTTP requests from tools are routed through a corporate proxy with preconfigured filtering rules. The proxy performs URL inspection, private range blocking, and logging of all requests. The agent has no direct network access.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
-faq: []
+  A fixed external destination that accepts arbitrary content (a public search, a translation service) is a bounded destination; the list permits it, and what goes inside the request is not this card's question.
+out_of_scope: >-
+  SSRF prevention is the denylist floor - private ranges, loopback, link-local, metadata endpoints - that
+  holds even where no allowlist is possible. It is a separate card because a browsing agent can adopt it
+  without this one; where this list is enforced at egress and holds no internal destinations, it already
+  covers what the floor covers for that tool. Content inside a request to a permitted destination is data
+  loss prevention. Addressed recipients of messages - people, channels, accounts - are system-bound
+  recipients. Links and images a client fetches while rendering a reply are the client's own allowlist.
+control_mechanism: >-
+  Enforced at the network layer - an egress proxy or network policy the tool's process cannot route
+  around - with an optional earlier check in the tool handler for a clear error message. The tool's process
+  has no direct route out: every connection passes the proxy, which identifies the tool by its workload
+  identity (not by a header the tool sets) and matches the destination host against that tool's list after
+  DNS resolution and on every redirect hop. Matching is on the parsed host, exact or by a suffix that
+  begins at a label boundary. Schemes other than https are refused unless listed. Anything not listed is
+  refused.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Proxy down, list not loaded, tool identity not established, DNS failure during the check: the
+    connection is refused. The value flips to fail_open where the tool falls back to a direct connection
+    when the proxy is unreachable; a direct connection attempt from the tool's host, recorded by the network
+    layer, is how that is noticed.
+telemetry:
+  events:
+  - name: egress.allowed
+    records: Which tool reached which destination.
+    attributes:
+    - tool workload identity
+    - destination host and resolved address
+    - list entry that matched
+  - name: egress.blocked
+    records: A refused destination; the count says whether the list is doing anything.
+    attributes:
+    - tool workload identity
+    - requested destination, including redirect hop if any
+    - session that issued the call
+  evidence: Held by the egress layer outside the tool's host, kept for the investigation window of the data the tool can reach.
+anti_patterns:
+- 'The check is in the tool''s code and redirects or other processes bypass it (the formal variant). Signal: a listed host that redirects to an unlisted one is followed.'
+- 'String-prefix matching on the address. Signal: https://api.example.com.attacker.net or https://api.example.com@attacker.net passes.'
+- 'A listed domain serves content anyone can publish (a public storage bucket domain, a code-hosting raw domain, a paste site). Signal: an attacker-created object under that domain is reachable.'
+- 'One list for the whole agent rather than per tool. Signal: a fetch tool can reach the webhook tool''s destinations.'
+validation:
+- criterion: An unlisted destination is unreachable from the tool.
+  test_scenario: Ask the tool to fetch from a host you control that is not on its list.
+  expected_result: Refused; the listener receives nothing.
+  base: true
+- criterion: Redirects are re-checked.
+  test_scenario: Point a listed destination, or a test double for it, at a redirect to an unlisted host.
+  expected_result: The redirect hop is refused.
+  base: true
+- criterion: The tool's host has no direct route out.
+  test_scenario: From the tool's process, open a connection to an unlisted host bypassing the proxy settings.
+  expected_result: The connection fails at the network layer.
+  base: true
+- criterion: Host matching is on the parsed host.
+  test_scenario: Try a lookalike host built by appending the listed name as a prefix, and one using userinfo before the listed name.
+  expected_result: Both are refused.
+  base: true
+faq:
+- question: How does this relate to SSRF prevention?
+  answer: The allowlist says where a tool may go; SSRF prevention says where nothing may go. Adopt the floor everywhere and the allowlist wherever the destination set is bounded.
+requires: []
+implementations: []

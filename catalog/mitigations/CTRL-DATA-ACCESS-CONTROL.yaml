@@ -1,21 +1,95 @@
 id: CTRL-DATA-ACCESS-CONTROL
 name: Data-level access control
 mitigation_class: gating_control
-purpose: Manages the access rights of agents and tools to data sources at the level of individual fields, records, and operations, enforcing the principle of least privilege and preventing unauthorized access to sensitive information. The mechanism is deployed as an authorization layer between the agent or tool and the data sources - databases, APIs, file storage - checking each request against access policies. This prevents mass data exfiltration, limits exposure in the event of compromise, and ensures tenant isolation in multi-tenant systems through row- and column-level security.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents a permitted read from returning records or fields the requesting principal may not hold, so what
+  reaches the model's context - and from there whoever the model answers - is bounded by the requester's
+  rights rather than by the tool's. Without it, whatever a tool can read, the model can repeat.
+formal_implementation_risk: >-
+  Access lists are copied into the retrieval index once, at ingestion, and never re-checked, so a revoked
+  permission keeps serving its chunks; or the filter runs in application code after ranking, on results the
+  tool already fetched under its own rights. Signal: revoke a user's access to a document in the source
+  system and the same user still gets passages from it.
+review: >-
+  Review when a new data source or index is connected, when the source system changes its permission model,
+  when a store moves from a policy-capable engine to one without (a new vector database), when a field is
+  reclassified, or when the connector's service identity changes. Keep a periodic safety-net review
+  alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'Row-level security in the database: At the database level, row-level security (RLS) is configured, where each query is automatically filtered by the tenant or user identifier from the session context. An agent or tool cannot reach another tenant''s data even with a direct SQL injection - the database engine enforces the filter. This gives the strongest isolation, but it requires thorough testing of RLS policies for coverage.
+locus:
+  value: split
+  note: >-
+    Where the store can express row, column or document rules, the store holds the guarantee and every
+    caller gets it for free. Where it cannot - a flat API, a vector index without access lists - the
+    connector holds it and each connector must be built to it. The handoff is the query: the runtime supplies
+    the requester's identity, the store or connector applies the rule.
+scope: |-
+  Every tool or retrieval path that returns data from a store holding records or fields with different audiences: multi-tenant tables, documents with per-user permissions, records with sensitive columns, a retrieval index built from such sources.
 
-
-  Data masking and tokenization: Sensitive fields (salary, SSN/SNILS, medical records) are masked or tokenized at the data access layer. The agent receives only masked values (***123) or tokens without access to the plaintext. When access to the plaintext is required for specific business operations, an additional confirmation process is applied. This protects against accidental exposure, but it limits the agent''s functionality.
-
-
-  Fine-grained permissions for each agent or tool: For each tool or agent, a minimal set of permitted operations on the data is defined: read-only for certain tables, no access to sensitive columns, write-only to audit tables. The policy engine checks each data access request against the permissions and blocks violations. This enforces the principle of least privilege at the data level.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
+  The variant is set by what the store can express:
+  - the store supports row, column or document-level rules (database row-level security, a search engine with document-level security): enforce there, with the query running as the requester;
+  - the store cannot (a vector index without access lists, an API with one service key): the connector filters by the source system's permissions, carried on each item and re-validated at read;
+  - a field the task never needs in plaintext: masked or tokenized at the access layer, with unmasking as a separate operation.
+out_of_scope: >-
+  Whether the read operation is permitted at all is per-operation access control. Data the requester
+  legitimately holds but the model then repeats to a different audience - a shared channel, an outside
+  recipient - is a recipient question, handled by system-bound recipients and data loss prevention.
+  Separation of infrastructure between tenants is tenant isolation.
+control_mechanism: >-
+  Enforced in the downstream data store, or, where the store cannot express the rule, in the connector that
+  queries it - never by telling the model to leave fields out. The query carries the requester's identity
+  from authenticated session state. The store or connector applies the row filter and column projection for
+  that identity before anything is returned to the runtime. In a retrieval index each item carries the
+  permissions of its source document, written at ingestion and invalidated when the source changes them,
+  and the search filters by the requester before ranking, so a forbidden item never enters the top results
+  or a summary built from them. Masked fields reach the model masked; plaintext needs its own access-checked
+  operation.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Requester identity missing, an item whose permissions are unknown or stale past their freshness bound,
+    the policy unavailable: the record is withheld and the withholding is counted. The value flips to
+    fail_open where a connector treats an item with no permission data as public; a nonzero count of
+    items with no permission data in the index is how that is noticed.
+telemetry:
+  events:
+  - name: data_access.filtered
+    records: How much a read returned and how much the requester's rights removed.
+    attributes:
+    - requester identity
+    - source and query
+    - records returned and records withheld
+    - policy or permission snapshot version
+  - name: data_access.unknown_permissions
+    records: Items withheld because their permissions could not be established.
+    attributes:
+    - source
+    - item ids
+  evidence: >-
+    Held by the store or a log store outside the agent runtime, for the investigation window of the most
+    sensitive data the source holds. Record identifiers, not the data.
+anti_patterns:
+- 'Permissions copied once at ingestion (the formal variant). Signal: an item''s permission timestamp is older than the last permission change on its source.'
+- 'The application connects to the database as a role that bypasses row-level security (the table owner, a superuser). Signal: the connection role has bypass rights, or a query with no session identity returns every tenant''s rows.'
+- 'Filtering after the top results are chosen. Signal: a requester with access to nothing gets fewer than the requested number of results rather than none, or a summary mentions a withheld document.'
+- 'Masked in the interface, plaintext in the tool output. Signal: the raw tool response in the trace carries the unmasked field.'
+validation:
+- criterion: A read returns only what the requester may hold.
+  test_scenario: As a user without access to a document, ask a question only that document answers.
+  expected_result: No passage from it appears in the context or the reply.
+  base: true
+- criterion: Revocation reaches the index.
+  test_scenario: Grant a user access to a document, index it, revoke access in the source, then query as that user.
+  expected_result: The document's items are withheld within the stated freshness bound.
+  base: true
+- criterion: The query runs as the requester, not as a role that skips the rule.
+  test_scenario: Run the connector's query with no requester identity set.
+  expected_result: Nothing is returned.
+  base: true
+- criterion: Masked fields stay masked to the model.
+  test_scenario: Read a record with a masked field through the tool and inspect the raw tool response.
+  expected_result: The field is masked in the response, not only in the interface.
+  base: false
 faq: []
+requires: []
+implementations: []

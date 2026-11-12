@@ -1,22 +1,107 @@
 id: CTRL-ACCESS-CONTROL
 name: Per-operation access control
 mitigation_class: gating_control
-purpose: Verifies a user's or agent's authorization to perform each operation before it is actually executed, relying on pre-configured access policies and permission matrices. The mechanism operates at the boundary between the incoming request and the execution environment, blocking attempts to carry out actions that fall outside the subject's assigned roles or attributes. This prevents unauthorized use of sensitive functions, access to other parties' data, and privilege escalation through misconfigured or missing checks.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents a caller - a person, or an agent acting for one - from performing an operation on an object
+  outside the rights that caller holds, whether the request was typed by the caller or composed by a
+  model on their behalf. Without it a tool runs whatever the model asks for under the tool's own authority,
+  and that authority is usually wider than any one caller's.
+formal_implementation_risk: >-
+  The check is made per tool ("may this caller use the documents tool") rather than per operation and
+  object, and the tool then serves every request under its own service credential. Signal: two callers with
+  different rights receive the same object from the same call.
+review: >-
+  Review when a tool gains an operation, when the target system changes how it expresses rights (new roles,
+  new object attributes, a move to a central policy engine), when a tool starts calling the target with a
+  shared credential instead of the caller's, or when a new caller type appears (a scheduled job, a peer
+  agent). Keep a periodic safety-net review alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'RBAC operation matrix: Each user or agent is assigned a role from a fixed set, and each operation in the system is bound to one or more roles through a permission matrix. Before a request is executed, middleware or a policy engine checks whether the current subject holds a role that permits the given operation on the given resource. This approach is simple to implement and audit, but it requires manual updates to the matrix whenever new roles or operations appear, which makes it less flexible in rapidly changing systems.
+locus:
+  value: split
+  note: >-
+    The decision belongs to the system that owns the object: only it knows who may do what to it. The agent
+    runtime's half is to carry the caller's authenticated identity to that point and never let a model
+    argument stand in for it. Where many tools front one service, a policy decision point shared by them
+    pays off; a single tool over a service that already checks its own callers needs nothing new beyond
+    calling it as the caller.
+scope: |-
+  Every operation a tool or connector performs for a caller on a target that distinguishes callers - reads and writes alike, including operations reached through a scheduled or resumed task.
 
-
-  ABAC with attribute-based policies: Access is determined dynamically based on attributes of the subject (department, clearance level), the resource (confidentiality label, owner), and the context (time, IP address). Policies are described declaratively and can account for complex conditions, for example "allow access to a document only if the subject and resource belong to the same department and the subject''s trust level is no lower than the document''s level". This approach scales better than RBAC, but it requires a mature attribute infrastructure and a more complex policy engine.
-
-
-  Policy-as-Code with OPA: Access policies are described in the Rego language and loaded into Open Policy Agent, which is embedded into services as a sidecar or runs as a separate decision point. On each request the service sends the context to OPA and receives an allow or deny decision. This makes it possible to manage policies centrally, version them, and test them before rollout, as well as to easily integrate complex logical conditions without changing the application code.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
+  Which variant of the mechanism fits is set by how the target expresses rights:
+  - rights depend only on the caller's role and the operation type: a role-to-operation matrix is enough;
+  - rights depend on the object (owner, tenant, classification) or on request context: the decision needs those attributes, read at call time, so an attribute policy is required;
+  - several services or tools share one set of rules: a central policy decision point, with each service as an enforcement point.
+out_of_scope: >-
+  Which records or fields an authorized read returns is data-level access control. Whether a permitted
+  operation should be performed this time is risk-based approval. Authority carried across agent hops is
+  initiating-principal authorization, for which this card is the prerequisite. How broad the tool's own
+  execution identity is, is least privilege for tokens. A target that cannot tell callers apart (one shared
+  API key for everyone) cannot hold this control at all; the fix there is in the target, not in the agent.
+control_mechanism: >-
+  Enforced in the tool handler or connector, or in the downstream service it calls, at the last point
+  before the operation runs - never in the prompt or the model. The caller's identity comes from
+  authenticated session state held by the runtime, never from a model argument such as user_id. The
+  enforcement point resolves the operation and its target (canonical object id, not a name the model wrote)
+  and asks the policy decision - matrix, attribute policy or policy engine, as scope sets - with caller,
+  operation and target. Only an explicit allow lets it proceed; an operation or object type with no policy
+  entry is refused. The downstream call is made with a credential bound to the caller (an on-behalf-of
+  token, or a service that checks the identity passed to it), so the tool's broader credential cannot be
+  used to skip the decision.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Policy engine unreachable, policy not loaded, caller identity missing or expired, an attribute the rule
+    needs unavailable: the operation is refused and the refusal names the missing piece. The value flips to
+    fail_open where an enforcement point treats a decision timeout as allow; the count of decision errors
+    next to the count of refusals is how either state is noticed.
+telemetry:
+  events:
+  - name: access.allowed
+    records: Which caller was allowed which operation on which object, under which rule.
+    attributes:
+    - caller identity, as authenticated
+    - resolved operation and target
+    - policy version and matching rule
+  - name: access.denied
+    records: A refusal. Their count says whether the control does anything.
+    attributes:
+    - caller identity
+    - resolved operation and target
+    - reason (no rule, rule denies, missing attribute)
+  - name: access.decision_error
+    records: The decision could not be made; separates a broken policy point from a deliberate refusal.
+    attributes:
+    - enforcement point
+    - what was missing
+  evidence: >-
+    Held by the target system or a log store outside the agent runtime, append-only, kept for the
+    investigation window of the data it guards. The agent's transcript is not evidence of what was decided.
+anti_patterns:
+- 'The check is per tool rather than per object (the formal variant). Signal: changing only the object id in a call returns another caller''s object.'
+- 'The caller''s identity is a tool argument. Signal: a call with a different user_id written into it acts on that user''s objects.'
+- 'The restriction lives in the system prompt ("only show the user their own documents"). Signal: the tool itself returns other users'' objects when called directly.'
+- 'Operations with no policy entry are allowed so that new features work. Signal: a newly added operation succeeds for a caller holding no role at all.'
+validation:
+- criterion: A caller cannot reach an object outside their rights through the agent.
+  test_scenario: As caller A, ask the agent for an object that belongs to caller B, naming it by id.
+  expected_result: The tool refuses; nothing from the object enters the context.
+  base: true
+- criterion: Identity cannot be supplied by the model.
+  test_scenario: Issue a tool call directly with caller B's identifier in its arguments while authenticated as caller A.
+  expected_result: The call is decided as caller A and refused.
+  base: true
+- criterion: Unmapped operations are refused.
+  test_scenario: Register a new operation on the tool without adding a policy entry, then call it.
+  expected_result: Refused with reason "no rule".
+  base: true
+- criterion: An unavailable policy point stops the operation.
+  test_scenario: Make the policy decision point unreachable and repeat a call that normally succeeds.
+  expected_result: Refused, and a decision_error event is recorded.
+  base: true
+- criterion: The tool cannot bypass the decision with its own credential.
+  test_scenario: Inspect the credential the tool uses toward the target and the target's access log for a refused call.
+  expected_result: The target sees the caller's identity, and no request for the refused object appears under the tool's service identity.
+  base: false
 faq: []
+requires: []
 implementations: []

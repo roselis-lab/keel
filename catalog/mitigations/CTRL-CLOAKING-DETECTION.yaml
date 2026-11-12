@@ -1,0 +1,77 @@
+id: CTRL-CLOAKING-DETECTION
+name: Detection of content served differently to the agent
+mitigation_class: detector
+purpose: >-
+  Catches a site that serves the agent different content from what a person's browser gets, so the agent
+  cites or acts on text no reviewer of the source would ever see.
+formal_implementation_risk: >-
+  The comparison fetch goes out from the same network address and with the same headless signals as the
+  agent's fetch, so a site that cloaks by those signals serves both the same agent-only content. Signal: the
+  comparison fetch never differs from the agent's, even on a test site set up to cloak.
+review: >-
+  Review when the agent's fetch client, its network egress or its user agent changes, when cloaking
+  techniques in the wild change (new fingerprinting signals), or when fetched content starts driving
+  actions rather than only citations. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: infrastructure
+  note: >-
+    A comparison fetcher with a browser-like profile and a different network position is shared
+    infrastructure; every agent that fetches the web can use one. A team with one agent can run the same
+    comparison through a hosted rendering service.
+scope: |-
+  Every agent that fetches pages live and cites them, summarises them, or acts on them.
+
+  How the signal is used is set by what the fetched content drives:
+  - citations and answers a person reads: a mismatch marks the source in the answer and lowers its standing;
+  - actions (a tool call chosen from the page's content): a mismatch holds the action for a person, through risk-based approval.
+out_of_scope: >-
+  Content that is malicious and served identically to everyone is not cloaking; it is source poisoning and
+  is judged by its content. Instructions hidden in a page the person can also see are prompt injection.
+control_mechanism: >-
+  Emitted by the agent's fetch layer, compared outside the model. For each page the agent fetches (all, or
+  a sample sized to its false-positive budget), a second fetch is made from a browser-like client in a
+  different network position, without the agent's identifying signals. Both are reduced to their visible
+  text and compared; a difference beyond the threshold, ignoring known dynamic regions, raises a mismatch.
+  The response is deterministic: where scope says the content drives actions, the action is held for a
+  person; where it drives citations, the answer marks the source. The detector itself gates nothing.
+failure_behavior:
+  value: degraded
+  note: >-
+    When the comparison fetch fails or times out, the page is used unverified and marked as such; for
+    content that drives actions the value becomes fail_closed and the action waits for a person. A rising
+    rate of unverified pages is how a broken comparison fetcher is noticed.
+telemetry:
+  events:
+  - name: fetch.cloaking_mismatch
+    records: A page that differed between the agent's fetch and the comparison.
+    attributes:
+    - address
+    - difference measure and threshold
+    - which signals differed between the two fetches
+  - name: fetch.unverified
+    records: A page used without a comparison.
+    attributes:
+    - address
+    - reason
+  evidence: Both fetched versions' digests, held in the fetch layer's log store for the investigation window of answers built on them.
+anti_patterns:
+- 'Comparison from the same address and profile (the formal variant). Signal: the two fetches share network address and user agent.'
+- 'A mismatch is logged and nothing responds. Signal: an action taken on a mismatched page with no hold.'
+- 'Raw HTML compared instead of visible text. Signal: nearly every page mismatches, and the alert is ignored.'
+validation:
+- criterion: A cloaking test site is caught.
+  test_scenario: Serve one text to headless clients and the agent's address, another to ordinary browsers, and have the agent fetch it.
+  expected_result: A mismatch is raised.
+  base: true
+- criterion: A mismatch on action-driving content holds the action.
+  test_scenario: On the cloaking site, place an instruction that leads to a tool call.
+  expected_result: The call waits for a person.
+  base: true
+- criterion: False positives stay within budget.
+  test_scenario: Fetch a sample of ordinary pages with dynamic content.
+  expected_result: The mismatch rate is within the stated budget.
+  base: false
+faq: []
+requires: []
+implementations: []
