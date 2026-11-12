@@ -2,11 +2,86 @@
 # Named on a weakness, never on a threat: a threat is a chain and crosses more than one
 # of these, so a list at the top could not say which weakness sits where. Component +
 # surface together name the place a control has to sit.
+#
+# `variants` is what the surface looks like in a real system: the carriers content
+# arrives in, what that content can hide, and the routes by which what the model
+# produced leaves. It is read while building the surface ledger (the assessment skill's
+# step 3), so a ledger row is written for each variant the system has, not only for the
+# obvious channel. It covers mistakes as much as planted content: a stale record, a
+# silent tool failure or a confident wrong answer travels the same route as an
+# instruction someone hid. Each line is one variant; a variant earns its line when a
+# ledger built without it would miss a row. Evidence for the variants sits in the
+# references of the threats whose weaknesses they reach.
 surface:
-  user-input:        {name: User input,        desc: "What a person typed or uploaded, in the turn or in the system prompt."}
-  retrieved-content: {name: Retrieved content, desc: "Documents, pages and records that search or a knowledge base pulled into context."}
-  tool-output:       {name: Tool output,       desc: "What a tool call or the environment returned, read back as if it were fact."}
-  agent-message:     {name: Agent message,     desc: "What another agent sent, in a hand-off or a shared plan."}
-  memory:            {name: Memory,            desc: "What an earlier turn wrote down and a later one reads back."}
-  training-data:     {name: Training data,     desc: "What went into the weights before deployment: pre-training, fine-tuning, preference data."}
-  model-output:      {name: Model output,      desc: "The egress side — a component downstream takes what the model produced as an instruction or an authority."}
+  user-input:
+    name: User input
+    desc: "What a person typed or uploaded, in the turn or in the system prompt."
+    variants:
+    - "Typed text, including text the person pasted from elsewhere - a page, an email, a log - and did not write."
+    - "A request that is ambiguous or simply wrong, taken literally by the agent."
+    - "Uploaded files: their names, their metadata (document properties, EXIF), and the parts a viewer hides - comments, tracked changes, speaker notes, hidden sheets, alt text."
+    - "Images and screenshots the model reads directly or through OCR, including text that appears only after the image is downscaled to the model's input size."
+    - "Audio and video turned into text by transcription, or read by a multimodal model, including sound a listener does not notice."
+    - "Hidden characters the model reads and the screen does not show: Unicode tag characters, zero-width characters, bidirectional overrides, look-alike letters."
+    - "The system prompt and operator settings, written by whoever configured the deployment."
+  retrieved-content:
+    name: Retrieved content
+    desc: "Documents, pages and records that search or a knowledge base pulled into context."
+    variants:
+    - "A web page fetched by search or browsing, including HTML comments, hidden or off-screen elements, alt and title attributes, and text in the page's scripts or metadata."
+    - "A page served differently to an agent than to a person - by user agent, IP or headless-browser signals - so a person who checks the same URL sees something else."
+    - "An email, including its headers, quoted history and attachments; a calendar invite's title, description and notes; a message in a shared channel."
+    - "A shared document, spreadsheet or deck, including comments, speaker notes, hidden sheets and document properties."
+    - "Repository text: a README, a pull or merge request description, an issue, a review comment, a commit message, a branch or tag name."
+    - "File names and paths in a listing, an archive or a search hit."
+    - "Images, scans and diagrams in the corpus, read by a multimodal model or turned into text by OCR."
+    - "A record that is out of date or wrong, retrieved and cited as current fact."
+  tool-output:
+    name: Tool output
+    desc: "What a tool call or the environment returned, read back as if it were fact."
+    variants:
+    - "A tool's own description, parameter names and schema as its server declares them, read by the model on every turn."
+    - "Free-form text a tool returns: an API response body, an error message, a log line, a stack trace."
+    - "Shell, build and test output, including file contents a command echoes that the agent never chose to read."
+    - "What a browser tool returns: page text, the accessibility tree, a screenshot of a page the agent is driving."
+    - "A success reported for an operation that failed, or a silent failure the agent reads as success."
+    - "Results from a remote server whose implementation changed behind the same name."
+  agent-message:
+    name: Agent message
+    desc: "What another agent sent, in a hand-off or a shared plan."
+    variants:
+    - "A task handed to a sub-agent, and the summary it sends back in place of what it saw."
+    - "A shared plan, scratchpad or task board that several agents write to."
+    - "A peer found through a registry or an agent-to-agent protocol, with the identity and capabilities it claims for itself."
+    - "Another agent's tool result or retrieved text relayed as that agent's own finding."
+  memory:
+    name: Memory
+    desc: "What an earlier turn wrote down and a later one reads back."
+    variants:
+    - "Long-term memory entries the agent wrote from an earlier conversation, document or tool result."
+    - "Chat history the client sends back with every request, which whoever controls the client or calls the API can rewrite - including turns attributed to the assistant or the system."
+    - "Summaries and compacted context that replace the turns they summarise."
+    - "An instruction saved to act later: on a trigger word, a date, or the next time a condition holds."
+    - "Files and stores the agent keeps between runs: notes, todo lists, project memory files, caches, a vector store it writes to."
+  training-data:
+    name: Training data
+    desc: "What went into the weights before deployment: pre-training, fine-tuning, preference data."
+    variants:
+    - "Web-scale pre-training data, where planted or mass-produced pages teach a false fact or a pattern."
+    - "Fine-tuning and preference data, including feedback collected from users of the deployed system."
+    - "Weights, adapters or embedding models downloaded from a public hub."
+    - "A trigger phrase that switches behaviour only when it appears, trained in by any of the above."
+  model-output:
+    name: Model output
+    desc: "The egress side — a component downstream takes what the model produced as an instruction or an authority."
+    variants:
+    - "A markdown image or other resource in the reply that the client loads as it renders, with data written into its URL."
+    - "A link the person is led to click, with data in its URL or pointing at a look-alike destination."
+    - "HTML, SVG, Mermaid or a notebook cell rendered by the client, a preview pane or a docs site."
+    - "Code, a command or a query that something downstream runs: CI, an eval, a database, the agent's own shell."
+    - "A command whose side effect reaches the network: a DNS lookup, a ping, a package install, a git push."
+    - "A write to a place others read: a public repository, an issue or comment, a wiki, a shared drive, a paste site."
+    - "A request to an allowed service where someone else owns the account on the other side - a shared storage domain, a proxy the policy permits, a form or webhook endpoint."
+    - "Invisible characters in the output - Unicode tag characters, zero-width characters - carrying data or instructions past a person who reads the text."
+    - "Tool-call arguments, which the runtime takes as the authority to act, and the approval text the model writes for the person who confirms them."
+    - "A confident wrong answer that a person or a downstream system acts on."

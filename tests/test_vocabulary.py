@@ -54,6 +54,31 @@ def test_a_value_missing_its_gloss_is_an_error(catalog_dir):
     assert any("model-mistake" in e and "desc" in e for e in vocabulary_errors(d))
 
 
+def test_every_surface_lists_its_variants():
+    """The assessor reads these while building the surface ledger; a surface with none
+    leaves its ledger rows to memory."""
+    for value, entry in load_vocabularies()["surface"].items():
+        assert entry["variants"], value
+        assert all(isinstance(x, str) and x.strip() for x in entry["variants"]), value
+
+
+def test_a_surface_without_variants_is_an_error(catalog_dir):
+    d = catalog_dir()
+    data = yaml.safe_load((d / "surface.yaml").read_text(encoding="utf-8"))
+    del data["surface"]["memory"]["variants"]
+    data["surface"]["tool-output"]["variants"] = ["fine", ""]
+    (d / "surface.yaml").write_text(yaml.safe_dump(data), encoding="utf-8")
+
+    errs = vocabulary_errors(d)
+    assert any("'memory'" in e and "variants" in e for e in errs), errs
+    assert any("'tool-output'" in e and "not a non-empty string" in e for e in errs), errs
+
+
+def test_variants_are_served_with_the_vocabulary(catalog_dir):
+    d = catalog_dir(threats=[{"id": "T-A"}])
+    assert Store(d).vocabulary["surface"]["model-output"]["variants"]
+
+
 def test_a_missing_file_is_an_error(catalog_dir):
     d = catalog_dir()
     (d / "components.yaml").unlink()

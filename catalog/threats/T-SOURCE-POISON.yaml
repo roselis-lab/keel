@@ -1,5 +1,5 @@
 id: T-SOURCE-POISON
-title: A source the agent treats as authoritative was written by an untrusted hand
+title: A source the agent treats as authoritative holds content nobody with standing wrote or checked
 harm: wrong-decision
 source:
 - external-attacker
@@ -15,7 +15,7 @@ weaknesses:
 - component: memory
   surface:
   - memory
-  text: The persistent memory accepts writes without verification, so what one write put there shapes every later decision until someone removes it by hand. Content from an earlier untrusted task could be restored as established knowledge.
+  text: The persistent memory accepts writes without verification, so what one write put there shapes every later decision until someone removes it by hand. Content an earlier task picked up from a page, a document or a tool result can be restored as established knowledge.
   nature: targeted
 - component: config
   text: Rules and instruction files committed to a repository are loaded as standing instructions into every session that opens it, and a change to them merges like any other diff, so an instruction added in one pull request steers the agent of everyone who opens the repository afterwards.
@@ -34,6 +34,11 @@ weaknesses:
   surface:
   - agent-message
   text: In a multi-agent chain, one node's tainted output is accepted by the next as established fact and amplified at each step, so a single bad input becomes the chain's conclusion.
+  nature: targeted
+- component: tool
+  surface:
+  - retrieved-content
+  text: The agent fetches pages live with a client a site can tell apart from a person's browser - by user agent, network address or headless-browser signals - while any check of the source, a person opening the cited link or a list of reputable sites, sees what the site serves to people, so the agent cites content no reviewer saw.
   nature: targeted
 reachability: Every source the agent reads was provenance-verified, fixed before deployment, and immutable for the deployment lifetime. No runtime ingestion or indexing; persistent/shared memory is absent or read-only with seed content passing the same pre-deployment provenance check; and no dynamic tool registry, third-party tool output, or peer-agent message can introduce or alter content the agent treats as authoritative—or the agent reads no external source at all.
 mitigations:
@@ -79,7 +84,7 @@ references:
   note: 'Measures the corpus weakness: five injected texts per target question, into a corpus of millions, gave about 90% attacker-chosen answers across eight models. Paraphrase and perplexity-based detection were tested and found insufficient, which bounds how much validation at ingestion can carry on its own.'
 - title: Hacking Gemini's Memory with Prompt Injection and Delayed Tool Invocation
   url: https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/
-  note: 'The memory weakness in a shipped product: an untrusted uploaded document made Gemini write attacker-chosen false facts to long-term memory, which then shaped later sessions. Google rated it low likelihood and low impact and shipped nothing beyond the existing memory indicator and review page - the roll-back-afterwards posture.'
+  note: 'The memory weakness in a shipped product: instructions in an uploaded document made Gemini write attacker-chosen false facts to long-term memory, which then shaped later sessions. Google rated it low likelihood and low impact and shipped nothing beyond the existing memory indicator and review page - the roll-back-afterwards posture.'
 - title: 'MCP Security Notification: Tool Poisoning Attacks'
   url: https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks
   note: 'The substituted-tool weakness demonstrated: a server can change a tool''s definition after the client approved it, and shadow a trusted server''s tool, with no integrity check between registration and use - shown against Cursor, where the agent then sent every email to the attacker regardless of the recipient the user named.'
@@ -89,6 +94,9 @@ references:
 - title: 'Rules File Backdoor: weaponizing code agents through compromised rule files'
   url: https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents
   note: 'The committed-instruction weakness: once a poisoned rules file is part of a repository it affects all later code generation by team members and survives forks, and the hidden Unicode carrying the instruction was also invisible in GitHub''s pull request approval view. Cursor and GitHub both answered that review is the user''s responsibility, so no vendor control shipped.'
+- title: OpenAI's new browser Atlas falls for AI-targeted cloaking attack
+  url: https://splx.ai/blog/ai-targeted-cloaking-openai-atlas
+  note: 'The cloaked-page weakness: test sites checked the user agent and served Atlas, ChatGPT, Perplexity and Comet a fabricated profile or an inflated resume while people saw the real page, and the agents repeated or scored the fabricated version - one candidate went from 26 to 88 out of 100. Published by SPLX in October 2025; a demonstration, not an incident.'
 positioning: LLM04 (Data and Model Poisoning) covers this record's corpus and memory paths and also poisoning of the model's weights through training data, which lands on a different component and is not modelled here. LLM08 (Vector and Embedding Weaknesses) overlaps the corpus path and adds retrieval-side leakage, which is the neighbouring disclosure record's question. AML.T0081 (Modify AI Agent Configuration) splits by what the rewritten configuration does - instruction text the agent obeys lands here, an executable entry the runtime starts is the supply-chain record.
 tags:
 - poisoning

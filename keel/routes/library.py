@@ -191,7 +191,8 @@ async def get_vocabulary():
 
     The schemas enforce these as `Literal`s, which is what makes an unknown value
     impossible; this is what the Literal cannot carry — what `downstream` actually
-    means. Shape: `{harm: {value: {name, desc}}, surface: ..., source: ..., components: ...}`."""
+    means. Shape: `{harm: {value: {name, desc}}, surface: ..., source: ..., components: ...}`;
+    each surface value also carries `variants`, its concrete carriers and exit routes."""
     return get_store().vocabulary
 
 
