@@ -1,0 +1,87 @@
+id: CTRL-SYSTEM-BOUND-RECIPIENT
+name: System-bound recipients for outbound messages
+mitigation_class: gating_control
+purpose: >-
+  Prevents a message, email, post or share that an agent sends from reaching an audience nobody with
+  standing chose. Without it, the recipient is whatever the model wrote, and content in the context can
+  name that recipient.
+formal_implementation_risk: >-
+  The schema fixes the main recipient but leaves copy, blind-copy, reply-to or a forward or share operation
+  free for the model to fill. Signal: a call that sets a copy recipient to an outside address is delivered.
+review: >-
+  Review when a messaging tool gains a recipient field or a forward, share or invite operation, when a task
+  type with a new kind of recipient is added, when group or alias membership can change outside the
+  organisation's control, or when a channel starts reaching outside parties. Keep a periodic safety-net
+  review alongside those triggers.
+maintainer: null
+locus:
+  value: product
+  note: >-
+    Who the recipient legitimately is depends on the task - the requester, a configured channel, the thread's
+    participants - and only the application that defines the task knows that. A shared messaging gateway can
+    hold the outside-the-organisation check for every agent; the binding itself stays in the tool.
+scope: |-
+  Every tool that delivers content to an addressed audience: email, chat messages, comments visible to outside parties, file or document shares, calendar invites, social posts.
+
+  The variant is set by who the recipient legitimately is:
+  - fixed by the task (reply to the requester, post to the team's channel, notify the on-call person): the runtime binds the recipient from task state, and the tool takes no recipient argument;
+  - chosen by the person for this message: the person picks or confirms the resolved recipient in an interface the model does not write; the model may propose one;
+  - choosing the recipient is the task (an assistant composing new mail for a person): a recipient outside the organisation or the person's known contacts goes to risk-based approval, showing the resolved address.
+out_of_scope: >-
+  What the message says is data loss prevention. Network destinations of requests and webhooks are the
+  destination allowlist. Whether the requester may see the data in the first place is data-level access
+  control. Links and images in a reply that the reader's client fetches are the client's render-time
+  allowlist.
+control_mechanism: >-
+  Enforced in the tool handler or connector that performs the send. For a task-fixed recipient the handler
+  takes the recipient from authenticated task state - the session's requester, a configured channel id, the
+  participants of the thread the task was opened on - and the tool's schema has no recipient field. For a
+  person-chosen recipient the argument is a reference to a directory entry, and the handler resolves it and
+  checks it against the set allowed for this task. Every field that delivers - copy, blind copy, reply-to,
+  forwarding, sharing, invitations - counts as a recipient, and groups and aliases are expanded before the
+  check, not after.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Task state with no recipient, a directory lookup failing, a group that cannot be expanded: the message is
+    not sent and the refusal names the field. A queued message whose task state expired is refused rather
+    than sent to a default.
+telemetry:
+  events:
+  - name: message.sent
+    records: Who received a message and where that recipient came from.
+    attributes:
+    - task and agent
+    - resolved recipients after expansion
+    - source of each recipient (task state, person's choice, approval)
+  - name: message.refused
+    records: A message with a recipient the task did not allow.
+    attributes:
+    - requested recipient and field
+    - reason
+  evidence: Held by the messaging service or a log store outside the agent runtime, recipients and message ids rather than bodies.
+anti_patterns:
+- 'Free copy, reply-to or forward fields (the formal variant). Signal: the tool schema exposes any delivering field as free text.'
+- 'A domain check by string suffix. Signal: an address at a lookalike domain ending in the organisation''s name passes.'
+- 'Checking a group address without expanding it. Signal: a group with an outside member receives the message.'
+- 'A thread or channel id taken from model arguments. Signal: the model can post into any thread by naming its id.'
+validation:
+- criterion: The model cannot choose a recipient for a task-bound message.
+  test_scenario: Plant an instruction in content the agent reads that asks it to send the answer to an outside address.
+  expected_result: The tool has no field to put the address in, or the send is refused.
+  base: true
+- criterion: Every delivering field is bound.
+  test_scenario: Issue a send call directly with an outside address in copy, blind copy and reply-to in turn.
+  expected_result: Each is refused.
+  base: true
+- criterion: Groups are expanded before the check.
+  test_scenario: Send to an allowed group that contains an outside member.
+  expected_result: Refused, or delivered only to members inside the allowed set.
+  base: true
+- criterion: Person-chosen recipients are resolved by the handler.
+  test_scenario: Pass a recipient reference that does not resolve in the directory, and one that resolves outside the allowed set.
+  expected_result: Both are refused.
+  base: false
+faq: []
+requires: []
+implementations: []

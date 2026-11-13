@@ -26,7 +26,9 @@ async def get_vocabulary() -> dict:
     `harm`, `surface`, `source` and `components` are enforced as enums everywhere, so a
     tool schema shows you the allowed tokens but not what they stand for. This returns
     `{harm: {value: {name, desc}}, ...}` — read it once before classifying a threat
-    rather than guessing which component a weakness sits on."""
+    rather than guessing which component a weakness sits on. Each `surface` value also
+    carries `variants`: the concrete carriers content arrives in and the routes output
+    leaves by, walked when building an assessment's surface ledger."""
     from keel.store import get_store
 
     return get_store().vocabulary

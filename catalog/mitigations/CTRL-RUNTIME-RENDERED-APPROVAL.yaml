@@ -1,0 +1,81 @@
+id: CTRL-RUNTIME-RENDERED-APPROVAL
+name: Approval view rendered from the exact call
+mitigation_class: gating_control
+purpose: >-
+  Prevents a person from approving one action while a different one runs, because what they were shown was
+  the model's description of the action, or a command laid out so the part that matters is out of view.
+  Without it, an approval records what the person read, not what was executed.
+formal_implementation_risk: >-
+  The view shows the exact command, but in a single line truncated to the width of the dialog, so a
+  harmless prefix padded with spaces hides the rest. Signal: a command longer than the view is approved and
+  the recorded call differs from the visible text after the cut-off.
+review: >-
+  Review when a tool's call format changes, when the approval interface moves to a new surface (a chat
+  card, a mobile notification), when a new tool class is routed to approval, or when the runtime starts
+  showing a model-written summary anywhere in the dialog. Keep a periodic safety-net review alongside those
+  triggers.
+maintainer: null
+locus:
+  value: product
+  note: >-
+    The view is drawn by whoever owns the approval interface - the agent runtime, or the service that sends
+    the decision request - and it is built once for every tool behind it. An organisation's part is choosing
+    an interface that meets the bar.
+scope: |-
+  Every decision request shown to a person before an agent's call runs - from risk-based approval, a per-call prompt, or a confirmation in a workflow tool.
+
+  What the view must show is set by the call's form:
+  - a command or code: the full text, wrapped rather than truncated, with invisible and control characters made visible;
+  - a structured call: every argument, by name, with the resolved target (canonical path, resolved recipient, expanded wildcard);
+  - a call too long to read: a refusal to approve in this view, not a summary.
+out_of_scope: >-
+  Which calls are sent to a person is risk-based approval. Whether the person reads before approving is
+  fatigue detection and approval throttling. A model-written explanation may be shown next to the call as
+  commentary; it is never the thing approved.
+control_mechanism: >-
+  Enforced in the agent runtime or decision service that renders the approval, from the call object the
+  dispatcher will execute - not from any text the model produced about it. The renderer lays out the call
+  itself: the full command wrapped across lines, every argument by name, the resolved target as the
+  dispatcher computed it, invisible and bidirectional control characters shown as escapes. A digest of the
+  rendered call is stored with the decision, and the dispatcher executes only a call whose digest matches.
+  Model-written text, where shown, is in a separate, labelled area.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    A call that cannot be rendered in full, a renderer error, a digest mismatch at execution: the call does
+    not run. A view that silently falls back to the model's summary is the failure this control exists to
+    prevent, so it counts as a refusal.
+telemetry:
+  events:
+  - name: approval.rendered
+    records: What exactly the person was shown.
+    attributes:
+    - call digest
+    - rendered length and whether it was wrapped
+    - characters escaped
+  - name: approval.digest_mismatch
+    records: The call about to run differs from the one approved.
+    attributes:
+    - approved digest
+    - executing digest
+  evidence: Held with the decision record, outside the agent runtime.
+anti_patterns:
+- 'Truncation in a single line (the formal variant). Signal: the dialog has a fixed width and no wrap.'
+- 'The dialog shows the model''s description of the action. Signal: the text approved is not derivable from the call object.'
+- 'Invisible characters pass through. Signal: a command containing a zero-width or bidirectional control character displays differently from what runs.'
+validation:
+- criterion: The person sees the whole call.
+  test_scenario: Submit a command padded with spaces so the second half sits past the view's width.
+  expected_result: The full command is visible, wrapped.
+  base: true
+- criterion: What runs is what was approved.
+  test_scenario: Approve a call, then alter it between approval and execution.
+  expected_result: The altered call does not run.
+  base: true
+- criterion: Model text is not the approved object.
+  test_scenario: Have the model describe a destructive call as harmless and send it for approval.
+  expected_result: The view shows the destructive call itself; the description, if shown, is labelled as the model's.
+  base: true
+faq: []
+requires: []
+implementations: []

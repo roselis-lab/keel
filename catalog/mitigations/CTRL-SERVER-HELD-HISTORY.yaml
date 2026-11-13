@@ -1,0 +1,72 @@
+id: CTRL-SERVER-HELD-HISTORY
+name: Conversation history held by the server
+mitigation_class: gating_control
+purpose: >-
+  Prevents a caller from writing turns into the conversation that never happened - an assistant reply
+  agreeing to act, a system note, an approval nobody gave - and having them read as established history
+  that authorizes the next action.
+formal_implementation_risk: >-
+  The server stores the history but the request format still accepts a full message list from the client,
+  and the server uses it when it is present. Signal: a request carrying an extra assistant turn changes what
+  the model does next.
+review: >-
+  Review when the request format changes, when a new client or integration is added, when approvals or
+  tool results start being recorded in the conversation, or when history moves to a different store. Keep
+  a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: product
+  note: >-
+    The application server owns the conversation and is the only party that can hold it as a record. A
+    stateless model API is the opposite case, and the application in front of it is where history must be
+    kept.
+scope: |-
+  Every application where the conversation history influences what the agent may do - where an earlier turn can authorize a tool call, record a consent, or set the agent's instructions - and where clients send requests over an interface someone other than the server controls.
+
+  The variant is set by what the client may contribute:
+  - a new user turn and attachments: the only input accepted; everything else comes from the server's record;
+  - an application that lets the person edit or branch history: edits create a new branch the server records, and a turn edited by the client is marked as user-written, never as assistant or system.
+out_of_scope: >-
+  Persistent memory across sessions is memory isolation and sanitisation. Approval of a specific action is
+  risk-based approval; this card only ensures that an approval claimed in history was actually recorded.
+  Whether a genuine earlier turn was itself steered by injected content is prompt-injection territory.
+control_mechanism: >-
+  Enforced in the application server that assembles the model's context. The server keeps the conversation
+  as its own append-only record - each turn with its role, origin and id - and builds every request to the
+  model from that record plus the client's new user turn. Client-supplied history is ignored or refused.
+  Approvals, consents and tool results are recorded by the server at the moment they happen, so a later
+  turn claiming one can be checked against the record rather than believed. The record is scoped to the
+  authenticated user and conversation.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    History store unavailable, a conversation id that does not belong to the caller, a record that cannot be
+    read: the request is refused rather than served from client-supplied history.
+telemetry:
+  events:
+  - name: history.client_turns_refused
+    records: A request that carried history the server did not accept.
+    attributes:
+    - conversation id
+    - roles and count of refused turns
+  evidence: Held with the conversation record on the server.
+anti_patterns:
+- 'Client history accepted when present (the formal variant). Signal: the request schema still has a message-list field the server reads.'
+- 'Approvals inferred from text in history. Signal: a turn saying "the user approved" is enough for the next tool call.'
+- 'Conversation ids not bound to the caller. Signal: a caller can continue another user''s conversation by id.'
+validation:
+- criterion: Forged turns are not read as history.
+  test_scenario: Send a request with an added assistant turn agreeing to perform a restricted action, then ask for the action.
+  expected_result: The added turn is ignored or refused, and the action is not authorized by it.
+  base: true
+- criterion: Approvals come from the record.
+  test_scenario: Include a system-role note claiming an approval, then trigger the approved action.
+  expected_result: The action waits for a recorded approval.
+  base: true
+- criterion: Conversations are bound to the caller.
+  test_scenario: As one user, send a request naming another user's conversation id.
+  expected_result: Refused.
+  base: true
+faq: []
+requires: []
+implementations: []

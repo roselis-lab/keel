@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Per-agent memory spaces (medium): Each agent receives a dedicated memory space or isolated store. Memory access is restricted to the owning agent — other agents cannot read from or write to another''s memory. Isolation is enforced at the infrastructure level. This provides strong isolation but incurs memory management overhead.
+control_mechanism: 'Per-agent memory spaces: Each agent receives a dedicated memory space or isolated store. Memory access is restricted to the owning agent — other agents cannot read from or write to another''s memory. Isolation is enforced at the infrastructure level. This provides strong isolation but incurs memory management overhead.
 
 
-  Segment-level access control (medium): Memory is divided into isolated segments with access control lists. Each segment has an owning agent and an optional list of agents with read or write rights. Access attempts are checked against the control list. This allows controlled sharing when needed.
+  Segment-level access control: Memory is divided into isolated segments with access control lists. Each segment has an owning agent and an optional list of agents with read or write rights. Access attempts are checked against the control list. This allows controlled sharing when needed.
 
 
-  Physical memory separation (high): Instead of logical isolation, each agent has physically separate memory storage — a separate database schema, a separate cache space, a separate file directory. Physical separation eliminates the attack surface via shared infrastructure but complicates coordination between agents.'
+  Physical memory separation: Instead of logical isolation, each agent has physically separate memory storage — a separate database schema, a separate cache space, a separate file directory. Physical separation eliminates the attack surface via shared infrastructure but complicates coordination between agents.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

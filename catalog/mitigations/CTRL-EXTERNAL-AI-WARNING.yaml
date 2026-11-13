@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Persistent UI banner for external AI (low): A persistent UI banner or indicator that is visible while an external AI service is actively in use. The banner includes the service name, a brief description of the data being transmitted, and a link to a detailed privacy notice. This ensures persistent awareness without blocking the workflow but may be ignored due to banner blindness.
+control_mechanism: 'Persistent UI banner for external AI: A persistent UI banner or indicator that is visible while an external AI service is actively in use. The banner includes the service name, a brief description of the data being transmitted, and a link to a detailed privacy notice. This ensures persistent awareness without blocking the workflow but may be ignored due to banner blindness.
 
 
-  Mandatory acknowledgment dialog (low): On first use of an external AI service, or before sending sensitive data categories, a modal dialog with detailed risk information is displayed and requires explicit acknowledgment. The dialog includes information about data retention, potential exposure scenarios, and compliance implications. This ensures informed consent but adds friction.
+  Mandatory acknowledgment dialog: On first use of an external AI service, or before sending sensitive data categories, a modal dialog with detailed risk information is displayed and requires explicit acknowledgment. The dialog includes information about data retention, potential exposure scenarios, and compliance implications. This ensures informed consent but adds friction.
 
 
-  Context-sensitive data warnings (medium): Before sending data to an external AI, the system analyzes the content for the presence of sensitive categories (PII, credentials, confidential content) and shows a contextual warning if sensitive data is detected. The warning includes the specific data types found and the risks associated with transmitting them. This gives targeted warnings but requires accurate content classification.'
+  Context-sensitive data warnings: Before sending data to an external AI, the system analyzes the content for the presence of sensitive categories (PII, credentials, confidential content) and shows a contextual warning if sensitive data is detected. The warning includes the specific data types found and the risks associated with transmitting them. This gives targeted warnings but requires accurate content classification.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Logical consistency check (medium): The plan is analyzed for logical consistency: preconditions are met for each step, there are no circular dependencies, it is achievable within system constraints. Logical errors are flagged for revision by the agent or human review.
+control_mechanism: 'Logical consistency check: The plan is analyzed for logical consistency: preconditions are met for each step, there are no circular dependencies, it is achievable within system constraints. Logical errors are flagged for revision by the agent or human review.
 
 
-  Action feasibility verification (medium): Each action in the plan is checked for feasibility: the tool exists, permissions are available, resources are sufficient. Infeasible actions are identified with suggested alternatives.
+  Action feasibility verification: Each action in the plan is checked for feasibility: the tool exists, permissions are available, resources are sufficient. Infeasible actions are identified with suggested alternatives.
 
 
-  Constraint compliance validation (high): An ML classifier or rules engine evaluates the plan for compliance with security constraints, safety guidelines, business rules. Plans that violate constraints are rejected with an explanation.'
+  Constraint compliance validation: An ML classifier or rules engine evaluates the plan for compliance with security constraints, safety guidelines, business rules. Plans that violate constraints are rejected with an explanation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

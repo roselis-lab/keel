@@ -76,6 +76,15 @@ def test_gap_must_name_nothing():
         CoverageEntry(ref="X1", title="S", state="gap", threats=["T-A"])
 
 
+def test_maturity_is_the_sources_own_scale_or_nothing():
+    """ATLAS says per technique whether it was seen in a real attack. The field takes its
+    three words verbatim and nothing else, so a hand-made label cannot pass for it."""
+    assert CoverageEntry(ref="X1", title="S", state="gap", maturity="Realized").maturity == "Realized"
+    assert CoverageEntry(ref="X1", title="S", state="gap").maturity is None
+    with pytest.raises(ValidationError):
+        CoverageEntry(ref="X1", title="S", state="gap", maturity="seen in prod")
+
+
 def test_duplicate_refs_in_one_source_are_refused(coverage):
     d = coverage([
         {"ref": "X1", "title": "One", "state": "gap"},

@@ -1,0 +1,6 @@
+[
+  {"title": {"rendered": "AIUC-1: Crosswalks OWASP Top 10 For Agentic Applications 2027"}, "link": "https://genai.owasp.org/resource/crosswalk/", "date": "2027-05-25T00:00:00"},
+  {"title": {"rendered": "OWASP Top 10 for Agentic Applications for 2026"}, "link": "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/", "date": "2025-12-09T00:00:00"},
+  {"title": {"rendered": "OWASP GenAI LLM Top 10 2026"}, "link": "https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/", "date": "2026-08-03T00:00:00"},
+  {"title": {"rendered": "OWASP Top 10 for LLM Applications 2025"}, "link": "https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/", "date": "2024-11-17T00:00:00"}
+]

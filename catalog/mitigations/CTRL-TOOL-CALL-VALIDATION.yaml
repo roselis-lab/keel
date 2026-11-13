@@ -1,21 +1,90 @@
 id: CTRL-TOOL-CALL-VALIDATION
 name: Schema validation of tool call arguments
 mitigation_class: gating_control
-purpose: Stops a call that is malformed against the tool's own contract from reaching the tool. It catches the class of failure where the model produces arguments of the wrong shape, type or range - not a well-formed call that should not have been made.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Stops a call that is malformed against the tool's own contract from reaching the tool. It catches the
+  class of failure where the model produces arguments of the wrong shape, type or range - an extra
+  statement in an id, a file:// address where a web address belongs - not a well-formed call that should
+  not have been made.
+formal_implementation_risk: >-
+  The only validation is the model provider's structured-output or strict function-calling mode, which
+  shapes what the model generates but is not a check at the tool: calls arriving by any other path - a
+  replayed call, another client of the same tool server - are never validated. Signal: a call with an extra
+  field or a wrong type sent straight to the invocation layer reaches the tool.
+review: >-
+  Review when a tool's arguments change, when a tool gains an argument that reaches an interpreter, a path,
+  an address or an identifier, when a new path for invoking tools is added (a new client, a batch runner),
+  or when the validator library or its mode changes. Keep a periodic safety-net review alongside those
+  triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'The enforcement point sits at the tool invocation layer, between the runtime and the tool. Every call is validated against the schema declared in the tool definition - types, required fields, enumerations, ranges, formats - and a call that fails is rejected rather than passed on with a warning.
+locus:
+  value: split
+  note: >-
+    The validator is one piece of the invocation layer and is built once for every tool behind it. The
+    schema is each tool author's: only they know which arguments are dangerous as free text. A team calling
+    a single tool from its own code holds both halves.
+scope: |-
+  Every tool whose arguments are produced by a model, on every path the tool can be invoked by.
 
-
-  The guarantee is deterministic and its limit is exact: the schema decides shape, never intent. A call that is well formed and wrong passes, which is what makes this a floor under other controls rather than a substitute for them.
-
-
-  Non-bypass rests on the tool being reachable only through the invocation layer. A tool that can also be called directly is outside this control''s guarantee.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
-faq: []
+  The strength of the schema is set by where an argument goes:
+  - into an interpreter, a file path, a network address or an object identifier: a reference type rather than free text - an enumeration, an id the handler resolves through its own registry, a structured object - so there is no string to inject into;
+  - anywhere else: declared types, required fields, ranges, formats and a bound on length, with unknown fields rejected.
+out_of_scope: >-
+  Whether a well-formed call is permitted, wanted or safe: access control, risk-based approval and the
+  destination allowlist decide that, and this card is the floor under them, not a substitute. Escaping a
+  free-text argument that must reach an interpreter is input parameterization. Validating what a tool
+  returns is output validation.
+control_mechanism: >-
+  Enforced in the tool handler or the invocation layer directly in front of it, between the agent runtime
+  and the tool, on every path the tool can be called by. Each call is validated against the schema declared
+  in the tool definition - types, required fields, enumerations, ranges, formats, unknown fields refused -
+  and a call that fails is rejected with an error the model can read, never passed on with a warning.
+  Arguments that scope marks as dangerous are typed as references the handler resolves itself, so a path or
+  query is never assembled from model text. The guarantee is deterministic and its limit is exact: the
+  schema decides shape, never intent. Non-bypass rests on the tool being reachable only through this layer.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    A tool with no schema, a schema that fails to load, a validator error: the call is refused. The value
+    flips to fail_open where the layer passes calls to tools that declare no schema; a startup list of tools
+    without a schema is how that is noticed.
+telemetry:
+  events:
+  - name: tool_call.rejected
+    records: A call refused for its shape. Their count and the failing field say where the model or an attacker pushes.
+    attributes:
+    - tool and schema version
+    - failing field and rule
+    - caller and session
+  - name: tool_call.unvalidated_tool
+    records: A tool registered without a schema.
+    attributes:
+    - tool identity
+  evidence: Held in the runtime's log store outside the session, kept as long as the tool's own call log.
+anti_patterns:
+- 'Provider-side strict mode as the only validation (the formal variant). Signal: no validator runs in the invocation layer''s code path.'
+- 'Unknown fields are accepted and passed through. Signal: an extra field in a call shows up in the request the tool makes.'
+- 'A path or address is a free string checked with a regular expression before canonicalisation. Signal: ../ or an encoded form passes the pattern.'
+- 'The schema exists only in the tool description shown to the model. Signal: the handler never reads it.'
+validation:
+- criterion: A malformed call does not reach the tool.
+  test_scenario: Send calls with a wrong type, a missing required field, an out-of-range value and an unknown field.
+  expected_result: Each is refused before the tool runs and a rejection is recorded.
+  base: true
+- criterion: Every invocation path validates.
+  test_scenario: Invoke the tool through each path it accepts - the agent, a direct client, a replay - with the same malformed call.
+  expected_result: Refused on every path.
+  base: true
+- criterion: Dangerous arguments take references, not free text.
+  test_scenario: Review the schemas of tools whose arguments reach an interpreter, a path, an address or an identifier.
+  expected_result: Each such argument is an enumeration or a resolved id, or the tool is listed as an accepted exception with input parameterization in place.
+  base: true
+- criterion: A tool without a schema is not callable.
+  test_scenario: Register a tool with no schema and call it.
+  expected_result: Refused.
+  base: true
+faq:
+- question: Does this replace strict validation of tool arguments as a separate control?
+  answer: It is the same control. Schema validation, runtime guards and reference types are three ways to state the tool's contract; adopting one without the others is still this card.
+requires: []
+implementations: []

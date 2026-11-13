@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Registry API query (low): Before allowing an install command, the system makes an API call to the package registry (npm, PyPI, Maven Central) to confirm that the package exists and its metadata matches the request. Non-existent packages are blocked with a warning. This is a simple but effective defense against hallucinated package names.
+control_mechanism: 'Registry API query: Before allowing an install command, the system makes an API call to the package registry (npm, PyPI, Maven Central) to confirm that the package exists and its metadata matches the request. Non-existent packages are blocked with a warning. This is a simple but effective defense against hallucinated package names.
 
 
-  Package reputation scoring (medium): For each requested package, the system gathers reputation metrics: download counts, GitHub stars, maintainer history, security advisories, dependency health. Packages with poor reputation (new, few downloads, unknown maintainer, signs of typosquatting) require additional approval.
+  Package reputation scoring: For each requested package, the system gathers reputation metrics: download counts, GitHub stars, maintainer history, security advisories, dependency health. Packages with poor reputation (new, few downloads, unknown maintainer, signs of typosquatting) require additional approval.
 
 
-  Install command interception (medium): LLM output is parsed for install commands via regular expressions or structured output parsing. Detected commands are intercepted and validated before execution. This prevents automatic execution of untrusted install commands but can be bypassed via obfuscation.'
+  Install command interception: LLM output is parsed for install commands via regular expressions or structured output parsing. Detected commands are intercepted and validated before execution. This prevents automatic execution of untrusted install commands but can be bypassed via obfuscation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

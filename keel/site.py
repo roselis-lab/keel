@@ -466,7 +466,9 @@ class Builder:
         for src in self.coverage:
             s, c = src["source"], src["counts"]
             rows = "".join(
-                f"<tr><td>{esc(e['ref'])}</td><td>{esc(e['title'])}</td><td>{esc(e['state'])}</td>"
+                f"<tr><td>{esc(e['ref'])}</td><td>{esc(e['title'])}"
+                f"{' <span class=muted>(' + esc(e['maturity']) + ')</span>' if e.get('maturity') else ''}"
+                f"</td><td>{esc(e['state'])}</td>"
                 f"<td>{' '.join(self.ref(d, i) for i in [*e.get('threats', []), *e.get('mitigations', [])])}"
                 f"{prose(e.get('note'))}</td></tr>"
                 for e in src["entries"]

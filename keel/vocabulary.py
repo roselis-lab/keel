@@ -29,6 +29,14 @@ VOCABULARIES: dict[str, tuple[str, tuple[str, ...]]] = {
     "components": ("components", get_args(Component)),
 }
 
+# file stem -> a list field every value in that vocabulary must carry. A surface's
+# `variants` are the concrete carriers and exit routes an assessor walks while building
+# the surface ledger; a surface without them leaves the ledger to whatever the assessor
+# happens to think of, which is the gap the list exists to close.
+REQUIRED_LISTS: dict[str, str] = {
+    "surface": "variants",
+}
+
 
 def load_vocabularies(catalog_dir: Path | None = None) -> dict[str, dict[str, Any]]:
     """Return `{name: {value: {name, desc, ...}}}`, skipping any file that is missing or
@@ -88,5 +96,16 @@ def vocabulary_errors(catalog_dir: Path | None = None) -> list[str]:
                 continue
             if not isinstance(entry, dict) or not (entry.get("name") and entry.get("desc")):
                 errors.append(f"{rel}: {value!r} needs both a `name` and a `desc`")
+                continue
+            field = REQUIRED_LISTS.get(stem)
+            if field is None:
+                continue
+            items = entry.get(field)
+            if not isinstance(items, list) or not items:
+                errors.append(f"{rel}: {value!r} needs a non-empty `{field}` list")
+            elif not all(isinstance(x, str) and x.strip() for x in items):
+                errors.append(f"{rel}: {value!r} has a `{field}` item that is not a non-empty string")
+            elif len(set(items)) != len(items):
+                errors.append(f"{rel}: {value!r} repeats an item in `{field}`")
 
     return errors

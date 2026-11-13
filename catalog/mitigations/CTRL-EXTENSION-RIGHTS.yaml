@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Capability-based permissions (low): Each extension must explicitly declare all required permissions in the manifest: filesystem access paths, network domains, IDE APIs, external tool integrations. Runtime enforcement checks each access request against declared permissions and blocks undeclared access. This gives an explicit surface area for security review but requires accurate manifest declarations.
+control_mechanism: 'Capability-based permissions: Each extension must explicitly declare all required permissions in the manifest: filesystem access paths, network domains, IDE APIs, external tool integrations. Runtime enforcement checks each access request against declared permissions and blocks undeclared access. This gives an explicit surface area for security review but requires accurate manifest declarations.
 
 
-  Least privilege enforcement (medium): The system applies the principle of least privilege: extensions receive only the minimal privileges necessary for core functionality. Overly permissive manifests are rejected at review or require justification. Periodic audits verify that privileges remain current and revoke unused permissions. This minimizes potential damage from a compromised extension.
+  Least privilege enforcement: The system applies the principle of least privilege: extensions receive only the minimal privileges necessary for core functionality. Overly permissive manifests are rejected at review or require justification. Periodic audits verify that privileges remain current and revoke unused permissions. This minimizes potential damage from a compromised extension.
 
 
-  Behavioural anomaly monitoring (high): Runtime monitoring tracks extension behavior: the frequency and patterns of API calls, accessed resources, data flows. Anomalous behavior — a sudden spike in file access, unexpected network connections, unusual data volumes — triggers alerts or automatic suspension. This detects compromised or malicious extensions post-installation.'
+  Behavioural anomaly monitoring: Runtime monitoring tracks extension behavior: the frequency and patterns of API calls, accessed resources, data flows. Anomalous behavior — a sudden spike in file access, unexpected network connections, unusual data volumes — triggers alerts or automatic suspension. This detects compromised or malicious extensions post-installation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

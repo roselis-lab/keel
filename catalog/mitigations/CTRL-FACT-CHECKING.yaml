@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Source cross-reference verification (high): Checkable factual claims (names, dates, numbers, statements of fact) are extracted from the model output, and each claim is verified through lookup in trusted sources: knowledge bases, authoritative APIs (Wikipedia, Wolfram Alpha), web search. Claims that find no confirmation or contradict the sources are flagged. This gives objective verification but adds latency and depends on the availability of sources.
+control_mechanism: 'Source cross-reference verification: Checkable factual claims (names, dates, numbers, statements of fact) are extracted from the model output, and each claim is verified through lookup in trusted sources: knowledge bases, authoritative APIs (Wikipedia, Wolfram Alpha), web search. Claims that find no confirmation or contradict the sources are flagged. This gives objective verification but adds latency and depends on the availability of sources.
 
 
-  Model confidence scoring (medium): The model assesses its own confidence in each factual claim through calibrated probability or explicit uncertainty quantification. Claims with low confidence are automatically flagged for review or excluded from the output. This lets the model self-identify uncertain claims but requires well-calibrated confidence scores, which not all models provide reliably.
+  Model confidence scoring: The model assesses its own confidence in each factual claim through calibrated probability or explicit uncertainty quantification. Claims with low confidence are automatically flagged for review or excluded from the output. This lets the model self-identify uncertain claims but requires well-calibrated confidence scores, which not all models provide reliably.
 
 
-  Multi-source corroboration (medium): For critical facts, the system requires corroborating evidence from multiple independent sources. A single source is insufficient — a fact must be confirmed by at least two independent authoritative sources. This increases reliability through redundancy but may filter out true yet rarely documented facts.'
+  Multi-source corroboration: For critical facts, the system requires corroborating evidence from multiple independent sources. A single source is insufficient — a fact must be confirmed by at least two independent authoritative sources. This increases reliability through redundancy but may filter out true yet rarely documented facts.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'SHA256 checksum verification (medium): For each downloaded component, the system verifies the SHA256 hash against the known-good value from a trusted source (package registry, internal artifact store, vendor signature). A hash mismatch blocks the download and generates an alert. This provides cryptographic verification of integrity but requires infrastructure for managing a hash database.
+control_mechanism: 'SHA256 checksum verification: For each downloaded component, the system verifies the SHA256 hash against the known-good value from a trusted source (package registry, internal artifact store, vendor signature). A hash mismatch blocks the download and generates an alert. This provides cryptographic verification of integrity but requires infrastructure for managing a hash database.
 
 
-  Code signing verification (high): Components are signed with the developer or vendor private key at release. Consumers verify the signature against the public key from a trusted keystore. Code signing provides authenticity in addition to integrity — it verifies who produced the component. This gives strong guarantees but requires PKI infrastructure and secure key management.
+  Code signing verification: Components are signed with the developer or vendor private key at release. Consumers verify the signature against the public key from a trusted keystore. Code signing provides authenticity in addition to integrity — it verifies who produced the component. This gives strong guarantees but requires PKI infrastructure and secure key management.
 
 
-  SBOM verification (medium): An SBOM (Software Bill of Materials) lists all dependencies with their expected versions and hashes. The system verifies the actual dependencies against the SBOM and alerts on any discrepancies. This ensures transparency in the supply chain but requires accurate SBOM generation and maintenance.'
+  SBOM verification: An SBOM (Software Bill of Materials) lists all dependencies with their expected versions and hashes. The system verifies the actual dependencies against the SBOM and alerts on any discrepancies. This ensures transparency in the supply chain but requires accurate SBOM generation and maintenance.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

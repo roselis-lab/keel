@@ -13,7 +13,7 @@ Keel runs inside the coding agent your engineers already use: Claude Code, Codex
 - **Assessments that show their reasoning.** A report lists the threats that apply to the system with severity and likelihood, the threats ruled out and why, and the controls still to build.
 - **A history per system.** One report per system per date. A re-assessment starts from the last report and states what changed.
 - **A read-only site for everyone else.** `keel site` turns the catalog and the signed-off reports into plain HTML pages. GitHub Pages or GitLab Pages publishes them, behind the access control your Git host already has.
-- **A map to the lists auditors ask about.** Every entry of the OWASP Top 10 for LLM Applications 2025, the OWASP Top 10 for Agentic Applications 2026, MITRE ATLAS 5.6.0 and the Google SAIF risk map has a row: covered, out of scope with the reason, or an open gap.
+- **A map to the lists auditors ask about.** Every entry of the OWASP Top 10 for LLM Applications 2025, the OWASP Top 10 for Agentic Applications 2026, the OWASP MCP Top 10, MITRE ATLAS 2026.10 and the Google SAIF risk map has a row: covered, out of scope with the reason, or an open gap.
 
 ## A first assessment, end to end
 

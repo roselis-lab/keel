@@ -87,10 +87,17 @@ export function ReportsPage() {
 }
 
 const COV: Record<string, string> = { covered: "Covered", out_of_scope: "Out of scope", gap: "Gap" };
+const MATURITY: Record<string, string> = {
+  Feasible: "Shown to work in research",
+  Demonstrated: "Shown in a red team exercise or demonstration on a realistic system",
+  Realized: "Used by a threat actor in a real-world incident",
+};
+
 export function CoveragePage() {
   const { source } = useParams();
   const q = useApi<[{ sources: CoverageSource[] }, { threats: Threat[] }, { mitigations: Mitigation[] }]>("/coverage", THREATS, MITIGATIONS);
   const [view, setView] = useState<"state" | "group">("state");
+  const [seen, setSeen] = useState<"all" | "realized" | "lab">("all");
   if (q.loading) return <Shell title="Coverage"><Loading /></Shell>;
   if (q.error) return <Shell title="Coverage"><Problem error={q.error} what="coverage" /></Shell>;
   const [{ sources }, t, m] = q.data;
@@ -99,7 +106,11 @@ export function CoveragePage() {
   if (!cs) return <Shell title="Coverage"><Head title="Coverage" /><div className="empty"><b>No frameworks tracked</b>Add a coverage file under catalog/coverage to compare the library with a framework.</div></Shell>;
   const c = cs.counts, n = cs.entries.length;
   const rank = ["gap", "covered", "out_of_scope"];
-  const rows = view === "state" ? [...cs.entries].sort((a, b) => rank.indexOf(a.state) - rank.indexOf(b.state)) : [...cs.entries].sort((a, b) => String(a.group).localeCompare(String(b.group)));
+  // ATLAS says for each technique whether it has been seen in a real attack. Only filter
+  // when the source publishes that; a hand-labelled guess would be worse than none.
+  const hasMaturity = cs.entries.some((e) => e.maturity);
+  const shown = !hasMaturity || seen === "all" ? cs.entries : cs.entries.filter((e) => (e.maturity === "Realized") === (seen === "realized"));
+  const rows = view === "state" ? [...shown].sort((a, b) => rank.indexOf(a.state) - rank.indexOf(b.state)) : [...shown].sort((a, b) => String(a.group).localeCompare(String(b.group)));
   let lastG: string | null | undefined = undefined;
   const p = (x: CoverageSource["counts"]) => [["covered", x.covered], ["out_of_scope", x.out_of_scope], ["gap", x.gap]] as [string, number][];
   const rail = <>{KINDS.map((k, i) => { const xs = sources.filter((x) => x.source.kind === k); return <div key={k} style={{ marginTop: i ? 22 : 0 }}><h2>{KIND[k].many}</h2>
@@ -114,13 +125,14 @@ export function CoveragePage() {
           <Legend items={[["covered", "Covered", c.covered], ["out_of_scope", "Out of scope", c.out_of_scope], ["gap", "Gap", c.gap]]} />
           <p className="t2 small" style={{ maxWidth: "72ch" }}>This page measures the library: what Keel can assess against this {cs.source.kind === "best_practice" ? "framework" : KIND[cs.source.kind]?.one.toLowerCase()}. How each assessed system stands against it is on <Link to="/compliance">Compliance</Link>.</p></>} />
       <Toggle label="Order" value={view} onChange={setView} options={[["state", "Gaps first"], ["group", "By group"]]} />
+      {hasMaturity && <Toggle label="Seen" value={seen} onChange={setSeen} options={[["all", "All"], ["realized", "Seen in real attacks"], ["lab", "Research or exercise only"]]} />}
       <table className="tbl"><thead><tr><th style={{ width: 100 }}>Entry</th><th>Name</th><th style={{ width: 130 }}>State</th><th>Covered by</th></tr></thead><tbody>
         {rows.flatMap((e) => {
           const out = [];
           if (view === "group" && e.group !== lastG) { lastG = e.group; out.push(<tr key={"g" + e.group}><td colSpan={4} style={{ paddingTop: 18, fontWeight: 700, borderBottom: "1px solid var(--ink)" }}>{e.group || "Other"}</td></tr>); }
           out.push(<tr key={e.ref}>
             <td><span className="id">{e.ref}</span></td>
-            <td><b style={{ fontWeight: 600 }}>{e.title}</b>{e.note && <div className="t2 small" style={{ marginTop: 2 }}>{e.note}</div>}{e.outside && <div className="t3 small" style={{ marginTop: 2 }}>Outside Keel: {e.outside}</div>}</td>
+            <td><b style={{ fontWeight: 600 }}>{e.title}</b>{e.maturity && <span className="t3 small" title={MATURITY[e.maturity]}> · {e.maturity}</span>}{e.note && <div className="t2 small" style={{ marginTop: 2 }}>{e.note}</div>}{e.outside && <div className="t3 small" style={{ marginTop: 2 }}>Outside Keel: {e.outside}</div>}</td>
             <td data-l="State"><span className={`st ${e.state}`}><i className={`k-${e.state}`} />{COV[e.state]}</span></td>
             <td data-l="Covered by" className="small">{[...(e.threats || []).map((x) => <Link key={x} to={`/threats/${x}`}>{clip(threats[x]?.title || x, 60)}</Link>), ...(e.mitigations || []).map((x) => <Link key={x} to={`/controls/${x}`}>{mits[x]?.name || x}</Link>)]
               .reduce<React.ReactNode[]>((a, el, i) => (i ? [...a, "; ", el] : [el]), []) }{!(e.threats || []).length && !(e.mitigations || []).length && <span className="t3">—</span>}</td>

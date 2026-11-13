@@ -4,10 +4,10 @@ source:
   kind: best_practice
   version: '2026'
   released: '2025-12-09'
-  url: https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-2026/
-  checked: '2026-08-29'
+  url: https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
+  checked: '2026-11-12'
   entry_count: 10
-  note: Keel's centre of gravity. The LLM list governs what a model says; this one governs what an agent does once it can plan, hold memory, call tools and talk to other agents — which is the only reason any of this needs a threat model rather than a content filter.
+  note: Keel's centre of gravity. The LLM list governs what a model says; this one governs what an agent does once it can plan, hold memory, call tools and talk to other agents — which is the only reason any of this needs a threat model rather than a content filter. Titles are read from the contents page of the published PDF (Version 2026, December 2025), not from summaries of it.
 entries:
 - ref: ASI01
   title: Agent Goal Hijack
@@ -38,14 +38,14 @@ entries:
   - T-SUPPLY-DEPS
   mitigations: []
 - ref: ASI05
-  title: Unexpected Code Execution
+  title: Unexpected Code Execution (RCE)
   state: covered
   threats:
   - T-CODEGEN
   - T-CMD-INJECT
   mitigations: []
 - ref: ASI06
-  title: Context Management and Retrieval Manipulation
+  title: Memory & Context Poisoning
   state: covered
   threats:
   - T-SOURCE-POISON

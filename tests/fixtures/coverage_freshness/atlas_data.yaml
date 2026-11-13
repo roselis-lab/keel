@@ -1,0 +1,16 @@
+format-version: 6.1.0
+collection:
+  version: '2026.11'
+techniques:
+  AML.T0000:
+    name: Search Open Technical Databases
+    maturity: Realized
+  AML.T0000.000:
+    name: Journals and Conference Proceedings
+    maturity: Realized
+  AML.T0146:
+    name: A Technique Added This Month
+    maturity: Feasible
+  AML.T0147:
+    name: Another New One
+    maturity: Demonstrated

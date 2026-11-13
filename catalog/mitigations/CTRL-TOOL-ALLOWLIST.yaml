@@ -1,21 +1,85 @@
 id: CTRL-TOOL-ALLOWLIST
-name: ToolCall Allowlist
+name: Per-agent tool allowlist
 mitigation_class: gating_control
-purpose: Restricts the list of tools that an agent may invoke autonomously, through a centralized registry of allowed tools or individual assignments per agent, implementing the principle of least privilege and limiting the attack surface. The mechanism operates at the tool registry layer and checks every tool invocation against the allowlist. This prevents unauthorized use of tools, limits the potential damage from a compromised agent, and ensures controlled expansion of capabilities.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents an agent from being steered, or erring, into a tool or operation its task never needed. An
+  operation the agent cannot reach cannot be misused, whatever the model produces.
+formal_implementation_risk: >-
+  The allowlist decides which tools are shown to the model, but dispatch accepts a call to any registered
+  tool name. Signal: a crafted call naming a registered tool that was not offered runs.
+review: >-
+  Review when a tool server or plugin is added, when an existing server adds operations, when an agent's
+  task changes, or when a new way of invoking tools appears (sub-agents, a batch runner). Keep a periodic
+  safety-net review alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'Tool registry (medium): A centralized registry of allowed tools. All tool invocations are checked against the registry before execution. Only tools in the registry are available for use. This provides a single control surface.
+locus:
+  value: split
+  note: >-
+    Enforcement belongs in the runtime's dispatcher and is built once by whoever builds the runtime. The
+    list is per agent and per task, so it belongs to whoever defines the agent. Where agents share a
+    gateway to tool servers, the gateway can hold the list for all of them.
+scope: |-
+  Every agent runtime where the tools it can reach exceed what a given agent or task needs, including tools contributed by tool servers and plugins.
 
-
-  Individual assignments (medium): Individual assignments per agent - each agent has an explicit list of available tools. Assignments are configured based on the agent''s role and function. This provides fine-grained control but requires management overhead.
-
-
-  Dynamic allowlists (high): Dynamic allowlists that are updated at runtime based on context, session state, and user permissions. Flexibility to adapt to changing conditions, but adds complexity.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
+  The variant is set by how the agent's task is defined:
+  - a fixed-purpose agent: a static list per agent, set at deployment;
+  - a task that varies by session (a general assistant, a coding agent): a list per task profile, chosen by the runtime or the operator at session start, never by the model;
+  - tools that arrive at runtime (a tool server that registers new operations): new operations start off the list until someone adds them.
+out_of_scope: >-
+  Which arguments an allowed tool accepts is tool-call validation; which objects it may touch is access
+  control; whether a person granted a category for this session is session-scoped permissions. An agent
+  whose one tool is a general shell or interpreter gets nothing from a tool list - the shell is the whole
+  surface - and needs a command allowlist or isolated execution instead.
+control_mechanism: >-
+  Enforced in the agent runtime's tool dispatcher, and also by not exposing the tool at all: the runtime
+  builds the tool list sent to the model from the allowlist, and refuses at dispatch any call to a tool not
+  on it, because a model can name a tool it was not offered. Entries identify the tool by server identity,
+  operation name and version or digest - not by display name - so a server that renames or re-registers an
+  operation does not inherit an entry. Granularity is the operation: a server exposing read and delete is
+  two entries. The list lives in configuration the agent cannot write.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    List missing or unreadable, a tool whose identity cannot be established: the agent starts with no tools
+    from that source and lists what it left out. The value flips to fail_open where a runtime treats a
+    missing list as "all tools"; the startup record of loaded tools is how that is noticed.
+telemetry:
+  events:
+  - name: tool.offered
+    records: Which tools the agent was given at session start, and from which list.
+    attributes:
+    - agent identity and task profile
+    - list version
+    - tool identities offered
+  - name: tool.refused
+    records: A call to a tool not on the list.
+    attributes:
+    - agent identity
+    - requested tool identity
+    - session
+  evidence: Held in the runtime's log store outside the session, kept as long as tool-call logs.
+anti_patterns:
+- 'The list filters what is shown, not what is dispatched (the formal variant). Signal: dispatch code has no check against the list.'
+- 'Wildcards over a whole server. Signal: a list entry matches every operation of a server, so a new delete operation is allowed on arrival.'
+- 'The agent can write the file holding its list. Signal: the list sits in a project file the agent''s file tool can edit.'
+- 'Entries keyed by name alone. Signal: a second server registering an operation with an allowed name is callable.'
+validation:
+- criterion: An unlisted tool cannot be called.
+  test_scenario: Send a call naming a registered tool that is not on the agent's list.
+  expected_result: Refused and recorded.
+  base: true
+- criterion: New operations start off the list.
+  test_scenario: Add an operation to an allowed tool server and call it.
+  expected_result: Refused until an entry is added.
+  base: true
+- criterion: The agent cannot extend its own list.
+  test_scenario: Ask the agent to add a tool to its own configuration, then start a new session.
+  expected_result: The write is refused, or the change does not take effect without a person outside the agent.
+  base: true
+- criterion: A renamed or substituted tool does not inherit an entry.
+  test_scenario: Register a different server exposing an operation with the same name as an allowed one.
+  expected_result: Its operation is refused.
+  base: false
 faq: []
+requires: []
+implementations: []

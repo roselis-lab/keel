@@ -1,0 +1,88 @@
+id: CTRL-VERSION-BOUND-APPROVAL
+name: Approval bound to the exact object version
+mitigation_class: gating_control
+purpose: >-
+  Prevents a protected change from taking effect under an approval or a passed check that was given to
+  different content - an earlier revision, the object before an edit - or with the required check skipped.
+  Without it, whoever can call the apply operation decides which prerequisites happened.
+formal_implementation_risk: >-
+  The approval is stored against the object's id rather than its content version, so content changed after
+  approval is applied under it. Signal: push a new commit after approval, or edit the record after sign-off,
+  and the merge or apply still succeeds.
+review: >-
+  Review when a new protected object type or workflow is added, when the apply operation gains a caller
+  (an agent, an integration, a bulk endpoint), when the versioning of the object changes, or when a required
+  check is added or removed. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: product
+  note: >-
+    The check has to be atomic with the write, so it lives in the service or repository host that owns the
+    object; nothing in front of it can hold the guarantee. Repository hosts ship it as a branch protection
+    setting; a business workflow has to build it into its own state transitions.
+scope: |-
+  Every protected object whose change requires a recorded prior step - an approval, a passed validation, a sign-off - and which an agent or integration can modify or apply: pull requests to protected branches, configuration changes, records with an approval workflow, payments.
+
+  The variant is set by where the object lives:
+  - a repository host: required reviews dismissed when new commits arrive, and merge allowed only for the approved head commit with the required checks passed on it;
+  - a business workflow (a ticket, a record, a document): the service's state machine, with each approval and check result recording the version it was given for;
+  - a single agent action held for a decision: risk-based approval already voids its decision on any change; this card applies where the decision is a stored workflow state other callers can act on.
+out_of_scope: >-
+  Who may approve, and whether the approver is independent of the author, is the independent-approver card.
+  Whether the approval decision was a good one is review quality. Business entitlement to the operation is
+  initiating-principal authorization.
+control_mechanism: >-
+  Enforced in the downstream service or repository host that applies the change - the endpoint that moves
+  the object to approved or applied - not in the agent, a client or an interface. Each approval and check
+  result is a record carrying the object id, its content version (a hash, or a revision that only
+  increases), the approver or check and its result. The apply operation checks, atomically with the write,
+  that a current approval and every required check result exist for exactly the version being applied, and
+  that the object's state permits the transition; otherwise it refuses. Any modification creates a new
+  version and carries no approval over. No generic update operation can set the approval state; only the
+  approval endpoint creates approval records.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Approval or check records unavailable, a version that cannot be computed, a concurrent modification
+    during apply: the change is refused. A check still running counts as not passed.
+telemetry:
+  events:
+  - name: change.applied
+    records: Which version was applied under which approvals and checks.
+    attributes:
+    - object id and version
+    - approval record ids and their versions
+    - check results and their versions
+    - caller
+  - name: change.refused
+    records: An apply attempt without matching prerequisites.
+    attributes:
+    - object id and version
+    - missing or stale prerequisite
+    - caller
+  evidence: Held by the owning service or the repository host's audit log, for as long as the change is subject to audit.
+anti_patterns:
+- 'Approval stored per object, not per version (the formal variant). Signal: approval records carry no version field.'
+- 'The agent or client checks the approval before calling apply. Signal: the apply endpoint succeeds when called directly without an approval.'
+- 'The status field is writable through a generic update operation. Signal: a caller sets the record to approved with an ordinary update.'
+- 'Dismissal of stale approvals is turned off on the repository host. Signal: the branch protection setting is off, or an admin bypass is enabled for the agent''s identity.'
+validation:
+- criterion: Content changed after approval is not applied.
+  test_scenario: Approve a version, change the content, then apply.
+  expected_result: Refused as stale.
+  base: true
+- criterion: A required check cannot be skipped.
+  test_scenario: Call the apply operation directly for a version with no passed check result.
+  expected_result: Refused.
+  base: true
+- criterion: The approval state cannot be set by an update.
+  test_scenario: Through the generic update operation, set the object's status to approved.
+  expected_result: Refused, or the field is not writable.
+  base: true
+- criterion: The agent's identity has no bypass.
+  test_scenario: Inspect the protection settings for exemptions that include the agent's identity or its app installation.
+  expected_result: None.
+  base: true
+faq: []
+requires: []
+implementations: []

@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Absolute step limit (low): An absolute limit on the number of tool calls or action steps an agent may perform per session. When the limit is reached, execution stops with an error. The limit is set based on expected task complexity and resource constraints. This provides a deterministic bound on execution.
+control_mechanism: 'Absolute step limit: An absolute limit on the number of tool calls or action steps an agent may perform per session. When the limit is reached, execution stops with an error. The limit is set based on expected task complexity and resource constraints. This provides a deterministic bound on execution.
 
 
-  Recursion depth limit (low): Recursion depth is bounded — an agent cannot invoke itself or another agent more than N times in a chain. Recursion depth tracking is maintained via the call stack or an explicit counter. This prevents infinite recursion between agents.
+  Recursion depth limit: Recursion depth is bounded — an agent cannot invoke itself or another agent more than N times in a chain. Recursion depth tracking is maintained via the call stack or an explicit counter. This prevents infinite recursion between agents.
 
 
-  Execution timeout (low): Total execution time is bounded by a timeout — if an agent has not completed the task within the configured time (for example, 5 minutes), execution is forcibly terminated. This protects against hanging agents and resource starvation.'
+  Execution timeout: Total execution time is bounded by a timeout — if an agent has not completed the task within the configured time (for example, 5 minutes), execution is forcibly terminated. This protects against hanging agents and resource starvation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

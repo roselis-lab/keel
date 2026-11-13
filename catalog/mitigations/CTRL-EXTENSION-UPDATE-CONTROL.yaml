@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Pinned versions with manual approval (low): All extensions are pinned to specific versions in a central configuration. Automatic updates are disabled — an update requires an explicit approval process that includes reviewing the changelog, diff analysis for security-relevant changes, and testing in staging. This gives full control over versions but delays receiving security fixes.
+control_mechanism: 'Pinned versions with manual approval: All extensions are pinned to specific versions in a central configuration. Automatic updates are disabled — an update requires an explicit approval process that includes reviewing the changelog, diff analysis for security-relevant changes, and testing in staging. This gives full control over versions but delays receiving security fixes.
 
 
-  Signature verification for updates (medium): Each extension update must be signed by the developer or a trusted publisher key. The IDE or extension manager verifies the signature before installation and rejects updates with invalid or missing signatures. This ensures the authenticity of updates but requires PKI infrastructure for key distribution.
+  Signature verification for updates: Each extension update must be signed by the developer or a trusted publisher key. The IDE or extension manager verifies the signature before installation and rejects updates with invalid or missing signatures. This ensures the authenticity of updates but requires PKI infrastructure for key distribution.
 
 
-  Automated diff audit (medium): The extension manager automatically compares permissions, API usage, and code patterns between the current and new versions. Changes in sensitive areas — new permissions, access to additional resources, changes to network communication — are flagged for manual review. This provides visibility into security-relevant changes but requires accurate diff analysis.'
+  Automated diff audit: The extension manager automatically compares permissions, API usage, and code patterns between the current and new versions. Changes in sensitive areas — new permissions, access to additional resources, changes to network communication — are flagged for manual review. This provides visibility into security-relevant changes but requires accurate diff analysis.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

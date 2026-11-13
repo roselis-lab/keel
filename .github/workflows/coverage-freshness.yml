@@ -1,0 +1,47 @@
+name: Coverage freshness
+
+# Like Dependabot, but for the threat lists in catalog/coverage/: each week, ask every
+# pinned source's publisher for its current release and open (or update) one issue per
+# source that moved on. It never edits the catalog and never opens a pull request -
+# mapping a new release is a person's reading. The check itself is
+# scripts/coverage_freshness.py, which documents the signal used for each source.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report only, open no issues"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: coverage-freshness
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install the one dependency
+        run: python -m pip install --disable-pip-version-check "pyyaml>=6.0"
+
+      - name: Check pinned sources against upstream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: python scripts/coverage_freshness.py --catalog catalog $DRY_RUN
