@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Install command blocklist (low): A blocklist of install commands (npm install, pip install, yarn add, apt-get install, etc.) that cannot be executed directly by the agent. When execution of a blocked command is attempted, the system shows the user information about the command and requires explicit approval. This prevents automatic installation but can be bypassed through aliases or alternative package managers.
+control_mechanism: 'Install command blocklist: A blocklist of install commands (npm install, pip install, yarn add, apt-get install, etc.) that cannot be executed directly by the agent. When execution of a blocked command is attempted, the system shows the user information about the command and requires explicit approval. This prevents automatic installation but can be bypassed through aliases or alternative package managers.
 
 
-  Package reputation check (medium): The system checks the requested package in the registry and collects metadata: download count, GitHub stars, maintainer history, security advisories, known vulnerabilities. Packages with suspicious characteristics (new, low downloads, unknown maintainer, typosquatting patterns) require additional review. This gives informed decision context but adds latency.
+  Package reputation check: The system checks the requested package in the registry and collects metadata: download count, GitHub stars, maintainer history, security advisories, known vulnerabilities. Packages with suspicious characteristics (new, low downloads, unknown maintainer, typosquatting patterns) require additional review. This gives informed decision context but adds latency.
 
 
-  Allowlist for verified packages (medium): Instead of block-all, an allowlist of verified packages that can be installed without confirmation is defined. Packages outside the allowlist require an explicit approval process with security review. This balances security with developer productivity but requires ongoing curation.'
+  Allowlist for verified packages: Instead of block-all, an allowlist of verified packages that can be installed without confirmation is defined. Packages outside the allowlist require an explicit approval process with security review. This balances security with developer productivity but requires ongoing curation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

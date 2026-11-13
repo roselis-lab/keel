@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Internal MCP server catalog (high): All MCP servers must be registered in an internal catalog with verified metadata: publisher, capabilities, security assessment, audit history. Agents may connect only to servers in the catalog. This provides complete control over the MCP surface area but requires a curation process.
+control_mechanism: 'Internal MCP server catalog: All MCP servers must be registered in an internal catalog with verified metadata: publisher, capabilities, security assessment, audit history. Agents may connect only to servers in the catalog. This provides complete control over the MCP surface area but requires a curation process.
 
 
-  MCP server signatures (high): Each MCP server signs its responses with a cryptographic signature. The client verifies the signature against a trusted public key. This ensures authenticity and integrity of communication but requires key distribution infrastructure.
+  MCP server signatures: Each MCP server signs its responses with a cryptographic signature. The client verifies the signature against a trusted public key. This ensures authenticity and integrity of communication but requires key distribution infrastructure.
 
 
-  MCP server allowlist (low): Agents may connect only to MCP servers on an allowlist defined in policy. The allowlist includes server IDs, endpoints, and allowed capabilities. A connection attempt to a non-allowlisted server is blocked. This is a simple but effective control.'
+  MCP server allowlist: Agents may connect only to MCP servers on an allowlist defined in policy. The allowlist includes server IDs, endpoints, and allowed capabilities. A connection attempt to a non-allowlisted server is blocked. This is a simple but effective control.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

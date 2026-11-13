@@ -1,0 +1,73 @@
+id: CTRL-RESOLVED-PATH-CHECK
+name: File access checked on the resolved path
+mitigation_class: gating_control
+purpose: >-
+  Prevents a file tool granted one directory from reading or writing outside it through a path the model
+  supplied - a relative climb, a symbolic link, a hard link, an alternate spelling of the same path.
+formal_implementation_risk: >-
+  The tool compares the path string with the granted directory by prefix, before resolving symbolic links,
+  so a link inside the grant pointing outside it is followed. Signal: a link created inside the workspace to
+  a file outside it can be read or written through the tool.
+review: >-
+  Review when the file tool gains an operation (rename, link, archive extraction), when the grant model
+  changes, when the tool moves to a platform with different path rules, or when the agent gains another way
+  to create files. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: >-
+    The path check is the file tool's own code and its author builds it. The operating-system boundary that
+    makes the check unnecessary to trust - a mount or a user that cannot reach outside the grant - is
+    platform work, shared across tools.
+scope: |-
+  Every file tool whose access is limited to granted directories, and whose path arguments a model writes.
+
+  The variant is set by what the process itself can reach:
+  - the tool's process can reach more than the grant: the tool resolves each path and checks the resolved form, and the platform layer is the stronger answer;
+  - the process runs in a mount or a user restricted to the grant: the operating system holds the boundary and the tool's check gives a clear error.
+out_of_scope: >-
+  Which directories are granted is session-scoped permissions or workspace trust. Writes to the agent's own
+  configuration are agent configuration protection. Shell and code execution reach files by their own
+  route and need isolated execution.
+control_mechanism: >-
+  Enforced in the file tool handler, backed where possible by the platform. The handler canonicalises
+  each path - absolute, with dot segments removed, symbolic links resolved through every component, case
+  and separator rules of the platform applied - and checks the resolved path against the resolved grant by
+  path components, not by string prefix. To close the window between check and use, it opens the file
+  relative to a directory handle of the grant with no-follow semantics (or the platform's equivalent) and
+  verifies the opened file's location. Creating a link that points outside the grant is refused. Where the
+  platform allows, the tool's process runs with only the grant mounted or writable.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    A path that cannot be resolved, a link that cannot be read, a location that differs after open: the
+    operation is refused.
+telemetry:
+  events:
+  - name: file_access.refused
+    records: A path that resolved outside the grant.
+    attributes:
+    - requested path
+    - resolved path
+    - grant
+  evidence: Held in the runtime's log store outside the workspace.
+anti_patterns:
+- 'Prefix check before resolving links (the formal variant). Signal: a link inside the grant to an outside file is followed.'
+- 'String prefix match on directories. Signal: a grant of /work/app allows /work/app-secrets.'
+- 'Check then open by name. Signal: replacing the file with a link between the check and the open lets the tool reach outside.'
+validation:
+- criterion: Links do not lead outside the grant.
+  test_scenario: Create a symbolic link inside the grant to a file outside it, and ask the tool to read and write through it.
+  expected_result: Both are refused.
+  base: true
+- criterion: Relative climbs and alternate spellings are refused.
+  test_scenario: Pass paths using parent-directory segments, a sibling directory sharing the grant's prefix, and a different case or separator.
+  expected_result: Each resolving outside the grant is refused.
+  base: true
+- criterion: The tool cannot create an outward link.
+  test_scenario: Ask the tool to create a link inside the grant pointing outside it.
+  expected_result: Refused.
+  base: true
+faq: []
+requires: []
+implementations: []

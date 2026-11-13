@@ -1,0 +1,82 @@
+id: CTRL-INDEPENDENT-APPROVER
+name: Independent approver for protected changes
+mitigation_class: gating_control
+purpose: >-
+  Prevents a change that requires a second person's approval from being approved by its own author under
+  another name - a second agent, a second credential, a bot account acting for the same person. Without it,
+  separation of duties holds only between account names.
+formal_implementation_risk: >-
+  The approval service compares account names, so an agent's bot account approving the pull request of the
+  developer it works for counts as a second person. Signal: a change authored by a developer is approved by
+  an agent identity that developer started, and it merges.
+review: >-
+  Review when a new kind of agent or service identity can approve, when agents start authoring changes in a
+  new system, when the mapping from agent identities to the people they act for changes, or when an
+  approval requirement is added. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: >-
+    The count of approvals happens in the approval service (the repository host, the workflow engine), but
+    the fact it needs - which person each agent or credential acts for - comes from the identity layer or a
+    registry of agent identities. Without that mapping the service can only compare names, which is the
+    formal variant.
+scope: |-
+  Every approval that is required to come from someone other than the author - required reviews, four-eyes payments, access grants, release approvals - in a system where agents can author changes, approve them, or both.
+
+  The variant is set by how actors are identified:
+  - agents act under the person's own account: the author is that person, and an approval from the same account never counts;
+  - agents act under their own identities (bot accounts, app installations, service accounts): each identity must resolve to the person it acts for, and the comparison is between those people;
+  - an identity that cannot be resolved to a person counts as no one: its approval never satisfies the requirement.
+out_of_scope: >-
+  Whether the approval applies to the version being changed is version-bound approval. Whether the approver
+  understood what they approved is the approval view and review quality. Delegated authority to perform the
+  operation is initiating-principal authorization.
+control_mechanism: >-
+  Enforced in the approval service at the moment an approval is counted, using identity resolution from
+  the identity or platform layer. Each actor - person, agent, service account, app installation - is mapped
+  to the person on whose behalf it acts, from delegation records or a registry of agent identities that
+  the agents cannot write. An approval counts only when its approver resolves to a person different from the
+  resolved author and from every resolved contributor to the approved version, and only when the approver
+  is of a class policy allows to approve (by default, a person). The requirement is evaluated again on each
+  new version, so a contributor added later disqualifies an approver who was independent before.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    Mapping unavailable, an actor that cannot be resolved, a contributor list that cannot be computed: the
+    approval does not count and the change waits. It never falls back to comparing names.
+telemetry:
+  events:
+  - name: approval.counted
+    records: An approval that satisfied the requirement, with the people it was resolved to.
+    attributes:
+    - object and version
+    - approver identity and resolved person
+    - resolved author and contributors
+  - name: approval.not_counted
+    records: An approval rejected as not independent or not resolvable.
+    attributes:
+    - approver identity
+    - reason (same person, unresolved, class not allowed)
+  evidence: Held by the approval service's audit log, for as long as the change is subject to audit.
+anti_patterns:
+- 'Name comparison (the formal variant). Signal: the approval rule has no input from an identity mapping.'
+- 'Agent identities resolve to nobody and are allowed to approve. Signal: an approval from an unmapped bot account counts.'
+- 'Only the author is compared, not later contributors. Signal: a reviewer who pushed a commit to the change can still approve it.'
+- 'The mapping is held where agents can write it. Signal: an agent can register itself as acting for a different person.'
+validation:
+- criterion: An author's agent cannot approve the author's change.
+  test_scenario: Have a developer open a change and an agent identity started by that developer approve it.
+  expected_result: The approval does not count and the change cannot merge.
+  base: true
+- criterion: An unresolvable identity is no one.
+  test_scenario: Approve a change from an identity with no mapping to a person.
+  expected_result: The approval does not count.
+  base: true
+- criterion: Later contributors are counted.
+  test_scenario: After an independent approval, have the approver push a commit to the change.
+  expected_result: Their approval no longer satisfies the requirement.
+  base: true
+faq: []
+requires: []
+implementations: []

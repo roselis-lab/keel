@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Mandatory security review for AI diffs (low): All PRs with AI-generated code above a threshold percentage (for example, 30% of changed lines) are automatically flagged as requiring a mandatory security review from a designated security advocate or senior developer. The reviewer receives a checklist of typical AI vulnerabilities: hardcoded secrets, insecure defaults, missing input validation, overly permissive access. This adds delay to the merge, but it substantially reduces the risk of vulnerabilities reaching main.
+control_mechanism: 'Mandatory security review for AI diffs: All PRs with AI-generated code above a threshold percentage (for example, 30% of changed lines) are automatically flagged as requiring a mandatory security review from a designated security advocate or senior developer. The reviewer receives a checklist of typical AI vulnerabilities: hardcoded secrets, insecure defaults, missing input validation, overly permissive access. This adds delay to the merge, but it substantially reduces the risk of vulnerabilities reaching main.
 
 
-  Extended automated SAST (medium): In addition to standard SAST, specialized scanners for AI code are run: detectors for hardcoded credentials, analyzers of insecure configuration patterns, checks on cryptographic API usage. Scan results block the PR when critical findings are detected and are flagged in a review comment. The approach automates detection of frequent AI vulnerability patterns, but it can produce false positives.
+  Extended automated SAST: In addition to standard SAST, specialized scanners for AI code are run: detectors for hardcoded credentials, analyzers of insecure configuration patterns, checks on cryptographic API usage. Scan results block the PR when critical findings are detected and are flagged in a review comment. The approach automates detection of frequent AI vulnerability patterns, but it can produce false positives.
 
 
-  Codeowners for sensitive areas (low): For critical directories (auth, crypto, data access), mandatory approvals from designated codeowners with security expertise are configured, regardless of the source of the changes. AI changes in these areas require explicit approval from the security team. This ensures human oversight in the most sensitive zones, where the cost of an error is highest.'
+  Codeowners for sensitive areas: For critical directories (auth, crypto, data access), mandatory approvals from designated codeowners with security expertise are configured, regardless of the source of the changes. AI changes in these areas require explicit approval from the security team. This ensures human oversight in the most sensitive zones, where the cost of an error is highest.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

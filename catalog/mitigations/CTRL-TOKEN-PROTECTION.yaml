@@ -1,21 +1,99 @@
 id: CTRL-TOKEN-PROTECTION
-name: Token Protection
+name: Credentials kept out of an agent's reach
 mitigation_class: gating_control
-purpose: Protects authentication tokens and credentials from theft and leakage through secure storage, encryption at rest and in transit, short time-to-live, and rotation policies, minimizing the blast radius upon compromise. The mechanism operates at the credential management layer and ensures secure handling of tokens throughout their entire lifecycle. This prevents credential theft through various attack vectors, limits the window of opportunity upon token leakage, and ensures a secure credential lifecycle.
-formal_implementation_risk: null
-review: null
+purpose: >-
+  Prevents a credential from being read by the model or by code the agent runs - from an environment
+  variable, a configuration file, a tool's output, a log - and then used or sent somewhere it was never
+  issued for. A credential the agent can read is a credential any content steering the agent can spend.
+formal_implementation_risk: >-
+  Redaction of secrets in tool outputs is the only measure, while the token stays in the agent's
+  environment, so encoding it, splitting it or writing it to a file and reading the file back passes the
+  redactor. Signal: from the agent's shell, printing the environment or reading a CLI credential file
+  returns a live token.
+review: >-
+  Review when the agent gains a shell or file tool, when a new CLI or connector with its own credential
+  store is installed where the agent runs, when a CI job starts running an agent step, when the credential
+  proxy or token issuer changes, or when a token's lifetime or scope changes. Keep a periodic safety-net
+  review alongside those triggers.
 maintainer: null
-locus: null
-scope: null
-control_mechanism: 'Encryption at rest (high): Tokens are encrypted at rest using KMS-managed keys. Plaintext tokens are never stored - only encrypted values. Decryption occurs in memory only when needed.
+locus:
+  value: split
+  note: >-
+    The runtime decides what the agent's process inherits and can see, so the runtime or the platform it
+    runs on holds the guarantee once for every agent. The credential proxy and short-lived token issuance
+    are infrastructure that pays to share. An organisation running one agent on one machine holds both
+    halves itself, mostly as a clean environment and a separate user for the agent.
+scope: |-
+  Every credential present where an agent runs commands, reads files or receives tool outputs: environment variables, CLI credential files (cloud, code host, cluster, package registry), .env and similar files in the workspace, tokens a tool returns, the tokens the runtime uses for connectors.
 
-
-  Short time-to-live and rotation (low): A short token time-to-live (minutes or hours) limits the exposure window upon theft. Automatic rotation ensures that compromised tokens quickly become invalid.
-
-
-  Token redaction in outputs (low): Sensitive tokens are never logged, never returned in API responses, and never disclosed in error messages. Token redaction is applied across all output channels.'
-failure_behavior: null
-telemetry: null
-anti_patterns: []
-validation: []
+  The variant is set by whether the agent's task must authenticate somewhere itself:
+  - it does not: no credential is present in the agent's environment at all;
+  - it does, through tools the runtime mediates: the credential is held by the connector or a credential proxy and attached outside the agent's process; the agent sees at most a handle;
+  - it does, from the agent's own shell (pushing a branch, a cloud CLI in a CI job): a token minted for this task, scoped to it, with a lifetime no longer than the task, revoked at the end - never a long-lived personal token.
+out_of_scope: >-
+  Encryption at rest and rotation in a secret store are general secret management: they do not stop an
+  agent from reading a credential that has already been decrypted into its environment. How much a
+  credential may do is least privilege for tokens. A credential that crosses into a person's browser or
+  client machine is the same principle enforced in the application's session design, not in an agent's
+  runtime. Data other than credentials is data-level access control.
+control_mechanism: >-
+  Enforced in the agent runtime and the platform it runs on: the process in which the agent's shell and
+  code run is started with a scrubbed environment and a file-system view without credential files - a
+  sandbox mount, deny rules on credential paths that apply to every tool including the shell, or a separate
+  operating-system user. Credentials a tool needs are attached by the connector or a credential proxy at
+  the moment of the outbound call - the proxy adds the authentication header for allowlisted destinations -
+  so the secret never enters the shell, the file system or the model's context. Where a token must be in the
+  shell, it is minted per task with the narrowest scope and revoked at task end. Redacting secrets from
+  tool outputs and logs before they enter the context is a second, soft layer; the gate is that the secret
+  is absent.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    The proxy unavailable, token issuance failing, the scrubbed environment failing to apply: the call or the
+    run fails rather than falling back to a credential in the environment. The value flips to fail_open where
+    a CLI silently falls back to a credential file it finds; a canary credential placed where a fallback
+    would find it, and an alert on its use, is how that is noticed.
+telemetry:
+  events:
+  - name: credential.attached
+    records: A credential was attached to an outbound call by the proxy or connector, not by the agent.
+    attributes:
+    - agent and session
+    - destination
+    - credential identity (never its value)
+  - name: credential.minted
+    records: A task-scoped token issued for the agent's shell.
+    attributes:
+    - task
+    - scope and expiry
+  - name: credential.canary_used
+    records: A planted credential was read and used, so something reached a place it should not have.
+    attributes:
+    - canary identity
+    - where it was used from
+  evidence: Held by the proxy, the token issuer and the identity provider, outside the agent's host, for the investigation window of the most privileged credential involved.
+anti_patterns:
+- 'Redaction as the only measure (the formal variant). Signal: the token is in the agent process''s environment.'
+- 'A deny rule protects .env from the file tool while the shell tool reads it. Signal: the agent''s shell can print the file.'
+- 'A CI job exposes a repository-write token to every step, including the agent step. Signal: the agent step''s environment lists the token.'
+- 'The credential is encrypted at rest and decrypted into an environment variable for the agent. Signal: same as the formal variant; encryption at rest changed nothing the agent can see.'
+validation:
+- criterion: The agent's shell and files hold no live credential.
+  test_scenario: From the agent's shell, print the environment and read the usual CLI credential paths and workspace .env files.
+  expected_result: No live credential is found.
+  base: true
+- criterion: Mediated tools work without the agent seeing the secret.
+  test_scenario: Have the agent call a connector that authenticates, then search the context and the trace for the credential value.
+  expected_result: The call succeeds and the value appears nowhere the agent can read.
+  base: true
+- criterion: A token in the shell is task-scoped and short-lived.
+  test_scenario: Take the token minted for an agent task and try it against a resource outside the task's scope, and again after the task ends.
+  expected_result: Both attempts are refused.
+  base: false
+- criterion: A fallback to a found credential is detected.
+  test_scenario: Place a canary credential in a file a CLI would fall back to, break the proxy and run the agent's task.
+  expected_result: The task fails or the canary's use raises an alert.
+  base: false
 faq: []
+requires: []
+implementations: []

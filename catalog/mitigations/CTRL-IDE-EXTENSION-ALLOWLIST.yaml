@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Internal curated marketplace (high): The organization maintains an internal extension marketplace or a curated list of approved extensions. Users can install only extensions from this approved catalog. The catalog includes security-reviewed extensions with documented permissions and an audit trail of the review process. This gives maximum control but requires ongoing curation effort.
+control_mechanism: 'Internal curated marketplace: The organization maintains an internal extension marketplace or a curated list of approved extensions. Users can install only extensions from this approved catalog. The catalog includes security-reviewed extensions with documented permissions and an audit trail of the review process. This gives maximum control but requires ongoing curation effort.
 
 
-  Publisher verification requirement (medium): Extensions are permitted only from publishers that have passed a verification process: identity verification, security assessment, code signing certificate. The IDE or management system verifies the publisher signature before installation. Unverified publishers are blocked by default. This gives flexibility for trusted publishers but requires verification infrastructure.
+  Publisher verification requirement: Extensions are permitted only from publishers that have passed a verification process: identity verification, security assessment, code signing certificate. The IDE or management system verifies the publisher signature before installation. Unverified publishers are blocked by default. This gives flexibility for trusted publishers but requires verification infrastructure.
 
 
-  Risk-tiered extension policy (low): Extensions are classified by risk tiers: low-risk (syntax highlighting, themes) are freely installable, medium-risk (language servers, linters) require team approval, high-risk (tools with file/network access) require security review. A risk-based policy balances security with developer productivity.'
+  Risk-tiered extension policy: Extensions are classified by risk tiers: low-risk (syntax highlighting, themes) are freely installable, medium-risk (language servers, linters) require team approval, high-risk (tools with file/network access) require security review. A risk-based policy balances security with developer productivity.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

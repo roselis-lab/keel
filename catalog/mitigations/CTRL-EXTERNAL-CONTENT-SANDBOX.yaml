@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Strict CORS isolation (low): External content is loaded and processed in an isolated context with strict CORS policies — only same-origin requests or explicitly whitelisted domains. JavaScript execution is disabled while parsing HTML. This prevents script execution and unauthorized data exfiltration but may break legitimate embedded content.
+control_mechanism: 'Strict CORS isolation: External content is loaded and processed in an isolated context with strict CORS policies — only same-origin requests or explicitly whitelisted domains. JavaScript execution is disabled while parsing HTML. This prevents script execution and unauthorized data exfiltration but may break legitimate embedded content.
 
 
-  Content Security Policy enforcement (medium): Content Security Policy headers are applied to all responses containing external content: inline scripts, eval, and data URIs are forbidden. The CSP also restricts connect-src to prevent exfiltration. This gives a declarative security policy but requires careful configuration so as not to break legitimate functionality.
+  Content Security Policy enforcement: Content Security Policy headers are applied to all responses containing external content: inline scripts, eval, and data URIs are forbidden. The CSP also restricts connect-src to prevent exfiltration. This gives a declarative security policy but requires careful configuration so as not to break legitimate functionality.
 
 
-  Offline processing container (high): External content is processed in an isolated process or container without network access. Content parsing and extraction happen offline, after which the extracted text is sanitized and passed to the main process. This gives strong isolation but adds latency from process spawning.'
+  Offline processing container: External content is processed in an isolated process or container without network access. Content parsing and extraction happen offline, after which the extracted text is sanitized and passed to the main process. This gives strong isolation but adds latency from process spawning.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Append-only audit storage (medium): every event is written to a dedicated append-only store - a table with RESTRICT deletes, object storage under a WORM policy, or a dedicated audit service. Each record carries timestamp, event type, actor id, session id, resource, action, outcome and context. Deleting or modifying a record is either impossible or requires a privileged break-glass procedure.
+control_mechanism: 'Append-only audit storage: every event is written to a dedicated append-only store - a table with RESTRICT deletes, object storage under a WORM policy, or a dedicated audit service. Each record carries timestamp, event type, actor id, session id, resource, action, outcome and context. Deleting or modifying a record is either impossible or requires a privileged break-glass procedure.
 
 
-  Hash-chained event log (high): records are linked cryptographically through a hash chain or Merkle tree, so history cannot be altered silently without breaking the chain. Root hashes may be published or countersigned externally for judicial-grade integrity.
+  Hash-chained event log: records are linked cryptographically through a hash chain or Merkle tree, so history cannot be altered silently without breaking the chain. Root hashes may be published or countersigned externally for judicial-grade integrity.
 
 
-  Replay (high): the store supports replaying the sequence of actions, so an investigation reconstructs what happened rather than inferring it.
+  Replay: the store supports replaying the sequence of actions, so an investigation reconstructs what happened rather than inferring it.
 
 
   This control leaves the record and nothing more. Reading that record to spot an anomalous pattern is a detector''s job and lives on its own card; a card that claims both is claiming to gate on evidence it only stores.'

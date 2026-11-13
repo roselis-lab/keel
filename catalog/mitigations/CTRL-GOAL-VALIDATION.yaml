@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Goal taxonomy validation (medium): A formal taxonomy of permissible agent goals is defined with a mapping to organizational objectives. Before execution begins and at each step, the agent''s current goal is checked for membership in the allowed goal taxonomy. Goals outside the taxonomy are rejected. This gives a strict boundary but requires upfront formalization of all legitimate goals.
+control_mechanism: 'Goal taxonomy validation: A formal taxonomy of permissible agent goals is defined with a mapping to organizational objectives. Before execution begins and at each step, the agent''s current goal is checked for membership in the allowed goal taxonomy. Goals outside the taxonomy are rejected. This gives a strict boundary but requires upfront formalization of all legitimate goals.
 
 
-  Constraint enforcement engine (medium): Each proposed agent action is checked for compliance with hard constraints: never modify production config, never exfiltrate data, never escalate privileges. Constraints are defined declaratively and enforced at runtime independently of the agent''s reasoning. This gives deterministic boundaries even when the agent logic is compromised.
+  Constraint enforcement engine: Each proposed agent action is checked for compliance with hard constraints: never modify production config, never exfiltrate data, never escalate privileges. Constraints are defined declaratively and enforced at runtime independently of the agent''s reasoning. This gives deterministic boundaries even when the agent logic is compromised.
 
 
-  Semantic alignment classifier (high): Instead of preset constraints, an ML classifier evaluates the semantic alignment between the agent''s stated purpose, the requested action, and the organizational context. The classifier is trained on examples of legitimate vs. illegitimate actions. This enables detection of novel violations but introduces ML uncertainty and requires ongoing training.'
+  Semantic alignment classifier: Instead of preset constraints, an ML classifier evaluates the semantic alignment between the agent''s stated purpose, the requested action, and the organizational context. The classifier is trained on examples of legitimate vs. illegitimate actions. This enables detection of novel violations but introduces ML uncertainty and requires ongoing training.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

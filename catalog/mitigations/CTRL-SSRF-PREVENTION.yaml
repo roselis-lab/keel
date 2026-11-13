@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'URL and IP validation (low): URL validation checks that the destination does not point to internal resources: localhost, 127.0.0.1, 10.x.x.x, 172.16.x.x, 192.168.x.x, link-local addresses. Requests to blocked destinations are rejected with an error.
+control_mechanism: 'URL and IP validation: URL validation checks that the destination does not point to internal resources: localhost, 127.0.0.1, 10.x.x.x, 172.16.x.x, 192.168.x.x, link-local addresses. Requests to blocked destinations are rejected with an error.
 
 
-  Protection against DNS rebinding (medium): DNS resolution is checked after the initial URL validation - an attacker can use DNS rebinding to bypass the initial check. The IP address after resolution is also checked against the blocklist.
+  Protection against DNS rebinding: DNS resolution is checked after the initial URL validation - an attacker can use DNS rebinding to bypass the initial check. The IP address after resolution is also checked against the blocklist.
 
 
-  Blocking of metadata endpoints (low): Blocking of requests to cloud metadata endpoints: 169.254.169.254 (AWS/GCP/Azure metadata), internal Kubernetes services. These endpoints contain sensitive credentials and configuration data.'
+  Blocking of metadata endpoints: Blocking of requests to cloud metadata endpoints: 169.254.169.254 (AWS/GCP/Azure metadata), internal Kubernetes services. These endpoints contain sensitive credentials and configuration data.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

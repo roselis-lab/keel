@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Hard limit on input tokens (low): A hard limit on input tokens - requests exceeding the limit are rejected or truncated with explicit user notification. The user is informed when their input has been truncated.
+control_mechanism: 'Hard limit on input tokens: A hard limit on input tokens - requests exceeding the limit are rejected or truncated with explicit user notification. The user is informed when their input has been truncated.
 
 
-  Output token limit (low): Output generation is bounded by a maximum number of output tokens. When the limit is reached, the response is truncated with a [...truncated] marker. The user can request continuation if needed.
+  Output token limit: Output generation is bounded by a maximum number of output tokens. When the limit is reached, the response is truncated with a [...truncated] marker. The user can request continuation if needed.
 
 
-  Session-level token quotas (low): Cumulative tracking of tokens at the session level - total token consumption is tracked and capped. The session quota prevents runaway conversations from exhausting resources.'
+  Session-level token quotas: Cumulative tracking of tokens at the session level - total token consumption is tracked and capped. The session quota prevents runaway conversations from exhausting resources.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

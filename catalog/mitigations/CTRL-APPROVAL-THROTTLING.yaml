@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Batched approval queue (medium): Approval requests are aggregated in queues and presented to the user in batches of several homogeneous operations. Instead of "confirm deletion of file A?", "confirm deletion of file B?", the user sees "confirm deletion of 5 files matching mask X?". This reduces the number of interruptions and lets the user assess the cumulative effect of the operations. Suitable for homogeneous actions with a similar level of risk.
+control_mechanism: 'Batched approval queue: Approval requests are aggregated in queues and presented to the user in batches of several homogeneous operations. Instead of "confirm deletion of file A?", "confirm deletion of file B?", the user sees "confirm deletion of 5 files matching mask X?". This reduces the number of interruptions and lets the user assess the cumulative effect of the operations. Suitable for homogeneous actions with a similar level of risk.
 
 
-  Rate limiter with cooldown (medium): For each type of action, a limit on requests per unit of time per user or session is configured. When the limit is exceeded, the agent is blocked or put into a cooldown mode. This prevents a mass-request attack and allows time to analyze the situation. It is important to distinguish legitimate intensity (a batch operation) from anomalous intensity (spam after compromise).
+  Rate limiter with cooldown: For each type of action, a limit on requests per unit of time per user or session is configured. When the limit is exceeded, the agent is blocked or put into a cooldown mode. This prevents a mass-request attack and allows time to analyze the situation. It is important to distinguish legitimate intensity (a batch operation) from anomalous intensity (spam after compromise).
 
 
-  Approval pattern detector (medium): The system analyzes the context of the user''s previous approvals and rejections, identifying patterns of automatic approval (all approvals in under 2 seconds, identical responses to requests with different risk). When such patterns are detected, the system introduces a mandatory pause and requires explicit confirmation of deliberateness. This detects not only attacks but also user fatigue.'
+  Approval pattern detector: The system analyzes the context of the user''s previous approvals and rejections, identifying patterns of automatic approval (all approvals in under 2 seconds, identical responses to requests with different risk). When such patterns are detected, the system introduces a mandatory pause and requires explicit confirmation of deliberateness. This detects not only attacks but also user fatigue.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

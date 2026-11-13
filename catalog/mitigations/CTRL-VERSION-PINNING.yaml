@@ -7,13 +7,13 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Manifest-based pinning (medium): The agent configuration contains a manifest with exact versions of all dependencies: tool@1.2.3, mcp-server@abc123def, model@claude-3-opus-20240229. A mismatch blocks loading. The manifest is cryptographically signed to protect against tampering.
+control_mechanism: 'Manifest-based pinning: The agent configuration contains a manifest with exact versions of all dependencies: tool@1.2.3, mcp-server@abc123def, model@claude-3-opus-20240229. A mismatch blocks loading. The manifest is cryptographically signed to protect against tampering.
 
 
-  Content-addressable storage (high): Components are stored in the repository by content hash (SHA-256) rather than by name or version. The agent configuration specifies the hash of the required component, which guarantees loading of exactly the content that was verified.
+  Content-addressable storage: Components are stored in the repository by content hash (SHA-256) rather than by name or version. The agent configuration specifies the hash of the required component, which guarantees loading of exactly the content that was verified.
 
 
-  SLSA attestation verification (high): For each component, an SLSA attestation is required, linking the binary artifact to the source code, the build process, and the version. The system checks the attestation before loading the component and reconciles the declared version with the version in the attestation.'
+  SLSA attestation verification: For each component, an SLSA attestation is required, linking the binary artifact to the source code, the build process, and the version. The system checks the attestation before loading the component and reconciles the declared version with the version in the attestation.'
 failure_behavior: null
 telemetry: null
 anti_patterns: []

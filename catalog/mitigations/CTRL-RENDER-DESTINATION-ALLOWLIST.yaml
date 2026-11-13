@@ -1,0 +1,79 @@
+id: CTRL-RENDER-DESTINATION-ALLOWLIST
+name: Render-time destination allowlist in the client
+mitigation_class: gating_control
+purpose: >-
+  Prevents a reply from sending data out through the reader's own client - an image, a link preview or an
+  embedded frame the client fetches as it renders, or a link the reader clicks - when the model wrote data
+  into the address.
+formal_implementation_risk: >-
+  The client's content policy allows images only from listed domains, but one of them is an image proxy or
+  a redirector that fetches any address passed to it. Signal: a markdown image pointing at the listed proxy
+  with an outside address in its query reaches the outside listener.
+review: >-
+  Review when the client starts rendering a new content type (embeds, previews, rich cards), when a domain
+  is added to the policy, when a listed domain starts proxying or redirecting, or when the reply reaches a
+  new surface (a chat integration, email). Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: product
+  note: >-
+    Only the client that renders the reply can decide what it fetches and how it shows links, so each
+    surface must hold this itself. Where replies go to a third-party surface the application does not
+    control (a chat platform, email), the application's half is to strip or rewrite references before
+    sending.
+scope: |-
+  Every surface that renders model output in a way that fetches or links: markdown images, link previews, embedded frames, clickable links, in the application's own client or in a surface it posts to.
+
+  The variant is set by how the reference is triggered:
+  - fetched with no action by the reader (images, previews, embeds): only destinations on the allowlist are fetched, and no listed destination forwards to arbitrary addresses;
+  - followed when the reader clicks (links): the client shows the full destination and opens one outside the allowlist only after the reader sees it;
+  - a surface the application does not control: references outside the allowlist are removed or made inert before the reply is sent.
+out_of_scope: >-
+  Requests a tool makes on the server side are the destination allowlist for tool egress. Data hidden in
+  invisible characters inside the reply is output encoding. Whether the model should have had the data in
+  context is data-level access control.
+control_mechanism: >-
+  Enforced in the client that renders the reply - the web or desktop interface, through its content
+  security policy and its renderer - or, for a surface the application does not control, in the server
+  step that formats the reply before posting. Images, previews and frames load only from listed
+  destinations, enforced by the client's content policy rather than by the renderer's goodwill; listed
+  destinations are ones that do not fetch or redirect on behalf of the caller. Links render with their full
+  destination visible, and opening a link outside the list shows the destination before navigating.
+failure_behavior:
+  value: fail_closed
+  note: >-
+    A policy that fails to load leaves references unfetched and links inert; the reply text still shows.
+    The failure is visible to the reader as broken images, which is how it is noticed.
+telemetry:
+  events:
+  - name: render.reference_blocked
+    records: A reference in a reply that the client did not fetch.
+    attributes:
+    - conversation and reply id
+    - destination host
+    - reference kind (image, preview, frame, link)
+  evidence: Reported by the client to the application's log store; the destination, not the query string, which may carry the data.
+anti_patterns:
+- 'A listed proxy or redirector (the formal variant). Signal: a listed domain returns content fetched from an address in its query.'
+- 'Allowlisting enforced in the renderer only, with no content policy. Signal: raw HTML in a reply loads an image from anywhere.'
+- 'Links shown by their text. Signal: a link whose text is a known site opens a different host with no warning.'
+validation:
+- criterion: Unlisted images are not fetched.
+  test_scenario: Make the model produce a markdown image pointing at a listener you control, with data in the query.
+  expected_result: The listener receives nothing.
+  base: true
+- criterion: No listed destination forwards.
+  test_scenario: For each listed destination, try passing an outside address to it as a parameter.
+  expected_result: None fetches or redirects to the outside address.
+  base: true
+- criterion: Links show where they go.
+  test_scenario: Have the model produce a link with misleading text and click it.
+  expected_result: The full destination is shown before navigation.
+  base: true
+- criterion: Third-party surfaces get inert references.
+  test_scenario: Post a reply with an unlisted image to the chat integration.
+  expected_result: The image reference is removed or rewritten before posting.
+  base: false
+faq: []
+requires: []
+implementations: []
