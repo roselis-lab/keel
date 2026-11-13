@@ -36,7 +36,7 @@ weaknesses:
   surface:
   - retrieved-content
   - user-input
-  text: The model acts on content it read as though it were instruction, so text placed where the agent will read it - a document, a page, a ticket body - can direct it to disclose what it can reach.
+  text: The model acts on content it read as though it were instruction, so content placed where the agent will read it - a document, a page, a ticket body, an image or a recording, text that appears only once an image is downscaled for the model - can direct it to disclose what it can reach.
   nature: targeted
 - component: model
   surface:
@@ -63,7 +63,22 @@ weaknesses:
 - component: model
   text: The runtime appends confidential metadata or credentials to model-visible request fields without including those fields in the data classification of the outgoing request.
   nature: targeted
-reachability: There is no data under differentiated authorization anywhere in the agent's context or reach - everything it can read is already available to any recipient of its output and to any destination its tools can send to. Recipients include inference processors and fallback endpoints; the condition also covers hidden request fields, restored memory, later tasks and restrictions on the processing purpose, not merely a successful technical allow decision.
+- component: downstream
+  surface:
+  - model-output
+  text: The client that displays the reply fetches what the reply references as it renders - a markdown image, a link preview, an embedded frame - from any destination its policy allows, and an allowed destination can pass the request on to an address someone outside can read, so data the model wrote into the URL leaves with no tool call and no click.
+  nature: targeted
+- component: downstream
+  surface:
+  - model-output
+  text: The reply can carry a link whose address the model composed, and the client shows the link text rather than where it goes and opens it with no check of the destination, so a person who clicks it sends whatever the model put in the address to whoever owns that address.
+  nature: targeted
+- component: downstream
+  surface:
+  - model-output
+  text: Output is displayed and passed on with characters a reader cannot see left in place - Unicode tag characters, zero-width characters - so data encoded in them leaves inside a reply, a link or a post that the person read and found harmless.
+  nature: targeted
+reachability: There is no data under differentiated authorization anywhere in the agent's context or reach - everything it can read is already available to any recipient of its output and to any destination its tools can send to or its client can fetch from or link to. Recipients include inference processors and fallback endpoints; the condition also covers hidden request fields, restored memory, later tasks and restrictions on the processing purpose, not merely a successful technical allow decision.
 mitigations:
 - id: CTRL-DATA-ACCESS-CONTROL
   strength: gating
@@ -116,7 +131,7 @@ references:
   note: 'The first weakness - a tool reaching data its audience may not hold: a crafted issue in a public repo steered an agent whose GitHub token spanned all repos into reading private-repo contents and writing them into a public pull request. No patch; the authors call it architectural.'
 - title: Permissive Default Allowlist Enables Unauthorized File Read and Network Exfiltration in Claude Code (CVE-2025-55284)
   url: https://github.com/anthropics/claude-code/security/advisories/GHSA-x5gv-jw7f-j6xj
-  note: 'The filesystem weakness in the vendor''s own advisory: untrusted content in context made Claude Code read a file and send it out through DNS-lookup commands that sat on the no-confirmation allowlist. Fixed in 1.0.4 by removing those commands from the allowlist.'
+  note: 'The filesystem weakness in the vendor''s own advisory: instructions in content the agent read made Claude Code read a file and send it out through DNS-lookup commands that sat on the no-confirmation allowlist. Fixed in 1.0.4 by removing those commands from the allowlist.'
 - title: 'SpAIware: persistent exfiltration through ChatGPT memory'
   url: https://embracethered.com/blog/posts/2024/chatgpt-macos-app-persistent-data-exfiltration/
   note: A researcher demonstrated website instructions stored in memory exfiltrating later conversations from the macOS app. The shipped fix blocked the image-fetch route, not memory poisoning itself; this establishes delayed disclosure, not arbitrary code execution.
@@ -126,6 +141,21 @@ references:
 - title: 'OECD incident record: Samsung confidential data submitted to ChatGPT'
   url: https://oecd.ai/en/incidents/2023-04-06-93c9
   note: The incident record describes source code and meeting notes submitted to an external chatbot. It supports disclosure at submission; it does not establish later training, public disclosure or another customer receiving the material.
+- title: 'EchoLeak: The First Real-World Zero-Click Prompt Injection Exploit in a Production LLM System (CVE-2025-32711)'
+  url: https://arxiv.org/abs/2509.10540
+  note: 'The render-fetch weakness in Microsoft 365 Copilot: an email''s instructions made Copilot put internal data into a reference-style markdown image, which the redaction filter did not cover; Outlook or Teams fetched it as the reply rendered, and a Teams proxy on a domain the content security policy allowed passed the request on to the outside. No click was needed. Microsoft fixed it server-side before disclosure in June 2025.'
+- title: Data Exfiltration from Slack AI via indirect prompt injection
+  url: https://promptarmor.com/resources/data-exfiltration-from-slack-ai-via-indirect-prompt-injection
+  note: 'The clicked-link weakness: a message planted in a public channel made Slack AI answer a question about a private channel with a markdown link captioned as a re-authentication step, its URL carrying an API key from that private channel. Slack''s first response was that searching public channels is intended behaviour.'
+- title: 'Microsoft Copilot: From Prompt Injection to Exfiltration of Personal Information'
+  url: https://embracethered.com/blog/posts/2024/m365-copilot-prompt-injection-tool-invocation-and-data-exfil-using-ascii-smuggling
+  note: 'The invisible-character weakness: Copilot was steered to fetch mail and encode it in Unicode tag characters inside a link, so the person saw an ordinary link and the hidden data went with the click. Microsoft fixed it in 2024; the researcher''s recommendation was to stop interpreting and rendering tag characters.'
+- title: Weaponizing image scaling against production AI systems
+  url: https://blog.trailofbits.com/2025/08/21/weaponizing-image-scaling-against-production-ai-systems/
+  note: 'The steering weakness through an image: instructions invisible at full resolution appear once the pipeline downscales the image for the model. Demonstrated on Gemini CLI, Vertex AI, Gemini web and API, Google Assistant and Genspark; on Gemini CLI with an auto-approving Zapier server it sent calendar data out. The authors advise not downscaling, or showing the person exactly what the model receives.'
+- title: (Ab)using Images and Sounds for Indirect Instruction Injection in Multi-Modal LLMs
+  url: https://arxiv.org/abs/2307.10490
+  note: 'An adversarial perturbation in an image or audio clip steers an unmodified multimodal model (LLaVA, PandaGPT) to follow an instruction the person never saw or heard, while still answering about the content. Evidence that the steering weakness is reached through media, not only text; research models, not a product.'
 positioning: 'LLM02 (Sensitive Information Disclosure) is a consequence class and is wider than this record in two directions. Disclosure of the system''s own metadata - prompt fragments, versions, paths - rests on a different rule-out and is its own record. So does one tenant''s data surfacing in another''s session through shared state: that path is ruled out by single-tenancy or statelessness, which says nothing about this one.'
 tags:
 - data

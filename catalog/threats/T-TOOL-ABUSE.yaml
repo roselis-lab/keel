@@ -19,7 +19,7 @@ weaknesses:
   - user-input
   - tool-output
   - retrieved-content
-  text: The arguments or the choice of action are formed by the model and steered by content it read - a user's message, a tool's free-form output, a file with hidden instructions - or by a substituted goal, so the tool performs a write nobody with standing asked for.
+  text: The arguments or the choice of action are formed by the model and steered by content it read - a user's message, a tool's free-form output, a file with hidden instructions, an image or recording the model interprets - or by a substituted goal, so the tool performs a write nobody with standing asked for.
   nature: targeted
 - component: tool
   text: The confirmation step is not differentiated by risk and is fed a stream of near-identical requests, so a critical write is approved mechanically along with the rest.
@@ -50,14 +50,34 @@ weaknesses:
 - component: identity-store
   text: One effective principal can submit and approve the same protected change, including through two agents or credentials for separate systems. The approval service counts different agent names or credentials as independent approvers without resolving their common initiator, so a change requiring an independent reviewer is self-approved.
   nature: targeted
-reachability: The reachable tools have no operations with real consequences - reads, or writes to state the session discards - or the model influences neither the choice of tool nor its arguments, as in a rigidly predefined pipeline. Count operations reached through delegation and instructions restored from memory in a later task, including changes whose validity requires prior checks or independent approval.
+- component: tool
+  surface:
+  - model-output
+  text: The confirmation step shows the person text the model wrote - its own description of the action, or a command padded until the part that matters scrolls out of view - rather than the exact call the runtime will execute, laid out by the runtime in full, so the person approves what they read and a different action runs.
+  nature: targeted
+- component: config
+  surface:
+  - model-output
+  text: The file that holds the agent's own permissions - an auto-approve switch, a tool allowlist, a tool-server declaration - is writable by the same file tool the agent uses for project files, and the runtime applies the change to the running session, so the agent can turn off the approval that gates it.
+  nature: targeted
+- component: tool
+  surface:
+  - model-output
+  text: A file tool is granted one directory, and the tool's own path check is the only thing holding it there - a string-prefix comparison, a check that does not resolve symbolic links - while the process can write anywhere its operating-system user can, so a path the model supplies writes outside the grant, including files the system later runs, such as a login item or a hook.
+  nature: targeted
+- component: memory
+  surface:
+  - memory
+  text: The conversation history is taken from the client with each request and not checked against what the server recorded, so turns the caller wrote - an assistant reply agreeing to act, a system note, an approval the person never gave - are read as having happened and authorize the next call.
+  nature: targeted
+reachability: The reachable tools have no operations with real consequences - reads, or writes to state the session discards - or the model influences neither the choice of tool nor its arguments, as in a rigidly predefined pipeline. Count operations reached through delegation and instructions restored from memory in a later task, including changes whose validity requires prior checks or independent approval, writes a file tool can make outside the directory it was granted, and writes to the agent's own permission settings.
 mitigations:
 - id: CTRL-RISK-BASED-APPROVAL
   strength: gating
   rationale: 'Closes the first weakness for the tier that matters and the third weakness at the same time: a high-tier call does not run without a decision outside the model, and low-tier calls do not ask, so the person deciding sees only what deserves attention. This addresses the consent and approval-load paths; it does not establish the initiating principal''s business entitlement.'
 - id: CTRL-HUMAN-IN-LOOP
   strength: gating
-  rationale: 'Closes the first weakness for the critical subset: a financial, destructive or configuration action does not execute until a person has approved it. Everything outside that subset still runs on the model''s word, and the third weakness says what happens when the subset is drawn too wide. Approval closes the missing-consent path for this subset, not missing business entitlement or object-specific prerequisites; a person can confirm an operation they have no right to perform.'
+  rationale: 'Closes the first weakness for the critical subset: a financial, destructive or configuration action does not execute until a person has approved it. Everything outside that subset still runs on the model''s word, and the third weakness says what happens when the subset is drawn too wide. Approval closes the missing-consent path for this subset, not missing business entitlement or object-specific prerequisites; a person can confirm an operation they have no right to perform. It holds only when the person sees the exact call the runtime will execute: approving the model''s account of the call is the confirmation-view weakness, not this control.'
 - id: CTRL-HACT-CRITICAL
   strength: gating
   rationale: Closes the first weakness for irreversible and secret-touching actions regardless of any other setting - including a session-scoped grant or a fatigued approver - so the floor holds even when the tiering above it has been relaxed.
@@ -149,6 +169,21 @@ references:
 - title: GitHub coding agent security boundaries
   url: https://github.blog/news-insights/product-news/github-copilot-meet-the-new-coding-agent/
   note: 'GitHub shipped restrictions preserving required review: the delegating developer cannot approve the agent''s pull request, and workflows need human approval. This is evidence of implemented actor separation, not evidence that its checks are infallible.'
+- title: 'Bypassing AI agent defenses with Lies-in-the-Loop (Checkmarx Zero, 2025-09-15)'
+  url: https://checkmarx.com/zero-post/bypassing-ai-agent-defenses-with-lies-in-the-loop/
+  note: 'The confirmation-view weakness, demonstrated on Claude Code and Copilot Chat in VS Code: instructions planted in a GitHub issue made the approval prompt describe a harmless action, and long padding pushed the real command out of the visible terminal area, so the person approved what they could see while a different command ran.'
+- title: 'GitHub Copilot: Remote Code Execution via Prompt Injection (CVE-2025-53773)'
+  url: https://embracethered.com/blog/posts/2025/github-copilot-remote-code-execution-via-prompt-injection/
+  note: 'The self-permission weakness: Copilot''s agent could write .vscode/settings.json without approval, and adding chat.tools.autoApprove switched the running session to approve every tool call, after which commands ran unconfirmed. Microsoft fixed it in the August 2025 security release.'
+- title: 'EscapeRoute: Anthropic filesystem MCP server path bypasses (CVE-2025-53109, CVE-2025-53110)'
+  url: https://cymulate.com/blog/cve-2025-53109-53110-escaperoute-anthropic/
+  note: 'The path-check weakness in the reference filesystem server: the allowed-directory check was a string prefix match, so a sibling directory with a longer name passed, and a symbolic link inside the allowed directory reached any file because the fallback validated the link''s parent. The demonstrated write was a macOS Launch Agent that ran at login. Fixed in 2025.7.1.'
+- title: 'When AI Meets the Web: Prompt Injection Risks in Third-Party AI Chatbot Plugins'
+  url: https://arxiv.org/abs/2511.05797
+  note: 'The client-supplied-history weakness, measured: 8 of 17 chatbot plugins, used on about 8,000 websites, did not enforce the integrity of the conversation history in requests, so a caller could forge earlier turns including system messages. The paper studies the plugins, not a write that followed.'
+- title: 'Hidden in Plain Sight: Exploring Chat History Tampering in Interactive Language Models'
+  url: https://arxiv.org/abs/2405.20234
+  note: 'Fabricated history inserted into an ordinary message is taken by the model as earlier turns, with disallowed-output success rates up to 98% on ChatGPT. Evidence that the model reads a forged turn as real; the authorization step it would unlock is this record''s extension, not the paper''s.'
 positioning: 'ASI02 (Tool Misuse and Exploitation) spans more than one harm: this record is state changed or destroyed through a legitimate tool; a read that should not have been served is the disclosure record; a shell or interpreter the model drives is the command-injection record, because what breaks there is that code ran. LLM06 (Excessive Agency) is wider again, covering the standing authority a call runs under, which is the borrowed-identity record.'
 tags:
 - agentic
