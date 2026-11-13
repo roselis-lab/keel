@@ -1,0 +1,100 @@
+source:
+  id: owasp-mcp
+  title: OWASP MCP Top 10
+  kind: best_practice
+  version: v0.1
+  url: https://owasp.org/www-project-mcp-top-10/
+  checked: '2026-11-12'
+  entry_count: 10
+  note: 'The list for the protocol most agents now reach their tools through. OWASP publishes it as a beta (v0.1, the project''s "Phase 3 - Beta Release and Pilot Testing") with entries numbered MCP01:2025 to MCP10:2025; the version is read from the list page in the project''s repository, github.com/OWASP/www-project-mcp-top-10, file tab_top10.md. Titles are that page''s. The detail page for MCP06 is titled "Intent Flow Subversion"; the list and the overview both call it "Prompt Injection via Contextual Payloads", which is used here.'
+entries:
+- ref: MCP01
+  title: Token Mismanagement & Secret Exposure
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+  - CTRL-CONTEXT-FILTERING
+- ref: MCP02
+  title: Privilege Escalation via Scope Creep
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-PRIVILEGE-CONTROL
+  - CTRL-DELEGATED-AUTHORIZATION
+- ref: MCP03
+  title: Tool Poisoning
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-TOOL-DESCRIPTION-AUDIT
+  - CTRL-TOOL-VERIFICATION
+  - CTRL-MCP-REGISTRY
+  - CTRL-VERSION-PINNING
+- ref: MCP04
+  title: Software Supply Chain Attacks & Dependency Tampering
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-INTEGRITY-VERIFICATION
+  - CTRL-VERSION-PINNING
+  - CTRL-SUPPLY-CHAIN-SCANNING
+- ref: MCP05
+  title: Command Injection & Execution
+  state: covered
+  threats:
+  - T-CMD-INJECT
+  - T-CODEGEN
+  mitigations:
+  - CTRL-INPUT-PARAMETERIZATION
+  - CTRL-COMMAND-SANDBOX
+- ref: MCP06
+  title: Prompt Injection via Contextual Payloads
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-GOAL-VALIDATION
+  - CTRL-PLAN-VALIDATION
+  - CTRL-CONTENT-STRIPPING
+- ref: MCP07
+  title: Insufficient Authentication & Authorization
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TRANSPORT-AUTH
+  - CTRL-AGENT-AUTHENTICATION
+  - CTRL-DELEGATED-AUTHORIZATION
+- ref: MCP08
+  title: Lack of Audit and Telemetry
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-AUDIT-LOGGING
+  - CTRL-ACTIVITY-ANOMALY-DETECTION
+- ref: MCP09
+  title: Shadow MCP Servers
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-MCP-REGISTRY
+  - CTRL-TRANSPORT-AUTH
+- ref: MCP10
+  title: Context Injection & Over-Sharing
+  state: covered
+  threats:
+  - T-CROSS-TENANT
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-SESSION-ISOLATION
+  - CTRL-MEMORY-ISOLATION
+  - CTRL-CONTEXT-FILTERING

@@ -2,15 +2,17 @@ source:
   id: mitre-atlas
   title: MITRE ATLAS
   kind: best_practice
-  version: 5.6.0
+  version: '2026.10'
+  released: '2026-10-28'
   url: https://atlas.mitre.org/
-  checked: '2026-08-29'
-  entry_count: 101
-  note: 'The long tail, and the only source here that is exhaustive by design. 16 tactics over these techniques, imported from the project''s own published dataset rather than retyped. Sub-techniques are deliberately not rows: they refine a parent rather than name a different thing, and a matrix nobody can read is not evidence of anything.'
+  checked: '2026-11-12'
+  entry_count: 129
+  note: 'The long tail, and the only source here that is exhaustive by design. 16 tactics over these techniques, imported from the project''s own published dataset rather than retyped. Sub-techniques are deliberately not rows: they refine a parent rather than name a different thing, and a matrix nobody can read is not evidence of anything. From 2026.05 ATLAS numbers releases by month and publishes the data as dist/v6/ATLAS-<release>.yaml; the old dist/ATLAS.yaml stays frozen at 5.6.0. maturity on each row is ATLAS''s own evidence level for the technique, copied from that file.'
 entries:
 - ref: AML.T0000
   title: Search Open Technical Databases
   group: Reconnaissance
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -18,6 +20,7 @@ entries:
 - ref: AML.T0001
   title: Search Open AI Vulnerability Analysis
   group: Reconnaissance
+  maturity: Demonstrated
   state: out_of_scope
   threats: []
   mitigations: []
@@ -25,6 +28,7 @@ entries:
 - ref: AML.T0002
   title: Acquire Public AI Artifacts
   group: Resource Development
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -32,6 +36,7 @@ entries:
 - ref: AML.T0003
   title: Search Victim-Owned Websites
   group: Reconnaissance
+  maturity: Demonstrated
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -40,13 +45,15 @@ entries:
 - ref: AML.T0004
   title: Search Application Repositories
   group: Reconnaissance
+  maturity: Demonstrated
   state: covered
   threats:
   - T-METADATA-LEAK
   mitigations: []
 - ref: AML.T0005
-  title: Create Proxy AI Model
-  group: AI Attack Staging
+  title: Replicate AI Model Behavior
+  group: Resource Development, AI Attack Adaptation
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -54,6 +61,7 @@ entries:
 - ref: AML.T0006
   title: Active Scanning
   group: Reconnaissance
+  maturity: Realized
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -63,6 +71,7 @@ entries:
 - ref: AML.T0007
   title: Discover AI Artifacts
   group: Discovery
+  maturity: Demonstrated
   state: covered
   threats:
   - T-DATA-LEAK
@@ -72,13 +81,15 @@ entries:
 - ref: AML.T0008
   title: Acquire Infrastructure
   group: Resource Development
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
   note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0010
-  title: AI Supply Chain Compromise
+  title: Supply Chain Compromise
   group: Initial Access
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
@@ -90,6 +101,7 @@ entries:
 - ref: AML.T0011
   title: User Execution
   group: Execution
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
@@ -99,7 +111,8 @@ entries:
   - CTRL-INTEGRITY-VERIFICATION
 - ref: AML.T0012
   title: Valid Accounts
-  group: Initial Access, Privilege Escalation
+  group: Initial Access, Privilege Escalation, Lateral Movement
+  maturity: Realized
   state: covered
   threats:
   - T-CRED-THEFT
@@ -110,6 +123,7 @@ entries:
 - ref: AML.T0013
   title: Discover AI Model Ontology
   group: Discovery
+  maturity: Demonstrated
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -119,6 +133,7 @@ entries:
 - ref: AML.T0014
   title: Discover AI Model Family
   group: Discovery
+  maturity: Feasible
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -128,6 +143,7 @@ entries:
 - ref: AML.T0015
   title: Evade AI Model
   group: Initial Access, Defense Evasion, Impact
+  maturity: Realized
   state: covered
   threats: []
   mitigations:
@@ -136,6 +152,7 @@ entries:
 - ref: AML.T0016
   title: Obtain Capabilities
   group: Resource Development
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -143,29 +160,25 @@ entries:
 - ref: AML.T0017
   title: Develop Capabilities
   group: Resource Development
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
   note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0018
   title: Manipulate AI Model
-  group: Persistence, AI Attack Staging
+  group: AI Attack Adaptation, Persistence
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
   mitigations:
   - CTRL-INTEGRITY-VERIFICATION
   - CTRL-VERSION-PINNING
-- ref: AML.T0019
-  title: Publish Poisoned Datasets
-  group: Resource Development
-  state: out_of_scope
-  threats: []
-  mitigations: []
-  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0020
-  title: Poison Training Data
-  group: Resource Development, Persistence
+  title: Training Data Poisoning
+  group: Persistence
+  maturity: Realized
   state: gap
   threats: []
   mitigations: []
@@ -173,6 +186,7 @@ entries:
 - ref: AML.T0021
   title: Establish Accounts
   group: Resource Development
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -180,6 +194,7 @@ entries:
 - ref: AML.T0024
   title: Exfiltration via AI Inference API
   group: Exfiltration
+  maturity: Realized
   state: gap
   threats: []
   mitigations: []
@@ -187,6 +202,7 @@ entries:
 - ref: AML.T0025
   title: Exfiltration via Cyber Means
   group: Exfiltration
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -197,6 +213,7 @@ entries:
 - ref: AML.T0029
   title: Denial of AI Service
   group: Impact
+  maturity: Demonstrated
   state: covered
   threats:
   - T-DOS
@@ -204,6 +221,7 @@ entries:
 - ref: AML.T0031
   title: Erode AI Model Integrity
   group: Impact
+  maturity: Realized
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -211,6 +229,7 @@ entries:
 - ref: AML.T0034
   title: Cost Harvesting
   group: Impact
+  maturity: Feasible
   state: covered
   threats:
   - T-DOS
@@ -221,6 +240,7 @@ entries:
 - ref: AML.T0035
   title: AI Artifact Collection
   group: Collection
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -230,6 +250,7 @@ entries:
 - ref: AML.T0036
   title: Data from Information Repositories
   group: Collection
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -239,6 +260,7 @@ entries:
 - ref: AML.T0037
   title: Data from Local System
   group: Collection
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -248,6 +270,7 @@ entries:
 - ref: AML.T0040
   title: AI Model Inference API Access
   group: AI Model Access
+  maturity: Realized
   state: covered
   threats: []
   mitigations:
@@ -256,20 +279,23 @@ entries:
 - ref: AML.T0041
   title: Physical Environment Access
   group: AI Model Access
+  maturity: Demonstrated
   state: out_of_scope
   threats: []
   mitigations: []
   note: The subject is the physical world a perception model observes, not a software component of an agent system. Keel's components are all software, so there is nowhere in this model to place a control.
 - ref: AML.T0042
   title: Verify Attack
-  group: AI Attack Staging
+  group: AI Attack Adaptation
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
   note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0043
   title: Craft Adversarial Data
-  group: AI Attack Staging
+  group: AI Attack Adaptation
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -277,6 +303,7 @@ entries:
 - ref: AML.T0044
   title: Full AI Model Access
   group: AI Model Access
+  maturity: Demonstrated
   state: out_of_scope
   threats: []
   mitigations: []
@@ -284,6 +311,7 @@ entries:
 - ref: AML.T0046
   title: Spamming AI System with Chaff Data
   group: Impact
+  maturity: Feasible
   state: covered
   threats:
   - T-DOS
@@ -293,6 +321,7 @@ entries:
 - ref: AML.T0047
   title: AI-Enabled Product or Service
   group: AI Model Access
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -303,6 +332,7 @@ entries:
 - ref: AML.T0048
   title: External Harms
   group: Impact
+  maturity: Realized
   state: covered
   threats:
   - T-TOXIC
@@ -312,6 +342,7 @@ entries:
 - ref: AML.T0049
   title: Exploit Public-Facing Application
   group: Initial Access
+  maturity: Realized
   state: covered
   threats:
   - T-CMD-INJECT
@@ -321,6 +352,7 @@ entries:
 - ref: AML.T0050
   title: Command and Scripting Interpreter
   group: Execution
+  maturity: Realized
   state: covered
   threats:
   - T-CMD-INJECT
@@ -331,6 +363,7 @@ entries:
 - ref: AML.T0051
   title: LLM Prompt Injection
   group: Execution
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -343,6 +376,7 @@ entries:
 - ref: AML.T0052
   title: Phishing
   group: Initial Access, Lateral Movement
+  maturity: Realized
   state: covered
   threats:
   - T-TOOL-ABUSE
@@ -350,7 +384,8 @@ entries:
   - CTRL-CONTENT-POLICY
 - ref: AML.T0053
   title: AI Agent Tool Invocation
-  group: Execution, Privilege Escalation
+  group: Execution, Privilege Escalation, Lateral Movement
+  maturity: Demonstrated
   state: covered
   threats:
   - T-TOOL-ABUSE
@@ -361,6 +396,7 @@ entries:
 - ref: AML.T0054
   title: LLM Jailbreak
   group: Privilege Escalation, Defense Evasion
+  maturity: Realized
   state: covered
   threats:
   - T-TOXIC
@@ -371,38 +407,17 @@ entries:
 - ref: AML.T0055
   title: Unsecured Credentials
   group: Credential Access
+  maturity: Realized
   state: covered
   threats:
   - T-CRED-THEFT
   - T-DATA-LEAK
   mitigations:
   - CTRL-TOKEN-PROTECTION
-- ref: AML.T0056
-  title: Extract LLM System Prompt
-  group: Exfiltration
-  state: covered
-  threats:
-  - T-METADATA-LEAK
-  mitigations:
-  - CTRL-METADATA-FILTERING
-- ref: AML.T0057
-  title: LLM Data Leakage
-  group: Exfiltration
-  state: covered
-  threats:
-  - T-DATA-LEAK
-  - T-CROSS-TENANT
-  mitigations: []
-- ref: AML.T0058
-  title: Publish Poisoned Models
-  group: Resource Development
-  state: out_of_scope
-  threats: []
-  mitigations: []
-  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0059
   title: Erode Dataset Integrity
   group: Impact
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -412,6 +427,7 @@ entries:
 - ref: AML.T0060
   title: Publish Hallucinated Entities
   group: Resource Development
+  maturity: Demonstrated
   state: out_of_scope
   threats: []
   mitigations: []
@@ -419,6 +435,7 @@ entries:
 - ref: AML.T0061
   title: LLM Prompt Self-Replication
   group: Persistence
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -428,6 +445,7 @@ entries:
 - ref: AML.T0062
   title: Discover LLM Hallucinations
   group: Discovery
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SUPPLY-DEPS
@@ -437,6 +455,7 @@ entries:
 - ref: AML.T0063
   title: Discover AI Model Outputs
   group: Discovery
+  maturity: Realized
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -445,6 +464,7 @@ entries:
 - ref: AML.T0064
   title: Gather RAG-Indexed Targets
   group: Reconnaissance
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -453,14 +473,16 @@ entries:
   - CTRL-RATE-LIMITING
 - ref: AML.T0065
   title: LLM Prompt Crafting
-  group: Resource Development
+  group: AI Attack Adaptation
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
   note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0066
   title: Retrieval Content Crafting
-  group: Resource Development
+  group: AI Attack Adaptation
+  maturity: Demonstrated
   state: out_of_scope
   threats: []
   mitigations: []
@@ -468,6 +490,7 @@ entries:
 - ref: AML.T0067
   title: LLM Trusted Output Components Manipulation
   group: Defense Evasion
+  maturity: Demonstrated
   state: covered
   threats:
   - T-HALLUCINATION
@@ -477,6 +500,7 @@ entries:
 - ref: AML.T0068
   title: LLM Prompt Obfuscation
   group: Defense Evasion
+  maturity: Realized
   state: covered
   threats: []
   mitigations:
@@ -485,6 +509,7 @@ entries:
 - ref: AML.T0069
   title: Discover LLM System Information
   group: Discovery
+  maturity: Demonstrated
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -493,6 +518,7 @@ entries:
 - ref: AML.T0070
   title: RAG Poisoning
   group: Persistence
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -502,6 +528,7 @@ entries:
 - ref: AML.T0071
   title: False RAG Entry Injection
   group: Defense Evasion
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -509,8 +536,9 @@ entries:
   - CTRL-PROMPT-HARDENING
   - CTRL-DATA-VALIDATION
 - ref: AML.T0072
-  title: Reverse Shell
+  title: Cyber Communication Channel
   group: Command and Control
+  maturity: Realized
   state: covered
   threats:
   - T-CMD-INJECT
@@ -520,6 +548,7 @@ entries:
 - ref: AML.T0073
   title: Impersonation
   group: Defense Evasion
+  maturity: Realized
   state: covered
   threats:
   - T-CRED-THEFT
@@ -530,6 +559,7 @@ entries:
 - ref: AML.T0074
   title: Masquerading
   group: Defense Evasion
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
@@ -538,8 +568,9 @@ entries:
   - CTRL-INTEGRITY-VERIFICATION
   - CTRL-TOOL-VERIFICATION
 - ref: AML.T0075
-  title: Cloud Service Discovery
+  title: Enterprise Resource Discovery
   group: Discovery
+  maturity: Realized
   state: covered
   threats:
   - T-SSRF
@@ -550,6 +581,7 @@ entries:
 - ref: AML.T0076
   title: Corrupt AI Model
   group: Defense Evasion
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
@@ -559,6 +591,7 @@ entries:
 - ref: AML.T0077
   title: LLM Response Rendering
   group: Exfiltration
+  maturity: Demonstrated
   state: covered
   threats:
   - T-DATA-LEAK
@@ -569,6 +602,7 @@ entries:
 - ref: AML.T0078
   title: Drive-by Compromise
   group: Initial Access
+  maturity: Demonstrated
   state: covered
   threats:
   - T-TOOL-ABUSE
@@ -579,6 +613,7 @@ entries:
 - ref: AML.T0079
   title: Stage Capabilities
   group: Resource Development
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -586,6 +621,7 @@ entries:
 - ref: AML.T0080
   title: AI Agent Context Poisoning
   group: Persistence
+  maturity: Realized
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -595,6 +631,7 @@ entries:
 - ref: AML.T0081
   title: Modify AI Agent Configuration
   group: Persistence, Defense Evasion
+  maturity: Demonstrated
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -605,6 +642,7 @@ entries:
 - ref: AML.T0082
   title: RAG Credential Harvesting
   group: Credential Access
+  maturity: Demonstrated
   state: covered
   threats:
   - T-DATA-LEAK
@@ -614,6 +652,7 @@ entries:
 - ref: AML.T0083
   title: Credentials from AI Agent Configuration
   group: Credential Access
+  maturity: Demonstrated
   state: covered
   threats:
   - T-CRED-THEFT
@@ -622,6 +661,7 @@ entries:
 - ref: AML.T0084
   title: Discover AI Agent Configuration
   group: Discovery
+  maturity: Demonstrated
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -630,15 +670,20 @@ entries:
 - ref: AML.T0085
   title: Data from AI Services
   group: Collection
+  maturity: Demonstrated
   state: covered
   threats:
   - T-DATA-LEAK
+  - T-METADATA-LEAK
+  - T-CROSS-TENANT
   mitigations:
   - CTRL-DATA-ACCESS-CONTROL
   - CTRL-ACCESS-CONTROL
+  - CTRL-METADATA-FILTERING
 - ref: AML.T0086
   title: Exfiltration via AI Agent Tool Invocation
   group: Exfiltration
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -648,20 +693,23 @@ entries:
 - ref: AML.T0087
   title: Gather Victim Identity Information
   group: Reconnaissance
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
   note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0088
   title: Generate Deepfakes
-  group: AI Attack Staging
+  group: AI Attack Adaptation
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
   note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0089
-  title: Process Discovery
+  title: Enterprise Environment Discovery
   group: Discovery
+  maturity: Realized
   state: gap
   threats: []
   mitigations: []
@@ -669,6 +717,7 @@ entries:
 - ref: AML.T0090
   title: OS Credential Dumping
   group: Credential Access
+  maturity: Demonstrated
   state: gap
   threats: []
   mitigations: []
@@ -676,6 +725,7 @@ entries:
 - ref: AML.T0091
   title: Use Alternate Authentication Material
   group: Lateral Movement
+  maturity: Realized
   state: covered
   threats:
   - T-CRED-THEFT
@@ -685,6 +735,7 @@ entries:
 - ref: AML.T0092
   title: Manipulate User LLM Chat History
   group: Defense Evasion
+  maturity: Demonstrated
   state: gap
   threats: []
   mitigations: []
@@ -692,6 +743,7 @@ entries:
 - ref: AML.T0093
   title: Prompt Infiltration via Public-Facing Application
   group: Initial Access, Persistence
+  maturity: Realized
   state: covered
   threats:
   - T-DATA-LEAK
@@ -704,6 +756,7 @@ entries:
 - ref: AML.T0094
   title: Delay Execution of LLM Instructions
   group: Defense Evasion
+  maturity: Demonstrated
   state: covered
   threats: []
   mitigations:
@@ -713,6 +766,7 @@ entries:
 - ref: AML.T0095
   title: Search Open Websites/Domains
   group: Reconnaissance
+  maturity: Realized
   state: covered
   threats:
   - T-METADATA-LEAK
@@ -721,6 +775,7 @@ entries:
 - ref: AML.T0096
   title: AI Service API
   group: Command and Control
+  maturity: Realized
   state: gap
   threats: []
   mitigations: []
@@ -728,6 +783,7 @@ entries:
 - ref: AML.T0097
   title: Virtualization/Sandbox Evasion
   group: Defense Evasion
+  maturity: Realized
   state: gap
   threats: []
   mitigations: []
@@ -735,6 +791,7 @@ entries:
 - ref: AML.T0098
   title: AI Agent Tool Credential Harvesting
   group: Credential Access
+  maturity: Demonstrated
   state: covered
   threats:
   - T-DATA-LEAK
@@ -745,6 +802,7 @@ entries:
 - ref: AML.T0099
   title: AI Agent Tool Data Poisoning
   group: Persistence
+  maturity: Feasible
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -755,6 +813,7 @@ entries:
 - ref: AML.T0100
   title: AI Agent Clickbait
   group: Execution
+  maturity: Demonstrated
   state: covered
   threats:
   - T-TOOL-ABUSE
@@ -765,6 +824,7 @@ entries:
 - ref: AML.T0101
   title: Data Destruction via AI Agent Tool Invocation
   group: Impact
+  maturity: Realized
   state: covered
   threats:
   - T-TOOL-ABUSE
@@ -774,7 +834,8 @@ entries:
   - CTRL-IRREVERSIBLE-ACTION-GUARD
 - ref: AML.T0102
   title: Generate Malicious Commands
-  group: AI Attack Staging
+  group: AI Attack Adaptation
+  maturity: Realized
   state: out_of_scope
   threats: []
   mitigations: []
@@ -782,22 +843,17 @@ entries:
 - ref: AML.T0103
   title: Deploy AI Agent
   group: Execution
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
   mitigations:
   - CTRL-AGENT-REGISTRY
   - CTRL-AGENT-AUTHENTICATION
-- ref: AML.T0104
-  title: Publish Poisoned AI Agent Tool
-  group: Resource Development
-  state: out_of_scope
-  threats: []
-  mitigations: []
-  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
 - ref: AML.T0105
   title: Escape to Host
   group: Privilege Escalation
+  maturity: Realized
   state: covered
   threats: []
   mitigations:
@@ -807,6 +863,7 @@ entries:
 - ref: AML.T0106
   title: Exploitation for Credential Access
   group: Credential Access
+  maturity: Realized
   state: gap
   threats: []
   mitigations: []
@@ -814,6 +871,7 @@ entries:
 - ref: AML.T0107
   title: Exploitation for Defense Evasion
   group: Defense Evasion
+  maturity: Demonstrated
   state: gap
   threats: []
   mitigations: []
@@ -821,6 +879,7 @@ entries:
 - ref: AML.T0108
   title: AI Agent
   group: Command and Control
+  maturity: Demonstrated
   state: gap
   threats: []
   mitigations: []
@@ -828,6 +887,7 @@ entries:
 - ref: AML.T0109
   title: AI Supply Chain Rug Pull
   group: Defense Evasion
+  maturity: Realized
   state: covered
   threats:
   - T-SUPPLY-DEPS
@@ -838,6 +898,7 @@ entries:
 - ref: AML.T0110
   title: AI Agent Tool Poisoning
   group: Persistence
+  maturity: Realized
   state: covered
   threats:
   - T-SOURCE-POISON
@@ -849,6 +910,7 @@ entries:
 - ref: AML.T0111
   title: AI Supply Chain Reputation Inflation
   group: Defense Evasion
+  maturity: Demonstrated
   state: covered
   threats: []
   mitigations:
@@ -857,9 +919,300 @@ entries:
 - ref: AML.T0112
   title: Machine Compromise
   group: Impact
+  maturity: Demonstrated
   state: covered
   threats:
   - T-CMD-INJECT
   - T-CODEGEN
   - T-SUPPLY-DEPS
   mitigations: []
+- ref: AML.T0113
+  title: Steal Web Session Cookie
+  group: Credential Access
+  maturity: Demonstrated
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+- ref: AML.T0114
+  title: AI Service Web Interface
+  group: Command and Control
+  maturity: Demonstrated
+  state: gap
+  threats: []
+  mitigations: []
+  note: Nothing treats a public AI assistant's web interface driven by an implant as a channel that could carry a command-and-control path, the same absence as the AI service API row.
+- ref: AML.T0115
+  title: Publish Poisoned AI Artifacts
+  group: Resource Development
+  maturity: Realized
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0116
+  title: Autonomous Reconnaissance
+  group: Reconnaissance
+  maturity: Realized
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0117
+  title: Autonomous Attack-Path Adaptation
+  group: AI Attack Adaptation
+  maturity: Realized
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  mitigations:
+  - CTRL-GOAL-VALIDATION
+  - CTRL-PLAN-VALIDATION
+  outside: An adversary running its own agent to plan an attack is attacker preparation outside the assessed system; what the assessed system has to answer is its own agent crossing an authorization boundary while pursuing a legitimate objective.
+- ref: AML.T0118
+  title: Autonomous AI Agent Communication
+  group: AI Attack Adaptation
+  maturity: Realized
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'The adversary''s own agents and whatever coordinates them: no component of the assessed architecture takes part, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0119
+  title: Exploit Automated Artifact Processing Pipeline
+  group: Initial Access
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: A backend worker that loads, converts or scans an uploaded artifact runs what the artifact carries, with the worker's own permissions. T-SUPPLY-DEPS covers a component the agent runs; no record names an ingestion pipeline that processes untrusted artifacts.
+- ref: AML.T0120
+  title: AI Artifact Repository
+  group: Command and Control
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: Nothing treats an AI artifact repository the system reads from as a channel that could carry a command-and-control path, the same absence as the AI service API row.
+- ref: AML.T0121
+  title: AI Agent Environment Reconstruction
+  group: Persistence
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: An agent that rebuilds its tools, credentials and state after being reset, to keep pursuing the same objective. No record treats an agent's own persistence across a reset as a weakness; the rogue-agent mappings cover one run going wrong, not one that comes back.
+- ref: AML.T0122
+  title: Exploitation of Remote Services
+  group: Lateral Movement
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Generic software-vulnerability exploitation, the same absence as exploitation for credential access: Keel''s weaknesses are architectural conditions, not bugs in a remote service''s code.'
+- ref: AML.T0123
+  title: Obfuscated Files or Information
+  group: Defense Evasion
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Obfuscation aimed at AI-based detectors - malware classifiers, secret scanners, automated review. The same absence as virtualization/sandbox evasion: no record has an AI analyzer as the thing being fooled.'
+- ref: AML.T0124
+  title: Autonomous Attack Orchestration
+  group: AI Attack Adaptation
+  maturity: Realized
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'The adversary''s own agents and whatever coordinates them: no component of the assessed architecture takes part, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0125
+  title: Create Account
+  group: Persistence
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Post-exploitation: adding an account to keep access once the attacker already holds access. The weaknesses stop at getting in; what follows is ordinary host and identity security, and whether Keel reaches there is a scope decision nobody has taken.'
+- ref: AML.T0126
+  title: Automated Collection
+  group: Collection
+  maturity: Realized
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-DATA-ACCESS-CONTROL
+  - CTRL-ACCESS-CONTROL
+- ref: AML.T0127
+  title: Data Staged
+  group: Collection
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Post-exploitation: gathering collected data in one place before it leaves once the attacker already holds access. The weaknesses stop at getting in; what follows is ordinary host and identity security, and whether Keel reaches there is a scope decision nobody has taken.'
+- ref: AML.T0128
+  title: Compromise Infrastructure
+  group: Resource Development
+  maturity: Realized
+  state: out_of_scope
+  threats: []
+  mitigations: []
+  note: 'Attacker preparation outside the assessed system: no component of the architecture changes it, so a model that attaches controls to components has nowhere to place one.'
+- ref: AML.T0129
+  title: Triggers in Multimodal Inputs
+  group: Defense Evasion
+  maturity: Feasible
+  state: covered
+  threats: []
+  mitigations:
+  - CTRL-INPUT-FILTERING
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0130
+  title: AI Agent Response Biasing
+  group: Impact
+  maturity: Realized
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-SOURCE-REFERENCES
+  - CTRL-PROMPT-HARDENING
+- ref: AML.T0131
+  title: Crafted AI Assistant Links
+  group: Initial Access
+  maturity: Realized
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-RISK-BASED-APPROVAL
+- ref: AML.T0132
+  title: Misconfigured or Publicly Exposed AI Services
+  group: Initial Access
+  maturity: Demonstrated
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TRANSPORT-AUTH
+  - CTRL-ACCESS-CONTROL
+- ref: AML.T0133
+  title: Discover AI Agent Runtime Capabilities
+  group: Discovery
+  maturity: Feasible
+  state: covered
+  threats:
+  - T-METADATA-LEAK
+  mitigations:
+  - CTRL-METADATA-FILTERING
+- ref: AML.T0134
+  title: AI Targeted Cloaking
+  group: Defense Evasion
+  maturity: Feasible
+  state: covered
+  threats:
+  - T-TOOL-ABUSE
+  - T-DATA-LEAK
+  mitigations:
+  - CTRL-EXTERNAL-CONTENT-SANDBOX
+  - CTRL-CONTENT-STRIPPING
+- ref: AML.T0135
+  title: Outputs from AI Models
+  group: Collection
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a record with the model itself as the asset, the same one exfiltration via the inference API waits on: harvesting a model''s outputs to replicate or study it is a weakness on the model component that nothing holds.'
+- ref: AML.T0136
+  title: Exfiltration via AI User Interface
+  group: Exfiltration
+  maturity: Realized
+  state: covered
+  threats:
+  - T-DATA-LEAK
+  - T-CROSS-TENANT
+  mitigations:
+  - CTRL-DLP
+  - CTRL-CONTEXT-FILTERING
+- ref: AML.T0137
+  title: Training Data Information from AI Models
+  group: Collection
+  maturity: Demonstrated
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a record with the model itself as the asset, the same one exfiltration via the inference API waits on: inferring membership, properties or memorized records of the training data is a weakness on the model component that nothing holds.'
+- ref: AML.T0138
+  title: Indicator Removal
+  group: Defense Evasion
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: No record treats the audit trail as an asset that an attacker, or the agent itself, edits. CTRL-AUDIT-LOGGING records actions; nothing names tampering with that record as a weakness.
+- ref: AML.T0139
+  title: Compromise Accounts
+  group: Resource Development
+  maturity: Realized
+  state: covered
+  threats:
+  - T-CRED-THEFT
+  mitigations:
+  - CTRL-TOKEN-PROTECTION
+  outside: Accounts compromised on services unrelated to the assessed system, to stage later operations, are attacker preparation outside its boundary.
+- ref: AML.T0140
+  title: Centralized AI Service Request Routing
+  group: Defense Evasion
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a record with the model itself as the asset, the same one exfiltration via the inference API waits on: spreading one extraction campaign across many accounts to slip under a provider''s enforcement is a weakness on the model component that nothing holds.'
+- ref: AML.T0141
+  title: AI Service Request Metadata Sanitization
+  group: Defense Evasion
+  maturity: Realized
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a record with the model itself as the asset, the same one exfiltration via the inference API waits on: stripping request metadata so a provider cannot correlate one campaign is a weakness on the model component that nothing holds.'
+- ref: AML.T0142
+  title: Event Triggered Execution
+  group: Persistence
+  maturity: Realized
+  state: covered
+  threats:
+  - T-SUPPLY-DEPS
+  mitigations:
+  - CTRL-CONFIG-CHANGE-REVIEW
+  - CTRL-WORKSPACE-TRUST
+- ref: AML.T0143
+  title: LLM Prompt Propagation
+  group: Lateral Movement
+  maturity: Demonstrated
+  state: covered
+  threats:
+  - T-SOURCE-POISON
+  mitigations:
+  - CTRL-MEMORY-SANITIZATION
+  - CTRL-INPUT-FILTERING
+- ref: AML.T0144
+  title: Recover AI Model Internals
+  group: Discovery, Collection
+  maturity: Feasible
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on a record with the model itself as the asset, the same one exfiltration via the inference API waits on: recovering a model''s architecture or parameters from its behaviour is a weakness on the model component that nothing holds.'
+- ref: AML.T0145
+  title: Poison AI Agent Learning Environment
+  group: Persistence
+  maturity: Feasible
+  state: gap
+  threats: []
+  mitigations: []
+  note: 'Waiting on the training pipeline as a component, the same one training data poisoning waits on: an agent''s learning environment feeds weights, and T-SOURCE-POISON covers only the runtime analogue.'
