@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, Navigate, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useLocation, useParams } from "react-router";
 import { forget, MITIGATIONS, send, THREATS, useApi, type SendError } from "../lib/api";
 import type { Finding, Mitigation, Report as R, SystemRow, Threat } from "../lib/types";
 import { assessorName, findingTitle, prepare, type Fix, type Prepared } from "../lib/report";
@@ -8,6 +8,7 @@ import { Grade, Head, Loading, Problem, Shape, Shell } from "../components/ui";
 import { ShareButton } from "../components/Share";
 import { SystemDiagram } from "../components/SystemDiagram";
 import { EditIcon, Saved } from "./Library";
+import { EvidenceRefs, Ev, revealEvidence } from "../components/Evidence";
 
 type Lib = { threats: Record<string, Threat>; mits: Record<string, Mitigation> };
 export const byId = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x]));
@@ -47,18 +48,18 @@ function FixRow({ x, r, lib, n }: { x: Fix; r: R; lib: Lib; n?: number }) {
       <details>
         <summary>
           <span className={`box ${box}`} aria-label={STATUS[x.status]} />
-          <span className="ttl">{n ? `${n}. ` : ""}{x.title}</span>
+          <span className="ttl">{n ? `${n}. ` : ""}<Ev text={x.title} still /></span>
           <span className="closes">{plural(x.risks.length, "risk")} {x.risks.map((f) => <Shape key={f.id} v={f.risk.severity} title={findingTitle(f, lib.threats)} />)}</span>
           <span className="why">{STATUS[x.status]}{x.id ? " · a library control" : " · written for this system"}</span>
         </summary>
         <div className="body">
-          {x.text ? <p>{x.text}</p> : c?.purpose && <p>{firstSentence(c.purpose)}</p>}
+          {x.text ? <p><Ev text={x.text} /></p> : c?.purpose && <p>{firstSentence(c.purpose)}</p>}
           {specific && <dl className="kv" style={{ margin: "10px 0" }}>
-            {specific.invariant && <><dt>Must always hold</dt><dd>{specific.invariant}</dd></>}
-            {specific.enforce_at && <><dt>Enforce at</dt><dd>{specific.enforce_at}</dd></>}
-            {specific.done_check && <><dt>Done when</dt><dd>{specific.done_check}</dd></>}
+            {specific.invariant && <><dt>Must always hold</dt><dd><Ev text={specific.invariant} /></dd></>}
+            {specific.enforce_at && <><dt>Enforce at</dt><dd><Ev text={specific.enforce_at} /></dd></>}
+            {specific.done_check && <><dt>Done when</dt><dd><Ev text={specific.done_check} /></dd></>}
           </dl>}
-          {x.reqs.map((q) => q.coverage_note).filter(Boolean).map((t, i) => <p key={i}>{t}</p>)}
+          {x.reqs.map((q) => q.coverage_note).filter(Boolean).map((t, i) => <p key={i}><Ev text={t} /></p>)}
           <p>Closes: {x.risks.map((f, i) => <span key={f.id}>{i ? "; " : ""}<Link to={`/reports/${r.system_id}/${r.date}/${f.id}`}>{clip(findingTitle(f, lib.threats), 80)}</Link></span>)}</p>
           {x.id && <p><Link to={`/controls/${x.id}`}>How this control works and how to check it →</Link></p>}
         </div>
@@ -75,13 +76,13 @@ function RiskRow({ f, r, P, lib }: { f: Finding; r: R; P: Prepared; lib: Lib }) 
       <button className="rhead" aria-expanded={open} onClick={() => setOpen(!open)}>
         <div className="rsev"><Grade f={f} /></div>
         <div className="rt">{findingTitle(f, lib.threats)}</div>
-        <div className="rs">{open ? f.scenario : firstSentence(f.scenario)}</div>
+        <div className="rs"><Ev text={open ? f.scenario : firstSentence(f.scenario)} still /></div>
         <div className="rside hide-s"><span>{harmLabel(f.harm)}</span></div>
       </button>
       <div className="rbody">
         <dl className="facts">
-          <dt>Who could do it</dt><dd>{WHO[f.source.who] || cap(f.source.who)}: {f.source.motive}</dd>
-          <dt>What lets it happen</dt><dd>{f.vulnerability}</dd>
+          <dt>Who could do it</dt><dd>{WHO[f.source.who] || cap(f.source.who)}: <Ev text={f.source.motive} /></dd>
+          <dt>What lets it happen</dt><dd><Ev text={f.vulnerability} /></dd>
           <dt>Fixed by</dt><dd><ul className="plain">{fixes.map((x) => <li key={x.key}>{x.id ? <Link to={`/controls/${x.id}`}>{x.title}</Link> : x.title} <span className="t2 small">· {STATUS[x.status]}</span></li>)}</ul></dd>
         </dl>
         <p><Link className="rlink" to={`/reports/${r.system_id}/${r.date}/${f.id}`}>Open the finding →</Link> <span className="t3 small">its own page, to hand to the developer</span></p>
@@ -125,6 +126,9 @@ function Finalize({ r, reload }: { r: R; reload: () => void }) {
 
 export function ReportView({ r, lib, systems, reload }: { r: R; lib: Lib; systems: SystemRow[]; reload?: () => void }) {
   const P = prepare(r, lib.mits);
+  const { hash } = useLocation();
+  // A link from another page to `#ev-3` opens the Evidence fold at it.
+  useEffect(() => { const m = /^#ev-(\d+)$/.exec(hash); if (m) revealEvidence(m[1]); }, [hash]);
   const hi = P.count("high");
   const oq = (r.open_questions || []).filter((q) => !q.answer);
   const rest = P.open.length - P.first.length;
@@ -143,6 +147,7 @@ export function ReportView({ r, lib, systems, reload }: { r: R; lib: Lib; system
   const side = <nav className="toc" aria-label="On this page">{toc.map(([h, l]) => <a key={h} href={`#${h}`}>{l}</a>)}</nav>;
   const sf = r.surfaces || [];
   return (
+    <EvidenceRefs report={r}>
     <Shell title={r.system_name} rail={rail} side={side}>
       <Saved />
       <Link className="back-s" to="/reports">← All systems</Link>
@@ -156,8 +161,8 @@ export function ReportView({ r, lib, systems, reload }: { r: R; lib: Lib; system
       {oq.length > 0 && <div className="qbox" id="questions">
         <h2>{plural(oq.length, "question")} before this report is final</h2>
         <p className="t2">Parts of the report wait on these facts. Each says how to check it.</p>
-        <ul>{oq.map((q) => <li key={q.id}><b>{q.question}</b>
-          <dl className="kv" style={{ marginTop: 6 }}><dt>How to check</dt><dd>{q.how_to_check}</dd><dt>What it decides</dt><dd>{q.needed_for}</dd><dt>Already looked in</dt><dd className="t2">{q.looked_in}</dd></dl></li>)}</ul>
+        <ul>{oq.map((q) => <li key={q.id}><b><Ev text={q.question} /></b>
+          <dl className="kv" style={{ marginTop: 6 }}><dt>How to check</dt><dd><Ev text={q.how_to_check} /></dd><dt>What it decides</dt><dd><Ev text={q.needed_for} /></dd><dt>Already looked in</dt><dd className="t2"><Ev text={q.looked_in} /></dd></dl></li>)}</ul>
       </div>}
 
       {P.first.length > 0 && <div className="first" id="first">
@@ -178,21 +183,22 @@ export function ReportView({ r, lib, systems, reload }: { r: R; lib: Lib; system
 
       <section id="detail"><h2>How this was assessed</h2><p className="sub">What was ruled out, what the assessment walked, and what it rests on.</p>
         {(r.paused || []).length > 0 && <Fold id="paused" title="Waiting on an answer" count={r.paused!.length} sub="neither a risk nor ruled out yet">
-          <ul className="ruled">{r.paused!.map((p) => <li key={p.id}><b>{lib.threats[p.id]?.title || cap(p.id.replace(/^T-/, "").toLowerCase().replace(/-/g, " "))}</b><span className="t2">{p.note}</span></li>)}</ul></Fold>}
+          <ul className="ruled">{r.paused!.map((p) => <li key={p.id}><b>{lib.threats[p.id]?.title || cap(p.id.replace(/^T-/, "").toLowerCase().replace(/-/g, " "))}</b><span className="t2"><Ev text={p.note} /></span></li>)}</ul></Fold>}
         <Fold id="ruled" title="Ruled out" count={r.discarded.length} sub="checked and found not to apply, with the fact that settles it">
-          <ul className="ruled">{r.discarded.map((d) => <li key={d.id}><span><Link className="rlink" to={`/threats/${d.id}`}>{lib.threats[d.id]?.title || d.id}</Link><br /><span className="t3 small">{d.by === "review" ? "broken in review" : "the condition holds here"}</span></span><span className="t2">{d.reason}</span></li>)}</ul></Fold>
+          <ul className="ruled">{r.discarded.map((d) => <li key={d.id}><span><Link className="rlink" to={`/threats/${d.id}`}>{lib.threats[d.id]?.title || d.id}</Link><br /><span className="t3 small">{d.by === "review" ? "broken in review" : "the condition holds here"}</span></span><span className="t2"><Ev text={d.reason} /></span></li>)}</ul></Fold>
         {sf.length > 0 && <Fold id="surfaces" title="Where things reach it" count={sf.length} sub="every way in, tool and data path the assessment walked">
           <table className="tbl"><thead><tr><th>What</th><th style={{ width: 100 }}>Kind</th><th>Leads to</th></tr></thead><tbody>
             {sf.map((x) => <tr key={x.id}><td>{x.name}<div className="where">{x.where}</div></td><td data-l="Kind">{{ entry: "Way in", tool: "Tool", data: "Data path", file: "File" }[x.kind]}</td>
-              <td data-l="Leads to">{x.outcome.length ? x.outcome.map((o, i) => { const f = P.findings.find((y) => y.id === o); return <span key={o}>{i ? "; " : ""}{f ? <Link to={`/reports/${r.system_id}/${r.date}/${o}`}>{clip(findingTitle(f, lib.threats), 60)}</Link> : <span className="t2">{lib.threats[o]?.title ? clip(lib.threats[o].title, 60) : o}</span>}</span>; }) : <span className="t2">{x.note}</span>}</td></tr>)}
+              <td data-l="Leads to">{x.outcome.length ? x.outcome.map((o, i) => { const f = P.findings.find((y) => y.id === o); return <span key={o}>{i ? "; " : ""}{f ? <Link to={`/reports/${r.system_id}/${r.date}/${o}`}>{clip(findingTitle(f, lib.threats), 60)}</Link> : <span className="t2">{lib.threats[o]?.title ? clip(lib.threats[o].title, 60) : o}</span>}</span>; }) : <span className="t2"><Ev text={x.note} /></span>}</td></tr>)}
           </tbody></table></Fold>}
         <Fold id="ran" title="Questions asked" count={r.meta.questions.length} sub={`what the assessor asked the system's owner${r.meta.volunteered.length ? `, and ${plural(r.meta.volunteered.length, "fact")} added unprompted` : ""}`}>
-          <ul className="qa">{r.meta.questions.map((q, i) => <li key={i}><q>{q.question}</q><div>{q.answer}</div><div className="imp">{q.impact}</div></li>)}
-            {r.meta.volunteered.map((v, i) => <li key={"v" + i}><q>Added unprompted</q><div>{v}</div></li>)}</ul></Fold>
+          <ul className="qa">{r.meta.questions.map((q, i) => <li key={i}><q><Ev text={q.question} /></q><div><Ev text={q.answer} /></div><div className="imp"><Ev text={q.impact} /></div></li>)}
+            {r.meta.volunteered.map((v, i) => <li key={"v" + i}><q>Added unprompted</q><div><Ev text={v} /></div></li>)}</ul></Fold>
         {(r.evidence || []).length > 0 && <Fold id="evidence" title="Evidence" count={r.evidence!.length} sub="every checked claim, pinned to a commit">
           {r.evidence!.map((e) => <div key={e.id} id={`ev-${e.id}`} style={{ marginBottom: 14, maxWidth: "80ch" }}><div className="where"><b>[{e.id}]</b> {e.kind === "read" ? `${e.path}:${e.lines} @ ${e.commit}` : `${e.kind}: ${e.command}`}</div><div className="quote">{e.quote}</div></div>)}</Fold>}
         <p className="t3 small" style={{ marginTop: 14 }}>{P.findings.filter((f) => !f.review && !(f.evidence || []).length).length} of {P.findings.length} grades are unchecked: no evidence attached and nobody else tried to refute them. Each finding's page says which.</p>
       </section>
     </Shell>
+    </EvidenceRefs>
   );
 }

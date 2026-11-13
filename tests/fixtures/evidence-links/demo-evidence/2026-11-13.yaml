@@ -1,0 +1,91 @@
+# A made-up report for looking at the evidence links (web/src/components/Evidence.tsx).
+# Not from a real assessment. Its prose carries every kind of mark: [1], a list [1, 3],
+# a link [text](#ev-2), a bare #ev-3, a mark on missing evidence [9], and items[3] in a
+# sentence, which is an index and stays text.
+system_id: demo-evidence
+system_name: Refund bot (evidence links demo)
+system_description: A support chat that can issue refunds through a tool.
+date: '2026-11-13'
+assessor: Tester <t@example.com>
+status: draft
+findings:
+- id: T-CMD-INJECT
+  from_catalog: true
+  scenario: >-
+    A customer asks for a refund and the model sets the amount itself [1]. The tool
+    passes it on unchecked [1, 3], and [the gateway call](#ev-2) sends whatever it gets.
+    The retry loop reads items[3] from the queue, which is not a mark.
+  source: {who: external-attacker, motive: money, access: the public chat}
+  asset: refund budget
+  attack_surface: user-input
+  vulnerability: >-
+    The refund tool takes the amount from the model [1]. Nothing caps it: see #ev-3.
+    An older note claimed a cap in the gateway [9], but that evidence is not in this report.
+  exploitation_complexity: low
+  harm: wrong-decision
+  risk: {likelihood: high, severity: high, reasoning: 'Anyone can open the chat [2].'}
+  delta: new
+  evidence: [1, 2, 3]
+  requirements:
+  - mitigation_id: null
+    coverage_status: needs_implementation
+    description: Cap refunds the bot can issue without a person [1].
+    invariant: No refund above 50 EUR leaves without a person's approval.
+    enforce_at: the refund service, before the gateway call
+    done_check: a test asks for a 60 EUR refund and expects a pending approval
+- id: T-CRED-THEFT
+  from_catalog: true
+  scenario: The gateway key sits in the bot's environment [2], next to the tool runner.
+  source: {who: model-mistake, motive: none, access: the tool runner}
+  asset: gateway key
+  attack_surface: tool-output
+  vulnerability: The runner inherits the whole environment [3].
+  exploitation_complexity: medium
+  harm: data-exposed
+  risk: {likelihood: low, severity: medium, reasoning: 'Needs a second bug first [9].'}
+  delta: new
+  evidence: [2]
+  requirements:
+  - mitigation_id: null
+    coverage_status: needs_implementation
+    description: Start the runner with an empty environment.
+    invariant: The runner sees no secret it does not need.
+    enforce_at: the runner's launch
+    done_check: the runner prints its environment and it holds no key
+discarded:
+- {id: T-CODEGEN, by: review, reason: 'The bot runs no code it writes [3].'}
+open_questions:
+- id: Q1
+  question: Who edits the help centre?
+  asks_for: access
+  looked_in: the repo
+  needed_for: poisoning
+  how_to_check: export permissions
+surfaces:
+- {id: S1, kind: entry, name: chat, where: /chat, outcome: [T-CMD-INJECT, T-CRED-THEFT]}
+evidence:
+- id: 1
+  kind: read
+  repo: payments-api
+  commit: 3f9c2a7d1e5b4c6a8f0e2d4b6a8c0e2f4a6b8d0e
+  path: tools/refund.py
+  lines: 40-52
+  quote: |-
+    def refund(order_id: str, amount: float) -> dict:
+        """Refund the order. The amount comes from the model's tool call."""
+        order = orders.get(order_id)
+        if order is None:
+            raise NotFound(order_id)
+        # no cap here: the gateway is trusted to refuse silly amounts
+        return gateway.refund(order_id, amount)
+- id: 2
+  kind: read
+  commit: 9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e
+  path: gateway/client.py
+  lines: '17'
+  quote: |-
+    return self.session.post(f"{BASE}/refunds", json={"order": order_id, "amount": amount})
+- id: 3
+  kind: command
+  command: grep -rn "max_refund" .
+  quote: (no output)

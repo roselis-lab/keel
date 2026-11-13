@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import type { Level } from "./types";
+import { Ev } from "../components/Evidence";
 
 export const ORDER: Record<Level, number> = { high: 0, medium: 1, low: 2 };
 export const cap = (s?: string | null) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
@@ -46,17 +47,18 @@ export const failText = (v?: string) => ({ fail_closed: "Fails closed", fail_ope
 export const harmLabel = (h?: string) => HARM[h || ""] || cap(h || "");
 
 /* ---- a small markdown: paragraphs, bullet lists, pipe tables, **bold**, `code` ----
-   Catalog prose uses no more than this. Built as React elements, never as HTML strings. */
+   Catalog prose uses no more than this. Built as React elements, never as HTML strings.
+   On a report page an evidence mark, `[3]` or `#ev-3`, is a link to it (components/Evidence). */
 function inline(s: string): ReactNode[] {
   const out: ReactNode[] = [];
   const re = /\*\*(.+?)\*\*|`([^`]+)`/g;
   let last = 0, m: RegExpExecArray | null, k = 0;
   while ((m = re.exec(s))) {
-    if (m.index > last) out.push(s.slice(last, m.index));
-    out.push(m[1] !== undefined ? <b key={k++}>{m[1]}</b> : <code key={k++}>{m[2]}</code>);
+    if (m.index > last) out.push(<Ev key={k++} text={s.slice(last, m.index)} />);
+    out.push(m[1] !== undefined ? <b key={k++}><Ev text={m[1]} /></b> : <code key={k++}>{m[2]}</code>);
     last = re.lastIndex;
   }
-  if (last < s.length) out.push(s.slice(last));
+  if (last < s.length) out.push(<Ev key={k++} text={s.slice(last)} />);
   return out;
 }
 export function Md({ text }: { text?: string | null }) {

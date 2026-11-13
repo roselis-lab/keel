@@ -169,6 +169,15 @@ td.n, th.n { text-align: right; font-family: var(--f-data); font-variant-numeric
 .det[open] > summary { margin-bottom: 6px; }
 .quote { font: 400 13px/1.55 ui-monospace, "Cascadia Mono", monospace; white-space: pre-wrap; background: var(--inset); padding: 10px 12px; border-radius: var(--r); margin: 6px 0 4px; overflow-x: auto; }
 .where { font: 400 12px/1.4 ui-monospace, "Cascadia Mono", monospace; color: var(--ink-2); overflow-wrap: anywhere; }
+/* evidence marks in report prose (components/Evidence.tsx) */
+.evref { color: inherit; text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+a.evref:hover { text-decoration-style: solid; }
+.evref.broken { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--hi); cursor: help; }
+.evhit { outline: 2px solid var(--md); outline-offset: 6px; border-radius: var(--r); }
+.evtip { position: fixed; z-index: 50; max-width: min(560px, calc(100vw - 16px)); padding: 10px 12px; background: var(--card); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r); box-shadow: 0 4px 16px rgba(0, 0, 0, .14); pointer-events: none; }
+.evtip-h { font: 600 12px/1.3 var(--f-body); color: var(--ink-2); margin-bottom: 6px; }
+.evtip-q { font: 400 12px/1.5 ui-monospace, "Cascadia Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--inset); padding: 6px 8px; border-radius: var(--r); margin-bottom: 6px; }
+.evtip-m { font: 400 12px/1.4 ui-monospace, "Cascadia Mono", monospace; color: var(--ink-2); overflow-wrap: anywhere; }
 
 /* ---------- finding: the chain, one picture for one relationship ---------- */
 .chain { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 8px 0 0; }
