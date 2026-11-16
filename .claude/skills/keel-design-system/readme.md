@@ -87,7 +87,7 @@ Keel's copy is written by security engineers for security engineers. It is dense
 
 ### Model prose (the style guide's own rules)
 
-The catalog's authored fields have a house style enforced by `catalog/style_guide/*.yaml` and reviewed by the `check-style` skill:
+The catalog's authored fields have a house style enforced by `catalog/style_guide/*.yaml`:
 
 - **Weakness `text`** is *cause + where + defect*, as one architectural condition — not an attack narrative. Real example: "A reachable tool performs destructive/irreversible or privileged operations (delete, admin, exec, persistent side effects), and the call is initiated by the model with no out-of-model authorization on the action itself."
 - **`reachability`** always opens with the same three words — **"NOT applicable if"** — and describes when the path is *not* live, judged on the un-mitigated architecture: "NOT applicable if the reachable tools have no operations with real consequences (read-only, no side effects)…"

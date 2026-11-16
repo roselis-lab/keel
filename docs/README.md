@@ -16,5 +16,5 @@
 **Background**
 
 - [Why Keel is built this way](why-keel.md)
-- [`demo/`](demo/): the made-up system used in examples, and talk material.
+- [`demo/`](demo/): the made-up system used in examples.
 - [`plans/`](plans/): design notes from earlier work, kept for history.

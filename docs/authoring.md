@@ -13,7 +13,7 @@ flowchart LR
   C -->|covered, or out of scope| D["Record the row.<br/>Nothing to author."]
   C -->|gap| E["Research gate:<br/>a case, the defence that shipped,<br/>what the sources call it,<br/>what you could not find"]
   E --> F["Write to the bar:<br/>a weakness on an existing threat,<br/>or a new record"]
-  F --> G["keel validate,<br/>check-style,<br/>pull request"]
+  F --> G["keel validate,<br/>style review,<br/>pull request"]
   D --> A
   G --> A
 ```
@@ -99,7 +99,7 @@ Whether a sentence is any good.
 
 The rule registry deliberately holds nothing about the wording of a field. Whether a `purpose` merely restates the name is semantics; it cannot be decided mechanically, and a rule that tried would only ever guess. Matching prose against a word list is the same mistake wearing a regular expression.
 
-That job belongs to the style guide and to the `check-style` skill, which judges an entry against the per-field bar and the record-level tests before the work is reported as done. `check-style` applies the bar and does not own it: if a field is wrong and the bar is silent, the fix is to the bar.
+That job belongs to the style guide: a reviewer reads the entry against the per-field bar and the record-level tests before the work is reported as done. The review applies the bar and does not own it: if a field is wrong and the bar is silent, the fix is to the bar.
 
 So the three layers are:
 
@@ -107,7 +107,7 @@ So the three layers are:
 | --- | --- | --- |
 | `keel validate` | structure, vocabularies, links | every change, and CI |
 | `pytest` | Keel's own code | every change, and CI |
-| `check-style` | prose and meaning | when a record is written or changed |
+| style review | prose and meaning | when a record is written or changed |
 
 ## A rule earns its place by catching something
 

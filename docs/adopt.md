@@ -61,7 +61,7 @@ What a reviewer checks that CI cannot:
 - **One threat is one harm.** A new threat should not be the same harm as an existing one reached by another path. That belongs as a new weakness on the existing threat.
 - **The "does not apply when" sentence is a real condition** someone can test against an unseen system, not a restatement of the title.
 - **Every reference says what it supports.** A link with no note is not evidence.
-- **The wording meets the style guide.** The `check-style` skill applies it; ask the agent to run it on the changed records.
+- **The wording meets the style guide.** Read the changed records against the per-field bar in [`catalog/style_guide/`](../catalog/style_guide/).
 
 Agents may write into `drafts/`. Only a person moves a record from `drafts/` into `catalog/`. See [Authoring](authoring.md) for how new content is researched before it is written.
 

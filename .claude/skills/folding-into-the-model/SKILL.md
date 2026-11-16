@@ -63,7 +63,7 @@ Changing what an existing entry means is not yours to decide: retitling a threat
 
 Every write answers with what it broke. A `problems` key means this write left the catalog inconsistent - a link pointing at nothing, a `gating` grade on a control that does not block, a coverage row still claiming something you deleted. Fix it in the same turn. No `problems` key means there is nothing structural to fix.
 
-That is the deterministic half only. Run the `check-style` skill on what you just wrote before you report it as done. It is the half that reads the card against its bar, and it is not optional because you feel good about the card.
+That is the deterministic half only. Before you report it as done, read what you just wrote against its bar in `catalog/style_guide/`. That is the half that reads the card against its bar, and it is not optional because you feel good about the card.
 
 ## Where this goes wrong
 

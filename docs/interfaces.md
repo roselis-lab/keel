@@ -52,9 +52,7 @@ Every report carries a `meta` block recording how the run went: the questions th
 
 **`folding-into-the-model`** decides what kind of thing an incoming item is, whether the model already answers it, whether it is one record or part of one, and then writes to the bar. It shows its uncertainty rather than resolving it silently, and asks before changing what an existing entry means.
 
-**`check-style`** judges what was written against the style guide. It applies the bar and does not own it: if a field is wrong and the bar is silent, the fix is to the bar.
-
-See [Authoring](authoring.md) for how the two work together.
+See [Authoring](authoring.md) for how what it writes is checked.
 
 ## The local UI
 
