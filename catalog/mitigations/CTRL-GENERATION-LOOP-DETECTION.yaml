@@ -1,0 +1,77 @@
+id: CTRL-GENERATION-LOOP-DETECTION
+name: Early repetition detection during generation
+mitigation_class: detector
+purpose: Detects repeated token or text sequences and ends that call before it spends its full inference
+  allowance. This reduces wasted time and billed tokens on literal generation loops.
+formal_implementation_risk: 'Only displayed text stops while the inference engine keeps generating.
+  Signal: provider usage increases after a loop event.'
+review: Review when the inference engine, stream format, tokenizer or cancellation
+  contract changes. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: The engine can detect and end its own generation; otherwise the streaming client sends a confirmed
+    signal to the executor for cancellation. The accounting layer settles usage after either path.
+scope: Model calls where the engine can end repetitive generation or a streamed call can be cancelled.
+out_of_scope: Paraphrased or semantic reasoning loops, hidden reasoning and loops across separate calls
+  still need hard per-call and root-task budgets. Inference-time frequency, presence and repetition
+  penalties can discourage repeats but are not loop detection or a consumption ceiling.
+control_mechanism: Monitor each call with bounded memory and work. Prefer the engine's own repetition
+  detector, configured by pattern length and repeat count; otherwise assemble a continuous token or
+  text stream across transport chunks. A custom monitor may use rolling hashes of bounded token windows
+  to find candidate repeats, but compares the original sequences before acting. On a confirmed repeat,
+  the engine ends generation or the executor requests cancellation within the accepted delay. Mark the
+  result incomplete and prevent partial tool calls or automatic continuation. Keep the call's reservation
+  until termination and usage are confirmed. Set detection delay, false-stop and miss targets using normal
+  code, tables and quotations as well as loops; repetition alone does not prove an answer is useless.
+failure_behavior:
+  value: degraded
+  note: Unavailable detector or stream, failed monitor or unconfirmed cancellation is reported. Generation
+    continues only under independent hard limits; unknown usage keeps its reservation. A missing hard limit stops
+    admission rather than relying on this detector.
+telemetry:
+  events:
+  - name: generation_loop.detected
+    records: A configured loop signal ended generation or triggered cancellation of one call.
+    attributes:
+    - call and root task
+    - signal and detector version
+    - detection delay and stop or cancellation outcome
+    - billed or reserved tokens
+  - name: generation_loop.monitor_error
+    records: Monitoring or cancellation could not provide an early stop.
+    attributes:
+    - call and failure reason
+    - remaining hard limit and reservation state
+  evidence: Append-only records outside agent-writable storage, retained for the usage-reconciliation
+    and investigation window. Store identifiers and decisions, not reasoning text.
+anti_patterns:
+- 'UI truncation only (the formal variant). Signal: billed tokens grow after the visible stream stops.'
+- 'A hash match is treated as proof. Signal: different sequences with the same hash cause a stop.'
+- 'Any repeated phrase causes cancellation. Signal: normal code or quotations exceed the accepted
+  false-stop rate.'
+validation:
+- criterion: Literal loops stop across transport chunk boundaries.
+  test_scenario: Generate the same repeating token sequence with different stream chunking.
+  expected_result: The same call ends within the configured delay, before its hard token limit.
+  base: true
+- criterion: False stops and detector work stay within accepted bounds.
+  test_scenario: Generate valid repeated code, tables and quotations alongside long repetitive attack streams.
+  expected_result: False stops, misses, memory and monitoring time stay within configured limits.
+  base: true
+- criterion: Hash collisions do not count as confirmed loops where hashing is used.
+  test_scenario: Force equal hashes for two different token windows in a custom stream monitor.
+  expected_result: Comparison of the original windows prevents cancellation.
+  base: false
+- criterion: Cancellation ends work and does not reset its allowance.
+  test_scenario: Trigger a loop in a batch, interrupt a partial tool call, then lose cancellation acknowledgement.
+  expected_result: Other calls continue; no partial tool call executes; unknown usage stays reserved
+    until the engine confirms termination.
+  base: true
+faq:
+- question: Do sampling penalties satisfy this detector?
+  answer: No. In vLLM, positive frequency_penalty and presence_penalty or repetition_penalty above 1
+    discourage repeated tokens; repetition_detection with min_pattern_size, max_pattern_size and min_count
+    ends matching generation early. Tune these settings against legitimate code, tables and quotations.
+requires: []
+implementations: []

@@ -1,0 +1,63 @@
+id: CTRL-RAG-DERIVED-ACCESS
+name: Source authorization preserved in RAG derivatives
+mitigation_class: gating_control
+purpose: Keeps restricted documents from becoming readable through their chunks, summaries, index copies
+  or snapshots by a principal who cannot read the source.
+formal_implementation_risk: 'Search checks document ACLs but an index export or snapshot is downloadable
+  with a broader storage credential. Signal: a reader denied the source can read its chunks from that copy.'
+review: Review when chunking, summary generation, caching, index export, backup, restore or source-permission
+  synchronization changes. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: Ingestion attaches source rights to derivatives; index and storage services enforce them on
+    reads and exports. The handoff is publication of a derived artifact to a searchable or downloadable store.
+scope: Chunks, embeddings, summaries, metadata, caches, replicas, exports and snapshots derived from
+  documents whose readers have different rights. Includes direct storage access and restored copies.
+out_of_scope: Authorization of an ordinary query against current user rights is data-level access control.
+  Integrity checks cannot establish who may read a copy, and this card does not validate source truth.
+control_mechanism: Bind each derivative to its source ids and versioned permission metadata. Project
+  document rights onto every chunk; a summary from several sources inherits only readers allowed by
+  all of them. Reject publication when source or policy mapping is missing. Query-time filtering uses
+  current source rights through data-level access control. Restrict raw index, cache, export and snapshot
+  APIs to authenticated principals with explicit rights; backup operators are a separately audited
+  exception. Before a restored copy serves data, reconcile deletions and revoked grants against the
+  current source policy. Stop serving stale derivatives when permission freshness cannot be established.
+failure_behavior:
+  value: fail_closed
+  note: Missing source mapping, unavailable policy, expired permission freshness or unreconciled restore
+    blocks publication and serving of affected derivatives. Record the refusal.
+telemetry:
+  events:
+  - name: rag_derivative.published
+    records: A derivative was admitted with a source policy binding.
+    attributes:
+    - artifact and source ids
+    - policy version and publisher
+  - name: rag_derivative.blocked
+    records: A read, export or publication was refused.
+    attributes:
+    - principal and artifact
+    - operation and denied or missing policy
+  evidence: Append-only records outside agent-writable storage, retained for the access-investigation
+    and restore-reconciliation window. Store identifiers and decisions, not document text.
+anti_patterns:
+- 'Only the search endpoint enforces ACLs (the formal variant). Signal: raw snapshot access exposes
+  restricted chunks.'
+- 'Restore trusts old ACLs. Signal: a revoked reader regains access after snapshot restoration.'
+validation:
+- criterion: Every derivative keeps its source audience.
+  test_scenario: Index documents with different readers and generate chunks and a combined summary.
+  expected_result: Source-policy bindings exist; the summary is not shown to a reader denied any source.
+  base: true
+- criterion: Direct copy access does not bypass document rights.
+  test_scenario: As a reader denied a source, attempt raw index reads, export and snapshot download.
+  expected_result: No restricted derivative is returned; backup exceptions are authorized and recorded.
+  base: true
+- criterion: Revocation survives backup and restoration.
+  test_scenario: Snapshot an index, revoke one grant and delete another source, then restore it.
+  expected_result: The copy is withheld until reconciliation; revoked and deleted content cannot be served.
+  base: true
+faq: []
+requires: []
+implementations: []
