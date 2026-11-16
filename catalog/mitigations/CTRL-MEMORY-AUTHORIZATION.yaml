@@ -1,0 +1,67 @@
+id: CTRL-MEMORY-AUTHORIZATION
+name: Per-principal authorization for persistent memory
+mitigation_class: gating_control
+purpose: Prevents one user or role from reading or changing memory outside its authenticated rights,
+  including when several users share one agent and tenant.
+formal_implementation_risk: 'Memory is partitioned by agent or tenant but not by user rights. Signal:
+  switching authenticated users leaves private memory search results unchanged.'
+review: Review when memory stores, role membership, sharing rules, delegation, compaction or cache paths
+  change. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: The runtime supplies authenticated principal and acting-agent identity; the memory service
+    checks each entry policy before a read or write. Shared memory services can enforce this centrally.
+scope: Persistent or shared memory whose entries have different user or role audiences, including
+  summaries, retrieval caches and restored entries. Read and write rights are evaluated separately.
+out_of_scope: Per-agent storage separation and session isolation are different boundaries. Authorization
+  does not establish that content written by an allowed principal is true or safe.
+control_mechanism: Derive tenant, user, current roles and acting agent from authenticated session state,
+  never from model-supplied ids. Store an owner and explicit read/write policy with each entry. Authorize
+  read, search, append, update, delete and export at the memory service before content enters context or
+  a write persists. A role grant does not expose another member's private entries; a read grant does not
+  imply write permission. Recheck membership on each read so revocation applies to existing sessions.
+  Summaries and caches inherit the intersection of their source audiences or are split by audience;
+  delegation cannot broaden the initiating principal's rights.
+failure_behavior:
+  value: fail_closed
+  note: Missing authenticated identity, entry policy or current role membership blocks the operation.
+    Policy lookup failures are reported rather than treating memory as public.
+telemetry:
+  events:
+  - name: memory_access.decided
+    records: A memory operation was allowed or refused under an entry policy.
+    attributes:
+    - authenticated principal and acting agent
+    - entry and operation
+    - policy version, decision and reason
+  - name: memory_access.policy_error
+    records: Authorization could not be established.
+    attributes:
+    - principal and store
+    - missing identity or policy
+  evidence: Append-only records outside agent-writable memory, retained for the access-investigation
+    window. Store identifiers and decisions, not private entry text.
+anti_patterns:
+- 'Only per-agent partitioning (the formal variant). Signal: two users of one agent read each other''s entries.'
+- 'Namespace comes from a model argument. Signal: changing user_id changes accessible memory without
+  changing the authenticated user.'
+- 'A shared summary loses source rights. Signal: a user sees a fact only after compaction.'
+validation:
+- criterion: Users sharing one agent and role retain private memory.
+  test_scenario: Write private entries as two users, then search and update the second user's entry as the
+    first, including with the second user id in tool arguments.
+  expected_result: No private entry is returned and unauthorized writes are refused.
+  base: true
+- criterion: Role sharing has current, separate read and write rights.
+  test_scenario: Give a role read-only access, attempt an update, revoke membership and read through the
+    same session and a cached summary.
+  expected_result: The update fails; after revocation neither the entry nor its summary is returned.
+  base: false
+- criterion: Unknown identity or policy fails closed.
+  test_scenario: Remove authenticated identity or entry policy and retry a memory read and write.
+  expected_result: Both operations are refused and a policy_error is recorded.
+  base: true
+faq: []
+requires: []
+implementations: []

@@ -45,6 +45,10 @@ mitigations:
 - id: CTRL-DATA-VALIDATION
   strength: soft
   rationale: 'Checks source and format at ingestion. It does not establish the truth of accepted material, so a valid document from an allowed source can still poison a decision.'
+- id: CTRL-TOOL-RESULT-VALIDATION
+  strength: soft
+  rationale: 'Rejects malformed or contract-inconsistent tool results before context assembly. It does
+    not close poisoning: a valid result may still contain false facts or hostile instructions.'
 - id: CTRL-RAG-INTEGRITY
   strength: soft
   rationale: 'Rejects retrieval that differs from an accepted integrity-protected snapshot. False or malicious content already admitted into that snapshot remains possible, so integrity does not close source poisoning.'

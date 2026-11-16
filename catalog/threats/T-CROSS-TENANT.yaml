@@ -9,7 +9,7 @@ weaknesses:
 - component: memory
   surface:
   - memory
-  text: Session context or long-term memory is shared across users or tenants without partition, so what one party wrote is in the state the next party's request reads.
+  text: Session context or long-term memory is shared across users or tenants without partition, or is keyed only by an agent that serves users with different rights, so what one party wrote is in the state the next party's request reads.
   nature: targeted
 - component: tool
   surface:
@@ -29,6 +29,10 @@ mitigations:
 - id: CTRL-MEMORY-ISOLATION
   strength: gating
   rationale: Where agents share a memory space, this partitions it per agent. It closes the weakness for the multi-agent case that session isolation does not reach.
+  exception: null
+- id: CTRL-MEMORY-AUTHORIZATION
+  strength: gating
+  rationale: Authenticates the initiating user and checks entry-level read and write rights, closing the shared-memory path between users or roles of one agent and tenant.
   exception: null
 references:
 - title: redis-py Race Condition vulnerability (GHSA-24wv-mv5m-xv4h / CVE-2023-28858)

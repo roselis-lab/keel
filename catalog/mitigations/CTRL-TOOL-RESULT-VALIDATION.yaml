@@ -1,0 +1,71 @@
+id: CTRL-TOOL-RESULT-VALIDATION
+name: Tool result validation before model context
+mitigation_class: gating_control
+purpose: Rejects malformed, oversized or contract-inconsistent tool results before they enter model
+  context or are saved as successful results. Valid structure does not establish factual or semantic safety.
+formal_implementation_risk: 'Only structuredContent is checked while a duplicate content block or error
+  body reaches the model unchanged. Signal: rejected data appears in the assembled context.'
+review: Review when tool contracts, protocol versions, content blocks, streaming, resource links or context
+  serialization change. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: The connector owns the reviewed result contract; the runtime enforces it after tool receipt and
+    before context assembly. A shared gateway can enforce the same boundary for several agents.
+scope: Every connected tool result, including success and error envelopes, structured and text content,
+  media blocks, streams and referenced resources that the runtime resolves. Free text uses an explicit
+  bounded text contract where no structured schema exists.
+out_of_scope: Tool argument validation and operation authorization occur before the call. This control
+  does not detect valid-looking false facts or prompt injection, and a rejected result does not prove a
+  side-effecting call failed to execute.
+control_mechanism: Bind a locally accepted versioned output contract to each registered tool; do not
+  trust a schema supplied with the result itself. Bound raw bytes before decoding and enforce expansion,
+  nesting, collection-size and parse-time limits during it. Validate result status, required fields,
+  types, ranges and content types before context insertion. For MCP, check structuredContent against
+  the accepted outputSchema and admit only a validated model-visible representation; do not append an
+  unchecked content copy. Check errors against a separate bounded contract. Resource links are not
+  fetched automatically; authorized dereferences pass the same validation. Keep incomplete streams out
+  of context. On rejection, return a bounded runtime-generated error without echoing raw rejected data.
+failure_behavior:
+  value: fail_closed
+  note: Missing contract, unavailable validator, malformed or oversized result and incomplete stream
+    block insertion and persistence. Record a rejection or validator failure; never downgrade to raw text.
+telemetry:
+  events:
+  - name: tool_result.accepted
+    records: A reviewed contract admitted a result.
+    attributes:
+    - tool and call id
+    - contract version and validated representation
+  - name: tool_result.rejected
+    records: A result was withheld from model context.
+    attributes:
+    - tool and call id
+    - contract version and failed bound or schema path
+  - name: tool_result.validator_error
+    records: Validation could not run.
+    attributes:
+    - tool and call id
+    - validator failure
+  evidence: Append-only records outside agent-writable storage, retained for the investigation window.
+    Store identifiers and decisions, not rejected payloads.
+anti_patterns:
+- 'Only structuredContent is validated (the formal variant). Signal: unchecked content enters context.'
+- 'The tool changes its own accepted schema in the reply. Signal: an unexpected field is accepted.'
+- 'Size is checked after expansion. Signal: compressed or nested output exhausts the parser first.'
+validation:
+- criterion: Invalid tool results do not reach the model.
+  test_scenario: Return wrong types, missing fields and unexpected keys, including in an error result.
+  expected_result: The model sees only a bounded runtime error and the rejection is recorded.
+  base: true
+- criterion: Parallel result representations cannot bypass the contract.
+  test_scenario: Return valid structuredContent plus unchecked text, media and a resource link.
+  expected_result: Only the accepted representation is admitted; unapproved blocks and fetches are refused.
+  base: true
+- criterion: Decoding and contract failures fail closed.
+  test_scenario: Send compressed or deeply nested output, then remove the registered contract or validator.
+  expected_result: Processing stays within configured limits; no raw or partial result enters context.
+  base: true
+faq: []
+requires: []
+implementations: []

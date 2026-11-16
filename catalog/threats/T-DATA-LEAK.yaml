@@ -78,11 +78,19 @@ weaknesses:
   - model-output
   text: Output is displayed and passed on with characters a reader cannot see left in place - Unicode tag characters, zero-width characters - so data encoded in them leaves inside a reply, a link or a post that the person read and found harmless.
   nature: targeted
-reachability: There is no data under differentiated authorization anywhere in the agent's context or reach - everything it can read is already available to any recipient of its output and to any destination its tools can send to or its client can fetch from or link to. Recipients include inference processors and fallback endpoints; the condition also covers hidden request fields, restored memory, later tasks and restrictions on the processing purpose, not merely a successful technical allow decision.
+- component: knowledge-base
+  surface:
+  - retrieved-content
+  text: A retrieval index, cache or snapshot derived from restricted documents can be read or exported directly without the source documents' permissions, bypassing the authorized search path.
+  nature: targeted
+reachability: There is no data under differentiated authorization anywhere in the agent's context, reach or retrieval artifacts derived from its sources - everything it can read or retain is already available to any recipient of its output, any direct reader of those artifacts, and any destination its tools can send to or its client can fetch from or link to. Recipients include inference processors and fallback endpoints; the condition also covers hidden request fields, restored memory, later tasks and restrictions on the processing purpose, not merely a successful technical allow decision.
 mitigations:
 - id: CTRL-DATA-ACCESS-CONTROL
   strength: gating
   rationale: 'Closes the first weakness at the source. Field- and record-level control bounds what a tool returns to what the requesting principal may hold, so the context never contains what the audience could not have asked for directly.'
+- id: CTRL-RAG-DERIVED-ACCESS
+  strength: gating
+  rationale: 'Closes the derived-artifact weakness: document permissions follow chunks and summaries, direct index and snapshot reads are authorized, and a restored copy reconciles current rights before serving.'
 - id: CTRL-ACCESS-CONTROL
   strength: gating
   rationale: 'Closes the first and third weaknesses one step earlier than data-level control: the read operation itself is authorized against the audience''s rights before it runs, so a tool cannot be asked to fetch on behalf of someone who could not fetch it themselves.'
