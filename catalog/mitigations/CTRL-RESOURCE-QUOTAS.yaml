@@ -7,7 +7,7 @@ review: null
 maintainer: null
 locus: null
 scope: null
-control_mechanism: 'Container resource limits: Container-level resource limits via Docker/Kubernetes: CPU shares, memory limits, disk quotas. Limits are enforced at the kernel level — processes exceeding the limits are terminated or throttled. This provides deterministic resource bounds.
+control_mechanism: 'Container resource limits: Container-level resource limits via Docker/Kubernetes: enforced CPU bandwidth or time limits, memory limits, disk quotas. CPU shares alone are not a hard cap. Limits are enforced at the kernel level — processes exceeding the limits are terminated or throttled. This provides deterministic resource bounds.
 
 
   Session-level quotas: Per-session or per-agent quotas on total resource consumption: maximum memory per session, maximum execution time, maximum output size. Quotas are tracked by the runtime and enforced when bounds are breached.
@@ -19,3 +19,4 @@ telemetry: null
 anti_patterns: []
 validation: []
 faq: []
+out_of_scope: Local quotas do not bound remote model billing or jobs running in another service; those need a shared task budget and execution-side limits at the remote service.

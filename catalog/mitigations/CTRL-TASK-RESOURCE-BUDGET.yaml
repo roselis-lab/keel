@@ -1,0 +1,93 @@
+id: CTRL-TASK-RESOURCE-BUDGET
+name: Aggregate resource budget for a task
+mitigation_class: gating_control
+purpose: Bounds the total consumption of one root task across retries, continuations, fallback models
+  and delegated branches. Prevents individually bounded calls from multiplying into unbounded work or
+  expense.
+formal_implementation_risk: 'Each child or retry gets a new allowance and concurrent calls check the same
+  unreserved balance. Signal: total admitted work exceeds the root task budget although every call passed
+  a local check.'
+review: Review when delegation, retries, resume paths, providers, billing units, tariffs or accounting
+  storage change. Keep a periodic safety-net review alongside those triggers.
+maintainer: null
+locus:
+  value: split
+  note: The runtime propagates an immutable root-task identity; a shared admission ledger atomically reserves
+    allowances before execution. Providers and executing services supply enforceable call ceilings and
+    settlement evidence.
+scope: Any task that may make multiple resource-consuming calls or spend a shared or monetary allocation.
+  Includes background and resumed tasks and all chargeable tool operations. Configured task ceilings are
+  subordinate to caller and shared allocations.
+out_of_scope: Request frequency, local process isolation and service-side termination remain separate
+  controls. This budget bounds total admitted consumption, not useful progress or availability under every
+  permitted workload. Work with no enforceable maximum cannot be admitted under a hard budget.
+control_mechanism: Before dispatch, atomically reserve an enforceable upper bound for each operation against
+  the persistent root-task ledger and applicable caller/shared allocation. Include full input, visible
+  and hidden generation where charged, model-specific tariffs and billable tools, storage or other metered
+  units. Keep units distinct; reserve monetary cost using a versioned tariff rather than treating all
+  tokens as equally priced. Permit only calls with an enforceable ceiling fitting the remaining balance;
+  otherwise refuse. Children, retries, fallbacks and resumptions inherit the same ledger and cannot change
+  its limits. Parallel reservations cannot spend the same balance. Settle against verified usage and release
+  only the unused reservation; missing usage or unknown cancellation retains the maximum reservation until
+  reconciliation proves a smaller charge. Task identity and reservations survive restarts. Do not launch
+  fresh calls on task exhaustion; already admitted work remains bounded by its reserved ceiling. Unsupported
+  provider ceilings require a separately enforced finite provider allocation or refusal.
+failure_behavior:
+  value: fail_closed
+  note: Unavailable accounting state, unknown tariff or non-enforceable operation ceiling refuses dispatch.
+    Lost usage and cancellation acknowledgements retain reservations. Restart never creates a fresh allowance
+    for an existing task. Ledger errors are separately visible.
+telemetry:
+  events:
+  - name: task_budget.reserved
+    records: Capacity was atomically reserved before dispatch.
+    attributes:
+    - principal and root task
+    - call and parent id
+    - units and maximum cost
+    - tariff version
+    - remaining allowance
+  - name: task_budget.refused
+    records: Work did not fit or could not be bounded.
+    attributes:
+    - principal and root task
+    - requested bound
+    - limiting allocation or accounting error
+  - name: task_budget.settled
+    records: Verified usage replaced a reservation.
+    attributes:
+    - root task and call
+    - reserved and actual usage
+    - completion evidence or unresolved status
+  evidence: Append-only records outside agent-writable storage, retained for the investigation and reconciliation
+    window of the guarded data or workload. Record identifiers and decisions, not confidential payloads.
+anti_patterns:
+- 'Fresh allowance per child or retry (the formal variant). Signal: a wide task tree exceeds the root
+  ceiling.'
+- 'Charge only when a response arrives. Signal: simultaneous calls all consume the same final balance.'
+- 'Timeout releases the full reservation. Signal: repeated disconnects admit new paid work while old calls
+  still run.'
+validation:
+- criterion: All task continuations share a finite allowance.
+  test_scenario: Run a wide delegation tree with retries, model fallback and resume.
+  expected_result: Combined admitted maxima never exceed the configured root ceiling.
+  base: true
+- criterion: Concurrent admissions cannot double-spend.
+  test_scenario: Have two workers reserve the last available balance at the same time.
+  expected_result: Only reservations that fit jointly succeed.
+  base: true
+- criterion: Lost state does not reset consumption.
+  test_scenario: Lose usage, drop a cancellation acknowledgement and restart the runtime.
+  expected_result: Unresolved reservations remain charged; unrecoverable accounting blocks dispatch.
+  base: true
+- criterion: Monetary limits include different tariffs and tool fees.
+  test_scenario: Use two model tariffs and a paid tool until the next maximum cost exceeds the remainder.
+  expected_result: That operation is refused using the recorded tariff version.
+  base: false
+- criterion: A call without an enforceable ceiling is refused.
+  test_scenario: Connect an operation with unbounded billing or hidden work and no provider allocation.
+  expected_result: Dispatch is refused rather than relying on a guessed average cost.
+  base: true
+faq: []
+requires: []
+implementations: []

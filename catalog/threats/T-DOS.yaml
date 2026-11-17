@@ -48,11 +48,19 @@ weaknesses:
   - model-output
   text: The downstream service accepts concurrent or repeated work from an agent without an aggregate allocation for that caller, and continues jobs after the agent times out or retries, so remote work accumulates independently of the agent's local limits.
   nature: targeted
-reachability: The endpoint accepts no untrusted or unbounded input, initiates no inter-agent or tool loops, and its tools have no unmetered outbound path. The condition must also cover hidden inference work, retries, delegated branches and resource-consuming downstream jobs, including work retained after a client timeout. A dedicated allocation is still material if depleting it exhausts service capacity or the payer's budget.
+- component: tool
+  surface:
+  - tool-output
+  text: A tool result is decompressed or parsed before byte, expansion, nesting and time limits apply, so an oversized result consumes the parser allocation before any model token limit.
+  nature: targeted
+reachability: The endpoint accepts no untrusted or unbounded input, initiates no inter-agent or tool loops, and its tools have no unmetered outbound path or unbounded result decoding. The condition must also cover hidden inference work, retries, delegated branches and resource-consuming downstream jobs, including work retained after a client timeout. A dedicated allocation is still material if depleting it exhausts service capacity or the payer's budget.
 mitigations:
 - id: CTRL-ITERATION-LIMITS
   strength: gating
   rationale: 'Closes the loop weakness: depth, iteration count and total steps per task are bounded, so a cycle terminates at the bound rather than at exhaustion.'
+- id: CTRL-TASK-RESOURCE-BUDGET
+  strength: gating
+  rationale: 'Closes aggregate amplification across retries, delegated branches and resumed tasks by reserving each call against one root-task budget. Per-call limits alone do not bound their sum.'
 - id: CTRL-TOKEN-LIMITS
   strength: gating
   rationale: 'Closes the size half of the input weakness and the tool-output weakness: the tokens a request or a tool result may carry are capped, so the largest unit of work has a known ceiling.'
@@ -68,6 +76,12 @@ mitigations:
 - id: CTRL-INPUT-FILTERING
   strength: soft
   rationale: 'Filters the input and tool-output paths: schema validation, normalization, encoding checks and rejection of known abusive patterns keep malformed or obviously hostile payloads from reaching the model or tool. It does not close the weakness, because valid-looking text can still trigger heavy work and novel or encoded recursion cannot be reliably detected by filtering.'
+- id: CTRL-TOOL-RESULT-VALIDATION
+  strength: gating
+  rationale: 'Bounds tool-result decoding and checks its locally accepted contract before context assembly, closing the oversized-result parser path. Valid text can still trigger expensive reasoning or actions.'
+- id: CTRL-GENERATION-LOOP-DETECTION
+  strength: soft
+  rationale: 'Cancels a detected literal generation loop before the hard per-call limit. It does not close the threat: hidden reasoning, paraphrased or nonrepetitive work and missed loops still consume their allowed budget.'
 references:
 - title: OpenAI ChatGPT Crawler Reflective DDoS Vulnerability
   url: https://github.com/bf/security-advisories/blob/main/2025-01-ChatGPT-Crawler-Reflective-DDOS-Vulnerability.md
@@ -78,6 +92,12 @@ references:
 - title: An Engorgio Prompt Makes Large Language Model Babble on
   url: https://arxiv.org/abs/2412.19394
   note: 'Measures the user-input weakness: crafted prompts suppress the end-of-sequence token and drive thirteen open models to two to thirteen times longer outputs, reaching over 90% of the length limit, with a run against a resource-limited service showing the availability hit (ICLR 2025).'
+- title: 'RecurGuard: Runtime Monitoring for Reasoning-Token Consumption Attacks'
+  url: https://arxiv.org/abs/2606.07968
+  note: 'Shows reasoning-token consumption through injected decoy tasks and a semantic trace monitor with adaptive misses. This is a path that literal repetition detection does not close.'
+- title: vLLM SamplingParams repetition detection
+  url: https://docs.vllm.ai/en/stable/api/vllm/sampling_params/
+  note: 'The inference engine exposes repetition_detection for ending repetitive N-gram generation early. It supports the literal-loop control, not a guarantee against semantic or hidden reasoning loops.'
 - title: 'GitLab: nested GraphQL query denial of service, CVE-2019-18455'
   url: https://gitlab.com/gitlab-org/gitlab/-/issues/30096
   note: A disclosed endpoint accepted nested queries whose expansion caused denial of service; GitLab fixed it in 12.4.1. This is evidence for the downstream query boundary, not an observed AI-agent incident.
